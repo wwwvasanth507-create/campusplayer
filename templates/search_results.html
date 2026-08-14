@@ -1,0 +1,360 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<style>
+    .search-header {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .search-header .page-title {
+        font-size: 1.2rem;
+        margin-bottom: 4px;
+    }
+    .search-header .page-sub {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+    }
+    .search-form-wrap {
+        position: relative;
+        margin-bottom: 24px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .search-form-wrap input {
+        padding-left: 48px;
+        padding-right: 64px;
+        font-size: 0.95rem;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 50px;
+        height: 54px;
+        margin: 0;
+        transition: all 0.3s ease;
+    }
+    .search-form-wrap input:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 30px rgba(212,168,83,0.15);
+    }
+    .search-form-wrap .search-icon {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-dim);
+        font-size: 1.2rem;
+    }
+    .search-form-wrap .search-btn {
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        bottom: 6px;
+        width: 44px;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        border: none;
+        border-radius: 50px;
+        color: #0a0a0f;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    .search-form-wrap .search-btn:active { transform: scale(0.92); }
+    .search-form-wrap .search-btn i { font-size: 1.2rem; }
+
+    .result-section { margin-bottom: 24px; }
+    .result-section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gold-light);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .result-section-title i { color: var(--gold); font-size: 1.1rem; }
+    .result-count {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.68rem;
+        font-weight: 400;
+        color: var(--text-dim);
+        margin-left: auto;
+    }
+
+    .result-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        margin-bottom: 8px;
+        text-decoration: none;
+        color: var(--text);
+        transition: all 0.2s ease;
+    }
+    .result-item:active {
+        transform: scale(0.98);
+        background: var(--surface2);
+    }
+    .result-item .ri-icon {
+        width: 42px;
+        height: 42px;
+        background: linear-gradient(135deg, rgba(212,168,83,0.12), rgba(124,58,173,0.08));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .result-item .ri-icon i { color: var(--gold); font-size: 1.2rem; }
+    .result-item .ri-body { flex: 1; min-width: 0; }
+    .result-item .ri-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .result-item .ri-title mark {
+        background: rgba(212,168,83,0.25);
+        color: var(--gold-light);
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+    .result-item .ri-meta {
+        font-size: 0.68rem;
+        color: var(--text-dim);
+        margin-top: 2px;
+    }
+    .result-item .ri-score {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        font-family: monospace;
+        opacity: 0.5;
+    }
+    .result-item .ri-chevron {
+        color: var(--text-dim);
+        font-size: 1rem;
+        opacity: 0.4;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    .no-results i {
+        font-size: 3rem;
+        color: var(--text-dim);
+        opacity: 0.2;
+        display: block;
+        margin-bottom: 16px;
+    }
+    .no-results p {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        margin-bottom: 6px;
+    }
+    .no-results .suggestion {
+        font-size: 0.75rem;
+        color: var(--text-dim);
+        opacity: 0.6;
+    }
+
+    .highlight-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .tag-video { background: rgba(255,152,0,0.15); color: #ff9800; }
+    .tag-playlist { background: rgba(0,229,255,0.15); color: #00e5ff; }
+    .tag-class { background: rgba(0,230,118,0.15); color: #00e676; }
+    .tag-quiz { background: rgba(187,134,252,0.15); color: #bb86fc; }
+    .tag-user { background: rgba(244,143,177,0.15); color: #f48fb1; }
+</style>
+
+<div class="search-header">
+    <h1 class="page-title">
+        {% if query %}Results for "{{ query }}"{% else %}Search{% endif %}
+    </h1>
+    {% if results and results.total_count > 0 %}
+    <p class="page-sub">{{ results.total_count }} result{{ 's' if results.total_count != 1 }} found</p>
+    {% endif %}
+</div>
+
+<div class="search-form-wrap">
+    <form action="{{ url_for('search_page') }}" method="GET" style="margin:0;">
+        <i class="material-icons search-icon">search</i>
+        <input type="text" name="q" placeholder="Search videos, playlists, classes, people..." 
+               value="{{ query or '' }}" autofocus>
+        <button type="submit" class="search-btn">
+            <i class="material-icons">arrow_forward</i>
+        </button>
+    </form>
+</div>
+
+{% if query %}
+    {% if results and results.total_count > 0 %}
+
+        <!-- Videos -->
+        {% if results.videos %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">videocam</i> Videos
+                <span class="result-count">{{ results.videos|length }}</span>
+            </div>
+            {% for video in results.videos %}
+            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="result-item">
+                <div class="ri-icon">
+                    <i class="material-icons">play_circle_outline</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ video.title }}</div>
+                    <div class="ri-meta">
+                        {{ video.uploader.username }} · {{ video.upload_date.strftime('%b %d, %Y') }}
+                        {% if video.classroom %}{{ video.classroom.name }}{% endif %}
+                    </div>
+                </div>
+                <span class="highlight-tag tag-video">video</span>
+                <i class="material-icons ri-chevron">chevron_right</i>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Playlists -->
+        {% if results.playlists %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">playlist_play</i> Playlists
+                <span class="result-count">{{ results.playlists|length }}</span>
+            </div>
+            {% for playlist in results.playlists %}
+            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="result-item">
+                <div class="ri-icon">
+                    <i class="material-icons">queue_music</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ playlist.title }}</div>
+                    <div class="ri-meta">{{ playlist.videos|length }} video{{ 's' if playlist.videos|length != 1 }} · by {{ playlist.creator.username }}</div>
+                </div>
+                <span class="highlight-tag tag-playlist">playlist</span>
+                <i class="material-icons ri-chevron">chevron_right</i>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Classes -->
+        {% if results.classes %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">school</i> Classes
+                <span class="result-count">{{ results.classes|length }}</span>
+            </div>
+            {% for cls in results.classes %}
+            <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="result-item">
+                <div class="ri-icon">
+                    <i class="material-icons">group</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ cls.name }}</div>
+                    <div class="ri-meta">Teacher: {{ cls.teacher.username }} · {{ cls.students.count() }} students</div>
+                </div>
+                <span class="highlight-tag tag-class">class</span>
+                <i class="material-icons ri-chevron">chevron_right</i>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Quizzes -->
+        {% if results.quizzes %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">quiz</i> Quizzes
+                <span class="result-count">{{ results.quizzes|length }}</span>
+            </div>
+            {% for quiz in results.quizzes %}
+            <a href="{{ url_for('edit_quiz', quiz_id=quiz.id) if current_user.role == 'teacher' else url_for('take_quiz', quiz_id=quiz.id) }}" class="result-item">
+                <div class="ri-icon">
+                    <i class="material-icons">help_outline</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ quiz.title }}</div>
+                    <div class="ri-meta">{{ quiz.questions|length }} question{{ 's' if quiz.questions|length != 1 }} · by {{ quiz.teacher.username }}</div>
+                </div>
+                <span class="highlight-tag tag-quiz">quiz</span>
+                <i class="material-icons ri-chevron">chevron_right</i>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Teachers -->
+        {% if results.teachers and current_user.role == 'admin' %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">supervisor_account</i> Teachers
+                <span class="result-count">{{ results.teachers|length }}</span>
+            </div>
+            {% for teacher in results.teachers %}
+            <div class="result-item" style="cursor:default;">
+                <div class="ri-icon">
+                    <i class="material-icons">person</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ teacher.username }}</div>
+                    <div class="ri-meta">XP: {{ teacher.xp }} · Joined {{ teacher.created_at.strftime('%b %Y') }}</div>
+                </div>
+                <span class="highlight-tag tag-user">teacher</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Students -->
+        {% if results.students and current_user.role in ['admin', 'teacher'] %}
+        <div class="result-section">
+            <div class="result-section-title">
+                <i class="material-icons">group</i> Students
+                <span class="result-count">{{ results.students|length }}</span>
+            </div>
+            {% for student in results.students %}
+            <div class="result-item" style="cursor:default;">
+                <div class="ri-icon">
+                    <i class="material-icons">face</i>
+                </div>
+                <div class="ri-body">
+                    <div class="ri-title">{{ student.username }}</div>
+                    <div class="ri-meta">XP: {{ student.xp }} · Joined {{ student.created_at.strftime('%b %Y') }}</div>
+                </div>
+                <span class="highlight-tag tag-user">student</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+    {% else %}
+    <div class="no-results">
+        <i class="material-icons">search_off</i>
+        <p>No results found for "{{ query }}"</p>
+        <p class="suggestion">Try different keywords or browse from the menu</p>
+    </div>
+    {% endif %}
+{% else %}
+<div class="no-results">
+    <i class="material-icons">travel_explore</i>
+    <p>Type something to search</p>
+    <p class="suggestion">Search across videos, playlists, classes, quizzes, and people</p>
+</div>
+{% endif %}
+
+{% endblock %}

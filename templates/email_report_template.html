@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusPlayer Student Progress Report</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #101114;
+            color: #f6f7fb;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+            width: 100%;
+            background-color: #101114;
+            padding: 30px 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #181b20;
+            border-radius: 12px;
+            border: 1px solid rgba(181, 189, 202, 0.15);
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+        }
+        .header {
+            background: linear-gradient(135deg, #171a1f, #101114);
+            padding: 24px;
+            text-align: center;
+            border-bottom: 2px solid #f4b04d;
+        }
+        .header h1 {
+            color: #ffd58a;
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            font-family: Georgia, serif;
+        }
+        .header p {
+            color: #9da7b7;
+            margin: 4px 0 0;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .content {
+            padding: 30px;
+        }
+        .student-card {
+            background-color: #20252d;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border-left: 4px solid #f4b04d;
+        }
+        .student-card table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .student-card td {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .student-card td.label {
+            color: #b5bdca;
+            width: 35%;
+            font-weight: bold;
+        }
+        .student-card td.val {
+            color: #f6f7fb;
+        }
+        .section-title {
+            color: #f4b04d;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0 0 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 6px;
+        }
+        .metric-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .metric-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        .metric-info {
+            flex: 1;
+        }
+        .metric-name {
+            font-size: 14px;
+            color: #ffd58a;
+            font-weight: 600;
+        }
+        .metric-desc {
+            font-size: 13px;
+            color: #9da7b7;
+            margin-top: 2px;
+        }
+        .remark-box {
+            background-color: rgba(244, 176, 77, 0.05);
+            border: 1px solid rgba(244, 176, 77, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            margin-bottom: 24px;
+        }
+        .remark-box h4 {
+            color: #f4b04d;
+            margin: 0 0 8px 0;
+            font-size: 14px;
+        }
+        .remark-box p {
+            margin: 0;
+            font-size: 13px;
+            color: #f6f7fb;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        .btn-container {
+            text-align: center;
+            margin: 30px 0 10px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #f4b04d, #b56f18);
+            color: #101114 !important;
+            padding: 14px 28px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 20px rgba(212, 168, 83, 0.3);
+        }
+        .footer {
+            background-color: #171a1f;
+            padding: 20px;
+            text-align: center;
+            font-size: 11px;
+            color: #727d8d;
+            border-top: 1px solid rgba(181, 189, 202, 0.1);
+        }
+        .footer p {
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <h1>CampusPlayer</h1>
+                <p>Student Progress Report</p>
+            </div>
+            
+            <div class="content">
+                <div class="student-card">
+                    <table>
+                        <tr>
+                            <td class="label">Student Name:</td>
+                            <td class="val">{{ student_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Roll Number:</td>
+                            <td class="val">{{ roll_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Classroom:</td>
+                            <td class="val">{{ classroom_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Report Date:</td>
+                            <td class="val">{{ report_date }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Level:</td>
+                            <td class="val">{{ level }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">XP:</td>
+                            <td class="val">{{ xp }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Quizzes Taken:</td>
+                            <td class="val">{{ total_quizzes_taken }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Total Quiz Score:</td>
+                            <td class="val">{{ total_quiz_score }}</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="section-title">Academic Metrics</div>
+                
+                <div class="metric-row">
+                    <span class="metric-icon">&#128203;</span>
+                    <div class="metric-info">
+                        <div class="metric-name">Attendance Rate: {{ attendance_pct }}%</div>
+                        <div class="metric-desc">{{ attendance_summary }}</div>
+                    </div>
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-icon">&#128221;</span>
+                    <div class="metric-info">
+                        <div class="metric-name">Assignments Status</div>
+                        <div class="metric-desc">{{ assignment_summary }}</div>
+                    </div>
+                </div>
+                
+                <div class="metric-row">
+                    <span class="metric-icon">&#127919;</span>
+                    <div class="metric-info">
+                        <div class="metric-name">Quiz Performance</div>
+                        <div class="metric-desc">{{ quiz_summary }}</div>
+                    </div>
+                </div>
+                
+                <div class="remark-box">
+                    <h4>Teacher Remarks</h4>
+                    <p>{{ remark_text }}</p>
+                </div>
+                
+                <div class="btn-container">
+                    <a href="{{ login_link }}" class="btn">Access CampusPlayer Portal</a>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>This report was generated automatically on behalf of your class instructor: {{ teacher_name }}.</p>
+                <p>&copy; 2026 CampusPlayer. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

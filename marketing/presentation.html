@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusPlayer — Presentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0f1a;
+            --surface: #111827;
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #7c4dff;
+            --cyan: #00e5ff;
+            --green: #00e676;
+            --orange: #ff9800;
+            --pink: #ff4081;
+            --gold: #ffd740;
+            --text: #fff;
+            --muted: rgba(255, 255, 255, 0.5);
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* ===== TOOLBAR ===== */
+        .toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: rgba(10, 15, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .tb-logo {
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: auto;
+        }
+
+        .tb-logo-box {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .tb-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tb-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tb-btn.primary {
+            background: linear-gradient(135deg, var(--primary), #5c35cc);
+            border-color: var(--primary);
+        }
+
+        .slide-counter {
+            font-size: 0.85rem;
+            color: var(--muted);
+            padding: 0 8px;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        /* ===== LAYOUT ===== */
+        .main {
+            display: flex;
+            height: calc(100vh - 52px);
+            margin-top: 52px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 200px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.02);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .thumb {
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            margin-bottom: 8px;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+            aspect-ratio: 16/9;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.55rem;
+            color: var(--muted);
+            padding: 6px;
+            text-align: center;
+            position: relative;
+        }
+
+        .thumb.active {
+            border-color: var(--cyan);
+        }
+
+        .thumb-num {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 0.6rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .thumb-emoji {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        .thumb-title {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ===== CANVAS ===== */
+        .canvas-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: #07080f;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-canvas {
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 16/9;
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ===== SLIDE CONTENT ===== */
+        .s {
+            position: absolute;
+            inset: 0;
+            padding: 48px 56px;
+            display: none;
+            flex-direction: column;
+        }
+
+        .s.active {
+            display: flex;
+        }
+
+        /* ===== NOTES PANEL ===== */
+        .notes-panel {
+            width: 100%;
+            max-width: 960px;
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        /* ===== SLIDE TYPOGRAPHY ===== */
+        .s-title {
+            font-size: clamp(1.4rem, 3.5vw, 2.8rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 8px;
+        }
+
+        .s-sub {
+            font-size: clamp(0.75rem, 1.5vw, 1rem);
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .s-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .grad-p {
+            background: linear-gradient(90deg, #b388ff, #7c4dff, #00e5ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-c {
+            background: linear-gradient(90deg, #00e5ff, #18ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-g {
+            background: linear-gradient(90deg, #00e676, #69f0ae);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-o {
+            background: linear-gradient(90deg, #ff9800, #ffcc02);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-pk {
+            background: linear-gradient(90deg, #ff4081, #ff80ab);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ===== GRIDS / LAYOUTS ===== */
+        .g2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .g3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .card-body {
+            font-size: 0.72rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .icon {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .bullet-list {
+            list-style: none;
+        }
+
+        .bullet-list li {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.75);
+            padding: 5px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .bullet-list li::before {
+            content: '▸';
+            color: var(--cyan);
+        }
+
+        /* ===== TITLE SLIDE ===== */
+        .title-giant {
+            font-size: clamp(2.5rem, 7vw, 5.5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin: 3px;
+        }
+
+        /* ===== STAT BOXES ===== */
+        .stat-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .stat {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .stat-n {
+            font-size: 1.8rem;
+            font-weight: 900;
+        }
+
+        .stat-l {
+            font-size: 0.65rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .bar-row {
+            margin-bottom: 8px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .bar-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 6px;
+        }
+
+        /* ===== CORNER BADGE ===== */
+        .corner-badge {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        /* ===== BG DECORATION ===== */
+        .bg-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .s-content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== TOOLBAR ===== -->
+    <div class="toolbar">
+        <div class="tb-logo">
+            <div class="tb-logo-box">🎓</div> CampusPlayer
+        </div>
+        <button class="tb-btn" onclick="prevSlide()">◀ Prev</button>
+        <div class="slide-counter" id="counter">1 / 12</div>
+        <button class="tb-btn" onclick="nextSlide()">Next ▶</button>
+        <button class="tb-btn primary" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    </div>
+
+    <!-- ===== MAIN ===== -->
+    <div class="main">
+
+        <!-- SIDEBAR -->
+        <div class="sidebar" id="sidebar">
+            <!-- generated by JS -->
+        </div>
+
+        <!-- CANVAS -->
+        <div class="canvas-wrap">
+            <div class="slide-canvas" id="canvas">
+
+                <!-- ===== SLIDE 1: TITLE ===== -->
+                <div class="s active" id="s1">
+                    <div class="bg-blob"
+                        style="width:400px;height:400px;background:radial-gradient(circle,rgba(124,77,255,0.18),transparent);top:-100px;left:-80px;">
+                    </div>
+                    <div class="bg-blob"
+                        style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,229,255,0.1),transparent);bottom:-60px;right:-60px;">
+                    </div>
+                    <div class="corner-badge">2026 Edition</div>
+                    <div class="s-content" style="justify-content:center;gap:0;">
+                        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+                            <div
+                                style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:1.6rem;">
+                                🎓</div>
+                            <span
+                                style="font-size:1rem;font-weight:800;color:var(--muted);letter-spacing:2px;text-transform:uppercase;">CampusPlayer</span>
+                        </div>
+                        <div class="title-giant"><span class="grad-p">Campus</span><br><span class="grad-c">Video
+                                Player</span></div>
+                        <div
+                            style="font-size:0.9rem;color:var(--muted);max-width:460px;margin-top:16px;line-height:1.6;">
+                            An all-in-one education platform designed for modern campuses — built with Flask, SQLite,
+                            FFmpeg, and AI.
+                        </div>
+                        <div style="margin-top:20px;">
+                            <span class="pill"
+                                style="background:rgba(124,77,255,0.15);border:1px solid rgba(124,77,255,0.3);color:#b388ff;">📹
+                                Video Streaming</span>
+                            <span class="pill"
+                                style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:#00e5ff;">🧠
+                                AI Assistant</span>
+                            <span class="pill"
+                                style="background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);color:#00e676;">📋
+                                Attendance</span>
+                            <span class="pill"
+                                style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.3);color:#ff9800;">🏆
+                                Gamification</span>
+                            <span class="pill"
+                                style="background:rgba(255,64,129,0.1);border:1px solid rgba(255,64,129,0.3);color:#ff4081;">💬
+                                Chatroom</span>
+                            <span class="pill"
+                                style="background:rgba(255,215,64,0.1);border:1px solid rgba(255,215,64,0.3);color:#ffd740;">📲
+                                SMS Alerts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 2: OVERVIEW ===== -->
+                <div class="s" id="s2">
+                    <div class="bg-blob"
+                        style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,229,255,0.1),transparent);top:-50px;right:-50px;">
+                    </div>
+                    <div class="s-content">
+                        <div class="corner-badge">Overview</div>
+                        <div class="s-title"><span class="grad-c">What is CampusPlayer?</span></div>
+                        <div class="s-sub">A full-stack web application for managing your entire campus digitally</div>
+                        <div class="s-body">
+                            <div class="stat-row" style="margin-bottom:18px;">
+                                <div class="stat">
+                                    <div class="stat-n grad-p">3</div>
+                                    <div class="stat-l">User Roles</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-n grad-c">10+</div>
+                                    <div class="stat-l">Core Features</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-n grad-g">100%</div>
+                                    <div class="stat-l">Web-Based</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-n grad-o">∞</div>
+                                    <div class="stat-l">Videos Supported</div>
+                                </div>
+                            </div>
+                            <div class="g2">
+                                <div>
+                                    <ul class="bullet-list">
+                                        <li>HLS adaptive video streaming</li>
+                                        <li>Role-based access control</li>
+                                        <li>AI-powered chat assistant</li>
+                                        <li>Automated attendance tracking</li>
+                                        <li>Quiz & assessment system</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <ul class="bullet-list">
+                                        <li>XP & level gamification</li>
+                                        <li>Real-time class chatrooms</li>
+                                        <li>SMS parent notifications</li>
+                                        <li>PDF report generation</li>
+                                        <li>Video analytics dashboard</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 3: USER ROLES ===== -->
+                <div class="s" id="s3">
+                    <div class="s-content">
+                        <div class="corner-badge">User Roles</div>
+                        <div class="s-title"><span class="grad-p">Three Roles. One Platform.</span></div>
+                        <div class="s-sub">Every user gets a tailored, role-specific dashboard experience</div>
+                        <div class="s-body">
+                            <div class="g3">
+                                <div class="card" style="border-color:rgba(124,77,255,0.3);">
+                                    <div class="icon">🔐</div>
+                                    <div class="card-title" style="color:#b388ff;">Administrator</div>
+                                    <ul class="bullet-list" style="margin-top:8px;">
+                                        <li style="font-size:0.7rem;">Manage all teachers & students</li>
+                                        <li style="font-size:0.7rem;">Global site settings</li>
+                                        <li style="font-size:0.7rem;">Attendance lock time</li>
+                                        <li style="font-size:0.7rem;">PDF reports & analytics</li>
+                                        <li style="font-size:0.7rem;">Password management</li>
+                                    </ul>
+                                </div>
+                                <div class="card" style="border-color:rgba(0,229,255,0.3);">
+                                    <div class="icon">👨‍🏫</div>
+                                    <div class="card-title" style="color:#00e5ff;">Teacher</div>
+                                    <ul class="bullet-list" style="margin-top:8px;">
+                                        <li style="font-size:0.7rem;">Upload & manage videos</li>
+                                        <li style="font-size:0.7rem;">Create classes & quizzes</li>
+                                        <li style="font-size:0.7rem;">Mark daily attendance</li>
+                                        <li style="font-size:0.7rem;">Manage class chatroom</li>
+                                        <li style="font-size:0.7rem;">Send SMS to parents</li>
+                                    </ul>
+                                </div>
+                                <div class="card" style="border-color:rgba(0,230,118,0.3);">
+                                    <div class="icon">🎓</div>
+                                    <div class="card-title" style="color:#00e676;">Student</div>
+                                    <ul class="bullet-list" style="margin-top:8px;">
+                                        <li style="font-size:0.7rem;">Watch class videos</li>
+                                        <li style="font-size:0.7rem;">Take assigned quizzes</li>
+                                        <li style="font-size:0.7rem;">View attendance record</li>
+                                        <li style="font-size:0.7rem;">Chat in classrooms</li>
+                                        <li style="font-size:0.7rem;">Earn XP & level up</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 4: VIDEO MANAGEMENT ===== -->
+                <div class="s" id="s4">
+                    <div class="bg-blob"
+                        style="width:350px;height:350px;background:radial-gradient(circle,rgba(0,229,255,0.08),transparent);bottom:-80px;left:-60px;">
+                    </div>
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 1</div>
+                        <div class="s-title"><span class="grad-c">📹 Video Management</span></div>
+                        <div class="s-sub">Professional HLS video streaming built right into the platform</div>
+                        <div class="s-body">
+                            <div class="g2">
+                                <div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(0,229,255,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#00e5ff;margin-bottom:6px;">
+                                            ⚡ HLS Streaming</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">FFmpeg converts uploaded
+                                            videos to HLS format (.m3u8) for adaptive, buffer-free streaming across all
+                                            devices.</div>
+                                    </div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(124,77,255,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#b388ff;margin-bottom:6px;">
+                                            🖼️ Auto Thumbnails</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Thumbnails are auto-generated
+                                            from the video's first frame using FFmpeg during processing.</div>
+                                    </div>
+                                    <div class="card" style="border-color:rgba(0,230,118,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#00e676;margin-bottom:6px;">
+                                            📂 Playlists</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Teachers organize videos into
+                                            playlists. Students see only playlists from their enrolled classes.</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(255,152,0,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#ff9800;margin-bottom:6px;">
+                                            💬 Comments & Replies</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Threaded comment section
+                                            under each video for student-teacher discussion.</div>
+                                    </div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(255,64,129,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#ff4081;margin-bottom:6px;">
+                                            🔒 Admin Locks</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Admin can lock video speed
+                                            controls and prevent skipping to enforce full viewing.</div>
+                                    </div>
+                                    <div class="card" style="border-color:rgba(255,215,64,0.2);">
+                                        <div style="font-size:0.85rem;font-weight:800;color:#ffd740;margin-bottom:6px;">
+                                            📊 Analytics</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Track every view: who
+                                            watched, start/end time, completion percentage per student.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 5: ATTENDANCE ===== -->
+                <div class="s" id="s5">
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 2</div>
+                        <div class="s-title"><span class="grad-g">📋 Attendance System</span></div>
+                        <div class="s-sub">Smart, time-locked attendance with automatic parent notifications</div>
+                        <div class="s-body">
+                            <div class="g3" style="margin-bottom:14px;">
+                                <div class="card" style="text-align:center;border-color:rgba(0,230,118,0.3);">
+                                    <div style="font-size:2rem;">🟢</div>
+                                    <div class="card-title" style="color:#00e676;margin-top:6px;">Present</div>
+                                    <div class="card-body">On-time arrival tracked</div>
+                                </div>
+                                <div class="card" style="text-align:center;border-color:rgba(255,152,0,0.3);">
+                                    <div style="font-size:2rem;">⏰</div>
+                                    <div class="card-title" style="color:#ff9800;margin-top:6px;">Late</div>
+                                    <div class="card-body">Auto-detected by time window</div>
+                                </div>
+                                <div class="card" style="text-align:center;border-color:rgba(255,82,82,0.3);">
+                                    <div style="font-size:2rem;">❌</div>
+                                    <div class="card-title" style="color:#ff5252;margin-top:6px;">Absent</div>
+                                    <div class="card-body">SMS sent to parent automatically</div>
+                                </div>
+                            </div>
+                            <div class="g2">
+                                <div class="card" style="border-color:rgba(0,229,255,0.2);">
+                                    <div class="card-title" style="color:#00e5ff;">🔒 Time-Locked Window</div>
+                                    <div class="card-body" style="margin-top:4px;">Admin sets lock time (e.g., 09:10
+                                        AM). Attendance only marks during open window — prevents backdating.</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(187,134,252,0.2);">
+                                    <div class="card-title" style="color:#b388ff;">📄 PDF Reports</div>
+                                    <div class="card-body" style="margin-top:4px;">Generate detailed attendance PDFs per
+                                        student or class — with date-wise breakdown and statistics.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 6: QUIZ ===== -->
+                <div class="s" id="s6">
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 3</div>
+                        <div class="s-title"><span class="grad-p">📝 Quiz System</span></div>
+                        <div class="s-sub">Create, assign, and grade assessments with automated XP rewards</div>
+                        <div class="s-body">
+                            <div class="g2">
+                                <div>
+                                    <ul class="bullet-list" style="margin-bottom:16px;">
+                                        <li>Teacher creates MCQ quizzes with 4 options</li>
+                                        <li>Assign quiz to a specific class or global</li>
+                                        <li>Students take quiz and submit answers</li>
+                                        <li>Automatic scoring & XP award on completion</li>
+                                        <li>Teacher views quiz result reports</li>
+                                        <li>Delete question or entire quiz anytime</li>
+                                    </ul>
+                                    <div class="card" style="border-color:rgba(124,77,255,0.3);">
+                                        <div class="card-title" style="color:#b388ff;">Quiz Flow</div>
+                                        <div
+                                            style="font-size:0.72rem;color:var(--muted);margin-top:6px;line-height:1.8;">
+                                            Create Quiz → Add Questions → Assign Class → Students Take → Auto Grade →
+                                            View Reports
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(255,215,64,0.2);">
+                                        <div class="card-title" style="color:#ffd740;">📊 Quiz Reports</div>
+                                        <div class="card-body" style="margin-top:4px;">See per-student scores, average
+                                            marks, pass rate, and question-wise results.</div>
+                                    </div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(0,230,118,0.2);">
+                                        <div class="card-title" style="color:#00e676;">🎮 XP on Completion</div>
+                                        <div class="card-body" style="margin-top:4px;">Students earn +25 XP per quiz
+                                            completed — motivating participation.</div>
+                                    </div>
+                                    <div class="card" style="border-color:rgba(255,64,129,0.2);">
+                                        <div class="card-title" style="color:#ff4081;">🗑️ Easy Management</div>
+                                        <div class="card-body" style="margin-top:4px;">Delete individual questions or
+                                            entire quizzes from the quiz management page.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 7: GAMIFICATION ===== -->
+                <div class="s" id="s7">
+                    <div class="bg-blob"
+                        style="width:300px;height:300px;background:radial-gradient(circle,rgba(255,215,64,0.1),transparent);bottom:-60px;right:-60px;">
+                    </div>
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 4</div>
+                        <div class="s-title"><span class="grad-o">🏆 Gamification & XP</span></div>
+                        <div class="s-sub">Keep students and teachers motivated with a reward system</div>
+                        <div class="s-body">
+                            <div class="g2" style="margin-bottom:16px;">
+                                <div>
+                                    <div
+                                        style="background:linear-gradient(135deg,rgba(255,215,64,0.12),rgba(255,152,0,0.12));border:1px solid rgba(255,215,64,0.3);border-radius:12px;padding:14px;margin-bottom:10px;text-align:center;">
+                                        <div style="font-size:1.8rem;font-weight:900;color:#ffd740;">Level 8</div>
+                                        <div style="font-size:0.72rem;color:var(--muted);">Master Learner</div>
+                                    </div>
+                                    <div class="bar-row">
+                                        <div class="bar-label"><span>Total XP</span><span style="color:#ffd740;">3,850
+                                                XP</span></div>
+                                        <div class="bar-track">
+                                            <div class="bar-fill"
+                                                style="width:96%;background:linear-gradient(90deg,var(--primary),var(--gold));">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                                        <thead>
+                                            <tr style="border-bottom:1px solid var(--border);">
+                                                <th style="text-align:left;padding:6px 4px;color:var(--muted);">Action
+                                                </th>
+                                                <th style="text-align:right;padding:6px 4px;color:var(--muted);">XP
+                                                    Earned</th>
+                                                <th style="padding:6px 4px;color:var(--muted);">Who</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                <td style="padding:7px 4px;">📹 Upload video</td>
+                                                <td style="text-align:right;color:#00e676;font-weight:700;">+50 XP</td>
+                                                <td style="text-align:center;">Teacher</td>
+                                            </tr>
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                <td style="padding:7px 4px;">🎬 Watch video</td>
+                                                <td style="text-align:right;color:#00e676;font-weight:700;">+10 XP</td>
+                                                <td style="text-align:center;">Student</td>
+                                            </tr>
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                <td style="padding:7px 4px;">📝 Complete quiz</td>
+                                                <td style="text-align:right;color:#00e676;font-weight:700;">+25 XP</td>
+                                                <td style="text-align:center;">Student</td>
+                                            </tr>
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                <td style="padding:7px 4px;">➕ Add student</td>
+                                                <td style="text-align:right;color:#00e676;font-weight:700;">+15 XP</td>
+                                                <td style="text-align:center;">Teacher</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:7px 4px;">💬 Chat message</td>
+                                                <td style="text-align:right;color:#00e676;font-weight:700;">+5 XP</td>
+                                                <td style="text-align:center;">Teacher</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card" style="border-color:rgba(255,215,64,0.2);">
+                                <div class="card-title" style="color:#ffd740;">📄 Leaderboard PDF Report — Admin can
+                                    export XP/Level rankings for all users</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 8: CHATROOM & AI ===== -->
+                <div class="s" id="s8">
+                    <div class="s-content">
+                        <div class="corner-badge">Features 5 & 6</div>
+                        <div class="s-title"><span class="grad-pk">💬 Chatrooms & 🤖 AI</span></div>
+                        <div class="s-sub">Real-time classroom communication and AI-powered student support</div>
+                        <div class="s-body">
+                            <div class="g2">
+                                <div>
+                                    <div class="card" style="border-color:rgba(0,229,255,0.3);margin-bottom:10px;">
+                                        <div class="card-title" style="color:#00e5ff;font-size:1rem;">💬 Live Class
+                                            Chatroom</div>
+                                        <ul class="bullet-list" style="margin-top:8px;">
+                                            <li style="font-size:0.72rem;">Per-classroom real-time messaging</li>
+                                            <li style="font-size:0.72rem;">3-second auto-polling for new messages</li>
+                                            <li style="font-size:0.72rem;">Teacher role badge on messages</li>
+                                            <li style="font-size:0.72rem;">Teacher: delete single or all messages</li>
+                                            <li style="font-size:0.72rem;">Students enrolled in class get access</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card" style="border-color:rgba(255,64,129,0.3);margin-bottom:10px;">
+                                        <div class="card-title" style="color:#ff4081;font-size:1rem;">🤖 AI Assistant
+                                        </div>
+                                        <ul class="bullet-list" style="margin-top:8px;">
+                                            <li style="font-size:0.72rem;">Always-available AI chatbot for all users
+                                            </li>
+                                            <li style="font-size:0.72rem;">Answers questions about videos, quizzes</li>
+                                            <li style="font-size:0.72rem;">Guides students through coursework</li>
+                                            <li style="font-size:0.72rem;">Available from sidebar navigation</li>
+                                            <li style="font-size:0.72rem;">Expandable with custom AI backend</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card" style="border-color:rgba(255,215,64,0.2);margin-top:4px;">
+                                <div style="display:flex;gap:20px;align-items:center;font-size:0.78rem;">
+                                    <span style="color:#ffd740;font-weight:700;">🔔 In-App Notifications</span>
+                                    <span style="color:var(--muted);">New quiz assigned, attendance open, system
+                                        announcements — all tracked with unread count badges.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 9: SMS ===== -->
+                <div class="s" id="s9">
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 7</div>
+                        <div class="s-title"><span class="grad-g">📲 SMS Parent Alerts</span></div>
+                        <div class="s-sub">Automated parent notifications using Selenium-powered SMS automation</div>
+                        <div class="s-body">
+                            <div class="g2">
+                                <div>
+                                    <ul class="bullet-list" style="margin-bottom:14px;">
+                                        <li>Selenium automates Google Messages (web.messages.google.com)</li>
+                                        <li>Sends personalized SMS to each parent's phone</li>
+                                        <li>Absent student alerts with custom message</li>
+                                        <li>Class-wide bulk SMS option</li>
+                                        <li>Lock mechanism prevents duplicate sends</li>
+                                        <li>Configurable admin phone number</li>
+                                    </ul>
+                                    <div class="card" style="border-color:rgba(0,230,118,0.3);">
+                                        <div class="card-title" style="color:#00e676;">Sample SMS Message</div>
+                                        <div
+                                            style="font-size:0.7rem;color:var(--muted);margin-top:6px;line-height:1.7;font-style:italic;">
+                                            "Dear Parent, your ward Ravi Kumar was absent on 22-Feb-2026 in ClassA.
+                                            Please ensure regular attendance. — CampusPlayer"
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(255,152,0,0.2);">
+                                        <div class="card-title" style="color:#ff9800;">📋 Attendance PDF</div>
+                                        <div class="card-body" style="margin-top:4px;">Beautiful, printable PDF reports
+                                            with per-student breakdown, statistics, and heatmaps.</div>
+                                    </div>
+                                    <div class="card" style="margin-bottom:10px;border-color:rgba(124,77,255,0.2);">
+                                        <div class="card-title" style="color:#b388ff;">📊 Struggling Topics</div>
+                                        <div class="card-body" style="margin-top:4px;">AI-powered analysis identifies
+                                            content areas where students are underperforming based on analytics.</div>
+                                    </div>
+                                    <div class="card" style="border-color:rgba(0,229,255,0.2);">
+                                        <div class="card-title" style="color:#00e5ff;">📝 Monthly Reports</div>
+                                        <div class="card-body" style="margin-top:4px;">Downloadable per-student monthly
+                                            PDF summary with attendance, XP, quizzes, and warnings.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 10: ANALYTICS ===== -->
+                <div class="s" id="s10">
+                    <div class="s-content">
+                        <div class="corner-badge">Feature 8</div>
+                        <div class="s-title"><span class="grad-c">📊 Analytics Dashboard</span></div>
+                        <div class="s-sub">Deep insights into student engagement and learning outcomes</div>
+                        <div class="s-body">
+                            <div class="g3" style="margin-bottom:14px;">
+                                <div class="card" style="border-color:rgba(0,229,255,0.3);">
+                                    <div class="icon">👁️</div>
+                                    <div class="card-title" style="color:#00e5ff;">View Tracking</div>
+                                    <div class="card-body">Track exactly who watched each video, when they started and
+                                        stopped.</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(124,77,255,0.3);">
+                                    <div class="icon">📈</div>
+                                    <div class="card-title" style="color:#b388ff;">Engagement Score</div>
+                                    <div class="card-body">See completion rates per video and per student cohort.</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(255,152,0,0.3);">
+                                    <div class="icon">⚠️</div>
+                                    <div class="card-title" style="color:#ff9800;">Struggling Topics</div>
+                                    <div class="card-body">Auto-detect videos with low watch rates or poor quiz
+                                        performance.</div>
+                                </div>
+                            </div>
+                            <div class="g2">
+                                <div class="card" style="border-color:rgba(0,230,118,0.2);">
+                                    <div class="card-title" style="color:#00e676;">🏆 XP Leaderboard</div>
+                                    <div class="card-body" style="margin-top:4px;">Admin sees all users ranked by XP and
+                                        level. Exportable as PDF report.</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(255,215,64,0.2);">
+                                    <div class="card-title" style="color:#ffd740;">📅 Monthly Summary</div>
+                                    <div class="card-body" style="margin-top:4px;">Per-student monthly PDF with full
+                                        activity breakdown including attendance warnings.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 11: TECH STACK ===== -->
+                <div class="s" id="s11">
+                    <div class="s-content">
+                        <div class="corner-badge">Technical</div>
+                        <div class="s-title"><span class="grad-o">⚙️ Technology Stack</span></div>
+                        <div class="s-sub">Powered by proven, production-ready open-source tools</div>
+                        <div class="s-body">
+                            <div class="g3">
+                                <div class="card" style="border-color:rgba(255,152,0,0.3);text-align:center;">
+                                    <div class="icon">🐍</div>
+                                    <div class="card-title" style="color:#ff9800;">Flask</div>
+                                    <div class="card-body">Python web framework powering all routes & APIs</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(0,229,255,0.3);text-align:center;">
+                                    <div class="icon">🗄️</div>
+                                    <div class="card-title" style="color:#00e5ff;">SQLite</div>
+                                    <div class="card-body">Lightweight relational database with SQLAlchemy ORM</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(0,230,118,0.3);text-align:center;">
+                                    <div class="icon">🎬</div>
+                                    <div class="card-title" style="color:#00e676;">FFmpeg</div>
+                                    <div class="card-body">HLS video processing, thumbnail auto-generation</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(124,77,255,0.3);text-align:center;">
+                                    <div class="icon">🤖</div>
+                                    <div class="card-title" style="color:#b388ff;">Selenium</div>
+                                    <div class="card-body">Browser automation for SMS messaging via web</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(255,64,129,0.3);text-align:center;">
+                                    <div class="icon">📄</div>
+                                    <div class="card-title" style="color:#ff4081;">ReportLab</div>
+                                    <div class="card-body">Dynamic PDF generation for reports and summaries</div>
+                                </div>
+                                <div class="card" style="border-color:rgba(255,215,64,0.3);text-align:center;">
+                                    <div class="icon">🔐</div>
+                                    <div class="card-title" style="color:#ffd740;">Flask-Login</div>
+                                    <div class="card-body">Secure session management & role-based access</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SLIDE 12: CTA ===== -->
+                <div class="s" id="s12">
+                    <div class="bg-blob"
+                        style="width:500px;height:500px;background:radial-gradient(circle,rgba(124,77,255,0.15),transparent);top:50%;left:50%;transform:translate(-50%,-50%);">
+                    </div>
+                    <div class="s-content" style="align-items:center;justify-content:center;text-align:center;">
+                        <div style="font-size:3.5rem;margin-bottom:16px;">🚀</div>
+                        <div class="title-giant" style="font-size:clamp(2rem,5vw,3.8rem);"><span
+                                class="grad-p">Revolutionize</span><br><span class="grad-c">Your Campus Today</span>
+                        </div>
+                        <div
+                            style="font-size:0.9rem;color:var(--muted);max-width:480px;margin:16px auto;line-height:1.7;">
+                            CampusPlayer is ready to deploy. One Python file, one database, and infinite possibilities
+                            for modern campus education.
+                        </div>
+                        <div style="margin-top:20px; color:rgba(255,255,255,0.35); font-size:0.78rem;">
+                            © 2026 Vasanth V. — CampusPlayer. All Rights Reserved.
+                        </div>
+                        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+                            <div class="card" style="border-color:rgba(0,229,255,0.3);padding:14px 24px;">
+                                <div style="font-size:1.2rem;font-weight:900;color:#00e5ff;">✅ Run: python app.py</div>
+                                <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">Instant local
+                                    deployment</div>
+                            </div>
+                            <div class="card" style="border-color:rgba(0,230,118,0.3);padding:14px 24px;">
+                                <div style="font-size:1.2rem;font-weight:900;color:#00e676;">🌐 Access: localhost:5000
+                                </div>
+                                <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;">No cloud required
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:24px;font-size:0.75rem;color:rgba(255,255,255,0.25);">Flask · SQLite ·
+                            FFmpeg · Selenium · ReportLab · HLS Streaming</div>
+                    </div>
+                </div>
+
+            </div><!-- /canvas -->
+
+            <!-- Notes -->
+            <div class="notes-panel" id="notes">📝 Notes: Use Arrow Keys or Space to navigate slides</div>
+        </div>
+    </div>
+
+    <script>
+        const slidesData = [
+            { emoji: '🎓', title: 'Title Slide', note: 'Opening slide — introduces CampusPlayer brand and core feature pillars.' },
+            { emoji: '📋', title: 'Overview', note: 'High-level stats: 3 roles, 10+ features, 100% web-based, unlimited video support.' },
+            { emoji: '👥', title: 'User Roles', note: 'Three tailored dashboards: Admin (control), Teacher (content), Student (learning).' },
+            { emoji: '📹', title: 'Video Mgmt', note: 'HLS streaming via FFmpeg, auto thumbnails, playlists, comments, admin locks, analytics.' },
+            { emoji: '📋', title: 'Attendance', note: 'Time-locked attendance with Present/Late/Absent and automatic parent SMS alerts.' },
+            { emoji: '📝', title: 'Quiz System', note: 'Teacher creates MCQ quizzes, students take them, auto-graded with XP rewards and reports.' },
+            { emoji: '🏆', title: 'Gamification', note: 'XP earned from videos, quizzes, uploads, chatting. Levels from 1–10+. PDF leaderboard.' },
+            { emoji: '💬', title: 'Chat & AI', note: 'Live per-class chatrooms with 3s polling. AI assistant available for all users.' },
+            { emoji: '📲', title: 'SMS Alerts', note: 'Selenium-powered parent SMS for absent students. Bulk class option available.' },
+            { emoji: '📊', title: 'Analytics', note: 'View tracking, engagement scores, struggling topic detection, XP leaderboards.' },
+            { emoji: '⚙️', title: 'Tech Stack', note: 'Flask, SQLite, FFmpeg, Selenium, ReportLab, Flask-Login — all open source.' },
+            { emoji: '🚀', title: 'Call to Action', note: 'Final slide — emphasizes ease of deployment with python app.py on localhost:5000.' },
+        ];
+
+        let current = 1;
+        const total = 12;
+
+        // Build sidebar
+        const sidebar = document.getElementById('sidebar');
+        slidesData.forEach((d, i) => {
+            const t = document.createElement('div');
+            t.className = 'thumb' + (i === 0 ? ' active' : '');
+            t.innerHTML = `<span class="thumb-num">${i + 1}</span><div class="thumb-emoji">${d.emoji}</div><div class="thumb-title">${d.title}</div>`;
+            t.onclick = () => goTo(i + 1);
+            sidebar.appendChild(t);
+        });
+
+        function goTo(n) {
+            const prev = document.getElementById('s' + current);
+            if (prev) prev.classList.remove('active');
+            sidebar.querySelectorAll('.thumb')[current - 1].classList.remove('active');
+            current = Math.max(1, Math.min(total, n));
+            const next = document.getElementById('s' + current);
+            if (next) next.classList.add('active');
+            sidebar.querySelectorAll('.thumb')[current - 1].classList.add('active');
+            // scroll thumb into view
+            sidebar.querySelectorAll('.thumb')[current - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            document.getElementById('counter').textContent = current + ' / ' + total;
+            document.getElementById('notes').textContent = '📝 ' + slidesData[current - 1].note;
+        }
+        function nextSlide() { goTo(current + 1); }
+        function prevSlide() { goTo(current - 1); }
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevSlide();
+            if (e.key === 'F5' || e.key === 'f') toggleFullscreen();
+        });
+        // init
+        goTo(1);
+    </script>
+</body>
+
+</html>

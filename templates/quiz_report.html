@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Report - {{ quiz.title }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 40px;
+            color: #000;
+            background: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: right;
+            font-size: 12px;
+            color: #777;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button onclick="window.print()" class="no-print"
+        style="margin-bottom: 20px; padding: 10px 20px; background: #000; color: #fff; border: none; cursor: pointer;">Print
+        Report</button>
+
+    <div class="header">
+        <h1>Quiz Report: {{ quiz.title }}</h1>
+        <p>Generated on: {{ datetime.utcnow().strftime('%B %d, %Y %H:%M') }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Score</th>
+                <th>Total Questions</th>
+                <th>Percentage</th>
+                <th>Date Taken</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in results %}
+            <tr>
+                <td>{{ result.student.username }}</td>
+                <td>{{ result.score }}</td>
+                <td>{{ result.total }}</td>
+                <td>{{ "%.1f"|format((result.score / result.total) * 100) }}%</td>
+                <td>{{ result.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No results found for this quiz.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Campus Video Player System &copy; {{ datetime.now().year }}</p>
+    </div>
+</body>
+
+</html>

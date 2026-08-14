@@ -1,0 +1,124 @@
+{% extends "layout.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+:root {
+  --bg-primary: #0f172a; --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9; --text-secondary: #94a3b8;
+  --accent: #d4a853; --success: #22c55e;
+  --warning: #f59e0b; --danger: #ef4444;
+}
+body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Segoe UI', sans-serif; }
+.page-container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.header-section { margin-bottom: 24px; }
+.header-section h1 { font-size: 28px; color: var(--accent); margin: 0 0 8px; }
+.meta { display: flex; gap: 20px; flex-wrap: wrap; color: var(--text-secondary); font-size: 13px; }
+.card { background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(212,168,83,0.1); }
+.submission-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(212,168,83,0.08); }
+.submission-item:last-child { border-bottom: none; }
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-ok { background: rgba(34,197,94,0.15); color: var(--success); }
+.status-missing { background: rgba(239,68,68,0.15); color: var(--danger); }
+.grade-input { width: 80px; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(212,168,83,0.3); background: var(--bg-primary); color: var(--text-primary); }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+.btn-primary { background: var(--accent); color: #0f172a; }
+.btn-success { background: var(--success); color: white; }
+.grade-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+textarea { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(212,168,83,0.2); background: var(--bg-primary); color: var(--text-primary); min-width: 200px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="header-section">
+        <h1>📝 {{ assignment.title }}</h1>
+        <div class="meta">
+            <span>📂 {{ assignment.classroom.name if assignment.classroom else 'No Class' }}</span>
+            <span>⏰ {{ assignment.due_date.strftime('%b %d, %Y %H:%M') if assignment.due_date else 'No deadline' }}</span>
+            <span>🎯 {{ assignment.total_points }} points</span>
+            <span>📝 {{ assignment.assignment_type|title }}</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="color:var(--accent); margin-bottom:8px;">📋 Description</h3>
+        <p style="color:var(--text-secondary);">{{ assignment.description or 'No description provided.' }}</p>
+        {% if assignment.question_file_path %}
+        <div style="margin-top:8px;">
+            <a href="{{ url_for('static', filename=assignment.question_file_path) }}" target="_blank" class="btn btn-sm" style="background:var(--bg-primary);color:var(--accent);">📄 View Question Paper: {{ assignment.question_file_name }}</a>
+        </div>
+        {% endif %}
+        <div style="margin-top:12px; display:flex; gap:16px; font-size:13px; color:var(--text-secondary); flex-wrap:wrap;">
+            <span>✅ Submitted: {{ submissions|length }}</span>
+            <span>⏳ Pending: {{ not_submitted|length }}</span>
+            <span>{% if assignment.allow_late_submission %}✅ Late OK ({{ assignment.late_penalty_percent }}% penalty){% else %}❌ No late submissions{% endif %}</span>
+            <span>📝 Response required: {{ {'either':'Type or Upload','type_only':'Typed answer only','file_only':'Document upload only'}[assignment.response_mode or 'either'] }}</span>
+        </div>
+    </div>
+
+    {% if not_submitted %}
+    <div class="card">
+        <h3 style="color:var(--warning); margin-bottom:12px;">⏳ Pending Submissions</h3>
+        {% for s in not_submitted %}
+        <div class="submission-item">
+            <span>{{ s.username }}</span>
+            <span class="status-badge status-missing">Not Submitted</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if submissions %}
+    <div class="card">
+        <h3 style="color:var(--success); margin-bottom:12px;">✅ Submissions</h3>
+        {% for sub in submissions %}
+        <div class="submission-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="color:var(--text-primary);">{{ sub.student.username }}</strong>
+                    <div style="font-size:12px; color:var(--text-secondary);">
+                        {{ sub.submitted_at.strftime('%b %d, %Y %H:%M') }}
+                        {% if sub.is_late %}<span style="color:var(--warning);"> (Late)</span>{% endif %}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    {% if sub.status == 'graded' %}
+                    <div style="color:var(--success); font-weight:700;">{{ sub.grade }}/{{ assignment.total_points }}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">{{ sub.feedback }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- NEW: show the student's actual response so the teacher can evaluate it -->
+            <div style="background:var(--bg-primary); border-radius:8px; padding:10px; font-size:13px;">
+                {% if sub.content %}
+                <div style="margin-bottom:{{ '8px' if sub.file_path else '0' }};">
+                    <strong style="color:var(--accent);">Typed answer:</strong>
+                    <div style="white-space:pre-wrap; color:var(--text-secondary); margin-top:4px;">{{ sub.content }}</div>
+                </div>
+                {% endif %}
+                {% if sub.file_path %}
+                <div>
+                    <strong style="color:var(--accent);">Uploaded document:</strong>
+                    <a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" style="color:var(--accent); margin-left:6px;">⬇️ {{ sub.file_name or 'Download submission' }}</a>
+                </div>
+                {% endif %}
+                {% if not sub.content and not sub.file_path %}
+                <span style="color:var(--text-secondary);">No response content recorded.</span>
+                {% endif %}
+            </div>
+
+            {% if sub.status != 'graded' %}
+            <form method="POST" action="{{ url_for('grade_submission', submission_id=sub.id) }}" class="grade-form">
+                <input type="number" class="grade-input" name="grade" min="0" max="{{ assignment.total_points }}" placeholder="Grade" required>
+                <textarea name="feedback" placeholder="Feedback" rows="1" style="min-width:150px;"></textarea>
+                <button type="submit" class="btn btn-success">Grade</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

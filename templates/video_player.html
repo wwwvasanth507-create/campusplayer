@@ -1,0 +1,1622 @@
+{% extends "layout.html" %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/player.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="{{ url_for('static', filename='js/player.js') }}"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Video Player Page - ULTRA-PREMIUM Cinematic UX/UI ✦
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+    /* ══ Core Palette ══ */
+    --vp-primary: #ff6b6b;
+    --vp-primary-dark: #ee5a24;
+    --vp-secondary: #a29bfe;
+    --vp-secondary-light: #b8b0ff;
+    --vp-accent: #fd79a8;
+    --vp-gold: #fdcb6e;
+    --vp-gold-light: #ffeaa7;
+    --vp-cyan: #00cec9;
+    --vp-cyan-light: #55efc4;
+    --vp-green: #55efc4;
+    --vp-rose: #ff6b81;
+    --vp-violet: #9b59b6;
+
+    /* ══ Gradients ══ */
+    --vp-gradient-1: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff8a5c 100%);
+    --vp-gradient-2: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 50%, #8b7cf7 100%);
+    --vp-gradient-3: linear-gradient(135deg, #fd79a8 0%, #e84393 50%, #ff8aae 100%);
+    --vp-gradient-4: linear-gradient(135deg, #00cec9 0%, #0984e3 50%, #00e5ff 100%);
+    --vp-gradient-5: linear-gradient(135deg, #fdcb6e 0%, #e17055 50%, #ffb347 100%);
+    --vp-gradient-6: linear-gradient(135deg, #55efc4 0%, #00b894 50%, #81ecec 100%);
+    --vp-gradient-title: linear-gradient(135deg, #f0eef7 0%, #c0bed4 50%, #a29bfe 100%);
+    --vp-gradient-neon: linear-gradient(45deg, #ff6b6b, #a29bfe, #00cec9, #fdcb6e);
+    --vp-gradient-bg: linear-gradient(135deg, #0a0a0f 0%, #13131e 40%, #1a1a2e 100%);
+
+    /* ══ Surfaces ══ */
+    --vp-surface: #0a0a0f;
+    --vp-surface2: #12121c;
+    --vp-surface3: #1a1a2e;
+    --vp-card: #13131e;
+    --vp-card-hover: #1c1c32;
+    --vp-card-glow: rgba(162,155,254,0.05);
+
+    /* ══ Text ══ */
+    --vp-text: #f0eef7;
+    --vp-text-secondary: #c0bed4;
+    --vp-text-dim: #8884a8;
+    --vp-text-glow: 0 0 20px rgba(162,155,254,0.3);
+
+    /* ══ Borders & Glows ══ */
+    --vp-border: rgba(162,155,254,0.08);
+    --vp-border-hover: rgba(162,155,254,0.2);
+    --vp-border-glow: rgba(162,155,254,0.15);
+    --vp-glow-primary: 0 0 30px rgba(255,107,107,0.2), 0 0 60px rgba(255,107,107,0.05);
+    --vp-glow-secondary: 0 0 30px rgba(162,155,254,0.2), 0 0 60px rgba(162,155,254,0.05);
+    --vp-glow-accent: 0 0 30px rgba(253,121,168,0.2), 0 0 60px rgba(253,121,168,0.05);
+    --vp-glow-gold: 0 0 30px rgba(253,203,110,0.2), 0 0 60px rgba(253,203,110,0.05);
+    --vp-glow-cyan: 0 0 30px rgba(0,206,201,0.2), 0 0 60px rgba(0,206,201,0.05);
+    --vp-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    --vp-shadow-hover: 0 12px 60px rgba(0,0,0,0.6);
+
+    /* ══ Typography ══ */
+    --vp-font: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+    --vp-font-display: 'Playfair Display', 'Georgia', serif;
+    --vp-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --vp-font-inter: 'Inter', -apple-system, sans-serif;
+}
+
+/* ── Animated Background ── */
+.vp-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
+    font-family: var(--vp-font);
+    position: relative;
+    background: var(--vp-gradient-bg);
+    min-height: 100vh;
+    animation: vpFadeIn 0.6s ease-out;
+}
+
+.vp-wrap::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 50%, rgba(162,155,254,0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(255,107,107,0.02) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(0,206,201,0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: vpAmbientShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes vpFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vpAmbientShift {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    50%  { transform: translate(5%, 3%) rotate(2deg); }
+    100% { transform: translate(-3%, -2%) rotate(-1deg); }
+}
+
+@keyframes vpPulseGlow {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+
+@keyframes vpShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes vpFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-8px); }
+}
+
+@keyframes vpBorderGlow {
+    0%, 100% { border-color: rgba(162,155,254,0.1); box-shadow: 0 0 15px rgba(162,155,254,0.05); }
+    50%      { border-color: rgba(162,155,254,0.25); box-shadow: 0 0 30px rgba(162,155,254,0.1); }
+}
+
+@keyframes vpGradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ── Hero Player ── */
+.vp-hero {
+    width: 100%;
+    background: #000;
+    position: relative;
+    box-shadow: 0 4px 80px rgba(0,0,0,0.6);
+    z-index: 1;
+}
+
+.vp-hero::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--vp-gradient-neon);
+    background-size: 400% 400%;
+    animation: vpGradientShift 6s ease infinite;
+    z-index: 2;
+}
+
+.vp-hero-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ── Content Grid ── */
+.vp-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 28px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 28px 20px 50px;
+}
+
+.vp-content {
+    min-width: 0;
+}
+
+/* ── Title ── */
+.vp-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.28;
+    margin: 0 0 12px;
+    font-family: var(--vp-font);
+    letter-spacing: -0.5px;
+    background: var(--vp-gradient-title);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: vpGradientShift 8s ease infinite;
+    text-shadow: none;
+    position: relative;
+}
+
+/* ── Meta Info Row ── */
+.vp-meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    animation: vpFadeIn 0.5s ease-out 0.1s both;
+}
+
+.vp-views {
+    font-size: 0.82rem;
+    color: var(--vp-text-dim);
+    font-weight: 500;
+    font-family: var(--vp-font-mono);
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vp-views::before {
+    content: '👁';
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.vp-date {
+    font-size: 0.8rem;
+    color: var(--vp-text-dim);
+    font-weight: 400;
+    position: relative;
+    padding-left: 14px;
+}
+
+.vp-date::before {
+    content: '•';
+    position: absolute;
+    left: 4px;
+    color: var(--vp-cyan);
+    opacity: 0.6;
+}
+
+.vp-lang {
+    background: linear-gradient(135deg, rgba(162,155,254,0.15), rgba(108,92,231,0.15));
+    padding: 3px 14px;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    color: var(--vp-secondary-light);
+    text-transform: uppercase;
+    border: 1px solid rgba(162,155,254,0.25);
+    transition: all 0.3s ease;
+}
+
+.vp-lang:hover {
+    background: linear-gradient(135deg, rgba(162,155,254,0.25), rgba(108,92,231,0.25));
+    border-color: rgba(162,155,254,0.4);
+    box-shadow: 0 0 20px rgba(162,155,254,0.15);
+    transform: translateY(-1px);
+}
+
+/* ── Uploader Row ── */
+.vp-uploader-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--vp-border);
+    position: relative;
+    animation: vpFadeIn 0.5s ease-out 0.2s both;
+}
+
+.vp-uploader-row::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 80px;
+    height: 2px;
+    background: var(--vp-gradient-2);
+    border-radius: 2px;
+    animation: vpPulseGlow 3s ease-in-out infinite;
+}
+
+.vp-uploader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vp-uploader-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--vp-gradient-1);
+    background-size: 200% 200%;
+    animation: vpGradientShift 6s ease infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 3px 12px rgba(255,107,107,0.35), 0 0 30px rgba(255,107,107,0.1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.vp-uploader-avatar:hover {
+    transform: scale(1.1) rotate(-3deg);
+    box-shadow: 0 6px 30px rgba(255,107,107,0.5), 0 0 50px rgba(255,107,107,0.15);
+}
+
+.vp-uploader-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.vp-uploader-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--vp-text);
+    font-family: var(--vp-font);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vp-uploader-name:hover {
+    color: var(--vp-secondary-light);
+}
+
+.vp-uploader-subs {
+    font-size: 0.76rem;
+    color: var(--vp-text-dim);
+    font-weight: 500;
+}
+
+/* ── Description ── */
+.vp-desc-box {
+    background: var(--vp-card);
+    border: 1px solid var(--vp-border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    animation: vpFadeIn 0.5s ease-out 0.3s both;
+}
+
+.vp-desc-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(162,155,254,0.03), transparent 60%);
+    pointer-events: none;
+}
+
+.vp-desc-box::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(162,155,254,0.02) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+}
+
+.vp-desc-box:hover {
+    background: var(--vp-card-hover);
+    border-color: rgba(162,155,254,0.25);
+    box-shadow: var(--vp-glow-secondary), var(--vp-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.vp-desc-box:hover::after {
+    opacity: 1;
+}
+
+.vp-desc-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.vp-stat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(162,155,254,0.08), rgba(108,92,231,0.08));
+    padding: 5px 14px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--vp-text-secondary);
+    font-family: var(--vp-font-mono);
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(162,155,254,0.06);
+    transition: all 0.3s ease;
+}
+
+.vp-stat-badge:hover {
+    background: linear-gradient(135deg, rgba(162,155,254,0.15), rgba(108,92,231,0.15));
+    border-color: rgba(162,155,254,0.15);
+    transform: translateY(-1px);
+}
+
+.vp-stat-badge svg {
+    color: var(--vp-cyan);
+    filter: drop-shadow(0 0 4px rgba(0,206,201,0.3));
+}
+
+.vp-tag {
+    color: var(--vp-gold);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.8;
+    font-family: var(--vp-font);
+    position: relative;
+}
+
+.vp-tag::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: var(--vp-gold);
+    transition: width 0.2s ease;
+}
+
+.vp-tag:hover {
+    opacity: 1;
+    color: var(--vp-gold-light);
+    text-shadow: 0 0 20px rgba(253,203,110,0.4);
+}
+
+.vp-tag:hover::after {
+    width: 100%;
+}
+
+.vp-desc-text {
+    color: var(--vp-text-secondary);
+    font-size: 0.88rem;
+    line-height: 1.75;
+    margin: 0;
+    white-space: pre-wrap;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Comments Section ── */
+.vp-comments-section {
+    padding-top: 8px;
+    animation: vpFadeIn 0.5s ease-out 0.35s both;
+}
+
+.vp-comments-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--vp-text);
+    font-family: var(--vp-font);
+}
+
+.vp-comments-heading svg {
+    color: var(--vp-cyan);
+    filter: drop-shadow(0 0 8px rgba(0,206,201,0.3));
+    animation: vpFloat 4s ease-in-out infinite;
+}
+
+.vp-comments-count {
+    font-size: 0.85rem;
+    color: var(--vp-text-dim);
+    font-weight: 600;
+    background: linear-gradient(135deg, rgba(162,155,254,0.08), rgba(108,92,231,0.08));
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-family: var(--vp-font-mono);
+    border: 1px solid rgba(162,155,254,0.06);
+}
+
+/* Comment Form */
+.vp-comment-form {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+}
+
+.vp-cf-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--vp-gradient-3);
+    background-size: 200% 200%;
+    animation: vpGradientShift 6s ease infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(253,121,168,0.3), 0 0 20px rgba(253,121,168,0.1);
+}
+
+.vp-cf-input-wrap {
+    flex: 1;
+}
+
+.vp-cf-input-wrap input {
+    width: 100%;
+    padding: 12px 0;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--vp-border);
+    color: var(--vp-text);
+    font-size: 0.88rem;
+    font-family: var(--vp-font);
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.vp-cf-input-wrap input:focus {
+    outline: none;
+    border-color: var(--vp-secondary);
+    box-shadow: 0 4px 20px rgba(162,155,254,0.1);
+}
+
+.vp-cf-input-wrap input::placeholder {
+    color: var(--vp-text-dim);
+    font-weight: 400;
+    transition: color 0.3s ease;
+}
+
+.vp-cf-input-wrap input:focus::placeholder {
+    color: rgba(136,132,168,0.4);
+}
+
+.vp-cf-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.vp-cf-cancel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #ff6b81;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-family: var(--vp-font);
+    transition: all 0.2s;
+}
+
+.vp-cf-cancel:hover {
+    background: rgba(255,107,129,0.12);
+    color: #ff8a9e;
+    border-color: rgba(255,107,129,0.35);
+    box-shadow: 0 0 18px rgba(255,107,129,0.12);
+}
+
+.vp-cf-submit {
+    background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+    background-size: 200% 200%;
+    animation: vpGradientShift 4s ease infinite;
+    color: white;
+    border: none;
+    padding: 8px 22px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-family: var(--vp-font);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(108,92,231,0.25);
+}
+
+.vp-cf-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(108,92,231,0.45);
+    background: linear-gradient(135deg, #b8b0ff 0%, #7c6ff7 100%);
+}
+
+.vp-cf-submit::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.vp-cf-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(162,155,254,0.4), 0 0 30px rgba(162,155,254,0.1);
+}
+
+.vp-cf-submit:hover::after {
+    opacity: 1;
+}
+
+.vp-cf-submit:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.vp-cf-small {
+    padding: 6px 16px;
+    font-size: 0.78rem;
+}
+
+/* Comments List */
+.vp-comments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vp-comment {
+    display: flex;
+    gap: 12px;
+    padding: 14px 6px;
+    margin-left: var(--ml, 0);
+    transition: all 0.3s ease;
+    border-radius: 14px;
+    position: relative;
+}
+
+.vp-comment:hover {
+    background: linear-gradient(135deg, rgba(162,155,254,0.04), rgba(108,92,231,0.02));
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.vp-comment-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--vp-gradient-4);
+    background-size: 200% 200%;
+    animation: vpGradientShift 8s ease infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,206,201,0.25), 0 0 15px rgba(0,206,201,0.08);
+    transition: transform 0.2s;
+}
+
+.vp-comment:hover .vp-comment-avatar {
+    transform: scale(1.05);
+}
+
+.vp-comment-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.vp-comment-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+
+.vp-comment-author {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: var(--vp-text);
+    font-family: var(--vp-font);
+}
+
+.vp-comment-author::before {
+    content: '@';
+    color: var(--vp-secondary);
+    font-weight: 500;
+}
+
+.vp-comment-time {
+    font-size: 0.7rem;
+    color: var(--vp-text-dim);
+    font-weight: 500;
+    font-family: var(--vp-font-mono);
+}
+
+.vp-comment-text {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--vp-text-secondary);
+    margin: 3px 0 8px;
+}
+
+.vp-comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vp-c-reply-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,206,201,0.08);
+    border: 1px solid rgba(0,206,201,0.18);
+    color: #00cec9;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 5px 12px;
+    border-radius: 16px;
+    transition: all 0.2s;
+    font-family: var(--vp-font);
+}
+
+.vp-c-reply-btn:hover {
+    background: rgba(0,206,201,0.16);
+    color: #55efc4;
+    border-color: rgba(0,206,201,0.4);
+    box-shadow: 0 0 16px rgba(0,206,201,0.15);
+}
+
+.vp-c-reply-btn svg {
+    transition: transform 0.2s;
+}
+
+.vp-c-reply-btn:hover svg {
+    transform: rotate(-10deg);
+}
+
+.vp-comment-replies {
+    margin-top: 12px;
+    padding-left: 8px;
+    border-left: 2px solid rgba(162,155,254,0.1);
+}
+
+.vp-reply-form {
+    margin-top: 10px;
+}
+
+.vp-reply-form form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.vp-reply-form input {
+    flex: 1;
+    padding: 9px 16px;
+    background: var(--vp-surface2);
+    border: 1px solid var(--vp-border);
+    border-radius: 20px;
+    color: var(--vp-text);
+    font-size: 0.82rem;
+    font-family: var(--vp-font);
+    margin: 0;
+    transition: all 0.2s;
+}
+
+.vp-reply-form input:focus {
+    outline: none;
+    border-color: var(--vp-secondary);
+    box-shadow: 0 0 20px rgba(162,155,254,0.08);
+}
+
+.vp-no-comments {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--vp-text-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.vp-no-comments svg {
+    color: var(--vp-text-dim);
+    opacity: 0.3;
+}
+
+.vp-no-comments p {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* ── Sidebar ── */
+.vp-sidebar {
+    min-width: 0;
+    animation: vpFadeIn 0.5s ease-out 0.4s both;
+}
+
+.vp-sidebar-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--vp-text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--vp-font);
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.vp-sidebar-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: var(--vp-gradient-5);
+    border-radius: 2px;
+}
+
+.vp-sidebar-title svg {
+    color: var(--vp-gold);
+    filter: drop-shadow(0 0 6px rgba(253,203,110,0.3));
+    animation: vpFloat 5s ease-in-out infinite;
+}
+
+.vp-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vp-related-card {
+    display: flex;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 14px;
+    overflow: hidden;
+    padding: 6px;
+    position: relative;
+}
+
+.vp-related-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 0;
+    background: var(--vp-gradient-2);
+    border-radius: 3px;
+    transition: height 0.3s ease;
+}
+
+.vp-related-card:hover::before {
+    height: 70%;
+}
+
+.vp-related-card:hover {
+    background: linear-gradient(135deg, var(--vp-card), rgba(162,155,254,0.03));
+    transform: translateX(8px);
+    box-shadow: 0 6px 30px rgba(0,0,0,0.4), var(--vp-glow-secondary);
+}
+
+.vp-related-thumb {
+    width: 168px;
+    height: 94px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.3s ease;
+}
+
+.vp-related-card:hover .vp-related-thumb {
+    border-color: rgba(162,155,254,0.2);
+    box-shadow: 0 0 20px rgba(162,155,254,0.05);
+}
+
+.vp-related-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vp-related-card:hover .vp-related-thumb img {
+    transform: scale(1.08);
+}
+
+.vp-related-thumb-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a1a, #000);
+}
+
+.vp-related-dur {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+    font-family: var(--vp-font-mono);
+    backdrop-filter: blur(4px);
+}
+
+.vp-related-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.vp-related-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--vp-text);
+    font-family: var(--vp-font);
+    transition: color 0.2s;
+}
+
+.vp-related-card:hover .vp-related-title {
+    color: var(--vp-secondary);
+}
+
+.vp-related-uploader {
+    font-size: 0.74rem;
+    color: var(--vp-text-dim);
+    font-weight: 500;
+}
+
+.vp-related-meta {
+    font-size: 0.72rem;
+    color: var(--vp-text-dim);
+    font-family: var(--vp-font-mono);
+}
+
+.vp-no-related {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--vp-text-dim);
+}
+
+.vp-no-related p {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1100px) {
+    .vp-grid {
+        grid-template-columns: 1fr;
+        padding: 20px 16px 32px;
+    }
+
+    .vp-sidebar {
+        order: -1;
+    }
+
+    .vp-sidebar-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 14px;
+    }
+
+    .vp-related-card {
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .vp-related-card:hover {
+        transform: none;
+    }
+
+    .vp-related-thumb {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+}
+
+@media (max-width: 768px) {
+    .vp-grid {
+        padding: 16px 0 24px;
+        gap: 20px;
+    }
+
+    .vp-title {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+
+    .vp-uploader-row {
+        margin-bottom: 12px;
+        padding-bottom: 14px;
+    }
+
+    .vp-uploader-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+
+    .vp-uploader-name {
+        font-size: 0.85rem;
+    }
+
+    .vp-desc-box {
+        padding: 14px 16px;
+        margin-bottom: 20px;
+    }
+
+    .vp-desc-text {
+        font-size: 0.82rem;
+    }
+
+    .vp-comment-form {
+        gap: 10px;
+    }
+
+    .vp-cf-avatar,
+    .vp-comment-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.78rem;
+    }
+
+    .vp-comments-heading {
+        font-size: 0.95rem;
+    }
+
+    .vp-related-thumb {
+        width: 140px;
+        height: 79px;
+    }
+
+    .vp-related-card {
+        padding: 0;
+    }
+
+    .vp-related-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .vp-grid {
+        padding: 12px 0 20px;
+    }
+
+    .vp-title {
+        font-size: 1.05rem;
+    }
+
+    .vp-meta-bar {
+        gap: 10px;
+    }
+
+    .vp-desc-box {
+        padding: 12px 14px;
+    }
+
+    .vp-related-thumb {
+        width: 120px;
+        height: 68px;
+    }
+
+    .vp-related-title {
+        font-size: 0.8rem;
+    }
+
+    .vp-cf-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+
+    .vp-comment-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+
+    .vp-comment {
+        gap: 8px;
+        padding: 10px 4px;
+    }
+
+    .vp-comment[style*="--ml"] {
+        margin-left: 28px !important;
+    }
+
+    .vp-comment-text {
+        font-size: 0.82rem;
+    }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .vp-grid {
+        padding-top: 8px;
+    }
+
+    .vp-uploader-row {
+        margin-bottom: 8px;
+        padding-bottom: 10px;
+    }
+
+    .vp-desc-box {
+        margin-bottom: 12px;
+    }
+
+    .vp-comments-section {
+        padding-top: 0;
+    }
+
+    .vp-comment-form {
+        margin-bottom: 16px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vp-wrap">
+
+    <!-- ═══ HERO PLAYER ═══ -->
+    <div class="vp-hero">
+        <div class="vp-hero-inner">
+            {# Use hls_source/hls_url from route if provided, else compute fallback for legacy callers #}
+            {% if hls_source is not defined %}
+                {% set hls_source = (video.hls_playlist_path or video.master_playlist_path) if video.status == 'completed' else None %}
+            {% endif %}
+            {% if hls_url is not defined or not hls_url %}
+                {% if hls_source %}
+                    {# Fallback: extract just the filename (last path component) #}
+                    {% set _parts = hls_source.split('/') %}
+                    {% set hls_filename = _parts[-1] %}
+                    {% set hls_url = url_for('serve_hls', video_id=video.id, filename=hls_filename) %}
+                {% else %}
+                    {% set hls_url = '' %}
+                {% endif %}
+            {% endif %}
+            <video id="video-player" class="video-js" preload="auto" width="100%" height="auto"
+                style="display:block;width:100%;background:#000;aspect-ratio:16/9;" playsinline crossorigin="anonymous">
+                {% if hls_source %}
+                <source src="{{ hls_url }}" type="application/vnd.apple.mpegurl">
+                {% endif %}
+                {% if video.subtitle_path %}
+                <track kind="captions" src="{{ url_for('static', filename=video.subtitle_path) }}"
+                    srclang="{{ video.subtitle_language or 'en' }}" label="Subtitles" default>
+                {% endif %}
+            </video>
+            {% if not hls_source %}
+            <div class="vp-error" style="margin-top:16px;color:#ff6b6b;font-weight:600;">This video is not ready for playback yet.</div>
+            {% endif %}
+        </div>
+
+        <script>
+            (function () {
+                var videoId = {{ video.id | tojson }};
+                var hasAdaptive = {{ 'true' if video.has_adaptive_streams else 'false' }};
+                var renditions = {{ video.get_renditions() | tojson }};
+                var hlsUrl = {{ hls_url | tojson }};
+                console.debug('[Video Player] hls_source:', {{ hls_source | tojson }} , 'hlsUrl:', hlsUrl);
+                var settingsData = {
+                    lock_video_speed: {% if settings %}{{ settings.lock_video_speed | tojson }}{% else %} false{% endif %},
+                    lock_video_skipping: {% if settings %}{{ settings.lock_video_skipping | tojson }}{% else %} false{% endif %}
+                };
+                {% set thumbnail_vtt_url = url_for('serve_hls', video_id=video.id, filename='thumbnails.vtt') if video.thumbnails_vtt_path or hls_source else none %}
+                var subtitleUrl = {% if video.subtitle_path %}{{ url_for('static', filename=video.subtitle_path) | tojson }}{% else %}null{% endif %};
+                var thumbnailsVtt = {% if thumbnail_vtt_url %}{{ thumbnail_vtt_url | tojson }}{% else %}null{% endif %};
+                document.addEventListener('DOMContentLoaded', function () {
+                    var player = new CampusPlayer({
+                        videoElement: 'video-player',
+                        videoId: videoId,
+                        hlsUrl: hlsUrl,
+                        hasAdaptive: hasAdaptive,
+                        renditions: renditions,
+                        settings: settingsData,
+                        subtitleUrl: subtitleUrl,
+                        thumbnailsVtt: thumbnailsVtt,
+                        duration: {{ video.duration_seconds }}
+                    });
+                    window.campusPlayer = player;
+                });
+            })();
+        </script>
+    </div>
+
+    <!-- ═══ QUALITY SELECTOR BAR (Below Video Player) ═══ -->
+    <div class="vp-quality-bar">
+        <div class="vp-quality-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+            Quality
+        </div>
+        <div id="vp-quality-options" class="vp-quality-options">
+            <button class="vp-quality-btn vp-quality-auto vp-quality-active" data-quality="auto" data-level="-1">Auto</button>
+        </div>
+        <span id="vp-quality-detected" class="vp-quality-detected"></span>
+    </div>
+
+    <!-- ═══ CONTENT GRID ═══ -->
+    <div class="vp-grid">
+
+        <!-- ─── MAIN CONTENT ─── -->
+        <div class="vp-content">
+
+            <!-- Meta Info -->
+            <div class="vp-meta-bar">
+                <div class="vp-views">{{ video.view_count or 0 }} views</div>
+                {% if video.upload_date %}
+                <div class="vp-date">{{ video.upload_date.strftime('%b %d, %Y') }}</div>
+                {% endif %}
+                {% if video.language %}
+                <div class="vp-lang">{{ video.language.upper() }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Title -->
+            <h1 class="vp-title">{{ video.title }}</h1>
+
+            <!-- Uploader -->
+            <div class="vp-uploader-row">
+                <div class="vp-uploader">
+                    <div class="vp-uploader-avatar">{{ video.uploader.username[0].upper() }}</div>
+                    <div class="vp-uploader-info">
+                        <div class="vp-uploader-name">{{ video.uploader.username }}</div>
+                        <div class="vp-uploader-subs">{% if video.uploader.subscriber_count %}{{ video.uploader.subscriber_count }} subscribers{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if video.description %}
+            <div class="vp-desc-box">
+                <div class="vp-desc-stats">
+                    {% if video.duration_seconds %}
+                    <span class="vp-stat-badge">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        {{ (video.duration_seconds // 3600)|string + 'h ' if video.duration_seconds >= 3600 else '' }}{{ ((video.duration_seconds % 3600) // 60)|string }}m {{ (video.duration_seconds % 60)|string }}s
+                    </span>
+                    {% endif %}
+                    {% if video.tags %}
+                    {% for tag in video.tags.split(',')[:5] %}
+                    <span class="vp-tag">#{{ tag.strip() }}</span>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                <p class="vp-desc-text">{{ video.description }}</p>
+            </div>
+            {% endif %}
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- AI VIDEO SUMMARIZER SECTION (At the bottom of video player)     -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <div class="vp-ai-summarizer-card" style="margin-top: 30px; margin-bottom: 30px; background: rgba(19, 19, 30, 0.8); border: 1px solid rgba(162, 155, 254, 0.2); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(162, 155, 254, 0.15); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); display: flex; align-items: center; justify-content: center; color: #fff;">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 3.5 6.5 9.5 0 12l6.5 2.5L9 20.5l2.5-6L18 12l-6.5-2.5zm7.5 5.5l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #f0eef7;">✨ AI Video Summarizer</h3>
+                            <span style="font-size: 0.8rem; color: #a29bfe;">Instant AI breakdown & key learning takeaways</span>
+                        </div>
+                    </div>
+                    <button id="generate-ai-summary-btn" onclick="fetchAISummary(true)" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.2s;">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        <span>Regenerate Summary</span>
+                    </button>
+                </div>
+
+                <!-- AI Output Container -->
+                <div id="ai-summary-content">
+                    {% if video.ai_summary %}
+                        <div style="margin-bottom: 16px;">
+                            <h4 style="color: #a29bfe; font-size: 0.95rem; margin-bottom: 8px;">Executive Overview</h4>
+                            <p style="color: #c0bed4; line-height: 1.6; font-size: 0.95rem; margin: 0;">{{ video.ai_summary }}</p>
+                        </div>
+                        {% set takeaways = video.get_ai_takeaways() %}
+                        {% if takeaways %}
+                        <div>
+                            <h4 style="color: #55efc4; font-size: 0.95rem; margin-bottom: 8px;">Key Takeaways & Concepts</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #c0bed4; font-size: 0.9rem; line-height: 1.7;">
+                                {% for item in takeaways %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div style="text-align: center; padding: 20px 0;">
+                            <p style="color: #8884a8; margin-bottom: 12px;">Click below to generate an AI summary for this video lesson.</p>
+                            <button onclick="fetchAISummary(false)" style="background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                🚀 Generate AI Summary Now
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ─── COMMENTS ─── -->
+            <div class="vp-comments-section">
+                <h3 class="vp-comments-heading">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18z"/>
+                    </svg>
+                    Comments <span class="vp-comments-count">{{ comments|length }}</span>
+                </h3>
+
+                <form id="comment-form" class="vp-comment-form">
+                    <div class="vp-cf-avatar">{{ current_user.username[0].upper() }}</div>
+                    <div class="vp-cf-input-wrap">
+                        <input type="text" id="comment-content" placeholder="Add a comment..." required autocomplete="off">
+                        <div class="vp-cf-actions" style="display:none;">
+                            <button type="button" class="vp-cf-cancel" onclick="this.closest('.vp-cf-actions').style.display='none';document.getElementById('comment-content').value='';">Cancel</button>
+                            <button type="submit" class="vp-cf-submit">Comment</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="comments-list" class="vp-comments-list">
+                    {% for comment in comments recursive %}
+                    <div class="vp-comment" style="--ml: {{ '48px' if comment.parent_id else '0' }};">
+                        <div class="vp-comment-avatar">{{ comment.author.username[0].upper() }}</div>
+                        <div class="vp-comment-body">
+                            <div class="vp-comment-header">
+                                <span class="vp-comment-author">{{ comment.author.username }}</span>
+                                <span class="vp-comment-time">{{ comment.timestamp.strftime('%b %d, %Y') }}</span>
+                            </div>
+                            <p class="vp-comment-text">{{ comment.content }}</p>
+                            <div class="vp-comment-actions">
+                                <button onclick="toggleReply('{{ comment.id }}')" class="vp-c-reply-btn">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
+                                    Reply
+                                </button>
+                            </div>
+                            <div id="reply-form-{{ comment.id }}" class="vp-reply-form" style="display:none;">
+                                <form onsubmit="postReply(event, '{{ comment.id }}')">
+                                    <input type="text" id="reply-input-{{ comment.id }}" placeholder="Write a reply..." required>
+                                    <button type="submit" class="vp-cf-submit vp-cf-small">Reply</button>
+                                </form>
+                            </div>
+                            {% if comment.replies %}
+                            <div class="vp-comment-replies">{{ loop(comment.replies) }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="vp-no-comments">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+                        <p>No comments yet. Start the conversation!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── SIDEBAR ─── -->
+        <div class="vp-sidebar">
+            <h3 class="vp-sidebar-title">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                Related Videos
+            </h3>
+            <div class="vp-sidebar-list">
+                {% for related in related_videos %}
+                <a href="{{ url_for('watch_video', video_id=related.id) }}" class="vp-related-card">
+                    <div class="vp-related-thumb">
+                        {% if related.thumbnail_path %}
+                        <img src="{{ url_for('static', filename=related.thumbnail_path) }}" alt="{{ related.title }}" loading="lazy">
+                        {% else %}
+                        <div class="vp-related-thumb-placeholder">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" opacity="0.3"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        {% endif %}
+                        {% if related.duration_seconds %}
+                        <span class="vp-related-dur">{{ (related.duration_seconds // 60)|string }}:{{ '%02d' % (related.duration_seconds % 60) }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="vp-related-info">
+                        <h4 class="vp-related-title">{{ related.title }}</h4>
+                        <span class="vp-related-uploader">{{ related.uploader.username }}</span>
+                        <span class="vp-related-meta">{{ related.view_count or 0 }} views</span>
+                    </div>
+                </a>
+                {% else %}
+                <div class="vp-no-related">
+                    <p>No related videos found.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quality Selector Script -->
+<script>
+/**
+ * Initialize external quality selector buttons after CampusPlayer is ready.
+ * This polls for the player instance and available qualities, then renders
+ * clickable quality buttons below the video player area.
+ */
+(function() {
+    function initQualitySelector() {
+        var player = window.campusPlayer;
+        if (!player || !player.getAvailableQualities) {
+            setTimeout(initQualitySelector, 300);
+            return;
+        }
+
+        var qualities = player.getAvailableQualities();
+        var container = document.getElementById('vp-quality-options');
+        var detectedEl = document.getElementById('vp-quality-detected');
+
+        if (!container || qualities.length <= 1) return;
+
+        // Clear placeholder auto button
+        container.innerHTML = '';
+
+        // Render quality buttons
+        qualities.forEach(function(q) {
+            var btn = document.createElement('button');
+            btn.className = 'vp-quality-btn' + (q.name === 'auto' ? ' vp-quality-auto' : '');
+            if (q.name === 'auto' || q.name === (player.getQualityInfo ? player.getQualityInfo().current : 'auto')) {
+                btn.classList.add('vp-quality-active');
+            }
+            btn.dataset.quality = q.name;
+            btn.dataset.level = q.index;
+            btn.textContent = q.name === 'auto' ? 'Auto' : q.name;
+
+            btn.addEventListener('click', function() {
+                // Update active state on all buttons
+                container.querySelectorAll('.vp-quality-btn').forEach(function(b) {
+                    b.classList.remove('vp-quality-active');
+                });
+                btn.classList.add('vp-quality-active');
+
+                // Set quality on player
+                player.setQuality(q.name, q.index);
+                updateDetectedInfo();
+            });
+
+            container.appendChild(btn);
+        });
+
+        // Show detected quality info
+        function updateDetectedInfo() {
+            if (!detectedEl || !player.getQualityInfo) return;
+            var info = player.getQualityInfo();
+            if (info.auto && info.detected && info.detected !== 'auto') {
+                detectedEl.textContent = 'Detected: ' + info.detected;
+            } else if (!info.auto) {
+                detectedEl.textContent = '';
+            } else {
+                detectedEl.textContent = '';
+            }
+        }
+
+        // Update detected info periodically
+        updateDetectedInfo();
+        setInterval(updateDetectedInfo, 5000);
+
+        // Update active button when quality changes via smart detection
+        if (player.hls) {
+            player.hls.on(Hls.Events.LEVEL_SWITCHED, function() {
+                var info = player.getQualityInfo ? player.getQualityInfo() : null;
+                if (info && !info.auto) {
+                    container.querySelectorAll('.vp-quality-btn').forEach(function(b) {
+                        b.classList.toggle('vp-quality-active', b.dataset.quality === info.current);
+                    });
+                }
+            });
+        }
+    }
+
+    // Start polling after page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initQualitySelector, 500);
+        });
+    } else {
+        setTimeout(initQualitySelector, 500);
+    }
+})();
+</script>
+
+<!-- Scripts -->
+<script>
+function fetchAISummary(force = false) {
+    const container = document.getElementById('ai-summary-content');
+
+    container.innerHTML = `
+        <div style="text-align:center; padding: 30px 0; color: #a29bfe;">
+            <div class="spinner-border" role="status" style="width: 2rem; height: 2rem; border-width: 3px;"></div>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Analyzing video content & generating AI summary...</p>
+        </div>
+    `;
+
+    fetch(`/api/video/${currentVideoId}/summarize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: force })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            let takeawaysHtml = '';
+            if (data.takeaways && data.takeaways.length > 0) {
+                takeawaysHtml = `
+                    <div>
+                        <h4 style="color: #55efc4; font-size: 0.95rem; margin-bottom: 8px;">Key Takeaways & Concepts</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #c0bed4; font-size: 0.9rem; line-height: 1.7;">
+                            ${data.takeaways.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <h4 style="color: #a29bfe; font-size: 0.95rem; margin-bottom: 8px;">Executive Overview</h4>
+                    <p style="color: #c0bed4; line-height: 1.6; font-size: 0.95rem; margin: 0;">${data.summary}</p>
+                </div>
+                ${takeawaysHtml}
+            `;
+        } else {
+            container.innerHTML = `<p style="color: #ff6b6b;">Failed to generate AI summary. Please try again later.</p>`;
+        }
+    })
+    .catch(err => {
+        container.innerHTML = `<p style="color: #ff6b6b;">An error occurred while connecting to the AI summarizer.</p>`;
+    });
+}
+
+const currentVideoId = {{ video.id | tojson }};
+
+document.getElementById('comment-content')?.addEventListener('focus', function() {
+    this.closest('.vp-cf-input-wrap').querySelector('.vp-cf-actions').style.display = 'flex';
+});
+
+document.getElementById('comment-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const contentInput = document.getElementById('comment-content');
+    const content = contentInput.value;
+    if (!content.trim()) return;
+    fetch('/api/comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: currentVideoId, content: content })
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); });
+});
+
+function toggleReply(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function postReply(event, parentId) {
+    event.preventDefault();
+    const content = document.getElementById(`reply-input-${parentId}`).value;
+    if (!content.trim()) return;
+    fetch('/api/comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_id: currentVideoId, content: content, parent_id: parentId })
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); });
+}
+</script>
+{% endblock %}

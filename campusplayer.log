@@ -1,0 +1,181 @@
+2026-08-12 10:08:49,472 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:17:56,941 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:20:14,467 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:28:35,597 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:28:35,599 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 10:28:35,601 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 10:28:36,125 [INFO] __main__: Created Default Institution (id=1)
+2026-08-12 10:28:36,200 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 10:29:44,370 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:29:44,373 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 10:29:44,374 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\campusplayer\static\uploads\chunks, hls=C:\campusplayer\static\hls
+2026-08-12 10:29:44,709 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 10:30:40,148 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:30:40,150 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 10:30:40,150 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 10:30:40,375 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 10:49:18,002 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 10:49:18,004 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 10:49:18,004 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\campusplayer\static\uploads\chunks, hls=C:\campusplayer\static\hls
+2026-08-12 10:49:18,160 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 10:57:58,519 [ERROR] __main__: Profile-email template render error: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 10:58:00,579 [WARNING] __main__: Flask-Mail fallback failed for profile update email: [WinError 10061] No connection could be made because the target machine actively refused it
+2026-08-12 11:03:28,515 [ERROR] root: Encryption error: Fernet key must be 32 url-safe base64-encoded bytes.
+2026-08-12 11:05:41,645 [ERROR] __main__: Profile-email template render error: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:05:43,657 [WARNING] __main__: Flask-Mail fallback failed for profile update email: [WinError 10061] No connection could be made because the target machine actively refused it
+2026-08-12 11:21:52,382 [ERROR] __main__: Profile-email template render error: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:21:54,396 [WARNING] __main__: Flask-Mail fallback failed for profile update email: [WinError 10061] No connection could be made because the target machine actively refused it
+2026-08-12 11:24:20,613 [ERROR] root: Encryption error: Fernet key must be 32 url-safe base64-encoded bytes.
+2026-08-12 11:24:28,162 [ERROR] root: Encryption error: Fernet key must be 32 url-safe base64-encoded bytes.
+2026-08-12 11:26:03,803 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 11:26:03,805 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 11:26:03,805 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\campusplayer\static\uploads\chunks, hls=C:\campusplayer\static\hls
+2026-08-12 11:26:04,000 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 11:32:04,247 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 11:32:04,249 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 11:32:04,249 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 11:32:26,243 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 11:32:26,244 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 11:32:26,244 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 11:32:48,823 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 11:32:48,824 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 11:32:48,824 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 11:53:35,567 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 11:53:35,568 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 61 workers
+2026-08-12 11:53:35,569 [INFO] services.upload_engine: Upload engine initialized: chunks=c:\campusplayer\static\uploads\chunks, hls=c:\campusplayer\static\hls
+2026-08-12 11:59:34,757 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:59:39,676 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:59:47,063 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:59:59,718 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 11:59:59,768 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 12:12:03,081 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 12:12:10,716 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 12:12:15,319 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 12:12:21,242 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 12:12:21,301 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 18:37:45,185 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-12 18:37:45,188 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 32 workers
+2026-08-12 18:37:45,188 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\uploads\chunks, hls=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\hls
+2026-08-12 18:37:45,489 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-12 18:44:33,843 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 18:44:39,689 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 18:44:44,830 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 18:44:49,965 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-12 18:44:50,004 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-13 10:29:41,017 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-13 10:29:41,026 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 32 workers
+2026-08-13 10:29:41,026 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\uploads\chunks, hls=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\hls
+2026-08-13 10:29:42,035 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-13 10:35:36,673 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-13 10:35:36,682 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 32 workers
+2026-08-13 10:35:36,682 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\uploads\chunks, hls=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\hls
+2026-08-13 10:35:37,862 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-13 11:20:35,330 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-13 11:20:35,338 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 32 workers
+2026-08-13 11:20:35,341 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\uploads\chunks, hls=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\hls
+2026-08-13 11:20:36,394 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-13 11:23:03,242 [INFO] services.upload_engine: ChunkBuffer initialized: max_size=107374182400, flush_interval=0.1s
+2026-08-13 11:23:03,247 [INFO] services.upload_engine: ParallelHLSTranscoder initialized: 32 workers
+2026-08-13 11:23:03,247 [INFO] services.upload_engine: Upload engine initialized: chunks=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\uploads\chunks, hls=C:\Users\vasan\Downloads\campusplayer_12_08_2026_14_38\campusplayer\static\hls
+2026-08-13 11:23:04,256 [INFO] __main__: Backfilled existing records into Default Institution
+2026-08-13 11:33:02,647 [INFO] __main__: Video 1 processed with adaptive HLS streams successfully.
+2026-08-13 11:46:28,437 [ERROR] __main__: Gemini API summarization failed: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.
+2026-08-13 11:47:53,760 [ERROR] __main__: Gemini API summarization failed: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.
+2026-08-13 11:47:54,219 [ERROR] __main__: Gemini API summarization failed: 404 models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.
+2026-08-13 12:21:02,629 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-13 12:21:07,658 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-13 12:21:12,132 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-13 12:21:16,515 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+2026-08-13 12:21:16,543 [ERROR] __main__: Template rendering failed: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.

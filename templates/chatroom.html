@@ -1,0 +1,474 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .chat-wrap {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 140px);
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    /* ─── TOP DETAILS BAR ─── */
+    .chat-top {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius) var(--radius) 0 0;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    .chat-top-av {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .chat-top-av i { font-size: 1.2rem; color: #0a0a0f; }
+    .chat-top-info { flex: 1; min-width: 0; }
+    .chat-top-name {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--gold-light);
+    }
+    .chat-top-sub {
+        font-size: 0.6rem;
+        color: var(--text-dim);
+        margin-top: 1px;
+    }
+    .chat-top-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .status-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: #4caf50;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .status-lbl {
+        font-size: 0.55rem;
+        font-weight: 700;
+        color: #4caf50;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ─── MESSAGES AREA ─── */
+    .chat-msgs {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 10px;
+        background: rgba(0,0,0,0.2);
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        scroll-behavior: smooth;
+    }
+    .chat-msgs::-webkit-scrollbar { width: 3px; }
+    .chat-msgs::-webkit-scrollbar-thumb { background: rgba(212,168,83,0.15); border-radius: 10px; }
+
+    .msg {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        margin-bottom: 3px;
+        animation: pop 0.2s ease;
+    }
+    .msg.own { flex-direction: row-reverse; }
+    @keyframes pop { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+
+    .msg-pic {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.6rem;
+        color: #0a0a0f;
+        flex-shrink: 0;
+        margin-bottom: 2px;
+    }
+    .msg-pic.me { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); }
+    .msg-pic.you { background: linear-gradient(135deg, #7c3aed, #512da8); }
+    .msg-pic.staff { background: linear-gradient(135deg, #ff9800, #e65100); }
+
+    .msg-box { max-width: 74%; min-width: 70px; }
+
+    .msg-bub {
+        padding: 7px 11px 4px;
+        border-radius: 12px;
+        position: relative;
+        word-wrap: break-word;
+    }
+    .msg.own .msg-bub {
+        background: linear-gradient(135deg, #1a3a2a, #0d2818);
+        border: 1px solid rgba(212,168,83,0.1);
+        border-bottom-right-radius: 2px;
+    }
+    .msg.other .msg-bub {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-bottom-left-radius: 2px;
+    }
+    .msg.other.staff-msg .msg-bub {
+        background: rgba(212,168,83,0.06);
+        border-color: rgba(212,168,83,0.12);
+    }
+
+    .msg-author {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--gold);
+        margin-bottom: 1px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .msg.own .msg-author { display: none; }
+    .staff-tag {
+        font-size: 0.48rem;
+        background: rgba(212,168,83,0.15);
+        color: var(--gold);
+        padding: 1px 5px;
+        border-radius: 3px;
+    }
+    .msg-txt {
+        font-size: 0.88rem;
+        line-height: 1.45;
+        color: var(--text);
+    }
+    .msg-tail {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 3px;
+        margin-top: 2px;
+    }
+    .msg-tym {
+        font-size: 0.52rem;
+        color: var(--text-dim);
+    }
+    .msg.own .msg-tym { color: rgba(255,255,255,0.35); }
+    .msg-rcpt {
+        font-size: 0.6rem;
+        color: rgba(255,255,255,0.25);
+    }
+    .msg-del {
+        position: absolute;
+        top: 1px;
+        right: 2px;
+        background: none;
+        border: none;
+        color: #ff5252;
+        cursor: pointer;
+        font-size: 0.55rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+        padding: 1px 3px;
+        border-radius: 3px;
+        line-height: 1;
+    }
+    .msg-bub:hover .msg-del,
+    .msg-bub:active .msg-del { opacity: 0.5; }
+
+    .empty-msgs {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-dim);
+        text-align: center;
+        padding: 20px;
+    }
+    .empty-msgs i { font-size: 2.6rem; opacity: 0.1; margin-bottom: 10px; color: var(--gold); }
+    .empty-msgs p { font-size: 0.8rem; }
+
+    /* ─── BAR BETWEEN MESSAGES & TYPING ─── */
+    .chat-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 5px 12px;
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .bar-left {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.6rem;
+        color: var(--text-dim);
+    }
+    .bar-left i { font-size: 0.75rem; }
+    .bar-right { display: flex; gap: 5px; }
+    .bar-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 3px 9px;
+        border-radius: 7px;
+        font-size: 0.58rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-dim);
+        transition: all 0.2s;
+    }
+    .bar-btn:active { background: rgba(255,255,255,0.04); }
+    .bar-btn.dngr { color: #ff5252; border-color: rgba(255,82,82,0.15); }
+    .bar-btn.dngr:active { background: rgba(255,82,82,0.08); }
+    .bar-btn i { font-size: 0.7rem; }
+
+    /* ─── TYPING BAR ─── */
+    .chat-type {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 0 0 var(--radius) var(--radius);
+        padding: 8px 10px 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .type-input {
+        flex: 1;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 10px 16px;
+        color: var(--text);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+    .type-input:focus {
+        border-color: var(--gold);
+        background: rgba(255,255,255,0.04);
+    }
+    .type-input::placeholder { color: var(--text-dim); opacity: 0.4; }
+    .type-send {
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        border: none;
+        color: #0a0a0f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        box-shadow: 0 3px 12px rgba(212,168,83,0.25);
+        flex-shrink: 0;
+    }
+    .type-send:active { transform: scale(0.85); }
+    .type-send i { font-size: 1.15rem; }
+</style>
+
+<div class="chat-wrap">
+
+    <!-- ─── TOP: Details ─── -->
+    <div class="chat-top">
+        <div class="chat-top-av"><i class="material-icons">forum</i></div>
+        <div class="chat-top-info">
+            <div class="chat-top-name">{{ classroom.name }}</div>
+            <div class="chat-top-sub">{{ classroom.students.count() }} members · {{ classroom.teacher.username }}</div>
+        </div>
+        <div class="chat-top-right">
+            <span class="status-dot"></span>
+            <span class="status-lbl">Live</span>
+        </div>
+    </div>
+
+    <!-- ─── MESSAGES ─── -->
+    <div class="chat-msgs" id="chatMessages">
+        {% if messages %}
+        {% for msg in messages %}
+        {% set initial = msg.user.username[0].upper() %}
+        <div class="msg {{ 'own' if msg.user_id == current_user.id else 'other' }} {{ 'staff-msg' if msg.user.role == 'teacher' else '' }}"
+            id="msg-{{ msg.id }}">
+            <div class="msg-pic {{ 'me' if msg.user_id == current_user.id else 'you' }} {{ 'staff' if msg.user.role == 'teacher' else '' }}">
+                {{ initial }}
+            </div>
+            <div class="msg-box">
+                <div class="msg-bub">
+                    {% if msg.user_id != current_user.id %}
+                    <div class="msg-author">
+                        <span>{{ msg.user.username }}</span>
+                        {% if msg.user.role == 'teacher' %}<span class="staff-tag">STAFF</span>{% endif %}
+                    </div>
+                    {% endif %}
+                    <div class="msg-txt">{{ msg.content }}</div>
+                    <div class="msg-tail">
+                        <span class="msg-tym">{{ msg.timestamp.strftime('%I:%M %p') }}</span>
+                        {% if msg.user_id == current_user.id %}
+                        <span class="msg-rcpt">✓✓</span>
+                        {% endif %}
+                    </div>
+                    {% if current_user.role in ['teacher', 'admin'] %}
+                    <button class="msg-del" onclick="deleteMessage({{ msg.id }})" title="Delete">
+                        <i class="material-icons" style="font-size:0.65rem;">close</i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-msgs" id="emptyChat">
+            <i class="material-icons">forum</i>
+            <p>No messages yet.<br>Start the conversation!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ─── BAR: Options ─── -->
+    <div class="chat-bar">
+        <div class="bar-left">
+            <i class="material-icons">forum</i>
+            <span>{{ messages|length }} msgs</span>
+        </div>
+        <div class="bar-right">
+            {% if current_user.role in ['teacher', 'admin'] %}
+            <button class="bar-btn dngr" onclick="deleteAllChats()">
+                <i class="material-icons">delete_sweep</i> Clear
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ─── TYPING: Bottom ─── -->
+    <div class="chat-type">
+        <input type="text" id="chatInput" class="type-input" placeholder="Type a message…" autocomplete="off"
+            onkeydown="if(event.key==='Enter') sendMessage();">
+        <button class="type-send" onclick="sendMessage()" id="sendBtn">
+            <i class="material-icons">send</i>
+        </button>
+    </div>
+
+</div>
+
+<script>
+    const classId = {{ classroom.id }};
+    const currentUserId = {{ current_user.id }};
+    const isTeacherOwner = {{ 'true' if current_user.role in ['teacher', 'admin'] else 'false' }};
+    let lastMsgId = 0;
+
+    document.querySelectorAll('.msg').forEach(m => {
+        const id = parseInt(m.id.replace('msg-', ''));
+        if (id > lastMsgId) lastMsgId = id;
+    });
+
+    const chatBox = document.getElementById('chatMessages');
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    function sendMessage() {
+        const inp = document.getElementById('chatInput');
+        const txt = inp.value.trim();
+        if (!txt) return;
+        inp.value = '';
+        inp.focus();
+        document.getElementById('sendBtn').style.transform = 'scale(0.85)';
+        setTimeout(() => document.getElementById('sendBtn').style.transform = '', 200);
+
+        fetch(`/api/chatroom/${classId}/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: txt })
+        })
+        .then(r => r.json())
+        .then(d => { if (d.success) { addMsg(d, true); lastMsgId = d.id; } });
+    }
+
+    function addMsg(m, own) {
+        const e = document.getElementById('emptyChat');
+        if (e) e.remove();
+
+        const r = document.createElement('div');
+        const st = m.role === 'teacher';
+        r.className = `msg ${own ? 'own' : 'other'} ${st && !own ? 'staff-msg' : ''}`;
+        r.id = `msg-${m.id}`;
+
+        const l = (m.username || '?')[0].toUpperCase();
+        let bad = '';
+        if (st && !own) bad = '<span class="staff-tag">STAFF</span>';
+        let del = '';
+        if (isTeacherOwner) del = `<button class="msg-del" onclick="deleteMessage(${m.id})"><i class="material-icons" style="font-size:0.65rem;">close</i></button>`;
+        let chk = '';
+        if (own) chk = '<span class="msg-rcpt">✓✓</span>';
+        let auth = '';
+        if (!own) auth = `<div class="msg-author"><span>${esc(m.username)}</span> ${bad}</div>`;
+
+        r.innerHTML = `
+            <div class="msg-pic ${own ? 'me' : 'you'} ${st && !own ? 'staff' : ''}">${l}</div>
+            <div class="msg-box">
+                <div class="msg-bub">
+                    ${auth}
+                    <div class="msg-txt">${esc(m.content)}</div>
+                    <div class="msg-tail"><span class="msg-tym">${m.timestamp}</span>${chk}</div>
+                    ${del}
+                </div>
+            </div>`;
+        chatBox.appendChild(r);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function deleteMessage(id) {
+        if (!confirm('Delete this message?')) return;
+        fetch(`/api/chatroom/delete_message/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const el = document.getElementById(`msg-${id}`);
+                if (el) { el.style.opacity = '0'; el.style.transform = 'scale(0.9)'; el.style.transition = 'all 0.25s'; setTimeout(() => el.remove(), 250); }
+            }
+        });
+    }
+
+    function deleteAllChats() {
+        if (!confirm('Delete ALL messages?')) return;
+        fetch(`/api/chatroom/${classId}/delete_all`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) document.getElementById('chatMessages').innerHTML = `<div class="empty-msgs" id="emptyChat"><i class="material-icons">forum</i><p>No messages yet.<br>Start the conversation!</p></div>`;
+        });
+    }
+
+    function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+    setInterval(() => {
+        fetch(`/api/chatroom/${classId}/messages?after=${lastMsgId}`)
+        .then(r => r.json())
+        .then(d => {
+            if (d.messages && d.messages.length) {
+                for (const m of d.messages) {
+                    if (!document.getElementById(`msg-${m.id}`)) { addMsg(m, m.user_id === currentUserId); }
+                    if (m.id > lastMsgId) lastMsgId = m.id;
+                }
+            }
+        });
+    }, 3000);
+</script>
+{% endblock %}

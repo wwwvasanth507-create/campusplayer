@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # Main Flask Application
+  web:
+    build: .
+    container_name: campusplayer-web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+    env_file:
+      - .env
+    volumes:
+      - static_volume:/app/static
+      - uploads_volume:/app/static/uploads
+      - hls_volume:/app/static/hls
+      - pdf_volume:/app/generated_pdfs
+      - ./instance:/app/instance
+    depends_on:
+      - redis
+    command: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 app:app
+
+  # Celery Worker for background tasks
+  celery-worker:
+    build: .
+    container_name: campusplayer-celery
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+    env_file:
+      - .env
+    volumes:
+      - static_volume:/app/static
+      - uploads_volume:/app/static/uploads
+      - hls_volume:/app/static/hls
+      - pdf_volume:/app/generated_pdfs
+      - ./instance:/app/instance
+    depends_on:
+      - redis
+    command: celery -A celery_config.celery worker --loglevel=info --concurrency=2
+
+  # Celery Beat for periodic tasks
+  celery-beat:
+    build: .
+    container_name: campusplayer-beat
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    env_file:
+      - .env
+    volumes:
+      - ./instance:/app/instance
+    depends_on:
+      - redis
+    command: celery -A celery_config.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+
+  # Redis (Cache & Message Broker)
+  redis:
+    image: redis:7-alpine
+    container_name: campusplayer-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  # PostgreSQL Database (Production alternative)
+  db:
+    image: postgres:15-alpine
+    container_name: campusplayer-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=campusplayer
+      - POSTGRES_PASSWORD=campusplayer
+      - POSTGRES_DB=campusplayer
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Nginx reverse proxy
+  nginx:
+    image: nginx:alpine
+    container_name: campusplayer-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/static:ro
+      - hls_volume:/app/static/hls:ro
+    depends_on:
+      - web
+
+volumes:
+  static_volume:
+  uploads_volume:
+  hls_volume:
+  pdf_volume:
+  redis_data:
+  postgres_data:

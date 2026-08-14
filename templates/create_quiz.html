@@ -1,0 +1,66 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2>Create New Quiz</h2>
+        <form method="POST">
+            <div style="margin-bottom: 20px;">
+                <label>Quiz Title</label>
+                <input type="text" name="title" required placeholder="e.g. Week 1 Assessment">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Related Video (Optional)</label>
+                <select name="video_id"
+                    style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                    <option value="">-- No Video Link --</option>
+                    {% for video in videos %}
+                    <option value="{{ video.id }}">{{ video.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Assign to Class (Optional)</label>
+                <select name="classroom_id"
+                    style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                    <option value="">-- All Students (No Class Restriction) --</option>
+                    {% for cls in classes %}
+                    <option value="{{ cls.id }}">{{ cls.name }}</option>
+                    {% endfor %}
+                </select>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 6px 0 0 0;">
+                    If assigned to a class, only students in that class can see and take this quiz.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label>Quiz Closing Time (auto-closes after this duration)</label>
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <input type="number" name="time_limit_hours" min="0" max="24" value="0" placeholder="Hours"
+                            style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 0 0;">Hours</p>
+                    </div>
+                    <div style="flex:1;">
+                        <input type="number" name="time_limit_extra_minutes" min="0" max="59" value="0" placeholder="Minutes"
+                            style="width: 100%; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 14px; color: white;">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 0 0;">Minutes</p>
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 6px 0 0 0;">
+                    Example: 1 hour 15 minutes. Leave both at 0 for no time limit.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px; display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" name="shuffle_questions" id="shuffle_questions">
+                <label for="shuffle_questions" style="margin:0;">Show questions in random order for every student</label>
+            </div>
+
+            <button type="submit" class="btn">Create & Add Questions</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

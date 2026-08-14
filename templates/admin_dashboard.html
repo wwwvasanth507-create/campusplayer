@@ -1,0 +1,195 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="flex-between" style="margin-bottom:8px; flex-wrap:wrap; gap:10px;">
+    <div class="page-title" style="margin:0;">Admin Dashboard</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('admin_teachers_page') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.75rem;">
+            <i class="material-icons" style="font-size:1rem;">manage_accounts</i> Teachers
+        </a>
+        <a href="{{ url_for('levels_pdf') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.75rem;">
+            <i class="material-icons" style="font-size:1rem;">military_tech</i> XP Reports
+        </a>
+        <a href="{{ url_for('attendance_reports_hub') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.75rem;">
+            <i class="material-icons" style="font-size:1rem;">event_note</i> Attendance Sessions
+        </a>
+    </div>
+</div>
+<p class="page-sub">{{ settings.institution_name or 'CampusPlayer' }} — System Overview</p>
+
+<div class="stat-row">
+    <div class="stat-card stat-gold">
+        <div class="stat-val">{{ teacher_count }}</div>
+        <div class="stat-lbl">Teachers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:var(--primary-light);">{{ student_count }}</div>
+        <div class="stat-lbl">Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#4caf50;">{{ video_count }}</div>
+        <div class="stat-lbl">Videos</div>
+    </div>
+</div>
+
+<div class="stat-row">
+    <div class="stat-card">
+        <div class="stat-val" style="color:#ff9800;">{{ quiz_count }}</div>
+        <div class="stat-lbl">Quizzes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#03a9f4;">{{ total_views }}</div>
+        <div class="stat-lbl">Total Views</div>
+    </div>
+    <div class="stat-card stat-purple">
+        <div class="stat-val">{{ total_xp }}</div>
+        <div class="stat-lbl">Total XP</div>
+    </div>
+</div>
+
+<!-- Admin Settings -->
+<div class="card">
+    <div class="card-title"><i class="material-icons">settings</i> Site Settings</div>
+    <form method="POST" action="{{ url_for('admin_settings') }}" enctype="multipart/form-data">
+        <label>Institution Name</label>
+        <input type="text" name="institution_name" value="{{ settings.institution_name or '' }}" placeholder="Your Institution">
+        <div class="flex gap-8" style="flex-wrap:wrap;">
+            <label class="flex gap-8" style="width:auto;text-transform:none;letter-spacing:0;">
+                <input type="checkbox" name="lock_speed" {% if settings.lock_video_speed %}checked{% endif %} style="width:auto;"> Lock Speed
+            </label>
+            <label class="flex gap-8" style="width:auto;text-transform:none;letter-spacing:0;">
+                <input type="checkbox" name="lock_skipping" {% if settings.lock_video_skipping %}checked{% endif %} style="width:auto;"> Lock Skipping
+            </label>
+        </div>
+        <label>Attendance Lock Time</label>
+        <input type="time" name="attendance_lock_time" value="{{ settings.attendance_lock_time or '09:10' }}">
+        <label>Minimum Attendance Percentage Required</label>
+        <input type="number" name="min_attendance_percentage" step="0.1" min="0" max="100"
+            value="{{ settings.min_attendance_percentage if settings.min_attendance_percentage is not none else 75 }}"
+            placeholder="75">
+        <p class="text-dim fs-small" style="margin:-8px 0 12px 0;">Students below this percentage are flagged in attendance session reports.</p>
+        <label>Max Video Size (MB)</label>
+        <input type="number" name="max_video_size_mb" value="{{ settings.max_video_size_mb or 500 }}" min="50" max="20480">
+        <label>Admin SMS Phone</label>
+        <input type="text" name="admin_sms_phone" value="{{ settings.admin_sms_phone or '' }}" placeholder="+919876543210">
+        <label>Gemini API Key</label>
+        <input type="password" name="gemini_api_key" value="{{ settings.gemini_api_key or '' }}" placeholder="AI API Key">
+        <label>Global Thumbnail</label>
+        <input type="file" name="global_thumbnail" accept="image/*">
+        {% if settings.global_playlist_thumbnail %}
+        <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:12px;display:block;">
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+</div>
+
+<!-- Change Admin Password -->
+<div class="card">
+    <div class="card-title"><i class="material-icons">lock</i> Change Password</div>
+    <form method="POST" action="{{ url_for('change_admin_password') }}">
+        <label>Current Password</label>
+        <input type="password" name="current_password" required>
+        <label>New Password</label>
+        <input type="password" name="new_password" required minlength="4">
+        <label>Confirm Password</label>
+        <input type="password" name="confirm_password" required minlength="4">
+        <button type="submit" class="btn btn-outline">Update Password</button>
+    </form>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-title"><i class="material-icons">history</i> Recent Activity</div>
+    {% if recent_activity %}
+    <div class="table-wrap">
+        <table>
+            <tr><th>Action</th><th>User</th><th>Time</th></tr>
+            {% for log in recent_activity %}
+            <tr>
+                <td>{{ log.action }}</td>
+                <td>{{ log.username or '—' }}</td>
+                <td style="font-size:0.65rem;color:var(--text-dim);">{{ log.timestamp.strftime('%d %b %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+    <p class="text-dim fs-small">No recent activity yet.</p>
+    {% endif %}
+</div>
+
+<!-- Live Analytics Chart (Static Chart via inline JS) -->
+<div class="card" id="liveStats">
+    <div class="card-title"><i class="material-icons">insights</i> Today's Stats</div>
+    <div class="stat-row">
+        <div class="stat-card"><div class="stat-val" id="viewsToday" style="color:#03a9f4;">—</div><div class="stat-lbl">Views Today</div></div>
+        <div class="stat-card"><div class="stat-val" id="usersToday" style="color:#4caf50;">—</div><div class="stat-lbl">New Users</div></div>
+        <div class="stat-card"><div class="stat-val" id="attToday" style="color:#ff9800;">—</div><div class="stat-lbl">Attendance</div></div>
+    </div>
+    <p class="text-dim fs-small text-center">Avg Quiz Score: <span id="avgQuizScore">—</span>%</p>
+</div>
+
+<!-- Classes Quick View -->
+<div class="card">
+    <div class="card-title"><i class="material-icons">school</i> All Classes ({{ all_classes|length }})</div>
+    {% if all_classes %}
+    <div class="table-wrap">
+        <table>
+            <tr><th>Name</th><th>Teacher</th><th>Students</th><th>Code</th><th>Reports</th></tr>
+            {% for c in all_classes %}
+            <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.teacher.username if c.teacher else '—' }}</td>
+                <td>{{ c.students.count() }}</td>
+                <td style="font-family:monospace;color:var(--gold);">{{ c.class_code or '—' }}</td>
+                <td style="white-space:nowrap;">
+                    <a href="{{ url_for('levels_pdf', type='class', class_id=c.id) }}" title="XP Report" style="margin-right:8px;">
+                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:var(--gold);">military_tech</i>
+                    </a>
+                    <a href="{{ url_for('attendance_pdf', class_id=c.id) }}" title="Attendance Report">
+                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:#03a9f4;">fact_check</i>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+    <p class="text-dim fs-small">No classes created yet.</p>
+    {% endif %}
+</div>
+
+<!-- All Teachers -->
+<div class="card">
+    <div class="card-title"><i class="material-icons">supervisor_account</i> Teachers ({{ teacher_count }})</div>
+    {% if teachers %}
+    <div class="table-wrap">
+        <table>
+            <tr><th>Username</th><th>XP</th><th>Phone</th><th>Added</th></tr>
+            {% for t in teachers %}
+            <tr>
+                <td><b>{{ t.username }}</b></td>
+                <td>{{ t.xp }}</td>
+                <td style="font-size:0.7rem;">{{ t.phone or '—' }}</td>
+                <td style="font-size:0.65rem;color:var(--text-dim);">{{ t.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+    <p class="text-dim fs-small">No teachers yet.</p>
+    {% endif %}
+</div>
+
+<script>
+    // Fetch live stats
+    fetch('/admin/api/stats')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('viewsToday').textContent = data.views_today;
+            document.getElementById('usersToday').textContent = data.users_today;
+            document.getElementById('attToday').textContent = data.attendance_today;
+            document.getElementById('avgQuizScore').textContent = data.avg_quiz_score;
+        })
+        .catch(() => {});
+</script>
+{% endblock %}
