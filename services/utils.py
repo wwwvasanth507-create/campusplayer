@@ -110,107 +110,69 @@ def rank_results(item, query, name_field, extra_fields=None):
 def search_videos(query):
     if not query:
         return []
-    videos = Video.query.filter(Video.title.contains(query)).all()
-    query_lower = query.lower()
-    for video in Video.query.all():
-        if video.id not in [x.id for x in videos] and query_lower in (video.title or '').lower():
-            videos.append(video)
-    unique = []
-    seen_ids = set()
+    term = f"%{query}%"
+    videos = Video.query.filter(
+        (Video.title.ilike(term)) | (Video.description.ilike(term)) | (Video.filename.ilike(term))
+    ).limit(50).all()
     for video in videos:
-        if video.id not in seen_ids:
-            seen_ids.add(video.id)
-            unique.append(video)
-    for video in unique:
         video._search_score = rank_results(video, query, 'title', extra_fields=['description'])
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    videos.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return videos
 
 
 def search_playlists(query):
     if not query:
         return []
-    playlists = Playlist.query.filter(Playlist.title.contains(query)).all()
-    query_lower = query.lower()
-    for item in Playlist.query.all():
-        if item.id not in [x.id for x in playlists] and query_lower in (item.title or '').lower():
-            playlists.append(item)
-    unique = []
-    seen_ids = set()
+    term = f"%{query}%"
+    playlists = Playlist.query.filter(
+        (Playlist.title.ilike(term)) | (Playlist.description.ilike(term))
+    ).limit(50).all()
     for playlist in playlists:
-        if playlist.id not in seen_ids:
-            seen_ids.add(playlist.id)
-            unique.append(playlist)
-    for playlist in unique:
-        playlist._search_score = rank_results(playlist, query, 'title')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+        playlist._search_score = rank_results(playlist, query, 'title', extra_fields=['description'])
+    playlists.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return playlists
 
 
 def search_classes(query):
     if not query:
         return []
-    classes = Classroom.query.filter(Classroom.name.contains(query)).all()
-    query_lower = query.lower()
-    for item in Classroom.query.all():
-        if item.id not in [x.id for x in classes] and query_lower in (item.name or '').lower():
-            classes.append(item)
-    unique = []
-    seen_ids = set()
+    term = f"%{query}%"
+    classes = Classroom.query.filter(
+        (Classroom.name.ilike(term)) | (Classroom.description.ilike(term))
+    ).limit(50).all()
     for cls in classes:
-        if cls.id not in seen_ids:
-            seen_ids.add(cls.id)
-            unique.append(cls)
-    for cls in unique:
-        cls._search_score = rank_results(cls, query, 'name')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+        cls._search_score = rank_results(cls, query, 'name', extra_fields=['description'])
+    classes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return classes
 
 
 def search_quizzes(query):
     if not query:
         return []
-    quizzes = Quiz.query.filter(Quiz.title.contains(query)).all()
-    query_lower = query.lower()
-    for q in Quiz.query.all():
-        if q.id not in [x.id for x in quizzes] and query_lower in (q.title or '').lower():
-            quizzes.append(q)
-    unique = []
-    seen_ids = set()
+    term = f"%{query}%"
+    quizzes = Quiz.query.filter(
+        (Quiz.title.ilike(term)) | (Quiz.description.ilike(term))
+    ).limit(50).all()
     for quiz in quizzes:
-        if quiz.id not in seen_ids:
-            seen_ids.add(quiz.id)
-            unique.append(quiz)
-    for quiz in unique:
-        quiz._search_score = rank_results(quiz, query, 'title')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+        quiz._search_score = rank_results(quiz, query, 'title', extra_fields=['description'])
+    quizzes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return quizzes
 
 
 def search_users(query, role_filter=None):
     if not query:
         return []
+    term = f"%{query}%"
     users_q = User.query
     if role_filter:
         users_q = users_q.filter(User.role == role_filter)
-    users = users_q.filter(User.username.contains(query)).all()
-    query_lower = query.lower()
-    all_users_q = User.query
-    if role_filter:
-        all_users_q = all_users_q.filter(User.role == role_filter)
-    for u in all_users_q.all():
-        if u.id not in [x.id for x in users] and query_lower in (u.username or '').lower():
-            users.append(u)
-    unique = []
-    seen_ids = set()
+    users = users_q.filter(
+        (User.username.ilike(term)) | (User.email.ilike(term))
+    ).limit(50).all()
     for user in users:
-        if user.id not in seen_ids:
-            seen_ids.add(user.id)
-            unique.append(user)
-    for user in unique:
         user._search_score = rank_results(user, query, 'username')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    users.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return users
 
 
 def global_search(query):

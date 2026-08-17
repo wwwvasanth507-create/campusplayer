@@ -130,14 +130,25 @@ def compute_session_report(session, settings=None):
     if min_pct is None:
         min_pct = 75.0
 
+    # Batch query: fetch all attendance records for this classroom in the session date range in 1 single query
+    all_attendance_rows = Attendance.query.filter(
+        Attendance.classroom_id == classroom.id,
+        Attendance.date >= session.start_date,
+        Attendance.date <= session.end_date,
+    ).all()
+    records_by_student = {}
+    for r in all_attendance_rows:
+        records_by_student.setdefault(r.student_id, {})[r.date] = r.status
+
     rows = []
     for student in students:
+        student_records = records_by_student.get(student.id, {})
         full_stats = compute_attendance_stats(
             student.id, classroom.id, session.start_date, session.end_date,
-            marked_dates=full_marked)
+            marked_dates=full_marked, records_by_date=student_records)
         current_stats = compute_attendance_stats(
             student.id, classroom.id, session.start_date, current_end,
-            marked_dates=current_marked)
+            marked_dates=current_marked, records_by_date=student_records)
         pct = full_stats['percentage']
         cur_pct = current_stats['percentage']
         rows.append({

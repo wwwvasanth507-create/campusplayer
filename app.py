@@ -144,6 +144,10 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.execute("PRAGMA busy_timeout=30000")
+            cursor.execute("PRAGMA cache_size=-64000")
+            cursor.execute("PRAGMA temp_store=MEMORY")
+            cursor.execute("PRAGMA mmap_size=268435456")
+            cursor.execute("PRAGMA foreign_keys=ON")
         except Exception:
             pass
         finally:
@@ -219,34 +223,64 @@ def csrf_protect_request():
         if not validate_csrf_token(token):
             abort(400, description='Invalid CSRF token')
 
+import gzip
+
 @app.after_request
-def set_security_headers(response):
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    # NOTE: Cross-Origin-Embedder-Policy: require-corp breaks hls.js media streaming
-    # because hls.js is loaded from CDN and cannot provide CORP headers.
-    # Cross-Origin-Opener-Policy is also omitted since COOP requires COEP pairing.
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "img-src 'self' data: blob:; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "media-src 'self' blob: data:; "
-        "connect-src 'self' blob: data:; "
-        "frame-ancestors 'none'; base-uri 'self';"
-    )
-    if app.config['FORCE_HTTPS'] or request.is_secure:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+def set_security_and_performance_headers(response):
+    # Static files caching
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    else:
+        # Standard security headers
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "media-src 'self' blob: data:; "
+            "connect-src 'self' blob: data:; "
+            "frame-ancestors 'none'; base-uri 'self';"
+        )
+        if app.config.get('FORCE_HTTPS') or request.is_secure:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+
+    # Gzip response compression
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if (
+        'gzip' in accept_encoding.lower()
+        and 200 <= response.status_code < 300
+        and not response.direct_passthrough
+        and response.mimetype in ('text/html', 'application/json', 'text/css', 'application/javascript', 'text/plain', 'image/svg+xml')
+        and 'Content-Encoding' not in response.headers
+    ):
+        try:
+            data = response.get_data()
+            if len(data) > 500:
+                compressed = gzip.compress(data, compresslevel=6)
+                response.set_data(compressed)
+                response.headers['Content-Encoding'] = 'gzip'
+                response.headers['Content-Length'] = len(compressed)
+        except Exception:
+            pass
+
     return response
 
 @app.before_request
 def update_last_active():
     if current_user.is_authenticated:
-        if request.endpoint in ('static', 'logout'):
+        endpoint = request.endpoint or ''
+        path = request.path or ''
+        if endpoint in ('static', 'logout', 'serve_hls', 'video.serve_hls') or \
+           path.startswith('/static/') or path.startswith('/hls/') or \
+           path.startswith('/api/video/progress') or path.startswith('/api/chatroom/') or \
+           path.startswith('/api/video_status') or path.startswith('/api/notifications') or \
+           path.startswith('/api/teacher/processing_videos'):
             return
             
         if not getattr(current_user, 'is_active_account', True):
@@ -255,19 +289,29 @@ def update_last_active():
             login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
             return redirect(login_url)
             
-        if getattr(current_user, 'institution_id', None):
-            inst = Institution.query.get(current_user.institution_id)
-            if inst and inst.status == 'suspended':
+        inst_id = getattr(current_user, 'institution_id', None)
+        if inst_id:
+            cache_key = f'inst_status_{inst_id}'
+            inst_status = cache.get(cache_key) if cache else None
+            if inst_status is None:
+                inst = Institution.query.get(inst_id)
+                inst_status = inst.status if inst else 'active'
+                if cache:
+                    cache.set(cache_key, inst_status, timeout=60)
+            if inst_status == 'suspended':
                 logout_user()
                 flash('Your institution has been suspended.', 'error')
                 login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
                 return redirect(login_url)
                 
-        try:
-            current_user.last_active = datetime.utcnow()
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        now = datetime.utcnow()
+        last = getattr(current_user, 'last_active', None)
+        if last is None or (now - last).total_seconds() > 120:
+            try:
+                current_user.last_active = now
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 os.makedirs(HLS_FOLDER, exist_ok=True)
 os.makedirs(SUBTITLE_FOLDER, exist_ok=True)
 
@@ -603,75 +647,55 @@ def rank_results(item, query, name_field, extra_fields=None):
 
 def search_videos(query):
     if not query: return []
-    videos = Video.query.filter(Video.title.contains(query) | Video.filename.contains(query)).all()
-    query_lower = query.lower()
-    all_videos = Video.query.all()
-    for v in all_videos:
-        if v.id not in [x.id for x in videos]:
-            if query_lower in v.title.lower() or query_lower in v.filename.lower():
-                videos.append(v)
-    seen = set(); unique = []
-    for v in videos:
-        if v.id not in seen: seen.add(v.id); unique.append(v)
-    for v in unique: v._search_score = rank_results(v, query, 'title', ['filename'])
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    term = f"%{query}%"
+    videos = Video.query.filter(
+        (Video.title.ilike(term)) | (Video.description.ilike(term)) | (Video.filename.ilike(term))
+    ).limit(50).all()
+    for v in videos: v._search_score = rank_results(v, query, 'title', ['filename', 'description'])
+    videos.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return videos
 
 def search_playlists(query):
     if not query: return []
-    playlists = Playlist.query.filter(Playlist.title.contains(query)).all()
-    query_lower = query.lower()
-    for p in Playlist.query.all():
-        if p.id not in [x.id for x in playlists] and query_lower in p.title.lower(): playlists.append(p)
-    seen = set(); unique = []
-    for p in playlists:
-        if p.id not in seen: seen.add(p.id); unique.append(p)
-    for p in unique: p._search_score = rank_results(p, query, 'title')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    term = f"%{query}%"
+    playlists = Playlist.query.filter(
+        (Playlist.title.ilike(term)) | (Playlist.description.ilike(term))
+    ).limit(50).all()
+    for p in playlists: p._search_score = rank_results(p, query, 'title', ['description'])
+    playlists.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return playlists
 
 def search_classes(query):
     if not query: return []
-    classes = Classroom.query.filter(Classroom.name.contains(query)).all()
-    query_lower = query.lower()
-    for c in Classroom.query.all():
-        if c.id not in [x.id for x in classes] and query_lower in c.name.lower(): classes.append(c)
-    seen = set(); unique = []
-    for c in classes:
-        if c.id not in seen: seen.add(c.id); unique.append(c)
-    for c in unique: c._search_score = rank_results(c, query, 'name')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    term = f"%{query}%"
+    classes = Classroom.query.filter(
+        (Classroom.name.ilike(term)) | (Classroom.description.ilike(term))
+    ).limit(50).all()
+    for c in classes: c._search_score = rank_results(c, query, 'name', ['description'])
+    classes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return classes
 
 def search_quizzes(query):
     if not query: return []
-    quizzes = Quiz.query.filter(Quiz.title.contains(query)).all()
-    query_lower = query.lower()
-    for q in Quiz.query.all():
-        if q.id not in [x.id for x in quizzes] and query_lower in q.title.lower(): quizzes.append(q)
-    seen = set(); unique = []
-    for q in quizzes:
-        if q.id not in seen: seen.add(q.id); unique.append(q)
-    for q in unique: q._search_score = rank_results(q, query, 'title')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    term = f"%{query}%"
+    quizzes = Quiz.query.filter(
+        (Quiz.title.ilike(term)) | (Quiz.description.ilike(term))
+    ).limit(50).all()
+    for q in quizzes: q._search_score = rank_results(q, query, 'title', ['description'])
+    quizzes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return quizzes
 
 def search_users(query, role_filter=None):
     if not query: return []
+    term = f"%{query}%"
     users_q = User.query
     if role_filter: users_q = users_q.filter(User.role == role_filter)
-    users = users_q.filter(User.username.contains(query)).all()
-    query_lower = query.lower()
-    all_users_q = User.query
-    if role_filter: all_users_q = all_users_q.filter(User.role == role_filter)
-    for u in all_users_q.all():
-        if u.id not in [x.id for x in users] and query_lower in u.username.lower(): users.append(u)
-    seen = set(); unique = []
-    for u in users:
-        if u.id not in seen: seen.add(u.id); unique.append(u)
-    for u in unique: u._search_score = rank_results(u, query, 'username')
-    unique.sort(key=lambda x: x._search_score, reverse=True)
-    return unique
+    users = users_q.filter(
+        (User.username.ilike(term)) | (User.email.ilike(term))
+    ).limit(50).all()
+    for u in users: u._search_score = rank_results(u, query, 'username')
+    users.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
+    return users
 
 def global_search(query):
     result = {'videos': [], 'playlists': [], 'classes': [], 'quizzes': [], 'teachers': [], 'students': [], 'total_count': 0}
@@ -1530,7 +1554,7 @@ def institutions_export_excel():
 @admin_required
 def admin_dashboard():
     teachers = User.query.filter_by(role='teacher').all()
-    teacher_count = User.query.filter_by(role='teacher').count()
+    teacher_count = len(teachers)
     student_count = User.query.filter_by(role='student').count()
     settings = SiteSettings.query.first()
     all_classes = Classroom.query.all()
@@ -2130,18 +2154,18 @@ def teacher_attendance_page():
 @teacher_required
 def teacher_enrolled_students_page():
     q = request.args.get('q', '').strip()
-    classes = Classroom.query.all()
+    classes = Classroom.query.options(db.joinedload(Classroom.students)).all()
+    class_ids = [cls.id for cls in classes]
+    all_remarks = StudentRemark.query.filter(StudentRemark.classroom_id.in_(class_ids)).all() if class_ids else []
+    remarks_map = {(r.student_id, r.classroom_id): r.remark for r in all_remarks}
+
     enrolled_set = {}
     for cls in classes:
         for s in cls.students:
             if s.id not in enrolled_set:
                 enrolled_set[s.id] = {'student': s, 'classes': [], 'class_details': []}
             enrolled_set[s.id]['classes'].append(cls.name)
-            
-            # Fetch remark
-            remark_obj = StudentRemark.query.filter_by(student_id=s.id, classroom_id=cls.id).first()
-            remark_text = remark_obj.remark if remark_obj else ''
-            
+            remark_text = remarks_map.get((s.id, cls.id), '')
             enrolled_set[s.id]['class_details'].append({
                 'id': cls.id,
                 'name': cls.name,
@@ -3162,7 +3186,7 @@ def chatroom(class_id):
         if class_id not in enrolled_ids:
             flash('You are not enrolled in this class.', 'error')
             return redirect(url_for('student_dashboard'))
-    messages = ChatMessage.query.filter_by(classroom_id=class_id).order_by(ChatMessage.timestamp.asc()).all()
+    messages = ChatMessage.query.options(db.joinedload(ChatMessage.user)).filter_by(classroom_id=class_id).order_by(ChatMessage.timestamp.asc()).all()
     return render_template('chatroom.html', classroom=classroom, messages=messages)
 
 @app.route('/api/chatroom/<int:class_id>/send', methods=['POST'])
@@ -3197,7 +3221,7 @@ def send_chat_message(class_id):
 @login_required
 def get_chat_messages(class_id):
     after_id = request.args.get('after', 0, type=int)
-    messages = ChatMessage.query.filter(
+    messages = ChatMessage.query.options(db.joinedload(ChatMessage.user)).filter(
         ChatMessage.classroom_id == class_id, ChatMessage.id > after_id
     ).order_by(ChatMessage.timestamp.asc()).all()
     return jsonify({
@@ -5616,14 +5640,22 @@ def check_achievements():
     achievements = Achievement.query.all()
     new_achievements = []
     user = current_user
+    user_achievements = user.get_achievements()
 
-    # Count data for conditions
-    videos_watched = ViewAnalytics.query.filter_by(user_id=user.id, completed=True).count()
-    comments_count = Comment.query.filter_by(user_id=user.id).count()
-    uploads_count = Video.query.filter_by(uploader_id=user.id).count()
+    # Lazy loaded condition counters
+    _counters = {}
+    def get_count(key):
+        if key not in _counters:
+            if key == 'videos_watched':
+                _counters[key] = ViewAnalytics.query.filter_by(user_id=user.id, completed=True).count()
+            elif key == 'comments_count':
+                _counters[key] = Comment.query.filter_by(user_id=user.id).count()
+            elif key == 'uploads_count':
+                _counters[key] = Video.query.filter_by(uploader_id=user.id).count()
+        return _counters[key]
 
     for ach in achievements:
-        if ach.code in user.get_achievements():
+        if ach.code in user_achievements:
             continue
 
         earned = False
@@ -5643,11 +5675,11 @@ def check_achievements():
             ).first()
             if perfect:
                 earned = True
-        elif ach.condition_type == 'videos_watched' and videos_watched >= ach.condition_value:
+        elif ach.condition_type == 'videos_watched' and get_count('videos_watched') >= ach.condition_value:
             earned = True
-        elif ach.condition_type == 'comments_count' and comments_count >= ach.condition_value:
+        elif ach.condition_type == 'comments_count' and get_count('comments_count') >= ach.condition_value:
             earned = True
-        elif ach.condition_type == 'uploads_count' and uploads_count >= ach.condition_value:
+        elif ach.condition_type == 'uploads_count' and get_count('uploads_count') >= ach.condition_value:
             earned = True
 
         if earned:

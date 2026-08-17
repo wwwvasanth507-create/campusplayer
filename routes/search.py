@@ -31,21 +31,22 @@ def search_suggest():
         return jsonify({'suggestions': []})
     suggestions = []
     seen_titles = set()
-    for v in Video.query.filter(Video.title.contains(query)).limit(5).all():
+    term = f"%{query}%"
+    for v in Video.query.filter(Video.title.ilike(term)).limit(5).all():
         if v.title not in seen_titles:
             seen_titles.add(v.title)
             suggestions.append({'text': v.title, 'type': 'video', 'icon': 'videocam', 'url': url_for('video.watch_video', video_id=v.id)})
-    for p in Playlist.query.filter(Playlist.title.contains(query)).limit(3).all():
+    for p in Playlist.query.filter(Playlist.title.ilike(term)).limit(3).all():
         title = f"[Playlist] {p.title}"
         if title not in seen_titles:
             seen_titles.add(title)
             suggestions.append({'text': p.title, 'type': 'playlist', 'icon': 'playlist_play', 'url': url_for('video.view_playlist', playlist_id=p.id)})
-    for c in Classroom.query.filter(Classroom.name.contains(query)).limit(3).all():
+    for c in Classroom.query.filter(Classroom.name.ilike(term)).limit(3).all():
         title = f"[Class] {c.name}"
         if title not in seen_titles:
             seen_titles.add(title)
             suggestions.append({'text': c.name, 'type': 'class', 'icon': 'school', 'url': '#'})
-    for u in User.query.filter(User.username.contains(query)).limit(4).all():
+    for u in User.query.filter(User.username.ilike(term)).limit(4).all():
         if u.username not in seen_titles and u.id != current_user.id:
             seen_titles.add(u.username)
             suggestions.append({'text': f"{u.username} ({u.role})", 'type': 'user', 'icon': 'person', 'url': '#'})

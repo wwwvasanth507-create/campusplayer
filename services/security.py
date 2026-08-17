@@ -34,39 +34,71 @@ def csrf_protect_request():
             abort(400, description='Invalid CSRF token')
 
 
+import gzip
+
 def set_security_headers(response):
-    """Add security headers to all responses."""
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "img-src 'self' data: blob:; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "media-src 'self' blob: data:; "
-        "connect-src 'self' blob: data:; "
-        "frame-ancestors 'none'; base-uri 'self';"
-    )
-    from app import app
-    if app.config.get('FORCE_HTTPS') or request.is_secure:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    """Add security headers, caching headers, and response compression."""
+    if request.path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    else:
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "media-src 'self' blob: data:; "
+            "connect-src 'self' blob: data:; "
+            "frame-ancestors 'none'; base-uri 'self';"
+        )
+        from flask import current_app
+        if current_app.config.get('FORCE_HTTPS') or request.is_secure:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+
+    # Gzip response compression
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if (
+        'gzip' in accept_encoding.lower()
+        and 200 <= response.status_code < 300
+        and not response.direct_passthrough
+        and response.mimetype in ('text/html', 'application/json', 'text/css', 'application/javascript', 'text/plain', 'image/svg+xml')
+        and 'Content-Encoding' not in response.headers
+    ):
+        try:
+            data = response.get_data()
+            if len(data) > 500:
+                compressed = gzip.compress(data, compresslevel=6)
+                response.set_data(compressed)
+                response.headers['Content-Encoding'] = 'gzip'
+                response.headers['Content-Length'] = len(compressed)
+        except Exception:
+            pass
+
     return response
 
 
 def update_last_active():
-    """Update user's last_active timestamp on each request and check suspension status."""
+    """Update user's last_active timestamp with throttling and check suspension status."""
     from flask_login import current_user, logout_user
     from flask import request, redirect, url_for, current_app
     from app import db
-    from models import User, Institution
+    from models import Institution
     import datetime
     
     if current_user.is_authenticated:
-        if request.endpoint in ('static', 'logout'):
+        endpoint = request.endpoint or ''
+        path = request.path or ''
+        # Skip static assets, media streaming, and frequent background polling endpoints
+        if endpoint in ('static', 'logout', 'serve_hls', 'video.serve_hls') or \
+           path.startswith('/static/') or path.startswith('/hls/') or \
+           path.startswith('/api/video/progress') or path.startswith('/api/chatroom/') or \
+           path.startswith('/api/video_status') or path.startswith('/api/notifications') or \
+           path.startswith('/api/teacher/processing_videos'):
             return
             
         if not getattr(current_user, 'is_active_account', True):
@@ -74,15 +106,27 @@ def update_last_active():
             login_url = url_for('auth.login') if 'auth.login' in current_app.view_functions else url_for('login')
             return redirect(login_url)
             
-        if getattr(current_user, 'institution_id', None):
-            inst = Institution.query.get(current_user.institution_id)
-            if inst and inst.status == 'suspended':
+        inst_id = getattr(current_user, 'institution_id', None)
+        if inst_id:
+            from extensions import cache
+            cache_key = f'inst_status_{inst_id}'
+            inst_status = cache.get(cache_key) if cache else None
+            if inst_status is None:
+                inst = Institution.query.get(inst_id)
+                inst_status = inst.status if inst else 'active'
+                if cache:
+                    cache.set(cache_key, inst_status, timeout=60)
+            if inst_status == 'suspended':
                 logout_user()
                 login_url = url_for('auth.login') if 'auth.login' in current_app.view_functions else url_for('login')
                 return redirect(login_url)
                 
-        try:
-            current_user.last_active = datetime.datetime.utcnow()
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+        now = datetime.datetime.utcnow()
+        last = getattr(current_user, 'last_active', None)
+        # Throttle DB writes: only commit timestamp at most once every 120 seconds
+        if last is None or (now - last).total_seconds() > 120:
+            try:
+                current_user.last_active = now
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
