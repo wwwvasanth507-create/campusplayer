@@ -4,7 +4,7 @@
 {% block content %}
 <div class="cp-feed-container">
 
-    <!-- ── 1. Campus Player Academic Pulse Banner ── -->
+    <!-- ── 1. Student Identity & Academic Pulse Banner ── -->
     <div class="cp-pulse-banner">
         <!-- Student Identity & Level Progress -->
         <div class="cp-student-meta">
@@ -25,14 +25,14 @@
                     </span>
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-dim); margin-top:3px;">
-                    🏆 <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
+                    🏆 <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP Total</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
                 </div>
             </div>
         </div>
 
         <!-- Academic Telemetry Badges & Quick Actions -->
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <!-- Attendance Metric Box -->
+            <!-- Attendance Standing Box -->
             <div class="cp-badge-stat" style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); padding:8px 16px; border-radius:14px;">
                 <span style="font-size:1.1rem; margin-right:4px;">{{ '🟢' if attendance_pct >= 75 else '🔴' }}</span>
                 <div>
@@ -60,48 +60,6 @@
             </a>
         </div>
     </div>
-
-    <!-- ── 2. TOP CLASSROOM DISCUSSION CHATROOM BOX ── -->
-    {% if enrolled_classes %}
-    <div class="cp-pulse-banner mb-28" style="background:linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(0,229,255,0.08) 100%); border:1px solid rgba(0,229,255,0.3); padding:18px 22px;">
-        <div style="width:100%;">
-            <div class="flex-between mb-12" style="align-items:center;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1.6rem;">💬</span>
-                    <div>
-                        <h3 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
-                            Live Classroom Discussion Hubs
-                        </h3>
-                        <p style="font-size:0.76rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
-                    </div>
-                </div>
-                <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:20px;">
-                    🟢 {{ enrolled_classes|length }} ACTIVE ROOMS
-                </span>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
-                {% for cls in enrolled_classes %}
-                <div style="background:rgba(13,17,28,0.85); border:1px solid var(--glass-border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:transform 0.2s ease, border-color 0.2s ease;"
-                     onmouseover="this.style.borderColor='rgba(0,229,255,0.5)'; this.style.transform='translateY(-2px)';"
-                     onmouseout="this.style.borderColor='var(--glass-border)'; this.style.transform='none';">
-                    <div style="min-width:0; flex:1;">
-                        <div style="font-weight:700; font-size:0.92rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            💬 {{ cls.name }}
-                        </div>
-                        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
-                            👨‍🏫 {{ cls.teacher.username }} &bull; 🎓 <b>{{ cls.students.count() }}</b> Scholars
-                        </div>
-                    </div>
-                    <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:20px; font-weight:700; flex-shrink:0;">
-                        Open Chat 🚀
-                    </a>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     <!-- 🎯 Daily Quests Collapsible Drawer -->
     {% if daily_quests %}
@@ -166,35 +124,186 @@
     </div>
     {% endif %}
 
-    <!-- ── 3. Campus Player Category Segment Bar ── -->
-    <div class="cp-category-nav" id="cpCategoryNav">
-        <button class="cp-tab-pill active" onclick="setCpCategory('all', this)">
-            <span style="font-size:1rem;">📊</span> All Streams
-        </button>
-        <button class="cp-tab-pill" onclick="setCpCategory('lectures', this)">
-            <span style="font-size:1rem;">🔥</span> Latest Lectures
-        </button>
-        <button class="cp-tab-pill" onclick="setCpCategory('playlists', this)">
-            <span style="font-size:1rem;">📚</span> Curated Tracks
-        </button>
-        <button class="cp-tab-pill" onclick="setCpCategory('classes', this)">
-            <span style="font-size:1rem;">🏫</span> Enrolled Classes
-        </button>
-        <a href="{{ url_for('student_assignments') }}" class="cp-tab-pill">
-            <span style="font-size:1rem;">📝</span> Assignments
-        </a>
-        <a href="{{ url_for('student_quizzes') }}" class="cp-tab-pill">
-            <span style="font-size:1rem;">❓</span> Quizzes
-        </a>
-        <a href="{{ url_for('leaderboard') }}" class="cp-tab-pill">
-            <span style="font-size:1rem;">🏆</span> Leaderboards
-        </a>
-        <a href="{{ url_for('ai_assistant') }}" class="cp-tab-pill">
-            <span style="font-size:1rem;">🤖</span> AI Tutor
-        </a>
+    <!-- ── 2. ACADEMIC QUICK OPTIONS & DETAILS MATRIX (FIRST) ── -->
+    <div class="mb-32">
+        <div class="flex-between mb-14" style="align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.4rem;">✨</span>
+                <div>
+                    <h2 class="font-display" style="font-size:1.2rem; font-weight:800; color:var(--text); margin:0;">
+                        Academic Learning &amp; Hub Options
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Direct access to coursework, quizzes, rankings, and AI tutoring</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+            <!-- Assignments Option Box -->
+            <a href="{{ url_for('student_assignments') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(99,102,241,0.45)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                        📝
+                    </div>
+                    <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Assignments</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Submit homework &amp; view grades</div>
+                </div>
+            </a>
+
+            <!-- Quizzes Option Box -->
+            <a href="{{ url_for('student_quizzes') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.45)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                        ❓
+                    </div>
+                    <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Active Quizzes</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Earn +100 XP per test</div>
+                </div>
+            </a>
+
+            <!-- Leaderboard Option Box -->
+            <a href="{{ url_for('leaderboard') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.45)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                        🏆
+                    </div>
+                    <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Leaderboards</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Class &amp; institute rankings</div>
+                </div>
+            </a>
+
+            <!-- AI Tutor Option Box -->
+            <a href="{{ url_for('ai_assistant') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(16,185,129,0.45)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                        🤖
+                    </div>
+                    <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
+                </div>
+                <div>
+                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">AI Tutor Assistant</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">24/7 instant academic Q&amp;A</div>
+                </div>
+            </a>
+        </div>
     </div>
 
-    <!-- ── 3. Campus Player Lectures Section ── -->
+    <!-- ── 3. LIVE CLASSROOM DISCUSSION CHATROOM BOX (SECOND) ── -->
+    {% if enrolled_classes %}
+    <div class="cp-pulse-banner mb-32" style="background:linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(0,229,255,0.08) 100%); border:1px solid rgba(0,229,255,0.3); padding:18px 22px;">
+        <div style="width:100%;">
+            <div class="flex-between mb-12" style="align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.6rem;">💬</span>
+                    <div>
+                        <h3 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
+                            Live Classroom Discussion Hubs
+                        </h3>
+                        <p style="font-size:0.76rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
+                    </div>
+                </div>
+                <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:20px;">
+                    🟢 {{ enrolled_classes|length }} ACTIVE ROOMS
+                </span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
+                {% for cls in enrolled_classes %}
+                <div style="background:rgba(13,17,28,0.85); border:1px solid var(--glass-border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:transform 0.2s ease, border-color 0.2s ease;"
+                     onmouseover="this.style.borderColor='rgba(0,229,255,0.5)'; this.style.transform='translateY(-2px)';"
+                     onmouseout="this.style.borderColor='var(--glass-border)'; this.style.transform='none';">
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-weight:700; font-size:0.92rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            💬 {{ cls.name }}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                            👨‍🏫 {{ cls.teacher.username }} &bull; 🎓 <b>{{ cls.students.count() }}</b> Scholars
+                        </div>
+                    </div>
+                    <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:20px; font-weight:700; flex-shrink:0;">
+                        Open Chat 🚀
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 4. CURATED PLAYLISTS / LEARNING TRACKS SECTION ── -->
+    {% if playlists %}
+    <div id="cpPlaylistsSection" class="mb-32">
+        <div class="flex-between mb-16" style="align-items:center;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:10px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; color:var(--gold);">
+                    <i class="material-icons" style="font-size:1.2rem;">auto_stories</i>
+                </div>
+                <div>
+                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                        Structured Learning Tracks
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Step-by-step modular curriculum playlists</p>
+                </div>
+            </div>
+            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                {{ playlists|length }} Tracks
+            </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+            {% for playlist in playlists %}
+            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="cp-track-card">
+                <div class="cp-track-thumb">
+                    {% if playlist.thumbnail_path %}
+                    <img src="{{ url_for('static', filename=playlist.thumbnail_path) }}" alt="{{ playlist.title }}" loading="lazy">
+                    {% elif settings and settings.global_playlist_thumbnail %}
+                    <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" alt="{{ playlist.title }}" loading="lazy">
+                    {% else %}
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #161b2c 0%, #0b0e18 100%);">
+                        <i class="material-icons" style="font-size:2.8rem; color:var(--gold); opacity:0.6;">collections_bookmark</i>
+                    </div>
+                    {% endif %}
+
+                    <!-- Module Counter Overlay -->
+                    <div class="cp-track-overlay">
+                        <i class="material-icons" style="font-size:0.9rem;">video_library</i>
+                        <span>{{ playlist.videos|length }} Chapters</span>
+                    </div>
+                </div>
+
+                <div class="cp-track-body">
+                    <div class="cp-track-title">{{ playlist.title }}</div>
+                    <div style="font-size:0.78rem; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+                        <span>By <b>{{ playlist.creator.username if playlist.creator else 'Faculty' }}</b></span>
+                        <span style="color:var(--gold); font-weight:700; display:flex; align-items:center; gap:2px;">
+                            Track <i class="material-icons" style="font-size:0.85rem;">chevron_right</i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 5. FEATURED ACADEMIC LECTURES (SHOWN AFTER DETAILS & OPTIONS) ── -->
     <div id="cpLecturesSection" class="mb-32">
         <div class="flex-between mb-16" style="align-items:center;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -214,6 +323,7 @@
         </div>
 
         {% if videos %}
+        <!-- 3 VIDEOS PER ROW ON DESKTOP, ADAPTIVE TO MOBILE SCREENS -->
         <div class="cp-video-grid">
             {% for video in videos %}
             <a href="{{ url_for('watch_video', video_id=video.id) }}" class="cp-card" title="{{ video.title }}">
@@ -297,162 +407,10 @@
         {% endif %}
     </div>
 
-    <!-- ── 4. Curated Playlists / Tracks Section ── -->
-    {% if playlists %}
-    <div id="cpPlaylistsSection" class="mb-32">
-        <div class="flex-between mb-16" style="align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:34px; height:34px; border-radius:10px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; color:var(--gold);">
-                    <i class="material-icons" style="font-size:1.2rem;">auto_stories</i>
-                </div>
-                <div>
-                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
-                        Structured Learning Tracks
-                    </h2>
-                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Step-by-step modular curriculum playlists</p>
-                </div>
-            </div>
-            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
-                {{ playlists|length }} Tracks
-            </span>
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
-            {% for playlist in playlists %}
-            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="cp-track-card">
-                <div class="cp-track-thumb">
-                    {% if playlist.thumbnail_path %}
-                    <img src="{{ url_for('static', filename=playlist.thumbnail_path) }}" alt="{{ playlist.title }}" loading="lazy">
-                    {% elif settings and settings.global_playlist_thumbnail %}
-                    <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" alt="{{ playlist.title }}" loading="lazy">
-                    {% else %}
-                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #161b2c 0%, #0b0e18 100%);">
-                        <i class="material-icons" style="font-size:2.8rem; color:var(--gold); opacity:0.6;">collections_bookmark</i>
-                    </div>
-                    {% endif %}
-
-                    <!-- Module Counter Overlay -->
-                    <div class="cp-track-overlay">
-                        <i class="material-icons" style="font-size:0.9rem;">video_library</i>
-                        <span>{{ playlist.videos|length }} Chapters</span>
-                    </div>
-                </div>
-
-                <div class="cp-track-body">
-                    <div class="cp-track-title">{{ playlist.title }}</div>
-                    <div style="font-size:0.78rem; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-                        <span>By <b>{{ playlist.creator.username if playlist.creator else 'Faculty' }}</b></span>
-                        <span style="color:var(--gold); font-weight:700; display:flex; align-items:center; gap:2px;">
-                            Track <i class="material-icons" style="font-size:0.85rem;">chevron_right</i>
-                        </span>
-                    </div>
-                </div>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- ── 5. Enrolled Classrooms Hub ── -->
-    {% if enrolled_classes %}
-    <div id="cpClassesSection" class="mb-32">
-        <div class="flex-between mb-16" style="align-items:center;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:34px; height:34px; border-radius:10px; background:rgba(99,102,241,0.12); display:flex; align-items:center; justify-content:center; color:var(--primary-light);">
-                    <i class="material-icons" style="font-size:1.2rem;">groups</i>
-                </div>
-                <div>
-                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
-                        My Enrolled Classrooms
-                    </h2>
-                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Real-time attendance &amp; class discussion chatrooms</p>
-                </div>
-            </div>
-            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
-                {{ enrolled_classes|length }} Active Classrooms
-            </span>
-        </div>
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-            {% for cls in enrolled_classes %}
-            <div style="background:var(--surface); border-radius:16px; padding:18px; border:1px solid var(--glass-border); display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 4px 18px rgba(0,0,0,0.25);">
-                {% set today_record = current_user.attendance_records | selectattr('classroom_id', 'equalto', cls.id) | selectattr('date', 'equalto', now_date) | first if current_user.attendance_records else None %}
-                <div>
-                    <div class="flex-between mb-8">
-                        <h3 class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text); margin:0;">
-                            {{ cls.name }}
-                        </h3>
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            {% if class_ranks and class_ranks.get(cls.id) %}
-                            <a href="{{ url_for('leaderboard', category='class', class_id=cls.id) }}"
-                                title="Your class rank"
-                                style="text-decoration:none; font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3);">
-                                <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">emoji_events</i> {{ class_ranks[cls.id].rank }}/{{ class_ranks[cls.id].total }}
-                            </a>
-                            {% endif %}
-                            {% if today_record %}
-                            <span style="font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; {% if today_record.status == 'Present' %}background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);{% else %}background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);{% endif %}">
-                                {{ today_record.status|upper }}
-                            </span>
-                            {% else %}
-                            <span style="font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">
-                                ABSENT
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <p style="font-size:0.78rem; color:var(--text-dim); margin:0 0 14px 0;">Faculty: <b style="color:var(--text);">{{ cls.teacher.username }}</b></p>
-                </div>
-                <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
-                    style="width:100%; padding:8px 12px; font-size:0.8rem; border-radius:var(--radius-sm);">
-                    <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">forum</i> Launch Class Discussion
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
 </div>
 
-<!-- Client-side Interactive Filter Script -->
+<!-- Client-side Interactive Drawer Script -->
 <script>
-function setCpCategory(category, btn) {
-    document.querySelectorAll('.cp-tab-pill').forEach(el => el.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-
-    const lecturesSec = document.getElementById('cpLecturesSection');
-    const playlistsSec = document.getElementById('cpPlaylistsSection');
-    const classesSec = document.getElementById('cpClassesSection');
-
-    if (category === 'all') {
-        if (lecturesSec) lecturesSec.style.display = 'block';
-        if (playlistsSec) playlistsSec.style.display = 'block';
-        if (classesSec) classesSec.style.display = 'block';
-    } else if (category === 'lectures') {
-        if (lecturesSec) {
-            lecturesSec.style.display = 'block';
-            lecturesSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        if (playlistsSec) playlistsSec.style.display = 'none';
-        if (classesSec) classesSec.style.display = 'none';
-    } else if (category === 'playlists') {
-        if (lecturesSec) lecturesSec.style.display = 'none';
-        if (playlistsSec) {
-            playlistsSec.style.display = 'block';
-            playlistsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-        if (classesSec) classesSec.style.display = 'none';
-    } else if (category === 'classes') {
-        if (lecturesSec) lecturesSec.style.display = 'none';
-        if (playlistsSec) playlistsSec.style.display = 'none';
-        if (classesSec) {
-            classesSec.style.display = 'block';
-            classesSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-}
-
 function toggleQuestsDrawer() {
     const drawer = document.getElementById('cpQuestsDrawer');
     if (drawer) {

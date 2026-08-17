@@ -1478,10 +1478,25 @@ body.campus-body-fullscreen .vp-hero::after {
 .cp-video-grid,
 .video-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
-    gap: 24px 20px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 20px !important;
     width: 100% !important;
     margin-bottom: 36px !important;
+}
+
+@media (max-width: 1024px) {
+    .cp-video-grid,
+    .video-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .cp-video-grid,
+    .video-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
 }
 
 /* ── Campus Player Cyber-Glass Card ── */
