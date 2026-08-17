@@ -67,8 +67,7 @@ htmlcov/
 .ruff_cache/
 
 # ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# 5. Database & Instance Files (Flask / SQLite)
+# 5. Database & Instance Files (Flask / SQLite / PostgreSQL Dumps)
 # ------------------------------------------------------------------------------
 instance/*
 !instance/.gitkeep
@@ -78,13 +77,16 @@ instance/*
 *.db-wal
 *.sqlite
 *.sqlite3
+*.dump
+*.sql
+dumps/
 
 # ------------------------------------------------------------------------------
 # 6. Logging, Background Worker & Celery Cache
 # ------------------------------------------------------------------------------
 *.log
 campusplayer.log
-celerybeat-schedule
+celerybeat-schedule*
 celerybeat.pid
 *.pid
 
@@ -113,7 +115,7 @@ _diag/
 _work/
 
 # ------------------------------------------------------------------------------
-# 9. IDE, OS & System Files
+# 9. IDE, OS & System Files / Temporary Files
 # ------------------------------------------------------------------------------
 .vscode/
 .idea/
@@ -122,3 +124,9 @@ _work/
 *~
 .DS_Store
 Thumbs.db
+desktop.ini
+*.bak
+*.tmp
+*.temp
+*.orig
+node_modules/
