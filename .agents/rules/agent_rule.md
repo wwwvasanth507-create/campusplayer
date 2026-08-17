@@ -56,6 +56,13 @@ To ensure seamless multi-developer collaboration without code drift or overwriti
 - **CSRF & Session Security**: All POST/PUT/DELETE forms and AJAX endpoints must pass `csrf_token`. Session cookies must be `HttpOnly` and `SameSite=Lax`.
 - **RBAC Decorators**: Protect endpoints using `@login_required`, `@admin_required`, `@teacher_required`, and `@system_admin_required`.
 
+### G. Database & Zero-Loss Schema Migration Standards
+- **Strictly Non-Destructive**: Never drop tables or columns in production. Always design schema modifications additively (`ALTER TABLE ... ADD COLUMN ...`).
+- **Synchronized `migrate_db.py` Registration**: Every new column or index added in `models.py` MUST be mirrored in `migrate_db.py` with safe defaults or nullable types.
+- **Dynamic Schema Inspection**: Migrations dynamically query table columns using SQLAlchemy inspector before issuing `ALTER TABLE` to guarantee complete idempotency.
+- **`CREATE INDEX IF NOT EXISTS`**: All performance indexes across foreign keys, status flags, timestamps, and tenant IDs must be created safely without collisions.
+- **Idempotent Multi-Tenant Backfill**: Transparently assigns legacy data to the default institution (`slug='default'`) so existing servers upgrade seamlessly without 500 errors.
+
 ---
 
 ## 🎨 3. UI/UX & Brand Aesthetics Rules

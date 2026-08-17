@@ -17,14 +17,21 @@ See [.agents/rules/agent_rule.md](.agents/rules/agent_rule.md) and [agent_rule.m
 - **Gamification**: XP points awarded for video watching (1 XP/tick) and quizzes (100 XP). Level formula is `(xp // 500) + 1`.
 - **PDF Generation**: Native ReportLab generation in `attendance_utils.py` and `app.py`.
 
-## 🎨 3. Branding & UI
+## 🗄️ 3. Database & Non-Destructive Schema Evolution
+- **Zero-Loss Additive Evolution**: Never drop existing production tables or columns. Schema changes must be strictly non-destructive.
+- **Mandatory `migrate_db.py` Sync**: Whenever any column or index is added to `models.py`, it MUST also be registered in `migrate_db.py` with safe default values or nullable types.
+- **Idempotent Inspections**: Migrations must inspect columns before running `ALTER TABLE` and use `CREATE INDEX IF NOT EXISTS`.
+- **Default Multi-Tenant Backfill**: Legacy data must automatically associate with the Default Institution (`slug='default'`) to prevent broken relationships or missing tenant queries.
+
+## 🎨 4. Branding & UI
 - **Branding**: The platform name must always be displayed as **`Campus Player`** (with a space) across all dashboards, templates, emails, and PDFs.
 - **Design System**: Modern Cyber-Glass styling with dark/light theme support and complete mobile-to-desktop responsive layouts.
 - **Device-Differentiated UI/UX (PC/Laptops vs Mobile Android/iOS)**:
   - **PC / Laptop / Desktop (min-width: 992px)**: High-productivity wide Cyber-Glass layouts, two-column interactive hero, rich interactive video player preview mockups, multi-column feature matrices, live platform telemetry, and keyboard-friendly (`Tab`/`Enter`) split-screen login cards.
   - **Mobile Android & iOS (< 992px)**: Native mobile app ergonomic design, touch-first large targets (min 48px), iOS notch & gesture bar safe-area insets (`env(safe-area-inset-bottom)`), segmented quick-touch role chips (`🎓 Student`, `👨‍🏫 Teacher`, `🏛️ Admin`, `⚙️ System`), swipeable cards, and sticky bottom action CTA buttons.
 
-## 👥 4. Git & Server Standards
+## 👥 5. Git & Server Standards
 - **Conventional Commits**: Format commit messages as `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`.
 - **Clean VCS**: No `.env`, database files, log files, or video `.ts`/`.m3u8` chunks committed to git.
 - **Ubuntu Server**: Production service managed via `deploy.sh` and systemd (`sudo systemctl restart campusplayer`).
+

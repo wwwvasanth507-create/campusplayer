@@ -254,7 +254,13 @@ When GitHub displays `"Cannot retrieve latest commit at this time."` on the web 
 3. **Security & CSRF**: All POST, PUT, DELETE endpoints MUST include CSRF validation (`csrf_token`). Session cookies must have `HttpOnly`, `SameSite=Lax`, and `Secure` (in HTTPS).
 4. **Responsive UI & Device Differentiation (PC/Laptops vs Mobile Android/iOS)**:
    - **PC / Laptop / Desktop (min-width: 992px)**: Wide-screen Cyber-Glass design, two-column interactive hero, animated 3D video player preview mockups, 4-column feature matrix, telemetry counters, and keyboard-optimized split-pane login cards.
-   - **Mobile Android & iOS (< 992px)**: Native mobile app ergonomics, large touch targets (min 48px), iOS safe-area insets (`env(safe-area-inset-bottom)`), segmented quick-touch role selector chips (`🎓 Student`, `👨‍🏫 Teacher`, `🏛️ Admin`, `⚙️ System`), swipeable feature cards, and sticky bottom action CTAs.
+   - **Mobile Android & iOS (< 992px)**: Native mobile app ergonomics, large touch targets (min 48px), iOS safe-area insets (`env(safe-area-inset-bottom)`), segmented quick-touch role chips (`🎓 Student`, `👨‍🏫 Teacher`, `🏛️ Admin`, `⚙️ System`), swipeable feature cards, and sticky bottom action CTAs.
+5. **Database & Zero-Loss Schema Migration Standards**:
+   - **Zero-Loss Additive Evolution**: Never drop existing production tables or columns. Schema changes must be strictly non-destructive and additive (`ALTER TABLE ... ADD COLUMN ...`).
+   - **Mandatory `migrate_db.py` Registration**: Whenever any column or index is added to `models.py`, it MUST also be registered in `migrate_db.py` with safe default values or nullable types.
+   - **Idempotent Column & Index Checks**: Migrations must inspect columns before running `ALTER TABLE` and use `CREATE INDEX IF NOT EXISTS` for all performance indexes.
+   - **Multi-Tenant Legacy Backfill**: Existing data must automatically associate with the Default Institution (`slug='default'`) to prevent orphaned records or runtime 500 crashes.
+   - **Automated Server Migration**: Production deployments via `deploy.sh` automatically execute `migrate_db.py` before restarting the application service.
 
 ---
 
