@@ -11,7 +11,7 @@ from crypto_helper import decrypt_password
 
 def send_profile_email_confirmation(student, old_email, new_email):
     teacher = None
-    class_name = 'CampusPlayer'
+    class_name = 'Campus Player'
     support_contact = 'support@campusplayer.com'
     enrollment = db.session.execute(
         student_classes.select().where(student_classes.c.student_id == student.id)
@@ -30,15 +30,15 @@ def send_profile_email_confirmation(student, old_email, new_email):
     changed_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
     remote_ip = request.remote_addr if has_request_context() else 'Unknown'
     browser_info = request.user_agent.string if has_request_context() else 'Unknown'
-    teacher_name = teacher.display_name or teacher.username if teacher else 'CampusPlayer System'
+    teacher_name = teacher.display_name or teacher.username if teacher else 'Campus Player System'
     teacher_contact = f"{teacher_name} <{teacher.email_sender_address}>" if teacher and teacher.email_sender_address else support_contact
 
     body_text = (
-        f"CampusPlayer - Email Address Updated\n"
+        f"Campus Player - Email Address Updated\n"
         f"\n"
         f"Hello {student.display_name or student.username},\n"
         f"\n"
-        f"Your CampusPlayer email address has been updated.\n"
+        f"Your Campus Player email address has been updated.\n"
         f"Previous Email: {old_email or '(not set)'}\n"
         f"Updated To: {new_email}\n"
         f"Account Username: {student.username}\n"
@@ -73,11 +73,11 @@ def send_profile_email_confirmation(student, old_email, new_email):
     except Exception:
         body_html = (
             f"<p>Hello {student.display_name or student.username},<br>"
-            f"Your CampusPlayer email address has been updated from <strong>{old_email or 'none'}</strong> to <strong>{new_email}</strong> on {changed_at}.<br><br>"
-            f"If you did not make this change, contact {support_contact} immediately and change your password in CampusPlayer.</p>"
+            f"Your Campus Player email address has been updated from <strong>{old_email or 'none'}</strong> to <strong>{new_email}</strong> on {changed_at}.<br><br>"
+            f"If you did not make this change, contact {support_contact} immediately and change your password in Campus Player.</p>"
         )
 
-    subject = 'CampusPlayer - Email Address Updated'
+    subject = 'Campus Player - Email Address Updated'
 
     if teacher:
         sender = teacher.email_sender_address

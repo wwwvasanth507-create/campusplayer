@@ -360,7 +360,7 @@ class Notification(db.Model):
 class SiteSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True)
-    institution_name = db.Column(db.String(200), nullable=True, default='CampusPlayer')
+    institution_name = db.Column(db.String(200), nullable=True, default='Campus Player')
     lock_video_speed = db.Column(db.Boolean, default=False)
     lock_video_skipping = db.Column(db.Boolean, default=False)
     global_playlist_thumbnail = db.Column(db.String(500), nullable=True)

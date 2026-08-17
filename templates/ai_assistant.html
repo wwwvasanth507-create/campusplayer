@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}AI Learning Assistant — CampusPlayer{% endblock %}
+{% block title %}AI Learning Assistant — Campus Player{% endblock %}
 
 {% block content %}
 <div style="max-width:860px; margin:0 auto; height:calc(100vh - 120px); display:flex; flex-direction:column;">
@@ -27,7 +27,7 @@
                     <span class="font-display" style="font-size:0.75rem; font-weight:700; color:var(--primary-light);">CampusBot</span>
                 </div>
                 <div style="background:var(--surface2); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:14px 18px; color:var(--text); line-height:1.6; font-size:0.88rem; box-shadow:var(--shadow);">
-                    👋 Hello <strong>{{ current_user.username }}</strong>! I'm your AI Academic Companion on <strong>CampusPlayer</strong>.<br><br>
+                    👋 Hello <strong>{{ current_user.username }}</strong>! I'm your AI Academic Companion on <strong>Campus Player</strong>.<br><br>
                     I can assist you with:<br>
                     • 📚 <strong>Concept Clarification</strong> — explanations, summaries & derivations<br>
                     • 📝 <strong>Exam Prep</strong> — practice problems, review guides & quizzes<br>
@@ -41,7 +41,7 @@
         <!-- Suggested Questions -->
         <div id="suggestions" style="padding:0 18px 10px; display:flex; gap:6px; flex-wrap:wrap;">
             <button class="suggest-btn" onclick="askSuggestion('Explain Newton\u0027s laws of motion')">⚡ Newton's Laws</button>
-            <button class="suggest-btn" onclick="askSuggestion('How do I earn XP and level up on CampusPlayer?')">🏆 XP & Levels</button>
+            <button class="suggest-btn" onclick="askSuggestion('How do I earn XP and level up on Campus Player?')">🏆 XP & Levels</button>
             <button class="suggest-btn" onclick="askSuggestion('Give me 5 proven study tips for exams')">📝 Exam Study Tips</button>
             <button class="suggest-btn" onclick="askSuggestion('How does the attendance monitoring system work?')">📋 Attendance Guide</button>
         </div>

@@ -1,6 +1,6 @@
-# 📢 CampusPlayer Marketing Package
+# 📢 Campus Player Marketing Package
 
-This folder contains all promotional and presentation materials for **CampusPlayer**.
+This folder contains all promotional and presentation materials for **Campus Player**.
 
 ---
 
@@ -65,7 +65,7 @@ No internet required except for Google Fonts (optional — works offline too).
 
 **Slides covered:**
 1. 🎓 Title / Cover Slide
-2. 📋 What is CampusPlayer?
+2. 📋 What is Campus Player?
 3. 👥 Three User Roles (Admin/Teacher/Student)
 4. 📹 Video Management (HLS, Playlists, Thumbnails)
 5. 📋 Attendance System (Present/Late/Absent/SMS)
@@ -106,4 +106,4 @@ No internet required except for Google Fonts (optional — works offline too).
 
 ---
 
-© 2026 Vasanth V. — CampusPlayer. All Rights Reserved. See LICENSE.md.
+© 2026 Vasanth V. — Campus Player. All Rights Reserved. See LICENSE.md.

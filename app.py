@@ -3372,7 +3372,7 @@ def mark_attendance(class_id, student_id):
     if lates >= 3:
         flash(f"WARNING: Student {student.username} late {lates} times! Parent notified via SMS.", 'warning')
         if student.phone:
-            alert_msg = f"🎓 CampusPlayer: Student {student.username} has been Late for {lates} times this month."
+            alert_msg = f"🎓 Campus Player: Student {student.username} has been Late for {lates} times this month."
             alert_data = [{'phone': student.phone, 'msg': alert_msg}]
             job_id = f"alert-{uuid.uuid4()}"
             SMS_JOBS[job_id] = {'status': 'queued', 'msg': 'Alert Queued', 'total': 1, 'current': 0}
@@ -3381,13 +3381,13 @@ def mark_attendance(class_id, student_id):
         if student.parent_email:
             parent_subject = f"⚠️ Attendance Alert: {student.username} - Late {lates} times"
             parent_body = f"""
-            <h2>CampusPlayer Attendance Alert</h2>
+            <h2>Campus Player Attendance Alert</h2>
             <p>Dear {student.parent_name or 'Parent'},</p>
             <p>This is to inform you that <strong>{student.username}</strong> has been marked <strong>Late</strong> 
             {lates} times this month.</p>
             <p>Please encourage your ward to arrive on time for classes.</p>
             <hr>
-            <p style="color:#666;font-size:12px;">- CampusPlayer Monitoring Team</p>
+            <p style="color:#666;font-size:12px;">- Campus Player Monitoring Team</p>
             """
             send_async_email(student.parent_email, parent_subject, parent_body)
     flash(f'Attendance marked for {student.username}: {status}', 'success')
@@ -3396,7 +3396,7 @@ def mark_attendance(class_id, student_id):
     if absent_streak:
         flash(f"CRITICAL: Student {student.username} absent for 3 consecutive days!", 'error')
         if student.phone:
-            alert_msg = f"🎓 CampusPlayer CRITICAL: Student {student.username} has been ABSENT for 3 consecutive days."
+            alert_msg = f"🎓 Campus Player CRITICAL: Student {student.username} has been ABSENT for 3 consecutive days."
             alert_data = [{'phone': student.phone, 'msg': alert_msg}]
             job_id = f"critical-{uuid.uuid4()}"
             SMS_JOBS[job_id] = {'status': 'queued', 'msg': 'Critical Alert Queued', 'total': 1, 'current': 0}
@@ -3411,7 +3411,7 @@ def mark_attendance(class_id, student_id):
             <p>Your ward has been marked <strong>Absent</strong> for 3 consecutive days.</p>
             <p>Please contact the school administration immediately to address this concern.</p>
             <hr>
-            <p style="color:#666;font-size:12px;">- CampusPlayer Monitoring Team</p>
+            <p style="color:#666;font-size:12px;">- Campus Player Monitoring Team</p>
             """
             send_async_email(student.parent_email, parent_subject, parent_body)
     return redirect(url_for('teacher_attendance_page', class_id=class_id))
@@ -3501,7 +3501,7 @@ def send_profile_email_confirmation(student, old_email, new_email):
         # Find a teacher who has email configured for this student
         teacher = None
         cls = None
-        class_name = "CampusPlayer"
+        class_name = "Campus Player"
         from models import Classroom
         enrollment = db.session.execute(
             student_classes.select().where(student_classes.c.student_id == student.id)
@@ -3521,11 +3521,11 @@ def send_profile_email_confirmation(student, old_email, new_email):
         browser_info = request.user_agent.string if has_request_context() else 'Unknown'
 
         body_text = (
-            f"CampusPlayer - Email Address Updated\n"
+            f"Campus Player - Email Address Updated\n"
             f"\n"
             f"Hello {student.display_name or student.username},\n"
             f"\n"
-            f"Your CampusPlayer email address has been updated.\n"
+            f"Your Campus Player email address has been updated.\n"
             f"Previous Email: {old_email or '(not set)'}\n"
             f"New Email: {new_email}\n"
             f"Student ID: CP-{student.id:04d}\n"
@@ -3549,17 +3549,17 @@ def send_profile_email_confirmation(student, old_email, new_email):
                 class_name=class_name,
                 changed_at=changed_at,
                 login_link=login_link,
-                teacher_name=teacher.display_name or teacher.username if teacher else "CampusPlayer System"
+                teacher_name=teacher.display_name or teacher.username if teacher else "Campus Player System"
             )
         except Exception as te:
             logger.error(f"Profile-email template render error: {te}")
             body_html = (
                 f"<p>Hello {student.display_name or student.username},<br>"
-                f"Your CampusPlayer email address has been updated to <strong>{new_email}</strong>.<br>"
+                f"Your Campus Player email address has been updated to <strong>{new_email}</strong>.<br>"
                 f"If you did not make this change, contact your administrator.</p>"
             )
 
-        subject = "CampusPlayer - Email Address Updated"
+        subject = "Campus Player - Email Address Updated"
 
         if teacher:
             # Send via teacher's SMTP
@@ -3653,7 +3653,7 @@ def send_profile_email_confirmation(student, old_email, new_email):
                 teacher_id=teacher.id if 'teacher' in locals() and teacher else 0,
                 student_id=student.id,
                 student_email=new_email,
-                subject="CampusPlayer - Email Address Updated",
+                subject="Campus Player - Email Address Updated",
                 status='failed',
                 error_message=str(e)[:300],
                 report_type='profile_email_update'
@@ -3725,7 +3725,7 @@ def send_student_report_smtp(student, classroom, teacher, execution_id, report_t
     total_quizzes_taken = getattr(student, 'total_quizzes_taken', 0) or 0
 
     # NEW: Institution Name (per-institution if set, else the site-wide default)
-    institution_name = 'CampusPlayer'
+    institution_name = 'Campus Player'
     try:
         if getattr(student, 'institution_id', None):
             inst = Institution.query.get(student.institution_id)
@@ -3751,7 +3751,7 @@ def send_student_report_smtp(student, classroom, teacher, execution_id, report_t
     student_login_id = student.username
 
     body_text = (
-        f"CampusPlayer Student Progress Report\n"
+        f"Campus Player Student Progress Report\n"
         f"\n"
         f"Institution: {institution_name}\n"
         f"Sent By (Teacher): {teacher.display_name or teacher.username if teacher else 'Teacher'}\n"
@@ -3994,7 +3994,7 @@ def _generate_student_progress_report_pdf(student, classroom, attendance_records
         st = _pdf_styles()
         story = []
 
-        story.append(Paragraph('CampusPlayer Academic Progress Report', st['title']))
+        story.append(Paragraph('Campus Player Academic Progress Report', st['title']))
         story.append(Paragraph(f'Generated on: {report_date}', st['sub']))
         story.append(HRFlowable(width='100%', thickness=2, color=colors.HexColor('#4f46e5')))
         story.append(Spacer(1, 6*mm))
@@ -4392,7 +4392,7 @@ def ai_chat():
                 model = genai.GenerativeModel(
                     model_name=m_name,
                     system_instruction=(
-                        f"You are CampusBot, an intelligent AI assistant for CampusPlayer — an educational platform. "
+                        f"You are CampusBot, an intelligent AI assistant for Campus Player — an educational platform. "
                         f"You are helping a {current_user.role}: '{current_user.username}'. "
                         f"Help with: study doubts, coursework, quiz prep, video content, attendance, platform usage, and general academics. "
                         f"Be friendly, concise, supportive. Use markdown. "
@@ -4559,7 +4559,7 @@ def ai_video_chat():
                 model = genai.GenerativeModel(
                     model_name=m_name,
                     system_instruction=(
-                        f"You are CampusBot, an AI video tutor for CampusPlayer. "
+                        f"You are CampusBot, an AI video tutor for Campus Player. "
                         f"You are helping a {current_user.role}: '{current_user.username}'. "
                         f"You have access to the video title, description, and the exact timestamp the student paused at. "
                         f"Answer the student's doubt based on the video content context provided. "
@@ -4754,7 +4754,7 @@ def send_class_sms_report(class_id):
         att_pct = (present_days / total_days * 100) if total_days > 0 else 0
         
         msg = (
-            f"🎓 CampusPlayer Report: {s.username}\n"
+            f"🎓 Campus Player Report: {s.username}\n"
             f"Date: {now.strftime('%d %b %Y')}\n"
             f"Today's Status: {status}\n"
             f"XP: {s.xp} (Level {level})\n"
@@ -4806,7 +4806,7 @@ def download_class_sms_report(class_id):
         present_days = len([r for r in monthly_recs if r.status == 'Present'])
         att_pct = (present_days / total_days * 100) if total_days > 0 else 0
         msg = (
-            f"🎓 CampusPlayer Report: {s.username}\n"
+            f"🎓 Campus Player Report: {s.username}\n"
             f"Date: {now.strftime('%d %b %Y')}\n"
             f"Today's Status: {status}\n"
             f"XP: {s.xp} (Level {level})\n"
@@ -4835,7 +4835,7 @@ def get_sms_text(student_id):
     present = len([r for r in monthly_records if r.status == 'Present'])
     att_pct = (present / total * 100) if total > 0 else 0
     msg = (
-        f"🎓 CampusPlayer Report: {student.username}\n"
+        f"🎓 Campus Player Report: {student.username}\n"
         f"Date: {now.strftime('%d %b %Y')}\n"
         f"Today's Status: {status}\n"
         f"XP: {student.xp} (Level {level})\n"
@@ -4915,7 +4915,7 @@ def download_attendance_pdf(student_id):
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18*mm, rightMargin=18*mm, topMargin=20*mm, bottomMargin=18*mm)
     st = _pdf_styles(); story = []
-    story.append(Paragraph('🎓 CampusPlayer', st['sub']))
+    story.append(Paragraph('🎓 Campus Player', st['sub']))
     story.append(Paragraph('Attendance Report', st['title']))
     story.append(Paragraph(f'Student: <b>{student.username}</b> &nbsp;|&nbsp; Generated: {now.strftime("%B %d, %Y %H:%M")}', st['sub']))
     story.append(HRFlowable(width='100%', thickness=2, color=colors.HexColor('#4f46e5')))
@@ -4955,7 +4955,7 @@ def download_attendance_pdf(student_id):
     else: story.append(Paragraph('No attendance records found.', st['body']))
     story.append(Spacer(1, 10*mm))
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#e2e8f0')))
-    story.append(Paragraph(f'CampusPlayer — {today.strftime("%B %d, %Y")}', ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER)))
+    story.append(Paragraph(f'Campus Player — {today.strftime("%B %d, %Y")}', ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER)))
     doc.build(story); buf.seek(0)
     filename = f'{student.username}_{today.strftime("%Y-%m-%d")}.pdf'
     response = make_response(buf.getvalue())
@@ -4975,7 +4975,7 @@ def download_levels_pdf(user_id):
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18*mm, rightMargin=18*mm, topMargin=20*mm, bottomMargin=18*mm)
     st = _pdf_styles(); story = []
-    story.append(Paragraph('🎓 CampusPlayer', st['sub']))
+    story.append(Paragraph('🎓 Campus Player', st['sub']))
     story.append(Paragraph('Levels & XP Report', st['title']))
     story.append(Paragraph(f'User: <b>{user.username}</b> ({user.role.title()}) &nbsp;|&nbsp; Generated: {now.strftime("%B %d, %Y %H:%M")}', st['sub']))
     story.append(HRFlowable(width='100%', thickness=2, color=colors.HexColor('#4f46e5')))
@@ -5005,7 +5005,7 @@ def download_levels_pdf(user_id):
         story.append(att_table)
     story.append(Spacer(1, 10*mm))
     story.append(HRFlowable(width='100%', thickness=1, color=colors.HexColor('#e2e8f0')))
-    story.append(Paragraph(f'CampusPlayer — {today.strftime("%B %d, %Y")}', ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER)))
+    story.append(Paragraph(f'Campus Player — {today.strftime("%B %d, %Y")}', ParagraphStyle('footer', fontSize=8, textColor=colors.HexColor('#94a3b8'), alignment=TA_CENTER)))
     doc.build(story); buf.seek(0)
     filename = f'{user.username}_{today.strftime("%Y-%m-%d")}.pdf'
     response = make_response(buf.getvalue())
@@ -5391,7 +5391,7 @@ def playlist_certificate(playlist_id):
         return redirect(url_for('view_playlist', playlist_id=playlist_id))
     
     settings = SiteSettings.query.first()
-    institution_name = settings.institution_name if settings and settings.institution_name else 'CampusPlayer'
+    institution_name = settings.institution_name if settings and settings.institution_name else 'Campus Player'
     
     now = datetime.now()
     buf = io.BytesIO()
