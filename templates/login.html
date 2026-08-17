@@ -1,26 +1,52 @@
 {% extends "layout.html" %}
 {% block content %}
 <div class="auth-card-wrap">
-    <div class="card card-royal auth-card">
-        <div class="card-title" style="justify-content:center;">
-            <i class="material-icons">school</i> CampusPlayer
+    <div class="card auth-card">
+        <div class="auth-header text-center">
+            <div class="auth-logo-icon">
+                <i class="material-icons">videocam</i>
+            </div>
+            <div class="auth-brand-title font-display">CampusPlayer</div>
+            <p class="auth-subtitle">High-Definition Academic Video & Learning Platform</p>
         </div>
-        <p class="text-muted text-center fs-small mb-16">Sign in to your account</p>
-        <form method="POST">
+
+        <form method="POST" class="auth-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <label>Username</label>
-            <input type="text" name="username" placeholder="Enter username" required>
-            <label>Password</label>
-            <input type="password" name="password" placeholder="Enter password" required>
-            <label>I am a</label>
-            <select name="role" required>
-                <option value="">Select role...</option>
-                <option value="system_admin">System Admin</option>
-                <option value="admin">Admin</option>
-                <option value="teacher">Teacher</option>
-                <option value="student">Student</option>
-            </select>
-            <button type="submit" class="btn btn-primary">Sign In</button>
+            
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-icon-wrap">
+                    <i class="material-icons input-icon">person</i>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-icon-wrap">
+                    <i class="material-icons input-icon">lock</i>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="roleSelect">Account Role</label>
+                <div class="input-icon-wrap">
+                    <i class="material-icons input-icon">badge</i>
+                    <select id="roleSelect" name="role" required>
+                        <option value="">Select your role...</option>
+                        <option value="student">🎓 Student</option>
+                        <option value="teacher">👨‍🏫 Teacher</option>
+                        <option value="admin">🏢 Institution Admin</option>
+                        <option value="system_admin">⚡ System Super Admin</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-auth-submit">
+                <span>Sign In to Portal</span>
+                <i class="material-icons" style="font-size:1.1rem;">arrow_forward</i>
+            </button>
         </form>
     </div>
 </div>
@@ -30,48 +56,124 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(100vh - 160px);
-    padding: 20px 0;
+    min-height: calc(100vh - 180px);
+    padding: 30px 16px;
 }
 
 .auth-card {
-    max-width: 380px;
+    max-width: 420px;
     width: 100%;
     margin: 0 auto;
+    padding: 32px 28px;
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    position: relative;
 }
 
-@media (max-width: 420px) {
-    .auth-card-wrap {
-        min-height: calc(100vh - 120px);
-        padding: 12px 0;
-    }
-
-    .auth-card {
-        padding: 20px 16px;
-        border-radius: 16px !important;
-    }
-
-    .auth-card .card-title {
-        font-size: 0.9rem;
-    }
+.auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--brand-gradient);
+    border-radius: 2px;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-    .auth-card-wrap {
-        min-height: auto;
-        padding: 8px 0;
-    }
+.auth-header {
+    margin-bottom: 24px;
+}
 
+.auth-logo-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 12px;
+    border-radius: 18px;
+    background: var(--brand-gradient);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4), 0 0 15px rgba(0, 229, 255, 0.3);
+}
+
+.auth-logo-icon i {
+    font-size: 2rem;
+    color: #ffffff;
+}
+
+.auth-brand-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+}
+
+.auth-subtitle {
+    font-size: 0.76rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+.input-icon-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon-wrap .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.15rem;
+    color: var(--text-dim);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.input-icon-wrap input,
+.input-icon-wrap select {
+    padding-left: 44px;
+    margin-bottom: 16px;
+}
+
+.input-icon-wrap input:focus + .input-icon,
+.input-icon-wrap select:focus + .input-icon {
+    color: var(--accent);
+}
+
+.btn-auth-submit {
+    width: 100%;
+    margin-top: 6px;
+    height: 48px;
+    font-size: 0.94rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+}
+
+@media (max-width: 480px) {
     .auth-card {
-        padding: 16px 14px;
+        padding: 24px 20px;
+        border-radius: var(--radius);
     }
 
-    .auth-card .card-title {
-        margin-bottom: 8px;
+    .auth-logo-icon {
+        width: 48px;
+        height: 48px;
     }
 
-    .auth-card p.mb-16 {
-        margin-bottom: 8px;
+    .auth-logo-icon i {
+        font-size: 1.7rem;
+    }
+
+    .auth-brand-title {
+        font-size: 1.35rem;
     }
 }
 </style>

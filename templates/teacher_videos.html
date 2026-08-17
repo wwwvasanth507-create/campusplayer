@@ -140,119 +140,120 @@
     }
 </style>
 
-<div class="page-header">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
-            class="material-icons">arrow_back</i></a>
-    <div>
-        <h1
-            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#ffeb3b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            All Campus Videos</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">{{ videos|length }} total video(s)</p>
+<div class="page-header flex-between" style="margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Teacher Video Studio</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">{{ videos|length }} total video(s) &bull; Multi-stream chunked uploader with HLS parallel processing</p>
+        </div>
     </div>
 </div>
 
 <!-- Upload Card -->
-<div class="upload-card">
-    <h3 style="margin-top:0; color:#ffeb3b; display:flex; align-items:center; gap:8px;"><i
-            class="material-icons">cloud_upload</i> Upload New Video (Supports up to 20 GB)</h3>
+<div class="card card-royal upload-card" style="margin-bottom:24px;">
+    <div class="card-title font-display" style="color:var(--gold); display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        <i class="material-icons">cloud_upload</i> High-Speed Video Uploader (Supports up to 20 GB)
+    </div>
     <form id="upload-form" enctype="multipart/form-data">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:16px; margin-bottom:16px;">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Video Title *</label>
-                <input type="text" name="title" id="video-title" placeholder="Video Title" required
-                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:14px;">
+            <div>
+                <label>Video Title *</label>
+                <input type="text" name="title" id="video-title" placeholder="Lecture / Chapter Title" required style="margin-bottom:0;">
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Classroom Association</label>
-                <select name="classroom_id" id="video-classroom"
-                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
-                    <option value="-1">None (Global Video)</option>
+            <div>
+                <label>Classroom Association</label>
+                <select name="classroom_id" id="video-classroom" style="margin-bottom:0;">
+                    <option value="-1">🌐 Global Video (Public to Campus)</option>
                     {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    <option value="{{ c.id }}">📚 {{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Select Video File *</label>
-                <div style="position:relative; display:flex; gap:8px;">
+            <div>
+                <label>Select Video File *</label>
+                <div style="display:flex; gap:8px; align-items:center;">
                     <input type="file" name="video_file" id="video-file" required accept="video/*"
                         style="opacity:0; position:absolute; z-index:-1;" onchange="document.getElementById('file-chosen-label').innerText = this.files[0] ? this.files[0].name : 'No file chosen'">
-                    <button type="button" class="btn btn-secondary" style="margin:0; padding:12px 16px; border-radius:10px; min-height:44px; flex:1;"
+                    <button type="button" class="btn btn-outline" style="margin:0; padding:10px 14px; min-height:44px; flex:1;"
                         onclick="document.getElementById('video-file').click()">
-                        <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">attach_file</i> Choose Video
+                        <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">attach_file</i> Choose Video
                     </button>
-                    <span id="file-chosen-label" style="font-size:0.75rem; color:var(--text-secondary); align-self:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;">No file chosen</span>
+                    <span id="file-chosen-label" style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">No file chosen</span>
                 </div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:16px;">
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Description</label>
-                <textarea id="video-desc" placeholder="Provide a brief description of the video content..." 
-                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:80px; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+                <label>Description</label>
+                <textarea id="video-desc" placeholder="Provide a brief summary of topics covered..." 
+                    style="margin-bottom:0; min-height:80px; resize:vertical;"></textarea>
             </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Tags (Comma separated)</label>
-                <input type="text" id="video-tags" placeholder="e.g. python, tutorial, basics"
-                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:44px; box-sizing:border-box;">
-                
-                <button type="submit" id="upload-btn" class="btn" style="margin-top:auto; white-space:nowrap; padding:12px 22px; border-radius:10px; min-height:44px; font-weight:700; background:linear-gradient(135deg, #7c4dff, #00e5ff); color:#fff; border:none; cursor:pointer;">
-                    <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">upload</i> Upload Video
+            <div style="display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <label>Tags (Comma separated)</label>
+                    <input type="text" id="video-tags" placeholder="e.g. math, physics, tutorial" style="margin-bottom:8px;">
+                </div>
+                <button type="submit" id="upload-btn" class="btn btn-primary" style="height:44px; width:100%;">
+                    <i class="material-icons" style="font-size:1.1rem;">upload</i>
+                    <span>Start Upload</span>
                 </button>
             </div>
         </div>
 
         <div id="upload-progress-container"
-            style="display:none; margin-top:16px; background:rgba(255,255,255,0.03); padding:18px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);">
+            style="display:none; margin-top:16px; background:var(--surface2); padding:18px; border-radius:14px; border:1px solid var(--border);">
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-                <span id="upload-speed-badge" style="font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:10px; background:rgba(0,229,255,0.15); color:#00e5ff; display:inline-flex; align-items:center; gap:4px;">
+                <span id="upload-speed-badge" style="font-size:0.75rem; font-weight:700; font-family:'JetBrains Mono',monospace; padding:4px 10px; border-radius:10px; background:rgba(0,229,255,0.15); color:#00e5ff; display:inline-flex; align-items:center; gap:4px; border:1px solid rgba(0,229,255,0.3);">
                     <i class="material-icons" style="font-size:0.9rem;">speed</i> <span id="speed-text">0.0 MB/s</span>
                 </span>
-                <span id="upload-eta-badge" style="font-size:0.75rem; color:var(--text-secondary);">
-                    ETA: <span id="eta-text" style="font-weight:700; color:#fff;">--</span>
+                <span id="upload-eta-badge" style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                    ETA: <span id="eta-text" style="font-weight:700; color:var(--text);">--</span>
                 </span>
             </div>
 
             <div style="margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span style="font-size:0.8rem; color:#bb86fc; font-weight:600;">1. High-Speed Multi-Stream Upload</span>
-                    <span id="upload-percentage" style="font-size:0.8rem; font-weight:700; color:#bb86fc;">0%</span>
+                    <span style="font-size:0.8rem; color:var(--primary-light); font-weight:600;">1. High-Speed Multi-Stream Chunk Upload</span>
+                    <span id="upload-percentage" style="font-size:0.8rem; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--primary-light);">0%</span>
                 </div>
-                <div style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
-                    <div id="upload-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#bb86fc,#00e5ff); transition:width 0.3s;"></div>
+                <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
+                    <div id="upload-progress-bar" style="width:0%; height:100%; background:var(--brand-gradient); transition:width 0.3s;"></div>
                 </div>
             </div>
 
             <!-- Active Parallel Streams Bar -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:6px; margin-bottom:12px;" id="parallel-streams-container">
-                <div id="stream-1-badge" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:4px 8px; font-size:0.68rem; text-align:center; color:var(--text-secondary);">Stream 1: Ready</div>
-                <div id="stream-2-badge" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:4px 8px; font-size:0.68rem; text-align:center; color:var(--text-secondary);">Stream 2: Ready</div>
-                <div id="stream-3-badge" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:4px 8px; font-size:0.68rem; text-align:center; color:var(--text-secondary);">Stream 3: Ready</div>
-                <div id="stream-4-badge" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:4px 8px; font-size:0.68rem; text-align:center; color:var(--text-secondary);">Stream 4: Ready</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); gap:6px; margin-bottom:12px;" id="parallel-streams-container">
+                <div id="stream-1-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 1: Ready</div>
+                <div id="stream-2-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 2: Ready</div>
+                <div id="stream-3-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 3: Ready</div>
+                <div id="stream-4-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 4: Ready</div>
             </div>
 
             <div>
                 <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                    <span style="font-size:0.8rem; color:#00e5ff; font-weight:600;">2. HLS Multi-Resolution Conversion</span>
-                    <span id="processing-percentage" style="font-size:0.8rem; font-weight:700; color:#00e5ff;">0%</span>
+                    <span style="font-size:0.8rem; color:#00e5ff; font-weight:600;">2. HLS Multi-Resolution Conversion (1080p, 720p, 480p, 360p)</span>
+                    <span id="processing-percentage" style="font-size:0.8rem; font-weight:700; font-family:'JetBrains Mono',monospace; color:#00e5ff;">0%</span>
                 </div>
-                <div style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
-                    <div id="processing-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#00b8d4); transition:width 0.3s;"></div>
+                <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
+                    <div id="processing-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#6366f1); transition:width 0.3s;"></div>
                 </div>
             </div>
-            <p id="system-status" style="font-size:0.75rem; color:var(--text-secondary); margin:10px 0 0; text-align:center;">Preparing upload streams...</p>
+            <p id="system-status" style="font-size:0.75rem; color:var(--text-dim); margin:10px 0 0; text-align:center;">Preparing upload streams...</p>
         </div>
     </form>
 </div>
 
 <!-- Search -->
-<div class="search-wrap">
-    <form method="GET">
-        <i class="material-icons si">search</i>
-        <input type="text" name="q" placeholder="Search all videos..." value="{{ search_query or '' }}"
-            oninput="this.form.submit()">
+<div class="search-wrap" style="margin-bottom:20px;">
+    <form method="GET" style="margin:0; position:relative;">
+        <i class="material-icons si" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>
+        <input type="text" name="q" placeholder="Search videos by title or tags..." value="{{ search_query or '' }}"
+            style="padding-left:42px; margin-bottom:0; height:46px; border-radius:var(--radius-pill);">
     </form>
 </div>
 

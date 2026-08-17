@@ -1,81 +1,108 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="page-title">System Admin Portal</div>
-<p class="page-sub">Manage every institution independently. Nothing is shared between them.</p>
+<div class="admin-header-wrap flex-between" style="margin-bottom:14px; flex-wrap:wrap; gap:12px;">
+    <div>
+        <div class="page-title font-display" style="margin:0;">System Admin Portal</div>
+        <p class="page-sub" style="margin:2px 0 0 0;">Multi-Tenant Infrastructure &bull; Independent Institution Management</p>
+    </div>
+    <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('institutions_export_excel') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.78rem;">
+            <i class="material-icons" style="font-size:1.05rem;color:#10b981;">file_download</i> Export Excel
+        </a>
+    </div>
+</div>
 
-<div class="card" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:14px;">
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.total_institutions }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Institutions</div></div>
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.total_admins }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Admins</div></div>
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.total_teachers }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Teachers</div></div>
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.total_students }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Students</div></div>
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.total_videos }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Videos</div></div>
-    <div><div style="font-size:1.6rem; font-weight:700;">{{ stats.active_today }}</div><div style="color:var(--text-secondary); font-size:0.8rem;">Active Today</div></div>
+<div class="stat-grid-6" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
+    <div class="stat-card stat-gold">
+        <div class="stat-val font-display">{{ stats.total_institutions }}</div>
+        <div class="stat-lbl">Institutions</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:var(--primary-light);">{{ stats.total_admins }}</div>
+        <div class="stat-lbl">Admins</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:#00e5ff;">{{ stats.total_teachers }}</div>
+        <div class="stat-lbl">Teachers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:#10b981;">{{ stats.total_students }}</div>
+        <div class="stat-lbl">Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:#ff9800;">{{ stats.total_videos }}</div>
+        <div class="stat-lbl">Videos</div>
+    </div>
+    <div class="stat-card stat-purple">
+        <div class="stat-val font-display">{{ stats.active_today }}</div>
+        <div class="stat-lbl">Active Today</div>
+    </div>
 </div>
 
 <div class="card">
-    <div class="card-title"><i class="material-icons">add_business</i> Create New Institution</div>
-    <form method="POST" action="{{ url_for('create_institution') }}" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+    <div class="card-title font-display"><i class="material-icons">add_business</i> Create New Institution</div>
+    <form method="POST" action="{{ url_for('create_institution') }}" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:flex-end;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div style="flex:1; min-width:180px;">
+        <div>
             <label>Institution Name</label>
-            <input type="text" name="institution_name" required placeholder="e.g. Green Valley College">
+            <input type="text" name="institution_name" required placeholder="e.g. Green Valley University" style="margin-bottom:0;">
         </div>
-        <div style="flex:1; min-width:150px;">
+        <div>
             <label>Admin Username</label>
-            <input type="text" name="admin_username" required>
+            <input type="text" name="admin_username" required placeholder="admin username" style="margin-bottom:0;">
         </div>
-        <div style="flex:1; min-width:150px;">
+        <div>
             <label>Admin Password</label>
-            <input type="password" name="admin_password" required minlength="4">
+            <input type="password" name="admin_password" required minlength="4" placeholder="password" style="margin-bottom:0;">
         </div>
-        <button type="submit" class="btn btn-primary">Create Institution</button>
+        <div>
+            <button type="submit" class="btn btn-primary" style="height:44px; width:100%;">Create Institution</button>
+        </div>
     </form>
 </div>
 
 <div class="card">
-    <div class="card-title"><i class="material-icons">apartment</i> Institutions</div>
-    <div style="margin-bottom:10px;">
-        <a href="{{ url_for('institutions_export_excel') }}" class="btn" style="padding:6px 12px; font-size:0.75rem;">⬇️ Export All (Excel)</a>
-    </div>
+    <div class="card-title font-display"><i class="material-icons">apartment</i> Institutions ({{ institutions|length }})</div>
     {% if institutions %}
     {% for inst in institutions %}
-    <div style="background:var(--bg-primary); border-radius:12px; padding:14px; margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; transition:all 0.3s ease;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-                <strong>{{ inst.name }}</strong>
-                <span style="font-size:0.7rem; padding:2px 8px; border-radius:10px; margin-left:8px;
-                    background:{{ 'rgba(0,230,118,0.15)' if inst.status=='active' else 'rgba(255,82,82,0.15)' }};
-                    color:{{ '#00e676' if inst.status=='active' else '#ff5252' }};">{{ inst.status }}</span>
-                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:4px;">
-                    Admin: {{ inst.owner_admin.username if inst.owner_admin else '—' }} · Slug: {{ inst.slug }}
+                <span class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text);">{{ inst.name }}</span>
+                <span style="font-size:0.68rem; font-family:'JetBrains Mono', monospace; font-weight:700; padding:3px 8px; border-radius:10px; margin-left:8px;
+                    background:{{ 'rgba(16,185,129,0.15)' if inst.status=='active' else 'rgba(244,63,94,0.15)' }};
+                    color:{{ '#10b981' if inst.status=='active' else '#f43f5e' }};
+                    border:1px solid {{ 'rgba(16,185,129,0.3)' if inst.status=='active' else 'rgba(244,63,94,0.3)' }};">{{ inst.status|upper }}</span>
+                <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                    Admin: <b style="color:var(--text);">{{ inst.owner_admin.username if inst.owner_admin else '—' }}</b> &bull; Slug: <span style="font-family:'JetBrains Mono',monospace;">{{ inst.slug }}</span>
                 </div>
             </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <a href="{{ url_for('institution_report_pdf', institution_id=inst.id) }}" class="btn" style="padding:6px 10px; font-size:0.72rem;">📄 Report PDF</a>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <a href="{{ url_for('institution_report_pdf', institution_id=inst.id) }}" class="btn btn-outline" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">📄 Report PDF</a>
                 {% if inst.status == 'active' %}
                 <form method="POST" action="{{ url_for('suspend_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; background:rgba(255,152,0,0.15); color:#ff9800;">Suspend</button>
+                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">Suspend</button>
                 </form>
                 {% else %}
                 <form method="POST" action="{{ url_for('activate_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; background:rgba(0,230,118,0.15); color:#00e676;">Activate</button>
+                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">Activate</button>
                 </form>
                 {% endif %}
                 <form method="POST" action="{{ url_for('force_logout_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">Force Logout</button>
+                    <button type="submit" class="btn btn-outline" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">Force Logout</button>
                 </form>
                 {% if inst.owner_admin %}
                 <form method="POST" action="{{ url_for('sysadmin_reset_admin_password', admin_id=inst.owner_admin.id) }}" style="margin:0; display:flex; gap:4px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="password" name="new_password" placeholder="New admin password" style="padding:5px 8px; font-size:0.72rem; width:130px; border-radius:6px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">Reset Pwd</button>
+                    <input type="password" name="new_password" placeholder="New pwd" style="padding:5px 8px; font-size:0.72rem; width:100px; margin-bottom:0; min-height:34px; height:34px; border-radius:8px;">
+                    <button type="submit" class="btn btn-outline" style="padding:6px 8px; font-size:0.72rem; min-height:34px;">Reset</button>
                 </form>
                 <form method="POST" action="{{ url_for('delete_admin', admin_id=inst.owner_admin.id) }}" style="margin:0;" onsubmit="return confirm('Delete this admin and their entire institution? This cannot be undone.');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; background:rgba(255,82,82,0.15); color:#ff5252;">Delete</button>
+                    <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">Delete</button>
                 </form>
                 {% endif %}
             </div>
@@ -83,7 +110,7 @@
     </div>
     {% endfor %}
     {% else %}
-    <p style="color:var(--text-secondary);">No institutions created yet.</p>
+    <p style="color:var(--text-dim); font-size:0.85rem;">No institutions created yet.</p>
     {% endif %}
 </div>
 
