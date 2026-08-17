@@ -101,6 +101,23 @@ def migrate():
         inspector = db.inspect(db.engine)
         
         migrations = {
+            'institution': {
+                'columns': [
+                    ('slug', 'VARCHAR(100)'),
+                    ('owner_admin_id', 'INTEGER'),
+                    ('status', 'VARCHAR(20) DEFAULT \'active\''),
+                    ('logo_url', 'VARCHAR(500)'),
+                    ('storage_root', 'VARCHAR(500)'),
+                    ('storage_used_bytes', 'BIGINT DEFAULT 0'),
+                    ('allow_manual_video_delete', 'BOOLEAN DEFAULT 1'),
+                    ('allow_auto_video_delete', 'BOOLEAN DEFAULT 1'),
+                    ('max_video_retention_days', 'INTEGER DEFAULT 365'),
+                ],
+                'indexes': [
+                    ('ix_institution_status', 'status'),
+                    ('ix_institution_owner_admin_id', 'owner_admin_id'),
+                ]
+            },
             'user': {
                 'columns': [
                     ('level', 'INTEGER DEFAULT 1'),
@@ -111,6 +128,16 @@ def migrate():
                     ('achievements_json', 'TEXT DEFAULT \'[]\''),
                     ('quests_json', 'TEXT DEFAULT \'{}\''),
                     ('bio', 'TEXT'),
+                    ('display_name', 'VARCHAR(150)'),
+                    ('avatar_url', 'VARCHAR(500)'),
+                    ('theme_preference', 'VARCHAR(10) DEFAULT \'dark\''),
+                    ('last_login', 'DATETIME'),
+                    ('last_active', 'DATETIME'),
+                    ('login_count', 'INTEGER DEFAULT 0'),
+                    ('email', 'VARCHAR(150)'),
+                    ('phone', 'VARCHAR(20)'),
+                    ('parent_email', 'VARCHAR(150)'),
+                    ('parent_name', 'VARCHAR(150)'),
                     ('email_sender_address', 'VARCHAR(150)'),
                     ('encrypted_app_password', 'VARCHAR(500)'),
                     ('email_enabled', 'BOOLEAN DEFAULT 0'),
@@ -133,6 +160,9 @@ def migrate():
                     ('question_file_path', 'VARCHAR(500)'),
                     ('question_file_name', 'VARCHAR(300)'),
                     ('response_mode', 'VARCHAR(20) DEFAULT \'either\''),
+                    ('max_score', 'INTEGER DEFAULT 100'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_assignment_institution_id', 'institution_id'),
@@ -145,6 +175,9 @@ def migrate():
             'assignment_submission': {
                 'columns': [
                     ('file_name', 'VARCHAR(300)'),
+                    ('score', 'INTEGER'),
+                    ('feedback', 'TEXT'),
+                    ('graded_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_assignment_submission_institution_id', 'institution_id'),
@@ -157,6 +190,8 @@ def migrate():
             'attendance': {
                 'columns': [
                     ('session_id', 'INTEGER'),
+                    ('remarks', 'VARCHAR(255)'),
+                    ('marked_by', 'INTEGER'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
                 ],
@@ -176,6 +211,14 @@ def migrate():
                 'columns': [
                     ('chapters_json', 'TEXT'),
                     ('difficulty', 'VARCHAR(20) DEFAULT \'intermediate\''),
+                    ('views', 'INTEGER DEFAULT 0'),
+                    ('likes_count', 'INTEGER DEFAULT 0'),
+                    ('duration', 'INTEGER DEFAULT 0'),
+                    ('thumbnail_path', 'VARCHAR(500)'),
+                    ('tags', 'VARCHAR(500)'),
+                    ('conversion_progress', 'INTEGER DEFAULT 0'),
+                    ('hls_path', 'VARCHAR(500)'),
+                    ('allow_comments', 'BOOLEAN DEFAULT 1'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
                 ],
@@ -196,7 +239,9 @@ def migrate():
                 ]
             },
             'playlist': {
-                'columns': [],
+                'columns': [
+                    ('description', 'TEXT'),
+                ],
                 'indexes': [
                     ('ix_playlist_institution_id', 'institution_id'),
                     ('ix_playlist_creator_id', 'creator_id'),
@@ -205,7 +250,10 @@ def migrate():
             },
             'classroom': {
                 'columns': [
+                    ('description', 'TEXT'),
                     ('color_theme', 'VARCHAR(7) DEFAULT \'#4f46e5\''),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_classroom_institution_id', 'institution_id'),
@@ -213,7 +261,9 @@ def migrate():
                 ]
             },
             'comment': {
-                'columns': [],
+                'columns': [
+                    ('parent_id', 'INTEGER'),
+                ],
                 'indexes': [
                     ('ix_comment_institution_id', 'institution_id'),
                     ('ix_comment_video_id', 'video_id'),
@@ -223,7 +273,11 @@ def migrate():
                 ]
             },
             'view_analytics': {
-                'columns': [],
+                'columns': [
+                    ('watch_duration', 'INTEGER DEFAULT 0'),
+                    ('completed', 'BOOLEAN DEFAULT 0'),
+                    ('ip_address', 'VARCHAR(45)'),
+                ],
                 'indexes': [
                     ('ix_view_analytics_institution_id', 'institution_id'),
                     ('ix_view_analytics_user_id', 'user_id'),
@@ -235,6 +289,7 @@ def migrate():
             'question': {
                 'columns': [
                     ('points', 'INTEGER DEFAULT 1'),
+                    ('explanation', 'TEXT'),
                 ],
                 'indexes': [
                     ('ix_question_institution_id', 'institution_id'),
@@ -258,6 +313,7 @@ def migrate():
             'notification': {
                 'columns': [
                     ('action_url', 'VARCHAR(500)'),
+                    ('is_read', 'BOOLEAN DEFAULT 0'),
                 ],
                 'indexes': [
                     ('ix_notification_institution_id', 'institution_id'),
@@ -283,6 +339,8 @@ def migrate():
                     ('min_attendance_percentage', 'FLOAT DEFAULT 75.0'),
                     ('scheduled_academic_year_end_date', 'DATETIME'),
                     ('academic_year_rollover_processed', 'BOOLEAN DEFAULT 0'),
+                    ('allow_student_chat', 'BOOLEAN DEFAULT 1'),
+                    ('allow_public_registration', 'BOOLEAN DEFAULT 0'),
                 ],
                 'indexes': [
                     ('ix_site_settings_institution_id', 'institution_id'),
@@ -290,8 +348,12 @@ def migrate():
             },
             'quiz': {
                 'columns': [
+                    ('due_date', 'DATETIME'),
                     ('passing_percent', 'INTEGER DEFAULT 50'),
                     ('max_attempts', 'INTEGER DEFAULT 0'),
+                    ('time_limit_minutes', 'INTEGER DEFAULT 0'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_quiz_institution_id', 'institution_id'),
