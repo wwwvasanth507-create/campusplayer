@@ -88,41 +88,49 @@
 </div>
 
 <!-- System-Wide Live Video Conversion Queue & Workers -->
-<div class="card" id="sysAdminConversionCard" style="background:linear-gradient(145deg, rgba(30,30,30,0.9), rgba(20,20,20,0.95)); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:24px; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
-    <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:12px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #00e5ff, #7c4dff); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 4px 12px rgba(0,229,255,0.3);">
-                <i class="material-icons" style="font-size:22px;">video_settings</i>
-            </div>
-            <div>
-                <div class="card-title" style="margin:0; font-size:1.15rem; font-weight:700;">System-Wide Video Transcoding & Worker Fleet</div>
-                <div style="font-size:0.75rem; color:var(--text-secondary);">Real-time monitoring across all institutions with 5 parallel workers per institution</div>
-            </div>
+<div class="card" id="sysAdminConversionCard">
+    <div class="flex-between" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+            <div class="card-title" style="margin:0;"><i class="material-icons">video_settings</i> System-Wide Video Conversion & Parallel Workers (5 Workers/Inst)</div>
+            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">Real-time transcode status and worker fleet monitoring across all institutions and admins</div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:7px 12px; font-size:0.75rem; border-radius:8px; background:rgba(30,30,30,0.9); color:#fff; border:1px solid rgba(255,255,255,0.15);">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:6px 10px; font-size:0.75rem; border-radius:8px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
                 <option value="">🏢 All Institutions</option>
                 {% for inst in institutions %}
                 <option value="{{ inst.id }}">{{ inst.name }}</option>
                 {% endfor %}
             </select>
-            <button onclick="sysAdminRetryAllFailed()" class="btn" style="padding:7px 14px; font-size:0.75rem; background:rgba(255,152,0,0.15); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s;">
+            <button onclick="sysAdminRetryAllFailed()" class="btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
                 ↻ Retry All Failed
             </button>
         </div>
     </div>
     
-    <div id="sysAdminConversionSummaryBadges" style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem; margin-bottom:16px;">
-        <span class="badge" style="background:rgba(0,229,255,0.12); color:#00e5ff; padding:5px 12px; border-radius:12px; font-weight:700; border:1px solid rgba(0,229,255,0.25);" id="sysAdminBadgeActiveWorkers">0/5 Active</span>
-        <span class="badge" style="background:rgba(255,152,0,0.12); color:#ff9800; padding:5px 12px; border-radius:12px; font-weight:700; border:1px solid rgba(255,152,0,0.25);" id="sysAdminBadgeQueued">0 Queued</span>
-        <span class="badge" style="background:rgba(76,175,80,0.12); color:#4caf50; padding:5px 12px; border-radius:12px; font-weight:700; border:1px solid rgba(76,175,80,0.25);" id="sysAdminBadgeCompleted">0 Done</span>
-        <span class="badge" style="background:rgba(255,82,82,0.12); color:#ff5252; padding:5px 12px; border-radius:12px; font-weight:700; border:1px solid rgba(255,82,82,0.25);" id="sysAdminBadgeFailed">0 Failed</span>
+    <div id="sysAdminConversionSummaryBadges" style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem; margin-bottom:14px;">
+        <span class="badge" style="background:rgba(0,229,255,0.15);color:#00e5ff;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeActiveWorkers">0/5 Active</span>
+        <span class="badge" style="background:rgba(255,152,0,0.15);color:#ff9800;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeQueued">0 Queued</span>
+        <span class="badge" style="background:rgba(76,175,80,0.15);color:#4caf50;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeCompleted">0 Done</span>
+        <span class="badge" style="background:rgba(255,82,82,0.15);color:#ff5252;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeFailed">0 Failed</span>
+    </div>
+
+    <!-- 5-Worker Fleet Visual Tiles -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:18px;" id="sysAdminWorkerFleetGrid">
+        {% for w in range(1, 6) %}
+        <div id="sys-worker-tile-{{ w }}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; transition:all 0.3s ease;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#00e5ff;">memory</i> Worker {{ w }}</span>
+                <span id="sys-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">Idle</span>
+            </div>
+            <div id="sys-worker-desc-{{ w }}" style="font-size:0.72rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting for jobs</div>
+        </div>
+        {% endfor %}
     </div>
 
     <div class="table-wrap">
-        <table id="sysAdminConversionJobsTable" style="margin-top:0;">
+        <table id="sysAdminConversionJobsTable">
             <thead>
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+                <tr>
                     <th>Video Title</th>
                     <th>Institution</th>
                     <th>Uploader</th>
@@ -135,7 +143,7 @@
                 </tr>
             </thead>
             <tbody id="sysAdminConversionJobsBody">
-                <tr><td colspan="9" class="text-dim fs-small" style="text-align:center;padding:20px; color:var(--text-secondary);">Loading live conversion queue...</td></tr>
+                <tr><td colspan="9" class="text-dim fs-small" style="text-align:center;padding:16px;">Loading live conversion queue...</td></tr>
             </tbody>
         </table>
     </div>
@@ -157,6 +165,40 @@
                 document.getElementById('sysAdminBadgeQueued').textContent = `${data.queued_jobs} Queued`;
                 document.getElementById('sysAdminBadgeCompleted').textContent = `${data.completed_jobs} Done`;
                 document.getElementById('sysAdminBadgeFailed').textContent = `${data.failed_jobs} Failed`;
+
+                // Update 5-Worker Fleet visual tiles
+                const activeJobs = (data.jobs || []).filter(j => j.status === 'processing');
+                for (let w = 1; w <= 5; w++) {
+                    const tile = document.getElementById(`sys-worker-tile-${w}`);
+                    const statusEl = document.getElementById(`sys-worker-status-${w}`);
+                    const descEl = document.getElementById(`sys-worker-desc-${w}`);
+                    if (!tile || !statusEl || !descEl) continue;
+
+                    const jobForWorker = activeJobs.find(j => j.worker_id === `worker-${w}` || j.worker_id === `Worker-${w}` || j.worker_id === String(w));
+                    if (jobForWorker) {
+                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
+                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
+                        statusEl.style.color = '#00e5ff';
+                        descEl.innerHTML = `<b style="color:#fff;">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
+                    } else if (w <= data.active_workers && activeJobs[w - 1]) {
+                        const fallbackJob = activeJobs[w - 1];
+                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
+                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
+                        statusEl.style.color = '#00e5ff';
+                        descEl.innerHTML = `<b style="color:#fff;">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
+                    } else {
+                        tile.style.background = 'rgba(255, 255, 255, 0.03)';
+                        tile.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                        statusEl.textContent = 'Idle';
+                        statusEl.style.background = 'rgba(255, 255, 255, 0.06)';
+                        statusEl.style.color = 'var(--text-secondary)';
+                        descEl.textContent = 'Ready for conversions';
+                    }
+                }
 
                 const tbody = document.getElementById('sysAdminConversionJobsBody');
                 if (!data.jobs || data.jobs.length === 0) {
