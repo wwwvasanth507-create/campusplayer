@@ -2,78 +2,52 @@
 {% block title %}Discover — Campus Player{% endblock %}
 
 {% block content %}
-<div class="yt-hub-container">
+<div class="cp-feed-container">
 
-    <!-- ── 1. YouTube-Style Filter Chips Bar ── -->
-    <div class="yt-filter-bar" id="ytFilterBar">
-        <button class="yt-filter-pill active" onclick="setYtFilter('all', this)">
-            <i class="material-icons" style="font-size:1.05rem;">explore</i> All
-        </button>
-        <button class="yt-filter-pill" onclick="setYtFilter('lectures', this)">
-            <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">local_fire_department</i> Latest Lectures
-        </button>
-        <button class="yt-filter-pill" onclick="setYtFilter('playlists', this)">
-            <i class="material-icons" style="font-size:1.05rem; color:var(--gold);">playlist_play</i> Course Playlists
-        </button>
-        <button class="yt-filter-pill" onclick="setYtFilter('classes', this)">
-            <i class="material-icons" style="font-size:1.05rem; color:var(--primary-light);">school</i> Enrolled Classes
-        </button>
-        <a href="{{ url_for('student_assignments') }}" class="yt-filter-pill">
-            <i class="material-icons" style="font-size:1.05rem;">assignment</i> Assignments
-        </a>
-        <a href="{{ url_for('student_quizzes') }}" class="yt-filter-pill">
-            <i class="material-icons" style="font-size:1.05rem;">quiz</i> Quizzes
-        </a>
-        <a href="{{ url_for('leaderboard') }}" class="yt-filter-pill">
-            <i class="material-icons" style="font-size:1.05rem; color:var(--gold);">emoji_events</i> Leaderboard
-        </a>
-        <a href="{{ url_for('ai_assistant') }}" class="yt-filter-pill">
-            <i class="material-icons" style="font-size:1.05rem; color:#10b981;">auto_awesome</i> AI Tutor
-        </a>
-    </div>
-
-    <!-- ── 2. Compact YouTube Academic Pulse Bar ── -->
-    <div class="yt-pulse-strip mb-24" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--glass-border); padding:12px 18px; border-radius:var(--radius); backdrop-filter:blur(16px);">
-        <!-- Student Identity & Status -->
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div class="yt-channel-avatar" style="width:42px; height:42px; font-size:1.05rem; box-shadow:0 0 14px rgba(99,102,241,0.4);">
-                {% if current_user.avatar_path %}
-                <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}">
-                {% else %}
-                {{ current_user.username[:1].upper() }}
-                {% endif %}
+    <!-- ── 1. Campus Player Academic Pulse Banner ── -->
+    <div class="cp-pulse-banner">
+        <!-- Student Identity & Level Progress -->
+        <div class="cp-student-meta">
+            <div class="cp-avatar-ring">
+                <div class="cp-avatar-inner">
+                    {% if current_user.avatar_path %}
+                    <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}">
+                    {% else %}
+                    {{ current_user.username[:1].upper() }}
+                    {% endif %}
+                </div>
             </div>
             <div>
-                <div style="font-weight:700; font-size:0.95rem; color:var(--text); display:flex; align-items:center; gap:6px;">
-                    {{ current_user.username }}
-                    <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary-light); border:1px solid rgba(99,102,241,0.4); font-size:0.68rem; font-family:'JetBrains Mono',monospace; padding:1px 7px;">
-                        LVL {{ (current_user.xp // 500) + 1 }}
+                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:8px;">
+                    Welcome back, {{ current_user.username }}
+                    <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary-light); border:1px solid rgba(99,102,241,0.4); font-size:0.7rem; font-family:'JetBrains Mono',monospace; padding:2px 8px;">
+                        LEVEL {{ (current_user.xp // 500) + 1 }}
                     </span>
                 </div>
-                <div style="font-size:0.75rem; color:var(--text-dim);">
-                    {{ current_user.xp }} XP Total &bull; {{ 500 - (current_user.xp % 500) }} XP to Next Level
+                <div style="font-size:0.76rem; color:var(--text-dim); margin-top:2px;">
+                    <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
                 </div>
             </div>
         </div>
 
-        <!-- Academic Metrics (Attendance & Quests) -->
+        <!-- Academic Telemetry Badges & Quick Action -->
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <!-- Attendance Chip -->
-            <div style="display:flex; align-items:center; gap:8px; background:var(--surface2); padding:6px 14px; border-radius:var(--radius-pill); border:1px solid var(--glass-border);">
-                <i class="material-icons" style="font-size:1rem; color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }};">
-                    {{ 'check_circle' if attendance_pct >= 75 else 'warning' }}
+            <!-- Attendance Metric -->
+            <div class="cp-badge-stat">
+                <i class="material-icons" style="font-size:1.05rem; color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }};">
+                    {{ 'verified' if attendance_pct >= 75 else 'report_problem' }}
                 </i>
-                <div style="font-size:0.78rem;">
+                <div>
                     <span style="color:var(--text-dim);">Attendance:</span>
                     <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace;">{{ attendance_pct }}%</strong>
                 </div>
             </div>
 
-            <!-- Daily Quests Toggle Button -->
+            <!-- Daily Quests Action -->
             {% if daily_quests %}
             {% set unclaimed_count = daily_quests.values() | selectattr('claimed', 'equalto', false) | selectattr('progress', 'ge', 1) | list | length %}
-            <button onclick="toggleQuestsDropdown()" class="btn btn-outline" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:34px; position:relative;">
-                <i class="material-icons" style="font-size:0.95rem; color:var(--gold);">stars</i>
+            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:36px; position:relative;">
+                <i class="material-icons" style="font-size:1rem; color:var(--gold);">military_tech</i>
                 <span>Daily Quests</span>
                 {% if unclaimed_count > 0 %}
                 <span style="position:absolute; top:-4px; right:-4px; background:#f59e0b; color:#000; font-weight:800; font-size:0.65rem; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(245,158,11,0.6);">
@@ -83,20 +57,20 @@
             </button>
             {% endif %}
 
-            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:34px;">
-                <i class="material-icons" style="font-size:0.95rem;">upload_file</i> Submit Work
+            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:6px 16px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:36px;">
+                <i class="material-icons" style="font-size:1rem;">cloud_upload</i> Submit Homework
             </a>
         </div>
     </div>
 
     <!-- 🎯 Daily Quests Collapsible Drawer -->
     {% if daily_quests %}
-    <div id="ytQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.03) 0%, rgba(99,102,241,0.04) 100%);">
+    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.04) 0%, rgba(99,102,241,0.04) 100%);">
         <div class="flex-between mb-12">
-            <div class="card-title font-display" style="margin:0; font-size:1.05rem;">
-                <i class="material-icons" style="color:var(--gold);">stars</i> Daily Quests &amp; Progress
+            <div class="card-title font-display" style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+                <i class="material-icons" style="color:var(--gold);">stars</i> Daily Quests &amp; Milestone Challenges
             </div>
-            <button onclick="toggleQuestsDropdown()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+            <button onclick="toggleQuestsDrawer()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
                 <i class="material-icons">close</i>
             </button>
         </div>
@@ -152,75 +126,117 @@
     </div>
     {% endif %}
 
-    <!-- ── 3. YouTube Main Video Grid (Lectures Section) ── -->
-    <div id="ytLecturesSection" class="yt-content-section mb-32">
+    <!-- ── 2. Campus Player Category Segment Bar ── -->
+    <div class="cp-category-nav" id="cpCategoryNav">
+        <button class="cp-tab-pill active" onclick="setCpCategory('all', this)">
+            <i class="material-icons">dashboard</i> All Streams
+        </button>
+        <button class="cp-tab-pill" onclick="setCpCategory('lectures', this)">
+            <i class="material-icons" style="color:var(--accent);">local_fire_department</i> Latest Lectures
+        </button>
+        <button class="cp-tab-pill" onclick="setCpCategory('playlists', this)">
+            <i class="material-icons" style="color:var(--gold);">auto_stories</i> Curated Tracks
+        </button>
+        <button class="cp-tab-pill" onclick="setCpCategory('classes', this)">
+            <i class="material-icons" style="color:var(--primary-light);">school</i> Enrolled Classes
+        </button>
+        <a href="{{ url_for('student_assignments') }}" class="cp-tab-pill">
+            <i class="material-icons">assignment</i> Assignments
+        </a>
+        <a href="{{ url_for('student_quizzes') }}" class="cp-tab-pill">
+            <i class="material-icons">quiz</i> Quizzes
+        </a>
+        <a href="{{ url_for('leaderboard') }}" class="cp-tab-pill">
+            <i class="material-icons" style="color:var(--gold);">emoji_events</i> Leaderboards
+        </a>
+        <a href="{{ url_for('ai_assistant') }}" class="cp-tab-pill">
+            <i class="material-icons" style="color:#10b981;">auto_awesome</i> AI Tutor
+        </a>
+    </div>
+
+    <!-- ── 3. Campus Player Lectures Section ── -->
+    <div id="cpLecturesSection" class="mb-32">
         <div class="flex-between mb-16" style="align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <i class="material-icons" style="color:var(--accent); font-size:1.4rem;">local_fire_department</i>
-                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
-                    {% if search_query %}Search Results for "{{ search_query }}"{% else %}Recommended Video Lectures{% endif %}
-                </h2>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:10px; background:rgba(0,229,255,0.12); display:flex; align-items:center; justify-content:center; color:var(--accent);">
+                    <i class="material-icons" style="font-size:1.2rem;">play_lesson</i>
+                </div>
+                <div>
+                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                        {% if search_query %}Search Results for "{{ search_query }}"{% else %}Featured Academic Lectures{% endif %}
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">High-definition multi-bitrate HLS streams</p>
+                </div>
             </div>
-            <span style="font-size:0.78rem; color:var(--text-dim);">
-                {{ videos|length }} HD Lectures Available
+            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                {{ videos|length }} Modules Available
             </span>
         </div>
 
         {% if videos %}
-        <div class="yt-video-grid">
+        <div class="cp-video-grid">
             {% for video in videos %}
-            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="yt-video-card" title="{{ video.title }}">
-                <!-- 16:9 Thumbnail Box -->
-                <div class="yt-thumb-wrap">
+            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="cp-card" title="{{ video.title }}">
+                <!-- 16:9 Viewport & Media Frame -->
+                <div class="cp-media-frame">
                     {% if video.thumbnail_path %}
-                    <img src="{{ url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" class="yt-thumb-img" loading="lazy">
+                    <img src="{{ url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" loading="lazy">
                     {% else %}
-                    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, #111422 0%, #080a10 100%);">
-                        <i class="material-icons" style="font-size:2.8rem; color:var(--text-dim); opacity:0.35;">play_circle_outline</i>
-                        <span style="font-size:0.7rem; color:var(--text-dim); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Campus Player HD</span>
+                    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, #111524 0%, #090c16 100%);">
+                        <i class="material-icons" style="font-size:2.8rem; color:var(--text-dim); opacity:0.35;">smart_display</i>
+                        <span style="font-size:0.68rem; color:var(--text-dim); margin-top:4px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Campus Player HD</span>
                     </div>
                     {% endif %}
 
-                    <!-- Top-Right Quality Badge -->
-                    <span class="yt-quality-badge">HLS HD</span>
+                    <!-- Floating Badges -->
+                    <span class="cp-tag-left">
+                        <i class="material-icons" style="font-size:0.75rem;">school</i> Lecture
+                    </span>
+                    <span class="cp-tag-right">1080p HLS</span>
 
-                    <!-- Bottom-Right Duration Badge -->
+                    <!-- Duration Pill -->
                     {% if video.duration_seconds and video.duration_seconds > 0 %}
-                    <span class="yt-duration-badge">{{ "%d:%02d" | format(video.duration_seconds // 60, video.duration_seconds % 60) }}</span>
+                    <span class="cp-duration-pill">{{ "%d:%02d" | format(video.duration_seconds // 60, video.duration_seconds % 60) }}</span>
                     {% else %}
-                    <span class="yt-duration-badge">HD</span>
+                    <span class="cp-duration-pill">HD</span>
                     {% endif %}
 
-                    <!-- Hover Play Icon Overlay -->
-                    <div class="yt-play-overlay">
-                        <div class="yt-play-icon">
-                            <i class="material-icons" style="font-size:1.6rem; margin-left:2px;">play_arrow</i>
+                    <!-- Cyber Hover Overlay -->
+                    <div class="cp-hover-overlay">
+                        <div class="cp-play-btn">
+                            <i class="material-icons" style="font-size:1.8rem; margin-left:2px;">play_arrow</i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Details Row (Avatar + Info) -->
-                <div class="yt-details-row">
-                    <!-- Left: Channel/Teacher Avatar -->
-                    <div class="yt-channel-avatar" title="{{ video.uploader.username }}">
-                        {% if video.uploader.avatar_path %}
-                        <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.username }}">
-                        {% else %}
-                        {{ video.uploader.username[:1].upper() if video.uploader else 'T' }}
-                        {% endif %}
+                <!-- Card Content Body -->
+                <div class="cp-card-body">
+                    <!-- Instructor Info -->
+                    <div class="cp-faculty-row">
+                        <div class="cp-faculty-avatar">
+                            {% if video.uploader.avatar_path %}
+                            <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.username }}">
+                            {% else %}
+                            {{ video.uploader.username[:1].upper() if video.uploader else 'T' }}
+                            {% endif %}
+                        </div>
+                        <span class="cp-faculty-name">{{ video.uploader.username if video.uploader else 'Faculty Instructor' }}</span>
+                        <i class="material-icons" style="font-size:0.8rem; color:var(--accent);" title="Verified Faculty">verified</i>
                     </div>
 
-                    <!-- Right: Info Details -->
-                    <div class="yt-text-wrap">
-                        <h3 class="yt-video-title font-display">{{ video.title }}</h3>
-                        <div class="yt-channel-name">
-                            <span>{{ video.uploader.username if video.uploader else 'Faculty Instructor' }}</span>
-                            <i class="material-icons" style="font-size:0.85rem; color:var(--text-dim);" title="Verified Instructor">check_circle</i>
-                        </div>
-                        <div class="yt-meta-line">
+                    <!-- Lecture Title -->
+                    <h3 class="cp-card-title">{{ video.title }}</h3>
+
+                    <!-- Footer Telemetry & Watch CTA -->
+                    <div class="cp-card-footer">
+                        <div class="cp-meta-stats">
                             <span>{{ video.view_count or 0 }} views</span>
-                            <span class="yt-meta-dot">&bull;</span>
-                            <span>{{ video.upload_date.strftime('%b %d, %Y') if video.upload_date else 'Recently added' }}</span>
+                            <span>&bull;</span>
+                            <span>{{ video.upload_date.strftime('%b %d, %Y') if video.upload_date else 'Recently' }}</span>
+                        </div>
+                        <div class="cp-watch-cta">
+                            <span>Watch</span>
+                            <i class="material-icons" style="font-size:0.95rem;">arrow_forward</i>
                         </div>
                     </div>
                 </div>
@@ -228,56 +244,63 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="card text-center" style="padding:48px 20px; border:1px dashed var(--glass-border); border-radius:var(--radius);">
+        <div class="card text-center" style="padding:48px 20px; border:1px dashed var(--glass-border); border-radius:var(--radius-lg);">
             <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:12px;">search_off</i>
             <h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0 0 6px 0;">No lectures found</h3>
-            <p style="color:var(--text-dim); font-size:0.84rem; margin:0 0 16px 0;">Try searching for another topic or explore all course playlists below.</p>
-            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 22px; border-radius:var(--radius-pill);">Clear Search</a>
+            <p style="color:var(--text-dim); font-size:0.84rem; margin:0 0 16px 0;">Try adjusting your search keywords or browse the playlists below.</p>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 22px; border-radius:var(--radius-pill);">Reset Filter</a>
         </div>
         {% endif %}
     </div>
 
-    <!-- ── 4. YouTube Curated Playlists Section ── -->
+    <!-- ── 4. Curated Playlists / Tracks Section ── -->
     {% if playlists %}
-    <div id="ytPlaylistsSection" class="yt-content-section mb-32">
+    <div id="cpPlaylistsSection" class="mb-32">
         <div class="flex-between mb-16" style="align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <i class="material-icons" style="color:var(--gold); font-size:1.4rem;">playlist_play</i>
-                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
-                    Curated Course Playlists
-                </h2>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:10px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; color:var(--gold);">
+                    <i class="material-icons" style="font-size:1.2rem;">auto_stories</i>
+                </div>
+                <div>
+                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                        Structured Learning Tracks
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Step-by-step modular curriculum playlists</p>
+                </div>
             </div>
-            <span style="font-size:0.78rem; color:var(--text-dim);">
-                {{ playlists|length }} Structured Tracks
+            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                {{ playlists|length }} Tracks
             </span>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
             {% for playlist in playlists %}
-            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="yt-playlist-card">
-                <div class="yt-playlist-thumb-box">
+            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="cp-track-card">
+                <div class="cp-track-thumb">
                     {% if playlist.thumbnail_path %}
                     <img src="{{ url_for('static', filename=playlist.thumbnail_path) }}" alt="{{ playlist.title }}" loading="lazy">
                     {% elif settings and settings.global_playlist_thumbnail %}
                     <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" alt="{{ playlist.title }}" loading="lazy">
                     {% else %}
-                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #181d2e 0%, #0d101c 100%);">
-                        <i class="material-icons" style="font-size:2.8rem; color:var(--gold); opacity:0.6;">auto_stories</i>
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #161b2c 0%, #0b0e18 100%);">
+                        <i class="material-icons" style="font-size:2.8rem; color:var(--gold); opacity:0.6;">collections_bookmark</i>
                     </div>
                     {% endif %}
 
-                    <!-- Playlist Count Stack Overlay -->
-                    <div class="yt-playlist-overlay">
-                        <i class="material-icons" style="font-size:1.4rem;">playlist_play</i>
-                        <span style="font-size:0.75rem; font-weight:800; font-family:'JetBrains Mono',monospace;">{{ playlist.videos|length }}</span>
-                        <span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px;">Videos</span>
+                    <!-- Module Counter Overlay -->
+                    <div class="cp-track-overlay">
+                        <i class="material-icons" style="font-size:0.9rem;">video_library</i>
+                        <span>{{ playlist.videos|length }} Chapters</span>
                     </div>
                 </div>
 
-                <div class="yt-playlist-body">
-                    <div class="yt-playlist-title font-display">{{ playlist.title }}</div>
-                    <div class="yt-playlist-meta">
-                        <span>Curated by <b>{{ playlist.creator.username if playlist.creator else 'Campus Faculty' }}</b></span>
+                <div class="cp-track-body">
+                    <div class="cp-track-title">{{ playlist.title }}</div>
+                    <div style="font-size:0.78rem; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
+                        <span>By <b>{{ playlist.creator.username if playlist.creator else 'Faculty' }}</b></span>
+                        <span style="color:var(--gold); font-weight:700; display:flex; align-items:center; gap:2px;">
+                            Track <i class="material-icons" style="font-size:0.85rem;">chevron_right</i>
+                        </span>
                     </div>
                 </div>
             </a>
@@ -286,24 +309,29 @@
     </div>
     {% endif %}
 
-    <!-- ── 5. Enrolled Classrooms Community Grid ── -->
+    <!-- ── 5. Enrolled Classrooms Hub ── -->
     {% if enrolled_classes %}
-    <div id="ytClassesSection" class="yt-content-section mb-32">
+    <div id="cpClassesSection" class="mb-32">
         <div class="flex-between mb-16" style="align-items:center;">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <i class="material-icons" style="color:var(--primary-light); font-size:1.4rem;">school</i>
-                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
-                    My Classrooms &amp; Discussion Hubs
-                </h2>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:34px; height:34px; border-radius:10px; background:rgba(99,102,241,0.12); display:flex; align-items:center; justify-content:center; color:var(--primary-light);">
+                    <i class="material-icons" style="font-size:1.2rem;">groups</i>
+                </div>
+                <div>
+                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                        My Enrolled Classrooms
+                    </h2>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Real-time attendance &amp; class discussion chatrooms</p>
+                </div>
             </div>
-            <span style="font-size:0.78rem; color:var(--text-dim);">
-                {{ enrolled_classes|length }} Active Classes
+            <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                {{ enrolled_classes|length }} Active Classrooms
             </span>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
             {% for cls in enrolled_classes %}
-            <div style="background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid var(--glass-border); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s ease;">
+            <div style="background:var(--surface); border-radius:16px; padding:18px; border:1px solid var(--glass-border); display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 4px 18px rgba(0,0,0,0.25);">
                 {% set today_record = current_user.attendance_records | selectattr('classroom_id', 'equalto', cls.id) | selectattr('date', 'equalto', now_date) | first if current_user.attendance_records else None %}
                 <div>
                     <div class="flex-between mb-8">
@@ -313,7 +341,7 @@
                         <div style="display:flex; gap:6px; align-items:center;">
                             {% if class_ranks and class_ranks.get(cls.id) %}
                             <a href="{{ url_for('leaderboard', category='class', class_id=cls.id) }}"
-                                title="Your rank in this class"
+                                title="Your class rank"
                                 style="text-decoration:none; font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3);">
                                 <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">emoji_events</i> {{ class_ranks[cls.id].rank }}/{{ class_ranks[cls.id].total }}
                             </a>
@@ -329,11 +357,11 @@
                             {% endif %}
                         </div>
                     </div>
-                    <p style="font-size:0.78rem; color:var(--text-dim); margin:0 0 12px 0;">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b></p>
+                    <p style="font-size:0.78rem; color:var(--text-dim); margin:0 0 14px 0;">Faculty: <b style="color:var(--text);">{{ cls.teacher.username }}</b></p>
                 </div>
                 <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
                     style="width:100%; padding:8px 12px; font-size:0.8rem; border-radius:var(--radius-sm);">
-                    <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">chat</i> Open Class Chat
+                    <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">forum</i> Launch Class Discussion
                 </a>
             </div>
             {% endfor %}
@@ -343,15 +371,15 @@
 
 </div>
 
-<!-- Interactive Client-side Filter Logic -->
+<!-- Client-side Interactive Filter Script -->
 <script>
-function setYtFilter(category, btn) {
-    document.querySelectorAll('.yt-filter-pill').forEach(el => el.classList.remove('active'));
+function setCpCategory(category, btn) {
+    document.querySelectorAll('.cp-tab-pill').forEach(el => el.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
-    const lecturesSec = document.getElementById('ytLecturesSection');
-    const playlistsSec = document.getElementById('ytPlaylistsSection');
-    const classesSec = document.getElementById('ytClassesSection');
+    const lecturesSec = document.getElementById('cpLecturesSection');
+    const playlistsSec = document.getElementById('cpPlaylistsSection');
+    const classesSec = document.getElementById('cpClassesSection');
 
     if (category === 'all') {
         if (lecturesSec) lecturesSec.style.display = 'block';
@@ -381,8 +409,8 @@ function setYtFilter(category, btn) {
     }
 }
 
-function toggleQuestsDropdown() {
-    const drawer = document.getElementById('ytQuestsDrawer');
+function toggleQuestsDrawer() {
+    const drawer = document.getElementById('cpQuestsDrawer');
     if (drawer) {
         if (drawer.style.display === 'none' || drawer.style.display === '') {
             drawer.style.display = 'block';

@@ -1336,256 +1336,353 @@ body.campus-body-fullscreen .vp-hero::after {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   YOUTUBE-STYLE VIDEO FEED & CARD ARCHITECTURE (CAMPUS PLAYER)
+   CAMPUS PLAYER — SIGNATURE CYBER-GLASS LEARNING FEED
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── YouTube Filter Chips Bar ── */
-.yt-filter-bar {
+/* ── Feed Container ── */
+.cp-feed-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ── Interactive Category Segment Bar ── */
+.cp-category-nav {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     overflow-x: auto;
     scroll-behavior: smooth;
-    padding: 6px 2px 14px 2px;
-    margin-bottom: 22px;
+    padding: 6px 4px 18px 4px;
+    margin-bottom: 24px;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     position: sticky;
     top: 64px;
     z-index: 25;
     background: var(--bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
 }
 
-.yt-filter-bar::-webkit-scrollbar {
+.cp-category-nav::-webkit-scrollbar {
     display: none;
 }
 
-.yt-filter-pill {
+.cp-tab-pill {
     flex: 0 0 auto;
-    padding: 7px 16px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.07);
+    padding: 8px 18px;
+    border-radius: 30px;
+    background: var(--surface);
     border: 1px solid var(--glass-border);
-    color: var(--text);
+    color: var(--text-dim);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     user-select: none;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
 }
 
-.yt-filter-pill:hover {
-    background: rgba(255, 255, 255, 0.14);
+.cp-tab-pill i {
+    font-size: 1.05rem;
+}
+
+.cp-tab-pill:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: rgba(99, 102, 241, 0.35);
+    transform: translateY(-1px);
+}
+
+.cp-tab-pill.active {
+    background: var(--brand-gradient);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.yt-filter-pill.active {
-    background: #ffffff;
-    color: #07090e;
     border-color: transparent;
     font-weight: 700;
-    box-shadow: 0 3px 12px rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4);
 }
 
-body[data-theme="light"] .yt-filter-pill.active,
-.theme-light .yt-filter-pill.active {
-    background: #0f172a;
+.cp-tab-pill.active i {
+    color: #ffffff !important;
+}
+
+/* ── Cyber-Glass Learning Pulse Strip ── */
+.cp-pulse-banner {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(24, 32, 53, 0.6) 0%, rgba(13, 17, 28, 0.8) 100%);
+    border: 1px solid var(--glass-border);
+    padding: 16px 22px;
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    margin-bottom: 28px;
+}
+
+.cp-student-meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cp-avatar-ring {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+}
+
+.cp-avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #0d111c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #ffffff;
-    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.25);
+    font-weight: 800;
+    font-size: 1.1rem;
+    overflow: hidden;
 }
 
-/* ── YouTube Video Grid ── */
-.video-grid,
-.yt-video-grid {
+.cp-avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cp-badge-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+}
+
+/* ── Campus Player Video Card Grid ── */
+.cp-video-grid,
+.video-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
-    gap: 26px 18px !important;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 22px !important;
     width: 100% !important;
-    margin-bottom: 32px !important;
+    margin-bottom: 36px !important;
 }
 
-/* ── YouTube Video Card ── */
-.video-card,
-.yt-video-card {
+/* ── Campus Player Cyber-Glass Card ── */
+.cp-card,
+.video-card {
     display: flex !important;
     flex-direction: column !important;
     text-decoration: none !important;
     color: inherit !important;
-    border-radius: 14px !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    cursor: pointer !important;
-    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
     position: relative !important;
-    box-shadow: none !important;
 }
 
-.video-card:hover,
-.yt-video-card:hover {
-    transform: translateY(-4px) !important;
+.cp-card:hover,
+.video-card:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(99, 102, 241, 0.45) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(99, 102, 241, 0.18) !important;
 }
 
-/* ── Thumbnail Wrap (16:9) ── */
-.video-thumbnail-wrap,
-.yt-thumb-wrap {
+/* ── 16:9 Viewport & Media Frame ── */
+.cp-media-frame,
+.video-thumbnail-wrap {
     width: 100% !important;
     aspect-ratio: 16 / 9 !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
     position: relative !important;
-    background: #090c14 !important;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    overflow: hidden !important;
+    background: #080a11 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
 }
 
-.video-thumbnail,
-.yt-thumb-img {
+.cp-media-frame img,
+.video-thumbnail {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
     display: block !important;
-    transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1) !important;
+    transition: transform 0.4s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
-.video-card:hover .video-thumbnail,
-.yt-video-card:hover .yt-thumb-img {
-    transform: scale(1.05) !important;
+.cp-card:hover .cp-media-frame img,
+.video-card:hover .video-thumbnail {
+    transform: scale(1.06) !important;
 }
 
-/* ── Duration Badge (Bottom-Right) ── */
-.video-duration,
-.yt-duration-badge {
+/* ── Floating Badges ── */
+.cp-tag-left {
     position: absolute !important;
-    bottom: 8px !important;
-    right: 8px !important;
-    background: rgba(0, 0, 0, 0.85) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
-    color: #ffffff !important;
-    font-size: 0.74rem !important;
+    top: 10px !important;
+    left: 10px !important;
+    background: rgba(10, 14, 26, 0.82) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: #00e5ff !important;
+    font-size: 0.68rem !important;
     font-weight: 700 !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    letter-spacing: 0.4px !important;
-    pointer-events: none !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(0, 229, 255, 0.3) !important;
     z-index: 3 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
 }
 
-/* ── Quality Badge (Top-Right) ── */
-.video-badge,
-.yt-quality-badge {
+.cp-tag-right,
+.video-badge {
     position: absolute !important;
-    top: 8px !important;
-    right: 8px !important;
-    background: rgba(99, 102, 241, 0.88) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    top: 10px !important;
+    right: 10px !important;
+    background: rgba(99, 102, 241, 0.9) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
     color: #ffffff !important;
     font-size: 0.65rem !important;
     font-weight: 800 !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
     letter-spacing: 0.5px !important;
     text-transform: uppercase !important;
     z-index: 3 !important;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4) !important;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4) !important;
 }
 
-/* ── Hover Play Overlay ── */
-.yt-play-overlay {
+.cp-duration-pill,
+.video-duration {
+    position: absolute !important;
+    bottom: 10px !important;
+    right: 10px !important;
+    background: rgba(8, 11, 20, 0.88) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: #ffffff !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.4px !important;
+    z-index: 3 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ── Cyber Hover Glow Overlay ── */
+.cp-hover-overlay {
     position: absolute !important;
     inset: 0 !important;
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(8, 11, 20, 0.7) 100%) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     opacity: 0 !important;
-    transition: opacity 0.22s ease !important;
+    transition: opacity 0.25s ease !important;
     z-index: 2 !important;
 }
 
-.video-card:hover .yt-play-overlay,
-.yt-video-card:hover .yt-play-overlay {
+.cp-card:hover .cp-hover-overlay,
+.video-card:hover .cp-hover-overlay {
     opacity: 1 !important;
 }
 
-.yt-play-icon {
-    width: 44px !important;
-    height: 44px !important;
+.cp-play-btn {
+    width: 48px !important;
+    height: 48px !important;
     border-radius: 50% !important;
     background: var(--brand-gradient) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.6) !important;
     color: #ffffff !important;
-    transform: scale(0.9) !important;
-    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.6) !important;
+    transform: scale(0.85) !important;
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
 
-.video-card:hover .yt-play-icon,
-.yt-video-card:hover .yt-play-icon {
+.cp-card:hover .cp-play-btn,
+.video-card:hover .cp-play-btn {
     transform: scale(1) !important;
 }
 
-/* ── Video Details Row ── */
-.video-info,
-.yt-details-row {
+/* ── Card Content Body ── */
+.cp-card-body,
+.video-info {
+    padding: 16px 18px !important;
     display: flex !important;
-    gap: 12px !important;
-    margin-top: 12px !important;
-    align-items: flex-start !important;
+    flex-direction: column !important;
+    flex: 1 !important;
     text-decoration: none !important;
     color: inherit !important;
 }
 
-/* ── Channel / Teacher Avatar ── */
-.yt-channel-avatar {
-    width: 38px !important;
-    height: 38px !important;
+/* ── Instructor / Author Line ── */
+.cp-faculty-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.78rem !important;
+    color: var(--text-dim) !important;
+}
+
+.cp-faculty-avatar {
+    width: 22px !important;
+    height: 22px !important;
     border-radius: 50% !important;
     background: var(--brand-gradient) !important;
-    flex-shrink: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
     color: #ffffff !important;
-    font-weight: 700 !important;
-    font-size: 0.88rem !important;
+    flex-shrink: 0 !important;
     overflow: hidden !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
-.yt-channel-avatar img {
+.cp-faculty-avatar img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
 }
 
-/* ── Video Info Column ── */
-.yt-text-wrap {
-    flex: 1 !important;
-    min-width: 0 !important;
+.cp-faculty-name {
+    font-weight: 600 !important;
+    color: var(--text-dim) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
-/* ── Video Title ── */
-.video-title,
-.yt-video-title {
-    font-size: 0.94rem !important;
-    font-weight: 600 !important;
+/* ── Title ── */
+.cp-card-title,
+.video-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.02rem !important;
+    font-weight: 700 !important;
     color: var(--text) !important;
     line-height: 1.38 !important;
     max-height: 2.76em !important;
@@ -1593,132 +1690,120 @@ body[data-theme="light"] .yt-filter-pill.active,
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
-    margin: 0 0 4px 0 !important;
-    text-decoration: none !important;
+    margin: 0 0 12px 0 !important;
     word-break: break-word !important;
-    transition: color 0.18s ease !important;
+    transition: color 0.2s ease !important;
 }
 
-.video-card:hover .video-title,
-.yt-video-card:hover .yt-video-title {
+.cp-card:hover .cp-card-title,
+.video-card:hover .video-title {
     color: var(--accent) !important;
 }
 
-/* ── Channel / Teacher Name ── */
-.yt-channel-name {
-    font-size: 0.82rem !important;
-    color: var(--text-dim) !important;
-    font-weight: 500 !important;
+/* ── Telemetry & Actions Row ── */
+.cp-card-footer,
+.video-meta {
+    margin-top: auto !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 4px !important;
-    margin-bottom: 2px !important;
-    text-decoration: none !important;
-    transition: color 0.18s ease !important;
-}
-
-.yt-channel-name:hover {
-    color: var(--text) !important;
-}
-
-/* ── Metadata Line (Views & Date) ── */
-.video-meta,
-.yt-meta-line {
-    font-size: 0.78rem !important;
+    justify-content: space-between !important;
+    font-size: 0.76rem !important;
     color: var(--text-dim) !important;
-    font-weight: 400 !important;
+}
+
+.cp-meta-stats {
     display: flex !important;
     align-items: center !important;
+    gap: 6px !important;
+}
+
+.cp-watch-cta {
+    display: inline-flex !important;
+    align-items: center !important;
     gap: 4px !important;
-    text-decoration: none !important;
-    margin: 0 !important;
+    font-weight: 700 !important;
+    color: var(--primary-light) !important;
+    transition: transform 0.2s ease, color 0.2s ease !important;
 }
 
-.yt-meta-dot {
-    font-size: 0.6rem;
-    opacity: 0.6;
+.cp-card:hover .cp-watch-cta {
+    color: #00e5ff !important;
+    transform: translateX(2px) !important;
 }
 
-/* ── YouTube Playlist Stack Card ── */
-.yt-playlist-card {
+/* ── Curated Playlists / Learning Tracks Cards ── */
+.cp-track-card {
     display: flex !important;
     flex-direction: column !important;
-    text-decoration: none !important;
-    color: inherit !important;
-    border-radius: 14px !important;
-    overflow: hidden !important;
     background: var(--surface) !important;
     border: 1px solid var(--glass-border) !important;
-    transition: transform 0.22s ease, box-shadow 0.22s ease !important;
-    position: relative !important;
+    border-radius: 16px !important;
+    overflow: hidden !important;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: all 0.28s ease !important;
 }
 
-.yt-playlist-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4) !important;
-    border-color: rgba(99, 102, 241, 0.35) !important;
+.cp-track-card:hover {
+    transform: translateY(-5px) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(245, 158, 11, 0.15) !important;
 }
 
-.yt-playlist-thumb-box {
+.cp-track-thumb {
     width: 100% !important;
     aspect-ratio: 16 / 9 !important;
     position: relative !important;
     overflow: hidden !important;
-    background: #090c14 !important;
+    background: #0b0f19 !important;
 }
 
-.yt-playlist-thumb-box img {
+.cp-track-thumb img {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    transition: transform 0.35s ease !important;
+    transition: transform 0.4s ease !important;
 }
 
-.yt-playlist-card:hover .yt-playlist-thumb-box img {
+.cp-track-card:hover .cp-track-thumb img {
     transform: scale(1.05) !important;
 }
 
-.yt-playlist-overlay {
+.cp-track-overlay {
     position: absolute !important;
-    bottom: 0 !important;
-    right: 0 !important;
-    top: 0 !important;
-    width: 40% !important;
-    background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%) !important;
+    top: 10px !important;
+    right: 10px !important;
+    background: rgba(10, 14, 26, 0.85) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    color: var(--gold) !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.cp-track-body {
+    padding: 16px 18px !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: #ffffff !important;
-    gap: 4px !important;
-    padding-right: 12px !important;
+    flex: 1 !important;
 }
 
-.yt-playlist-body {
-    padding: 12px 14px !important;
-}
-
-.yt-playlist-title {
-    font-size: 0.92rem !important;
+.cp-track-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1rem !important;
     font-weight: 700 !important;
     color: var(--text) !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 6px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 
-.yt-playlist-meta {
-    font-size: 0.76rem !important;
-    color: var(--text-dim) !important;
-}
-
-/* ── Light Mode Fixes ── */
-body[data-theme="light"] .video-thumbnail-wrap,
-.theme-light .video-thumbnail-wrap,
-body[data-theme="light"] .yt-thumb-wrap,
-.theme-light .yt-thumb-wrap {
-    background: #e2e8f0 !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
-}
 
