@@ -1334,3 +1334,391 @@ body.campus-body-fullscreen .vp-hero::after {
     border-color: transparent;
     font-weight: 600;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   YOUTUBE-STYLE VIDEO FEED & CARD ARCHITECTURE (CAMPUS PLAYER)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── YouTube Filter Chips Bar ── */
+.yt-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 6px 2px 14px 2px;
+    margin-bottom: 22px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    position: sticky;
+    top: 64px;
+    z-index: 25;
+    background: var(--bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.yt-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.yt-filter-pill {
+    flex: 0 0 auto;
+    padding: 7px 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.yt-filter-pill:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.yt-filter-pill.active {
+    background: #ffffff;
+    color: #07090e;
+    border-color: transparent;
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(255, 255, 255, 0.25);
+}
+
+body[data-theme="light"] .yt-filter-pill.active,
+.theme-light .yt-filter-pill.active {
+    background: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.25);
+}
+
+/* ── YouTube Video Grid ── */
+.video-grid,
+.yt-video-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+    gap: 26px 18px !important;
+    width: 100% !important;
+    margin-bottom: 32px !important;
+}
+
+/* ── YouTube Video Card ── */
+.video-card,
+.yt-video-card {
+    display: flex !important;
+    flex-direction: column !important;
+    text-decoration: none !important;
+    color: inherit !important;
+    border-radius: 14px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease !important;
+    position: relative !important;
+    box-shadow: none !important;
+}
+
+.video-card:hover,
+.yt-video-card:hover {
+    transform: translateY(-4px) !important;
+}
+
+/* ── Thumbnail Wrap (16:9) ── */
+.video-thumbnail-wrap,
+.yt-thumb-wrap {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    position: relative !important;
+    background: #090c14 !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.video-thumbnail,
+.yt-thumb-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+    transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+.video-card:hover .video-thumbnail,
+.yt-video-card:hover .yt-thumb-img {
+    transform: scale(1.05) !important;
+}
+
+/* ── Duration Badge (Bottom-Right) ── */
+.video-duration,
+.yt-duration-badge {
+    position: absolute !important;
+    bottom: 8px !important;
+    right: 8px !important;
+    background: rgba(0, 0, 0, 0.85) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    color: #ffffff !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    letter-spacing: 0.4px !important;
+    pointer-events: none !important;
+    z-index: 3 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ── Quality Badge (Top-Right) ── */
+.video-badge,
+.yt-quality-badge {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    background: rgba(99, 102, 241, 0.88) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    color: #ffffff !important;
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    z-index: 3 !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* ── Hover Play Overlay ── */
+.yt-play-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 0 !important;
+    transition: opacity 0.22s ease !important;
+    z-index: 2 !important;
+}
+
+.video-card:hover .yt-play-overlay,
+.yt-video-card:hover .yt-play-overlay {
+    opacity: 1 !important;
+}
+
+.yt-play-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 50% !important;
+    background: var(--brand-gradient) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.6) !important;
+    color: #ffffff !important;
+    transform: scale(0.9) !important;
+    transition: transform 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+.video-card:hover .yt-play-icon,
+.yt-video-card:hover .yt-play-icon {
+    transform: scale(1) !important;
+}
+
+/* ── Video Details Row ── */
+.video-info,
+.yt-details-row {
+    display: flex !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+    align-items: flex-start !important;
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+/* ── Channel / Teacher Avatar ── */
+.yt-channel-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+    background: var(--brand-gradient) !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.yt-channel-avatar img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* ── Video Info Column ── */
+.yt-text-wrap {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+/* ── Video Title ── */
+.video-title,
+.yt-video-title {
+    font-size: 0.94rem !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
+    line-height: 1.38 !important;
+    max-height: 2.76em !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    margin: 0 0 4px 0 !important;
+    text-decoration: none !important;
+    word-break: break-word !important;
+    transition: color 0.18s ease !important;
+}
+
+.video-card:hover .video-title,
+.yt-video-card:hover .yt-video-title {
+    color: var(--accent) !important;
+}
+
+/* ── Channel / Teacher Name ── */
+.yt-channel-name {
+    font-size: 0.82rem !important;
+    color: var(--text-dim) !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-bottom: 2px !important;
+    text-decoration: none !important;
+    transition: color 0.18s ease !important;
+}
+
+.yt-channel-name:hover {
+    color: var(--text) !important;
+}
+
+/* ── Metadata Line (Views & Date) ── */
+.video-meta,
+.yt-meta-line {
+    font-size: 0.78rem !important;
+    color: var(--text-dim) !important;
+    font-weight: 400 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    text-decoration: none !important;
+    margin: 0 !important;
+}
+
+.yt-meta-dot {
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+/* ── YouTube Playlist Stack Card ── */
+.yt-playlist-card {
+    display: flex !important;
+    flex-direction: column !important;
+    text-decoration: none !important;
+    color: inherit !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--glass-border) !important;
+    transition: transform 0.22s ease, box-shadow 0.22s ease !important;
+    position: relative !important;
+}
+
+.yt-playlist-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4) !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+}
+
+.yt-playlist-thumb-box {
+    width: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background: #090c14 !important;
+}
+
+.yt-playlist-thumb-box img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    transition: transform 0.35s ease !important;
+}
+
+.yt-playlist-card:hover .yt-playlist-thumb-box img {
+    transform: scale(1.05) !important;
+}
+
+.yt-playlist-overlay {
+    position: absolute !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    width: 40% !important;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.85) 100%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #ffffff !important;
+    gap: 4px !important;
+    padding-right: 12px !important;
+}
+
+.yt-playlist-body {
+    padding: 12px 14px !important;
+}
+
+.yt-playlist-title {
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    color: var(--text) !important;
+    margin-bottom: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.yt-playlist-meta {
+    font-size: 0.76rem !important;
+    color: var(--text-dim) !important;
+}
+
+/* ── Light Mode Fixes ── */
+body[data-theme="light"] .video-thumbnail-wrap,
+.theme-light .video-thumbnail-wrap,
+body[data-theme="light"] .yt-thumb-wrap,
+.theme-light .yt-thumb-wrap {
+    background: #e2e8f0 !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+}
+

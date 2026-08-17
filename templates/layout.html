@@ -188,21 +188,21 @@
         /* ── Search / Autocomplete ── */
         .search-bar-wrap {
             flex: 1;
-            max-width: 280px;
+            max-width: 440px;
             position: relative;
-            margin: 0 4px;
+            margin: 0 auto;
         }
 
         .search-bar-wrap input {
             width: 100%;
-            padding: 8px 36px 8px 14px;
+            padding: 8px 40px 8px 16px;
             background: var(--input-bg);
             border: 1px solid var(--border);
             border-radius: var(--radius-pill);
             color: var(--text);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 0.78rem;
-            height: 36px;
+            font-size: 0.82rem;
+            height: 38px;
             margin: 0;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             backdrop-filter: blur(10px);
@@ -223,11 +223,11 @@
 
         .search-bar-wrap .sb-icon {
             position: absolute;
-            right: 10px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-dim);
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             cursor: pointer;
             background: none;
             border: none;
@@ -340,12 +340,12 @@
         .top-bar-brand span {
             font-family: 'Outfit', sans-serif;
             font-weight: 800;
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             background: var(--brand-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.02em;
-            display: none;
+            display: inline-block;
         }
 
         .top-bar-right {
@@ -1257,6 +1257,15 @@
         a {
             color: var(--link-color);
             transition: color 0.3s ease;
+        }
+
+        a.video-card,
+        a.yt-video-card,
+        a.yt-playlist-card,
+        .video-card a,
+        .yt-video-card a {
+            color: inherit !important;
+            text-decoration: none !important;
         }
     </style>
     {% block head %}{% endblock %}

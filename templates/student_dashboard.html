@@ -1,287 +1,396 @@
 {% extends "layout.html" %}
+{% block title %}Discover — Campus Player{% endblock %}
+
 {% block content %}
+<div class="yt-hub-container">
 
-<div class="flex-between mb-16" style="flex-wrap:wrap; gap:10px;">
-    <div>
-        <h1 class="page-title font-display">Student Learning Hub</h1>
-        <p class="page-sub">Explore HD video lectures, class chatrooms & gamified coursework</p>
+    <!-- ── 1. YouTube-Style Filter Chips Bar ── -->
+    <div class="yt-filter-bar" id="ytFilterBar">
+        <button class="yt-filter-pill active" onclick="setYtFilter('all', this)">
+            <i class="material-icons" style="font-size:1.05rem;">explore</i> All
+        </button>
+        <button class="yt-filter-pill" onclick="setYtFilter('lectures', this)">
+            <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">local_fire_department</i> Latest Lectures
+        </button>
+        <button class="yt-filter-pill" onclick="setYtFilter('playlists', this)">
+            <i class="material-icons" style="font-size:1.05rem; color:var(--gold);">playlist_play</i> Course Playlists
+        </button>
+        <button class="yt-filter-pill" onclick="setYtFilter('classes', this)">
+            <i class="material-icons" style="font-size:1.05rem; color:var(--primary-light);">school</i> Enrolled Classes
+        </button>
+        <a href="{{ url_for('student_assignments') }}" class="yt-filter-pill">
+            <i class="material-icons" style="font-size:1.05rem;">assignment</i> Assignments
+        </a>
+        <a href="{{ url_for('student_quizzes') }}" class="yt-filter-pill">
+            <i class="material-icons" style="font-size:1.05rem;">quiz</i> Quizzes
+        </a>
+        <a href="{{ url_for('leaderboard') }}" class="yt-filter-pill">
+            <i class="material-icons" style="font-size:1.05rem; color:var(--gold);">emoji_events</i> Leaderboard
+        </a>
+        <a href="{{ url_for('ai_assistant') }}" class="yt-filter-pill">
+            <i class="material-icons" style="font-size:1.05rem; color:#10b981;">auto_awesome</i> AI Tutor
+        </a>
     </div>
-</div>
 
-<form action="{{ url_for('student_dashboard') }}" method="GET" class="search-form-row" style="display:flex; gap:10px; margin-bottom:20px;">
-    <div style="flex:1; position:relative;">
-        <input type="text" name="q" placeholder="Search lectures, topics, or playlists..." value="{{ search_query or '' }}"
-            style="margin-bottom:0; height:46px; border-radius:var(--radius-pill); padding-left:42px;">
-        <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:1.2rem;">search</i>
-    </div>
-    <button type="submit" class="btn btn-primary" style="width:auto; height:46px; padding:0 24px; border-radius:var(--radius-pill);">
-        <span>Search</span>
-    </button>
-</form>
-
-<!-- Quick Actions 6-Item Grid -->
-<div class="quick-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
-    <a href="{{ url_for('student_assignments') }}" class="quick-item">
-        <i class="material-icons">assignment</i>
-        <span>Assignments</span>
-        <small>Submit homework</small>
-    </a>
-    <a href="{{ url_for('student_progress_reports') }}" class="quick-item">
-        <i class="material-icons">assignment_turned_in</i>
-        <span>Reports</span>
-        <small>Academic record</small>
-    </a>
-    <a href="{{ url_for('student_quizzes') }}" class="quick-item">
-        <i class="material-icons">quiz</i>
-        <span>Quizzes</span>
-        <small>Test knowledge</small>
-    </a>
-    <a href="{{ url_for('view_notifications') }}" class="quick-item">
-        <i class="material-icons">notifications</i>
-        <span>Alerts</span>
-        <small>Notifications</small>
-    </a>
-    <a href="{{ url_for('ai_assistant') }}" class="quick-item">
-        <i class="material-icons">auto_awesome</i>
-        <span>AI Tutor</span>
-        <small>Instant help</small>
-    </a>
-    <a href="{{ url_for('leaderboard') }}" class="quick-item">
-        <i class="material-icons">leaderboard</i>
-        <span>Leaderboard</span>
-        <small>Class ranking</small>
-    </a>
-</div>
-
-<!-- Attendance & XP Gamification Banner -->
-<div class="stat-row" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
-    <div class="stat-card stat-gold" style="text-align:left; padding:20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div class="stat-lbl" style="margin-top:0;">Attendance Standing</div>
-                <div class="stat-val font-display" style="font-size:2.2rem; margin:4px 0;">{{ attendance_pct }}%</div>
-            </div>
-            <div>
-                {% if attendance_pct >= 75 %}
-                <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 12px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:700;">✓ Good Standing</span>
+    <!-- ── 2. Compact YouTube Academic Pulse Bar ── -->
+    <div class="yt-pulse-strip mb-24" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; background:var(--surface); border:1px solid var(--glass-border); padding:12px 18px; border-radius:var(--radius); backdrop-filter:blur(16px);">
+        <!-- Student Identity & Status -->
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="yt-channel-avatar" style="width:42px; height:42px; font-size:1.05rem; box-shadow:0 0 14px rgba(99,102,241,0.4);">
+                {% if current_user.avatar_path %}
+                <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}">
                 {% else %}
-                <span style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3); padding:4px 12px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:700;">⚠ Under Warning</span>
+                {{ current_user.username[:1].upper() }}
                 {% endif %}
             </div>
-        </div>
-        <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; margin-top:8px;">
-            <div style="width:{{ attendance_pct }}%; height:100%; background:{{ '#10b981' if attendance_pct>=75 else '#f43f5e' }}; border-radius:10px;"></div>
-        </div>
-    </div>
-    
-    <div class="stat-card stat-purple" style="text-align:left; padding:20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
-                <div class="stat-lbl" style="margin-top:0;">XP & Gamified Rank</div>
-                <div class="stat-val font-display" style="font-size:2.2rem; margin:4px 0;">{{ current_user.xp }} <span style="font-size:0.9rem; font-weight:600; color:var(--text-dim);">XP</span></div>
-            </div>
-            <span style="background:rgba(99,102,241,0.2); color:var(--primary-light); border:1px solid rgba(99,102,241,0.4); padding:4px 12px; border-radius:var(--radius-pill); font-size:0.72rem; font-weight:700; font-family:'JetBrains Mono',monospace;">
-                LEVEL {{ (current_user.xp // 500) + 1 }}
-            </span>
-        </div>
-        {% set xp_in_level = current_user.xp % 500 %}
-        {% set xp_pct = (xp_in_level / 500) * 100 %}
-        <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; margin-top:8px;">
-            <div style="width:{{ xp_pct }}%; height:100%; background:var(--brand-gradient); border-radius:10px;"></div>
-        </div>
-        <div style="font-size:0.68rem; color:var(--text-dim); margin-top:6px; text-align:right; font-family:'JetBrains Mono',monospace;">
-            {{ 500 - xp_in_level }} XP to Level {{ (current_user.xp // 500) + 2 }}
-        </div>
-    </div>
-</div>
-
-<!-- 🎯 Daily Quests & Challenges Card -->
-<div class="card card-royal mb-16" id="dailyQuestsCard" style="border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.03) 0%, rgba(99,102,241,0.04) 100%);">
-    <div class="flex-between mb-12" style="flex-wrap:wrap; gap:8px;">
-        <div class="card-title font-display" style="margin:0;">
-            <i class="material-icons" style="color:var(--gold);">stars</i>
-            Daily Quests &amp; Challenges
-        </div>
-        <div style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
-            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">schedule</i> Resets Daily at 00:00 UTC
-        </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
-        {% if daily_quests %}
-        {% for q_id, q in daily_quests.items() %}
-        <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(16,185,129,0.4)' if q.claimed else ('rgba(245,158,11,0.4)' if q.progress >= q.target else 'var(--glass-border)') }}; border-radius:var(--radius); padding:14px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.3s ease;">
-            <div>
-                <div class="flex-between mb-8" style="gap:8px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:34px; height:34px; border-radius:10px; background:{{ 'rgba(16,185,129,0.15)' if q.claimed else ('rgba(245,158,11,0.15)' if q.progress >= q.target else 'rgba(99,102,241,0.15)') }}; display:flex; align-items:center; justify-content:center;">
-                            <i class="material-icons" style="font-size:1.15rem; color:{{ '#10b981' if q.claimed else ('var(--gold)' if q.progress >= q.target else 'var(--primary-light)') }};">{{ q.icon }}</i>
-                        </div>
-                        <div>
-                            <div style="font-weight:700; font-size:0.88rem; color:var(--text);" class="font-display">{{ q.title }}</div>
-                            <div style="font-size:0.7rem; color:var(--text-dim);">{{ q.desc }}</div>
-                        </div>
-                    </div>
-                    <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace;">
-                        +{{ q.xp }} XP
+                <div style="font-weight:700; font-size:0.95rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+                    {{ current_user.username }}
+                    <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary-light); border:1px solid rgba(99,102,241,0.4); font-size:0.68rem; font-family:'JetBrains Mono',monospace; padding:1px 7px;">
+                        LVL {{ (current_user.xp // 500) + 1 }}
                     </span>
                 </div>
-                
-                <div style="margin:10px 0 8px 0;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-dim); margin-bottom:4px; font-family:'JetBrains Mono',monospace;">
-                        <span>Progress</span>
-                        <span>{{ q.progress }}/{{ q.target }}</span>
-                    </div>
-                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
-                        <div style="width:{{ [((q.progress / q.target) * 100), 100]|min }}%; height:100%; background:{{ '#10b981' if q.claimed else ('linear-gradient(90deg, #f59e0b, #d97706)' if q.progress >= q.target else 'var(--brand-gradient)') }}; border-radius:10px;"></div>
-                    </div>
+                <div style="font-size:0.75rem; color:var(--text-dim);">
+                    {{ current_user.xp }} XP Total &bull; {{ 500 - (current_user.xp % 500) }} XP to Next Level
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Metrics (Attendance & Quests) -->
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- Attendance Chip -->
+            <div style="display:flex; align-items:center; gap:8px; background:var(--surface2); padding:6px 14px; border-radius:var(--radius-pill); border:1px solid var(--glass-border);">
+                <i class="material-icons" style="font-size:1rem; color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }};">
+                    {{ 'check_circle' if attendance_pct >= 75 else 'warning' }}
+                </i>
+                <div style="font-size:0.78rem;">
+                    <span style="color:var(--text-dim);">Attendance:</span>
+                    <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace;">{{ attendance_pct }}%</strong>
                 </div>
             </div>
 
-            <div style="margin-top:6px;">
-                {% if q.claimed %}
-                <button class="btn btn-outline" disabled style="width:100%; padding:6px 12px; font-size:0.75rem; border-radius:var(--radius-sm); opacity:0.6; cursor:default; color:#10b981; border-color:rgba(16,185,129,0.3);">
-                    <i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">check_circle</i> Claimed
-                </button>
-                {% elif q.progress >= q.target %}
-                <form method="POST" action="{{ url_for('claim_quest', quest_id=q_id) }}" style="margin:0;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-primary claim-quest-btn" style="width:100%; padding:7px 12px; font-size:0.78rem; font-weight:800; border-radius:var(--radius-sm); background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none; box-shadow:0 0 14px rgba(245,158,11,0.5); cursor:pointer;">
-                        <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">redeem</i> Claim +{{ q.xp }} XP
-                    </button>
-                </form>
-                {% else %}
-                <button class="btn btn-outline" disabled style="width:100%; padding:6px 12px; font-size:0.75rem; border-radius:var(--radius-sm); opacity:0.5; cursor:not-allowed;">
-                    In Progress
-                </button>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-        {% endif %}
-    </div>
-</div>
-
-<!-- My Classes & Chatrooms -->
-{% if enrolled_classes %}
-<div class="card card-royal mb-16">
-    <div class="card-title font-display">
-        <i class="material-icons">school</i>
-        My Enrolled Classrooms ({{ enrolled_classes|length }})
-    </div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
-    {% for cls in enrolled_classes %}
-    <div style="background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid var(--glass-border); display:flex; flex-direction:column; justify-content:space-between;">
-        {% set today_record = current_user.attendance_records | selectattr('classroom_id', 'equalto', cls.id) |
-        selectattr('date', 'equalto', now_date) | first if current_user.attendance_records else None %}
-        <div>
-            <div class="flex-between mb-8">
-                <h3 class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text); margin:0;">
-                    {{ cls.name }}</h3>
-                <div style="display:flex; gap:6px; align-items:center;">
-                {% if class_ranks and class_ranks.get(cls.id) %}
-                <a href="{{ url_for('leaderboard', category='class', class_id=cls.id) }}"
-                    title="Your leaderboard rank in this class"
-                    style="text-decoration:none; font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:700; padding:3px 8px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3);">
-                    <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">emoji_events</i> {{ class_ranks[cls.id].rank }}/{{ class_ranks[cls.id].total }}
-                </a>
-                {% endif %}
-                {% if today_record %}
-                <span style="font-size:0.68rem; font-weight:700; padding:3px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; {% if today_record.status == 'Present' %}background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);{% else %}background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);{% endif %}">
-                    {{ today_record.status|upper }}
-                </span>
-                {% else %}
-                <span style="font-size:0.68rem; font-weight:700; padding:3px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">
-                    ABSENT
+            <!-- Daily Quests Toggle Button -->
+            {% if daily_quests %}
+            {% set unclaimed_count = daily_quests.values() | selectattr('claimed', 'equalto', false) | selectattr('progress', 'ge', 1) | list | length %}
+            <button onclick="toggleQuestsDropdown()" class="btn btn-outline" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:34px; position:relative;">
+                <i class="material-icons" style="font-size:0.95rem; color:var(--gold);">stars</i>
+                <span>Daily Quests</span>
+                {% if unclaimed_count > 0 %}
+                <span style="position:absolute; top:-4px; right:-4px; background:#f59e0b; color:#000; font-weight:800; font-size:0.65rem; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(245,158,11,0.6);">
+                    {{ unclaimed_count }}
                 </span>
                 {% endif %}
-                </div>
-            </div>
-            <p style="font-size:0.78rem; color:var(--text-dim); margin:0 0 12px 0;">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b></p>
-        </div>
-        <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
-            style="width:100%; padding:8px 12px; font-size:0.8rem; border-radius:var(--radius-sm);">
-            <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">chat</i> Open Class Chat
-        </a>
-    </div>
-    {% endfor %}
-    </div>
-</div>
-{% endif %}
+            </button>
+            {% endif %}
 
-<!-- Playlists Section -->
-{% if playlists %}
-<div class="mb-16">
-    <div class="section-header">
-        <div class="section-title">
-            <i class="material-icons" style="color:var(--gold);">playlist_play</i> Curated Playlists
+            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:34px;">
+                <i class="material-icons" style="font-size:0.95rem;">upload_file</i> Submit Work
+            </a>
         </div>
     </div>
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px;">
-        {% for playlist in playlists %}
-        <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" style="text-decoration:none;">
-            <div class="card" style="padding:14px; margin-bottom:0; transition:all 0.3s ease;">
-                {% if playlist.thumbnail_path %}
-                <div style="width:100%; aspect-ratio:16/9; border-radius:10px; background:url('{{ url_for('static', filename=playlist.thumbnail_path) }}') center/cover; margin-bottom:10px;"></div>
-                {% elif settings and settings.global_playlist_thumbnail %}
-                <div style="width:100%; aspect-ratio:16/9; border-radius:10px; background:url('{{ url_for('static', filename=settings.global_playlist_thumbnail) }}') center/cover; margin-bottom:10px;"></div>
-                {% else %}
-                <div style="width:100%; aspect-ratio:16/9; border-radius:10px; background:var(--surface2); display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
-                    <i class="material-icons" style="font-size:2rem; color:var(--text-dim);">video_library</i>
-                </div>
-                {% endif %}
-                <div class="font-display" style="font-size:0.92rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ playlist.title }}</div>
-                <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">{{ playlist.videos|length }} videos</div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
 
-<!-- Latest Videos Grid -->
-<div class="mb-16">
-    <div class="section-header">
-        <div class="section-title">
-            <i class="material-icons" style="color:var(--accent);">local_fire_department</i> Latest HD Lectures
+    <!-- 🎯 Daily Quests Collapsible Drawer -->
+    {% if daily_quests %}
+    <div id="ytQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.03) 0%, rgba(99,102,241,0.04) 100%);">
+        <div class="flex-between mb-12">
+            <div class="card-title font-display" style="margin:0; font-size:1.05rem;">
+                <i class="material-icons" style="color:var(--gold);">stars</i> Daily Quests &amp; Progress
+            </div>
+            <button onclick="toggleQuestsDropdown()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="material-icons">close</i>
+            </button>
         </div>
-    </div>
-    {% if videos %}
-    <div class="video-grid">
-        {% for video in videos %}
-        <a href="{{ url_for('watch_video', video_id=video.id) }}" class="video-card">
-            <div class="video-thumbnail-wrap">
-                {% if video.thumbnail_path %}
-                <img src="{{ url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" class="video-thumbnail" loading="lazy">
-                {% else %}
-                <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--surface2);">
-                    <i class="material-icons" style="font-size:2.5rem; color:var(--text-dim); opacity:0.4;">play_circle</i>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+            {% for q_id, q in daily_quests.items() %}
+            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(16,185,129,0.4)' if q.claimed else ('rgba(245,158,11,0.4)' if q.progress >= q.target else 'var(--glass-border)') }}; border-radius:var(--radius); padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div>
+                    <div class="flex-between mb-8" style="gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:32px; height:32px; border-radius:8px; background:{{ 'rgba(16,185,129,0.15)' if q.claimed else ('rgba(245,158,11,0.15)' if q.progress >= q.target else 'rgba(99,102,241,0.15)') }}; display:flex; align-items:center; justify-content:center;">
+                                <i class="material-icons" style="font-size:1.05rem; color:{{ '#10b981' if q.claimed else ('var(--gold)' if q.progress >= q.target else 'var(--primary-light)') }};">{{ q.icon }}</i>
+                            </div>
+                            <div>
+                                <div style="font-weight:700; font-size:0.85rem; color:var(--text);">{{ q.title }}</div>
+                                <div style="font-size:0.68rem; color:var(--text-dim);">{{ q.desc }}</div>
+                            </div>
+                        </div>
+                        <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:800; font-size:0.68rem; font-family:'JetBrains Mono',monospace;">
+                            +{{ q.xp }} XP
+                        </span>
+                    </div>
+                    
+                    <div style="margin:6px 0;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-bottom:4px; font-family:'JetBrains Mono',monospace;">
+                            <span>Progress</span>
+                            <span>{{ q.progress }}/{{ q.target }}</span>
+                        </div>
+                        <div style="width:100%; height:5px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
+                            <div style="width:{{ [((q.progress / q.target) * 100), 100]|min }}%; height:100%; background:{{ '#10b981' if q.claimed else ('linear-gradient(90deg, #f59e0b, #d97706)' if q.progress >= q.target else 'var(--brand-gradient)') }};"></div>
+                        </div>
+                    </div>
                 </div>
-                {% endif %}
-                <span class="video-badge">HLS HD</span>
-                {% if video.duration_seconds and video.duration_seconds > 0 %}
-                <span class="video-duration">{{ "%d:%02d" | format(video.duration_seconds // 60, video.duration_seconds % 60) }}</span>
-                {% else %}
-                <span class="video-duration">HD</span>
-                {% endif %}
-            </div>
-            <div class="video-info">
-                <div class="video-title">{{ video.title }}</div>
-                <div class="video-meta">
-                    <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--accent);">person</i> {{ video.uploader.username }}</span>
-                    <span>&bull;</span>
-                    <span>{{ video.upload_date.strftime('%b %d, %Y') }}</span>
+
+                <div style="margin-top:6px;">
+                    {% if q.claimed %}
+                    <span style="font-size:0.72rem; color:#10b981; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="material-icons" style="font-size:0.85rem;">check_circle</i> Claimed
+                    </span>
+                    {% elif q.progress >= q.target %}
+                    <form method="POST" action="{{ url_for('claim_quest', quest_id=q_id) }}" style="margin:0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:5px 10px; font-size:0.74rem; font-weight:800; border-radius:var(--radius-sm); background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none;">
+                            Claim +{{ q.xp }} XP
+                        </button>
+                    </form>
+                    {% else %}
+                    <span style="font-size:0.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">In Progress...</span>
+                    {% endif %}
                 </div>
             </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="card text-center" style="padding:40px;">
-        <i class="material-icons" style="font-size:2.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">search_off</i>
-        <p style="color:var(--text-dim); font-size:0.88rem;">No videos found matching your query.</p>
-        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 20px; margin-top:10px;">Clear Search</a>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
+
+    <!-- ── 3. YouTube Main Video Grid (Lectures Section) ── -->
+    <div id="ytLecturesSection" class="yt-content-section mb-32">
+        <div class="flex-between mb-16" style="align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="material-icons" style="color:var(--accent); font-size:1.4rem;">local_fire_department</i>
+                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                    {% if search_query %}Search Results for "{{ search_query }}"{% else %}Recommended Video Lectures{% endif %}
+                </h2>
+            </div>
+            <span style="font-size:0.78rem; color:var(--text-dim);">
+                {{ videos|length }} HD Lectures Available
+            </span>
+        </div>
+
+        {% if videos %}
+        <div class="yt-video-grid">
+            {% for video in videos %}
+            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="yt-video-card" title="{{ video.title }}">
+                <!-- 16:9 Thumbnail Box -->
+                <div class="yt-thumb-wrap">
+                    {% if video.thumbnail_path %}
+                    <img src="{{ url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" class="yt-thumb-img" loading="lazy">
+                    {% else %}
+                    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg, #111422 0%, #080a10 100%);">
+                        <i class="material-icons" style="font-size:2.8rem; color:var(--text-dim); opacity:0.35;">play_circle_outline</i>
+                        <span style="font-size:0.7rem; color:var(--text-dim); margin-top:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Campus Player HD</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Top-Right Quality Badge -->
+                    <span class="yt-quality-badge">HLS HD</span>
+
+                    <!-- Bottom-Right Duration Badge -->
+                    {% if video.duration_seconds and video.duration_seconds > 0 %}
+                    <span class="yt-duration-badge">{{ "%d:%02d" | format(video.duration_seconds // 60, video.duration_seconds % 60) }}</span>
+                    {% else %}
+                    <span class="yt-duration-badge">HD</span>
+                    {% endif %}
+
+                    <!-- Hover Play Icon Overlay -->
+                    <div class="yt-play-overlay">
+                        <div class="yt-play-icon">
+                            <i class="material-icons" style="font-size:1.6rem; margin-left:2px;">play_arrow</i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Row (Avatar + Info) -->
+                <div class="yt-details-row">
+                    <!-- Left: Channel/Teacher Avatar -->
+                    <div class="yt-channel-avatar" title="{{ video.uploader.username }}">
+                        {% if video.uploader.avatar_path %}
+                        <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.username }}">
+                        {% else %}
+                        {{ video.uploader.username[:1].upper() if video.uploader else 'T' }}
+                        {% endif %}
+                    </div>
+
+                    <!-- Right: Info Details -->
+                    <div class="yt-text-wrap">
+                        <h3 class="yt-video-title font-display">{{ video.title }}</h3>
+                        <div class="yt-channel-name">
+                            <span>{{ video.uploader.username if video.uploader else 'Faculty Instructor' }}</span>
+                            <i class="material-icons" style="font-size:0.85rem; color:var(--text-dim);" title="Verified Instructor">check_circle</i>
+                        </div>
+                        <div class="yt-meta-line">
+                            <span>{{ video.view_count or 0 }} views</span>
+                            <span class="yt-meta-dot">&bull;</span>
+                            <span>{{ video.upload_date.strftime('%b %d, %Y') if video.upload_date else 'Recently added' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card text-center" style="padding:48px 20px; border:1px dashed var(--glass-border); border-radius:var(--radius);">
+            <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:12px;">search_off</i>
+            <h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0 0 6px 0;">No lectures found</h3>
+            <p style="color:var(--text-dim); font-size:0.84rem; margin:0 0 16px 0;">Try searching for another topic or explore all course playlists below.</p>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 22px; border-radius:var(--radius-pill);">Clear Search</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── 4. YouTube Curated Playlists Section ── -->
+    {% if playlists %}
+    <div id="ytPlaylistsSection" class="yt-content-section mb-32">
+        <div class="flex-between mb-16" style="align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="material-icons" style="color:var(--gold); font-size:1.4rem;">playlist_play</i>
+                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                    Curated Course Playlists
+                </h2>
+            </div>
+            <span style="font-size:0.78rem; color:var(--text-dim);">
+                {{ playlists|length }} Structured Tracks
+            </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;">
+            {% for playlist in playlists %}
+            <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="yt-playlist-card">
+                <div class="yt-playlist-thumb-box">
+                    {% if playlist.thumbnail_path %}
+                    <img src="{{ url_for('static', filename=playlist.thumbnail_path) }}" alt="{{ playlist.title }}" loading="lazy">
+                    {% elif settings and settings.global_playlist_thumbnail %}
+                    <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" alt="{{ playlist.title }}" loading="lazy">
+                    {% else %}
+                    <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, #181d2e 0%, #0d101c 100%);">
+                        <i class="material-icons" style="font-size:2.8rem; color:var(--gold); opacity:0.6;">auto_stories</i>
+                    </div>
+                    {% endif %}
+
+                    <!-- Playlist Count Stack Overlay -->
+                    <div class="yt-playlist-overlay">
+                        <i class="material-icons" style="font-size:1.4rem;">playlist_play</i>
+                        <span style="font-size:0.75rem; font-weight:800; font-family:'JetBrains Mono',monospace;">{{ playlist.videos|length }}</span>
+                        <span style="font-size:0.65rem; text-transform:uppercase; letter-spacing:0.5px;">Videos</span>
+                    </div>
+                </div>
+
+                <div class="yt-playlist-body">
+                    <div class="yt-playlist-title font-display">{{ playlist.title }}</div>
+                    <div class="yt-playlist-meta">
+                        <span>Curated by <b>{{ playlist.creator.username if playlist.creator else 'Campus Faculty' }}</b></span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 5. Enrolled Classrooms Community Grid ── -->
+    {% if enrolled_classes %}
+    <div id="ytClassesSection" class="yt-content-section mb-32">
+        <div class="flex-between mb-16" style="align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="material-icons" style="color:var(--primary-light); font-size:1.4rem;">school</i>
+                <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                    My Classrooms &amp; Discussion Hubs
+                </h2>
+            </div>
+            <span style="font-size:0.78rem; color:var(--text-dim);">
+                {{ enrolled_classes|length }} Active Classes
+            </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+            {% for cls in enrolled_classes %}
+            <div style="background:var(--surface); border-radius:var(--radius); padding:16px; border:1px solid var(--glass-border); display:flex; flex-direction:column; justify-content:space-between; transition:transform 0.2s ease;">
+                {% set today_record = current_user.attendance_records | selectattr('classroom_id', 'equalto', cls.id) | selectattr('date', 'equalto', now_date) | first if current_user.attendance_records else None %}
+                <div>
+                    <div class="flex-between mb-8">
+                        <h3 class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text); margin:0;">
+                            {{ cls.name }}
+                        </h3>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            {% if class_ranks and class_ranks.get(cls.id) %}
+                            <a href="{{ url_for('leaderboard', category='class', class_id=cls.id) }}"
+                                title="Your rank in this class"
+                                style="text-decoration:none; font-family:'JetBrains Mono',monospace; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3);">
+                                <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">emoji_events</i> {{ class_ranks[cls.id].rank }}/{{ class_ranks[cls.id].total }}
+                            </a>
+                            {% endif %}
+                            {% if today_record %}
+                            <span style="font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; {% if today_record.status == 'Present' %}background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);{% else %}background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);{% endif %}">
+                                {{ today_record.status|upper }}
+                            </span>
+                            {% else %}
+                            <span style="font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace; background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3);">
+                                ABSENT
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <p style="font-size:0.78rem; color:var(--text-dim); margin:0 0 12px 0;">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b></p>
+                </div>
+                <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
+                    style="width:100%; padding:8px 12px; font-size:0.8rem; border-radius:var(--radius-sm);">
+                    <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">chat</i> Open Class Chat
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
 </div>
+
+<!-- Interactive Client-side Filter Logic -->
+<script>
+function setYtFilter(category, btn) {
+    document.querySelectorAll('.yt-filter-pill').forEach(el => el.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const lecturesSec = document.getElementById('ytLecturesSection');
+    const playlistsSec = document.getElementById('ytPlaylistsSection');
+    const classesSec = document.getElementById('ytClassesSection');
+
+    if (category === 'all') {
+        if (lecturesSec) lecturesSec.style.display = 'block';
+        if (playlistsSec) playlistsSec.style.display = 'block';
+        if (classesSec) classesSec.style.display = 'block';
+    } else if (category === 'lectures') {
+        if (lecturesSec) {
+            lecturesSec.style.display = 'block';
+            lecturesSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (playlistsSec) playlistsSec.style.display = 'none';
+        if (classesSec) classesSec.style.display = 'none';
+    } else if (category === 'playlists') {
+        if (lecturesSec) lecturesSec.style.display = 'none';
+        if (playlistsSec) {
+            playlistsSec.style.display = 'block';
+            playlistsSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (classesSec) classesSec.style.display = 'none';
+    } else if (category === 'classes') {
+        if (lecturesSec) lecturesSec.style.display = 'none';
+        if (playlistsSec) playlistsSec.style.display = 'none';
+        if (classesSec) {
+            classesSec.style.display = 'block';
+            classesSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+}
+
+function toggleQuestsDropdown() {
+    const drawer = document.getElementById('ytQuestsDrawer');
+    if (drawer) {
+        if (drawer.style.display === 'none' || drawer.style.display === '') {
+            drawer.style.display = 'block';
+            drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            drawer.style.display = 'none';
+        }
+    }
+}
+</script>
 {% endblock %}
