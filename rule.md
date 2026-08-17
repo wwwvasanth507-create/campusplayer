@@ -252,7 +252,9 @@ When GitHub displays `"Cannot retrieve latest commit at this time."` on the web 
 1. **Multi-Tenancy**: All queries, uploads, and data models MUST filter by `institution_id` unless operating strictly within the System Admin dashboard.
 2. **Video Processing**: Chunked upload supports up to 20 GB (`MAX_VIDEO_SIZE_MB=20480`). Transcoding uses FFmpeg HLS segmented streams (`144p`, `240p`, `360p`, `480p`, `720p`, `1080p`).
 3. **Security & CSRF**: All POST, PUT, DELETE endpoints MUST include CSRF validation (`csrf_token`). Session cookies must have `HttpOnly`, `SameSite=Lax`, and `Secure` (in HTTPS).
-4. **Responsive UI**: Web interfaces use modern cyber-glass styling, royal dark/light theme adaptivity, and must remain completely responsive from 320px mobile screens up to 4K desktop screens.
+4. **Responsive UI & Device Differentiation (PC/Laptops vs Mobile Android/iOS)**:
+   - **PC / Laptop / Desktop (min-width: 992px)**: Wide-screen Cyber-Glass design, two-column interactive hero, animated 3D video player preview mockups, 4-column feature matrix, telemetry counters, and keyboard-optimized split-pane login cards.
+   - **Mobile Android & iOS (< 992px)**: Native mobile app ergonomics, large touch targets (min 48px), iOS safe-area insets (`env(safe-area-inset-bottom)`), segmented quick-touch role selector chips (`🎓 Student`, `👨‍🏫 Teacher`, `🏛️ Admin`, `⚙️ System`), swipeable feature cards, and sticky bottom action CTAs.
 
 ---
 

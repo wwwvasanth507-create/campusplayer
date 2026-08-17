@@ -2,37 +2,280 @@
 {% block title %}Campus Player — Official Academic Video Portal{% endblock %}
 
 {% block content %}
-<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:40px 20px; position:relative;">
-    <div style="max-width:760px; position:relative; z-index:1;">
-        <div class="badge mb-16" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-size:0.82rem; padding:6px 18px; letter-spacing:1px; text-transform:uppercase;">
-            ✨ Official Institutional Learning Engine
+<!-- ═══════════════════════════════════════════════════════════════
+     PC & LAPTOP LANDING PAGE EXPERIENCE (Desktop / Mac / Laptops)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="device-desktop-only">
+    <div class="desktop-landing-hero">
+        <!-- Left Hero Content -->
+        <div>
+            <div class="desktop-hero-badge">
+                <i class="material-icons" style="font-size:1.05rem; color:var(--accent);">verified</i>
+                <span>Official Institutional Video & Learning Engine</span>
+            </div>
+
+            <h1 class="desktop-hero-title font-display">
+                Empowering Campus Learning Through <span style="background:var(--brand-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">High-Definition Video</span>
+            </h1>
+
+            <p class="desktop-hero-desc">
+                A royal, cyber-glass academic repository powered by ultra-parallel multi-bitrate HLS streaming, interactive student discussions, automated attendance auditing, and AI-powered progress telemetry.
+            </p>
+
+            <div class="desktop-cta-row">
+                <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding:14px 38px; font-size:1.05rem; border-radius:var(--radius-pill); box-shadow:0 10px 30px rgba(99,102,241,0.4); display:inline-flex; align-items:center; gap:10px;">
+                    <span>Enter Academic Portal</span>
+                    <i class="material-icons" style="font-size:1.2rem;">arrow_forward</i>
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-secondary" style="padding:14px 28px; font-size:0.95rem; border-radius:var(--radius-pill);">
+                    <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">play_circle</i>
+                    <span>Explore Features</span>
+                </a>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:20px; color:var(--text-dim); font-size:0.84rem;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="color:#10b981; font-size:1rem;">lock</i>
+                    <span>Multi-Tenant Encrypted</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="color:var(--accent); font-size:1rem;">bolt</i>
+                    <span>Adaptive 16K Ladder</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="color:var(--gold); font-size:1rem;">keyboard</i>
+                    <span>Press <kbd style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; font-family:monospace; color:#fff;">Enter</kbd> to Sign In</span>
+                </div>
+            </div>
         </div>
 
-        <h1 class="page-title font-display" style="font-size:clamp(2.2rem, 6vw, 3.8rem); line-height:1.15; margin:0 0 16px 0;">
-            Empowering Campus Learning Through High-Definition Video
+        <!-- Right 3D Cyber-Glass Mockup Player Preview -->
+        <div>
+            <div class="desktop-preview-mockup">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--glass-border);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:10px; height:10px; border-radius:50%; background:#ef4444;"></div>
+                        <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b;"></div>
+                        <div style="width:10px; height:10px; border-radius:50%; background:#10b981;"></div>
+                        <span style="font-size:0.75rem; color:var(--text-dim); margin-left:8px; font-weight:600;">Campus Player Player Engine v3.0</span>
+                    </div>
+                    <span class="badge" style="background:rgba(0,229,255,0.15); color:var(--accent); font-size:0.7rem; padding:3px 8px;">16K READY</span>
+                </div>
+
+                <div style="background:linear-gradient(180deg, #0b0f19 0%, #1e1b4b 100%); border-radius:12px; height:240px; display:flex; flex-direction:column; justify-content:space-between; padding:18px; position:relative; overflow:hidden;">
+                    <!-- Waveform simulation -->
+                    <div style="position:absolute; inset:0; opacity:0.12; background:radial-gradient(circle at 50% 50%, #6366f1 0%, transparent 70%);"></div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; z-index:1;">
+                        <span style="font-size:0.8rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:6px;">
+                            <i class="material-icons" style="font-size:1rem; color:var(--primary-light);">play_circle_filled</i>
+                            Advanced Distributed Systems Lecture #04
+                        </span>
+                        <span style="font-size:0.72rem; color:var(--text-dim); background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:6px;">1080p60 HD</span>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:center; z-index:1;">
+                        <div style="width:54px; height:54px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; box-shadow:0 0 25px rgba(99,102,241,0.6); cursor:pointer;">
+                            <i class="material-icons" style="font-size:2rem; color:#fff;">play_arrow</i>
+                        </div>
+                    </div>
+
+                    <div style="z-index:1;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:var(--text-dim); margin-bottom:4px;">
+                            <span>14:28 / 48:00</span>
+                            <span style="color:var(--accent);">Adaptive HLS Live</span>
+                        </div>
+                        <div style="height:4px; width:100%; background:rgba(255,255,255,0.15); border-radius:2px; overflow:hidden;">
+                            <div style="height:100%; width:32%; background:var(--brand-gradient);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px; text-align:center;">
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; padding:8px;">
+                        <div style="font-size:0.85rem; font-weight:800; color:var(--accent);">0.2s</div>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">Seek Latency</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; padding:8px;">
+                        <div style="font-size:0.85rem; font-weight:800; color:#10b981;">100%</div>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">Crash Resilient</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); border-radius:8px; padding:8px;">
+                        <div style="font-size:0.85rem; font-weight:800; color:var(--gold);">20 GB</div>
+                        <div style="font-size:0.65rem; color:var(--text-dim);">Max Chunk Upload</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Stats Telemetry Bar -->
+    <div class="desktop-stats-bar">
+        <div style="text-align:center;">
+            <div style="font-size:2rem; font-weight:900; color:var(--accent); font-family:var(--font-display);">99.9%</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); font-weight:600;">System Availability</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:2rem; font-weight:900; color:var(--primary-light); font-family:var(--font-display);">16K</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); font-weight:600;">Ultra-Parallel Transcoding</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:2rem; font-weight:900; color:#10b981; font-family:var(--font-display);">100 XP</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); font-weight:600;">Gamified Quiz Rewards</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:2rem; font-weight:900; color:var(--gold); font-family:var(--font-display);">&lt; 1s</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); font-weight:600;">Instant Report Audits</div>
+        </div>
+    </div>
+
+    <!-- Desktop 4-Column Feature Grid -->
+    <div class="desktop-features-grid">
+        <div class="desktop-feature-card">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; color:var(--primary-light); margin-bottom:14px;">
+                <i class="material-icons">movie</i>
+            </div>
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 8px 0;">Adaptive HLS Video</h3>
+            <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.5; margin:0;">
+                Multi-bitrate video streaming ranging from 144p to 16K resolution with automated chunk resumption.
+            </p>
+        </div>
+
+        <div class="desktop-feature-card">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(0,229,255,0.15); display:flex; align-items:center; justify-content:center; color:var(--accent); margin-bottom:14px;">
+                <i class="material-icons">domain</i>
+            </div>
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 8px 0;">Multi-Tenant Cloud</h3>
+            <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.5; margin:0;">
+                Isolated databases, encrypted teacher credentials, and institution-scoped permissions.
+            </p>
+        </div>
+
+        <div class="desktop-feature-card">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; color:#10b981; margin-bottom:14px;">
+                <i class="material-icons">fact_check</i>
+            </div>
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 8px 0;">Smart Attendance</h3>
+            <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.5; margin:0;">
+                Session audits, automated SMS/Email absence alerts, and one-click ReportLab PDF generation.
+            </p>
+        </div>
+
+        <div class="desktop-feature-card">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; color:var(--gold); margin-bottom:14px;">
+                <i class="material-icons">emoji_events</i>
+            </div>
+            <h3 style="font-size:1.05rem; font-weight:700; margin:0 0 8px 0;">Gamification & AI</h3>
+            <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.5; margin:0;">
+                XP watch progression, leaderboard ranking badges, and integrated AI academic assistant.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MOBILE ANDROID & IOS LANDING PAGE EXPERIENCE (< 992px)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="device-mobile-only mobile-landing-wrap">
+    <!-- Mobile App Header Banner -->
+    <div class="mobile-app-banner">
+        <div class="mobile-app-logo">
+            <i class="material-icons" style="font-size:1.5rem;">school</i>
+        </div>
+        <div style="flex:1;">
+            <div style="font-size:0.95rem; font-weight:800; color:#fff;">Campus Player Mobile</div>
+            <div style="font-size:0.72rem; color:var(--text-dim);">Institutional Academic Video Portal</div>
+        </div>
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm" style="border-radius:var(--radius-pill); font-size:0.75rem; padding:6px 14px;">
+            Sign In
+        </a>
+    </div>
+
+    <!-- Mobile Hero Center -->
+    <div class="mobile-hero-center">
+        <div class="badge mb-8" style="background:rgba(99,102,241,0.15); color:var(--primary-light); font-size:0.72rem; padding:4px 12px; border-radius:12px;">
+            ⚡ Ultra-Fast HLS Streaming
+        </div>
+        <h1 class="mobile-hero-title font-display">
+            High-Definition Learning on Every Device
         </h1>
-
-        <p class="page-sub" style="font-size:1.1rem; max-width:620px; margin:0 auto 36px auto; line-height:1.6;">
-            A royal, secure digital knowledge repository. Adaptive multi-tenant HLS streaming, interactive discussions, automated attendance auditing, and AI academic assistance.
+        <p class="mobile-hero-desc">
+            Watch lectures, take live quizzes, track attendance stats, and collaborate with your class directly on mobile.
         </p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary" style="width:100%; padding:14px; font-size:1rem; border-radius:14px; font-weight:700; box-shadow:0 8px 25px rgba(99,102,241,0.4);">
+            Enter Academic Portal <i class="material-icons" style="font-size:1.1rem;">arrow_forward</i>
+        </a>
+    </div>
 
-        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
-            <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding:14px 36px; font-size:1.05rem; border-radius:var(--radius-pill); box-shadow:0 8px 30px rgba(99,102,241,0.35);">
-                Enter Academic Portal <i class="material-icons" style="font-size:1.2rem;">arrow_forward</i>
-            </a>
+    <!-- Mobile Quick-Action Tiles -->
+    <div style="font-size:0.8rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:6px;">
+        Quick Portal Access
+    </div>
+    <div class="mobile-quick-actions">
+        <a href="{{ url_for('login') }}" class="mobile-action-tile">
+            <i class="material-icons" style="color:var(--primary-light);">play_circle</i>
+            <span style="font-weight:700; font-size:0.85rem;">Video Lectures</span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">Stream & Resume</span>
+        </a>
+        <a href="{{ url_for('login') }}" class="mobile-action-tile">
+            <i class="material-icons" style="color:#10b981;">fact_check</i>
+            <span style="font-weight:700; font-size:0.85rem;">Attendance</span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">Daily Audits</span>
+        </a>
+        <a href="{{ url_for('login') }}" class="mobile-action-tile">
+            <i class="material-icons" style="color:var(--accent);">quiz</i>
+            <span style="font-weight:700; font-size:0.85rem;">Quizzes & Tests</span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">Earn XP Points</span>
+        </a>
+        <a href="{{ url_for('login') }}" class="mobile-action-tile">
+            <i class="material-icons" style="color:var(--gold);">forum</i>
+            <span style="font-weight:700; font-size:0.85rem;">Class Chatroom</span>
+            <span style="font-size:0.68rem; color:var(--text-dim);">Live Discussions</span>
+        </a>
+    </div>
+
+    <!-- Mobile Swipeable Feature Cards -->
+    <div style="font-size:0.8rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:10px;">
+        Platform Capabilities
+    </div>
+    <div class="mobile-scroll-cards">
+        <div class="mobile-feature-pill">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <i class="material-icons" style="color:var(--primary-light);">speed</i>
+                <span style="font-weight:800; font-size:0.9rem; color:#fff;">Adaptive Transcoding</span>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-dim); margin:0; line-height:1.4;">
+                Smooth playback on mobile 4G/5G data with dynamic quality switching.
+            </p>
         </div>
 
-        <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap; color:var(--text-dim); font-size:0.85rem;">
-            <div style="display:flex; align-items:center; gap:6px;">
-                <i class="material-icons" style="color:var(--accent); font-size:1.1rem;">security</i> Multi-Tenant Isolation
+        <div class="mobile-feature-pill">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <i class="material-icons" style="color:#10b981;">military_tech</i>
+                <span style="font-weight:800; font-size:0.9rem; color:#fff;">Gamified Levels</span>
             </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <i class="material-icons" style="color:var(--gold); font-size:1.1rem;">bolt</i> Distributed HLS Fleet
-            </div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <i class="material-icons" style="color:#10b981; font-size:1.1rem;">devices</i> Universal Screen Adaptive
-            </div>
+            <p style="font-size:0.75rem; color:var(--text-dim); margin:0; line-height:1.4;">
+                Level up by watching lectures and climbing the institutional leaderboard.
+            </p>
         </div>
+
+        <div class="mobile-feature-pill">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <i class="material-icons" style="color:var(--accent);">smart_toy</i>
+                <span style="font-weight:800; font-size:0.9rem; color:#fff;">AI Study Assistant</span>
+            </div>
+            <p style="font-size:0.75rem; color:var(--text-dim); margin:0; line-height:1.4;">
+                Ask academic questions, summarize concepts, and review key lecture points.
+            </p>
+        </div>
+    </div>
+
+    <!-- Mobile Sticky Bottom CTA -->
+    <div class="mobile-sticky-cta">
+        <a href="{{ url_for('login') }}" class="btn btn-primary" style="width:100%; border-radius:14px; padding:13px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span>Sign In to Campus Player</span>
+            <i class="material-icons" style="font-size:1.1rem;">login</i>
+        </a>
     </div>
 </div>
 {% endblock %}

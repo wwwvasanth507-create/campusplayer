@@ -62,7 +62,17 @@ To ensure seamless multi-developer collaboration without code drift or overwriti
 
 1. **Brand Name**: Always format the platform brand as **`Campus Player`** (with a space) in all user-facing dashboards, page titles, navigation bars, email templates, PDF headers, and marketing materials.
 2. **Design Language**: Follow the **Cyber-Glass Modern Design System** with dark/light mode toggle, vibrant gradients (`#6366f1` Indigo, `#00e5ff` Cyan, `#f59e0b` Amber), glassmorphism borders, and smooth micro-animations.
-3. **Responsiveness**: All templates must render flawlessly across 320px mobile screens, tablets, laptops, and ultra-wide desktop monitors using `responsive.css`.
+3. **Responsiveness & Device Differentiation**: All templates must render flawlessly across 320px mobile screens, tablets, laptops, and ultra-wide desktop monitors using `responsive.css`.
+4. **Device-Differentiated UI Architecture**:
+   - **PC / Laptop / Desktop (min-width: 992px)**:
+     - Wide two-column interactive hero layouts with live interactive Cyber-Glass player preview simulations.
+     - 4-column feature matrix, telemetry counters, and horizontal navigation.
+     - Split-screen / expansive login card with keyboard accessibility (`Tab`, `Enter`) and password reveal.
+   - **Mobile Android & iOS (< 992px)**:
+     - Native mobile app ergonomic design with thumb-reach action zones.
+     - Big touch targets (min 48px), swipeable feature cards, and safe-area insets (`env(safe-area-inset-bottom)`).
+     - Segmented quick-touch role selector chips (`🎓 Student`, `👨‍🏫 Teacher`, `🏛️ Admin`, `⚙️ System`).
+     - Sticky bottom-bar action CTAs and touch feedback animations.
 
 ---
 

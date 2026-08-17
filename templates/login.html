@@ -1,180 +1,181 @@
 {% extends "layout.html" %}
+{% block title %}Sign In — Campus Player{% endblock %}
+
 {% block content %}
-<div class="auth-card-wrap">
-    <div class="card auth-card">
-        <div class="auth-header text-center">
-            <div class="auth-logo-icon">
-                <i class="material-icons">videocam</i>
+<!-- ═══════════════════════════════════════════════════════════════
+     PC & LAPTOP LOGIN EXPERIENCE (Desktop / Mac / Laptops >= 992px)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="device-desktop-only" style="padding: 20px 0 40px 0;">
+    <div class="desktop-login-layout">
+        <!-- Left Hero Highlight Sidebar -->
+        <div class="desktop-login-hero">
+            <div>
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+                    <div style="width:48px; height:48px; border-radius:14px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(99,102,241,0.4);">
+                        <i class="material-icons" style="font-size:1.6rem;">videocam</i>
+                    </div>
+                    <div>
+                        <div class="font-display" style="font-size:1.4rem; font-weight:800; background:var(--brand-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Campus Player</div>
+                        <div style="font-size:0.75rem; color:var(--text-dim);">Academic Video & Learning Engine</div>
+                    </div>
+                </div>
+
+                <h2 style="font-size:1.65rem; font-weight:800; line-height:1.25; margin:0 0 16px 0;">
+                    Secure Gateway to Your Institutional Lectures
+                </h2>
+                <p style="font-size:0.9rem; color:var(--text-dim); line-height:1.55; margin-bottom:24px;">
+                    Access ultra-high definition course videos, take interactive quizzes, submit class assignments, and monitor attendance reports.
+                </p>
+
+                <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:24px;">
+                    <div style="display:flex; align-items:center; gap:10px; font-size:0.84rem; color:var(--text-main);">
+                        <i class="material-icons" style="color:var(--accent); font-size:1.15rem;">shield</i>
+                        <span>Tenant-Scoped AES-128 Encryption</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:0.84rem; color:var(--text-main);">
+                        <i class="material-icons" style="color:var(--primary-light); font-size:1.15rem;">hd</i>
+                        <span>16K Adaptive Multi-Bitrate HLS Streaming</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; font-size:0.84rem; color:var(--text-main);">
+                        <i class="material-icons" style="color:#10b981; font-size:1.15rem;">auto_graph</i>
+                        <span>Automated Attendance Audits & XP Gamification</span>
+                    </div>
+                </div>
             </div>
-            <div class="auth-brand-title font-display">Campus Player</div>
-            <p class="auth-subtitle">High-Definition Academic Video & Learning Platform</p>
+
+            <div style="padding-top:16px; border-top:1px solid var(--glass-border); display:flex; align-items:center; justify-content:space-between; font-size:0.78rem; color:var(--text-dim);">
+                <span style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 8px #10b981;"></span>
+                    Network Fleet Operational
+                </span>
+                <span>Version 3.0</span>
+            </div>
         </div>
 
-        <form method="POST" class="auth-form">
+        <!-- Right Login Card -->
+        <div class="desktop-login-card">
+            <div style="margin-bottom:24px;">
+                <h3 style="font-size:1.35rem; font-weight:800; margin:0 0 6px 0;">Sign In to Portal</h3>
+                <p style="font-size:0.82rem; color:var(--text-dim); margin:0;">Enter your credentials and select your role to continue</p>
+            </div>
+
+            <form method="POST" class="auth-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
+                <div class="form-group">
+                    <label for="desktop_username" style="font-size:0.82rem; font-weight:600; margin-bottom:6px; display:block;">Username</label>
+                    <div class="input-icon-wrap">
+                        <i class="material-icons input-icon">person</i>
+                        <input type="text" id="desktop_username" name="username" placeholder="Enter username or email" required autocomplete="username" autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="desktop_password" style="font-size:0.82rem; font-weight:600; margin-bottom:6px; display:block;">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="material-icons input-icon">lock</i>
+                        <input type="password" id="desktop_password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="desktop_role" style="font-size:0.82rem; font-weight:600; margin-bottom:6px; display:block;">Account Role</label>
+                    <div class="input-icon-wrap">
+                        <i class="material-icons input-icon">badge</i>
+                        <select id="desktop_role" name="role" required>
+                            <option value="">Select your account role...</option>
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="admin">Institution Admin</option>
+                            <option value="system_admin">System Super Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%; height:48px; font-size:0.98rem; font-weight:700; border-radius:12px; box-shadow:0 8px 24px rgba(99,102,241,0.35); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px;">
+                    <span>Sign In to Portal</span>
+                    <i class="material-icons" style="font-size:1.15rem;">arrow_forward</i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MOBILE ANDROID & IOS LOGIN EXPERIENCE (< 992px)
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="device-mobile-only mobile-login-container">
+    <div class="mobile-login-sheet">
+        <!-- Mobile App Brand Header -->
+        <div style="text-align:center; margin-bottom:20px;">
+            <div style="width:52px; height:52px; border-radius:16px; background:var(--brand-gradient); margin:0 auto 10px; display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 6px 18px rgba(99,102,241,0.4);">
+                <i class="material-icons" style="font-size:1.8rem;">school</i>
+            </div>
+            <div class="font-display" style="font-size:1.4rem; font-weight:800; background:var(--brand-gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Campus Player</div>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin:4px 0 0 0;">Mobile Academic Sign In</p>
+        </div>
+
+        <form method="POST" class="auth-form" id="mobileAuthForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            
+            <!-- Hidden role input connected to segmented role chips -->
+            <input type="hidden" name="role" id="mobile_role_input" value="student">
+
+            <!-- Mobile Touch Segmented Role Chips -->
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+                Select Role
+            </div>
+            <div class="role-chips-group">
+                <div class="role-chip active" data-role="student" onclick="selectMobileRole('student', this)">
+                    <i class="material-icons" style="font-size:1rem;">school</i>
+                    <span>Student</span>
+                </div>
+                <div class="role-chip" data-role="teacher" onclick="selectMobileRole('teacher', this)">
+                    <i class="material-icons" style="font-size:1rem;">co_present</i>
+                    <span>Teacher</span>
+                </div>
+                <div class="role-chip" data-role="admin" onclick="selectMobileRole('admin', this)">
+                    <i class="material-icons" style="font-size:1rem;">domain</i>
+                    <span>Admin</span>
+                </div>
+                <div class="role-chip" data-role="system_admin" onclick="selectMobileRole('system_admin', this)">
+                    <i class="material-icons" style="font-size:1rem;">admin_panel_settings</i>
+                    <span>System</span>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="mobile_username" style="font-size:0.78rem; font-weight:600; margin-bottom:4px; display:block;">Username</label>
                 <div class="input-icon-wrap">
                     <i class="material-icons input-icon">person</i>
-                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+                    <input type="text" id="mobile_username" name="username" placeholder="Username" required autocomplete="username" inputmode="text" style="font-size:0.95rem; height:46px;">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="mobile_password" style="font-size:0.78rem; font-weight:600; margin-bottom:4px; display:block;">Password</label>
                 <div class="input-icon-wrap">
                     <i class="material-icons input-icon">lock</i>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                    <input type="password" id="mobile_password" name="password" placeholder="Password" required autocomplete="current-password" style="font-size:0.95rem; height:46px;">
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="roleSelect">Account Role</label>
-                <div class="input-icon-wrap">
-                    <i class="material-icons input-icon">badge</i>
-                    <select id="roleSelect" name="role" required>
-                        <option value="">Select your role...</option>
-                        <option value="student">Student</option>
-                        <option value="teacher">Teacher</option>
-                        <option value="admin">Institution Admin</option>
-                        <option value="system_admin">System Super Admin</option>
-                    </select>
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-auth-submit">
-                <span>Sign In to Portal</span>
-                <i class="material-icons" style="font-size:1.1rem;">arrow_forward</i>
+            <button type="submit" class="btn btn-primary" style="width:100%; height:50px; font-size:1rem; font-weight:700; border-radius:14px; box-shadow:0 8px 24px rgba(99,102,241,0.4); display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px;">
+                <span>Sign In</span>
+                <i class="material-icons" style="font-size:1.15rem;">arrow_forward</i>
             </button>
         </form>
     </div>
 </div>
 
-<style>
-.auth-card-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 180px);
-    padding: 30px 16px;
-}
-
-.auth-card {
-    max-width: 420px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 32px 28px;
-    background: var(--surface);
-    border: 1px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
-    position: relative;
-}
-
-.auth-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 20%;
-    right: 20%;
-    height: 2px;
-    background: var(--brand-gradient);
-    border-radius: 2px;
-    box-shadow: 0 0 15px rgba(99, 102, 241, 0.8);
-}
-
-.auth-header {
-    margin-bottom: 24px;
-}
-
-.auth-logo-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 12px;
-    border-radius: 18px;
-    background: var(--brand-gradient);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4), 0 0 15px rgba(0, 229, 255, 0.3);
-}
-
-.auth-logo-icon i {
-    font-size: 2rem;
-    color: #ffffff;
-}
-
-.auth-brand-title {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    background: var(--brand-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 4px;
-}
-
-.auth-subtitle {
-    font-size: 0.76rem;
-    color: var(--text-dim);
-    line-height: 1.4;
-}
-
-.input-icon-wrap {
-    position: relative;
-    width: 100%;
-}
-
-.input-icon-wrap .input-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.15rem;
-    color: var(--text-dim);
-    pointer-events: none;
-    transition: color 0.2s ease;
-}
-
-.input-icon-wrap input,
-.input-icon-wrap select {
-    padding-left: 44px;
-    margin-bottom: 16px;
-}
-
-.input-icon-wrap input:focus + .input-icon,
-.input-icon-wrap select:focus + .input-icon {
-    color: var(--accent);
-}
-
-.btn-auth-submit {
-    width: 100%;
-    margin-top: 6px;
-    height: 48px;
-    font-size: 0.94rem;
-    font-weight: 700;
-    border-radius: var(--radius-sm);
-}
-
-@media (max-width: 480px) {
-    .auth-card {
-        padding: 24px 20px;
-        border-radius: var(--radius);
-    }
-
-    .auth-logo-icon {
-        width: 48px;
-        height: 48px;
-    }
-
-    .auth-logo-icon i {
-        font-size: 1.7rem;
-    }
-
-    .auth-brand-title {
-        font-size: 1.35rem;
+<script>
+function selectMobileRole(role, element) {
+    document.getElementById('mobile_role_input').value = role;
+    document.querySelectorAll('.role-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+    });
+    if (element) {
+        element.classList.add('active');
     }
 }
-</style>
+</script>
 {% endblock %}
