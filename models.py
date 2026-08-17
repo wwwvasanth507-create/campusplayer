@@ -99,6 +99,7 @@ class User(UserMixin, db.Model):
     total_quiz_score = db.Column(db.Integer, default=0)
     total_quizzes_taken = db.Column(db.Integer, default=0)
     achievements_json = db.Column(db.Text, default='[]')  # JSON array of achievement IDs
+    quests_json = db.Column(db.Text, default='{}')        # JSON object storing daily quests state and progress
 
     def get_achievements(self):
         return json.loads(self.achievements_json or '[]')
@@ -110,6 +111,94 @@ class User(UserMixin, db.Model):
             self.achievements_json = json.dumps(achievements)
             return True
         return False
+
+    def get_daily_quests(self):
+        """Return dict of 4 active daily quests for today's UTC date."""
+        today_str = datetime.utcnow().strftime('%Y-%m-%d')
+        raw = json.loads(self.quests_json or '{}')
+        if raw.get('date') != today_str:
+            raw = {
+                'date': today_str,
+                'quests': {
+                    'daily_login': {
+                        'id': 'daily_login',
+                        'title': 'Daily Check-in',
+                        'desc': 'Log in & remain active today',
+                        'xp': 25,
+                        'icon': 'event_available',
+                        'progress': 1,
+                        'target': 1,
+                        'claimed': False
+                    },
+                    'watch_video': {
+                        'id': 'watch_video',
+                        'title': 'Course Explorer',
+                        'desc': 'Watch or review an educational lecture',
+                        'xp': 50,
+                        'icon': 'play_circle_filled',
+                        'progress': 0,
+                        'target': 1,
+                        'claimed': False
+                    },
+                    'take_quiz': {
+                        'id': 'take_quiz',
+                        'title': 'Quiz Challenger',
+                        'desc': 'Complete an online assessment',
+                        'xp': 75,
+                        'icon': 'quiz',
+                        'progress': 0,
+                        'target': 1,
+                        'claimed': False
+                    },
+                    'submit_assignment': {
+                        'id': 'submit_assignment',
+                        'title': 'Assignment Scholar',
+                        'desc': 'Submit coursework or homework',
+                        'xp': 100,
+                        'icon': 'assignment_turned_in',
+                        'progress': 0,
+                        'target': 1,
+                        'claimed': False
+                    }
+                }
+            }
+            self.quests_json = json.dumps(raw)
+        return raw.get('quests', {})
+
+    def update_quest_progress(self, quest_id, amount=1):
+        """Increment progress for a specific daily quest."""
+        today_str = datetime.utcnow().strftime('%Y-%m-%d')
+        raw = json.loads(self.quests_json or '{}')
+        if raw.get('date') != today_str:
+            self.get_daily_quests()
+            raw = json.loads(self.quests_json or '{}')
+        quests = raw.get('quests', {})
+        if quest_id in quests and not quests[quest_id].get('claimed', False):
+            current = quests[quest_id].get('progress', 0)
+            target = quests[quest_id].get('target', 1)
+            quests[quest_id]['progress'] = min(target, current + amount)
+            self.quests_json = json.dumps(raw)
+            return True
+        return False
+
+    def claim_quest(self, quest_id):
+        """Claim rewards for a completed quest and award XP."""
+        today_str = datetime.utcnow().strftime('%Y-%m-%d')
+        raw = json.loads(self.quests_json or '{}')
+        if raw.get('date') != today_str:
+            self.get_daily_quests()
+            raw = json.loads(self.quests_json or '{}')
+        quests = raw.get('quests', {})
+        if quest_id in quests:
+            quest = quests[quest_id]
+            if quest.get('progress', 0) >= quest.get('target', 1) and not quest.get('claimed', False):
+                reward_xp = quest.get('xp', 0)
+                self.xp = (self.xp or 0) + reward_xp
+                self.level = (self.xp // 500) + 1
+                quest['claimed'] = True
+                self.quests_json = json.dumps(raw)
+                return True, reward_xp
+        return False, 0
 
     # Relationships with cascades for clean deletions
     videos = db.relationship('Video', backref='uploader', lazy=True, cascade="all, delete-orphan")
@@ -201,6 +290,10 @@ class Video(db.Model):
     # === FIXED-TIME AUTO-DELETION FIELDS ===
     auto_delete_at = db.Column(db.DateTime, nullable=True)  # Fixed date/time when video expires
     retention_days = db.Column(db.Integer, nullable=True)   # Retention duration in days (e.g. 7, 30, 90)
+
+    # === ACADEMIC ARCHIVING FIELDS ===
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime, nullable=True)
 
     # === AI VIDEO SUMMARIZER CACHING FIELDS ===
     ai_summary = db.Column(db.Text, nullable=True)          # AI generated narrative summary
@@ -407,6 +500,10 @@ class SiteSettings(db.Model):
     # attendance session reports.
     min_attendance_percentage = db.Column(db.Float, default=75.0)
 
+    # === ACADEMIC YEAR ROLLOVER & ARCHIVING SETTINGS ===
+    scheduled_academic_year_end_date = db.Column(db.DateTime, nullable=True)
+    academic_year_rollover_processed = db.Column(db.Boolean, default=False)
+
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -458,6 +555,10 @@ class QuizResult(db.Model):
     # NEW: Pass/fail
     passed = db.Column(db.Boolean, default=False)
 
+    # === ACADEMIC ARCHIVING FIELDS ===
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime, nullable=True)
+
     student = db.relationship('User', backref=db.backref('quiz_results', lazy=True))
 
 
@@ -492,6 +593,10 @@ class Attendance(db.Model):
         db.Index('ix_attendance_student_class', 'student_id', 'classroom_id'),
         db.Index('ix_attendance_session_student', 'session_id', 'student_id'),
     )
+
+    # === ACADEMIC ARCHIVING FIELDS ===
+    is_archived = db.Column(db.Boolean, default=False)
+    archived_at = db.Column(db.DateTime, nullable=True)
 
     # Allowed status values (extends the old free-text 'Present'/'Absent'/'Late').
     # NOTE: 'Leave' has been removed — Present/Absent/Late/Half Day/Holiday/
@@ -645,6 +750,7 @@ class StudentProfile(db.Model):
     department = db.Column(db.String(150), nullable=True)
     year = db.Column(db.String(20), nullable=True)
     section = db.Column(db.String(20), nullable=True)
+    requires_admin_review = db.Column(db.Boolean, default=False)  # Flagged on 4th year / final year rollover
     date_of_birth = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(20), nullable=True)
     blood_group = db.Column(db.String(10), nullable=True)

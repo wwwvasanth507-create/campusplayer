@@ -4,11 +4,12 @@ Run: celery -A celery_config.celery worker --loglevel=info
 """
 import os
 import subprocess
+import shutil
 import time
 import json
 import logging
 from datetime import datetime, timedelta
-from celery import Celery, Task
+from celery import Celery, Task, shared_task
 from celery_config import celery, make_celery
 from factory import create_app
 
@@ -574,3 +575,100 @@ def refresh_leaderboard():
 
         db.session.commit()
     return {'users_refreshed': len(users)}
+
+
+@celery.task
+def process_academic_year_rollovers():
+    """Automated background task to process academic-year rollovers, student promotions,
+    final-year review flagging, and data archiving per institution."""
+    with flask_app.app_context():
+        from models import SiteSettings, StudentProfile, Video, Attendance, QuizResult, ActivityLog, Institution
+        from extensions import db
+
+        now = datetime.utcnow()
+        eligible_settings = SiteSettings.query.filter(
+            SiteSettings.scheduled_academic_year_end_date.isnot(None),
+            SiteSettings.scheduled_academic_year_end_date <= now,
+            SiteSettings.academic_year_rollover_processed == False
+        ).all()
+
+        results = []
+
+        year_promotion_map = {
+            '1st Year': '2nd Year',
+            '2nd Year': '3rd Year',
+            '3rd Year': '4th Year',
+            '1': '2nd Year',
+            '2': '3rd Year',
+            '3': '4th Year',
+            'I': '2nd Year',
+            'II': '3rd Year',
+            'III': '4th Year',
+        }
+
+        for setting in eligible_settings:
+            inst_id = setting.institution_id
+            inst = Institution.query.get(inst_id) if inst_id else None
+            inst_name = inst.name if inst else "Default Institution"
+
+            try:
+                with db.session.begin_nested():
+                    # 1. Promote Student Profiles & Flag Final-Year Students
+                    students = StudentProfile.query.filter_by(institution_id=inst_id).all() if inst_id else StudentProfile.query.all()
+                    promoted_count = 0
+                    review_flagged_count = 0
+
+                    for sp in students:
+                        current_yr = (sp.year or '').strip()
+                        if current_yr in year_promotion_map:
+                            sp.year = year_promotion_map[current_yr]
+                            promoted_count += 1
+                        elif current_yr in ['4th Year', '4', 'IV', 'Final Year']:
+                            sp.requires_admin_review = True
+                            review_flagged_count += 1
+
+                    # 2. Archive Outgoing Year Data (Videos, Attendance, Quiz Results)
+                    video_filter = {'institution_id': inst_id, 'is_archived': False} if inst_id else {'is_archived': False}
+                    attendance_filter = {'institution_id': inst_id, 'is_archived': False} if inst_id else {'is_archived': False}
+                    quiz_res_filter = {'institution_id': inst_id, 'is_archived': False} if inst_id else {'is_archived': False}
+
+                    archived_videos = Video.query.filter_by(**video_filter).update({'is_archived': True, 'archived_at': now}, synchronize_session=False)
+                    archived_attendance = Attendance.query.filter_by(**attendance_filter).update({'is_archived': True, 'archived_at': now}, synchronize_session=False)
+                    archived_quizzes = QuizResult.query.filter_by(**quiz_res_filter).update({'is_archived': True, 'archived_at': now}, synchronize_session=False)
+
+                    # 3. Mark Settings as Processed
+                    setting.academic_year_rollover_processed = True
+
+                    # 4. Activity Log
+                    log = ActivityLog(
+                        institution_id=inst_id,
+                        action='ACADEMIC_YEAR_ROLLOVER',
+                        details=(f"Academic rollover processed for '{inst_name}'. Promoted: {promoted_count}, "
+                                 f"Review Flags: {review_flagged_count}, Archived Videos: {archived_videos}, "
+                                 f"Archived Attendance: {archived_attendance}, Archived Quizzes: {archived_quizzes}.")
+                    )
+                    db.session.add(log)
+
+                db.session.commit()
+                logger.info(f"Successfully processed academic rollover for institution '{inst_name}' (ID: {inst_id})")
+                results.append({
+                    'institution_id': inst_id,
+                    'institution_name': inst_name,
+                    'promoted_students': promoted_count,
+                    'flagged_reviews': review_flagged_count,
+                    'archived_videos': archived_videos,
+                    'archived_attendance': archived_attendance,
+                    'archived_quizzes': archived_quizzes,
+                    'status': 'success'
+                })
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Error processing academic rollover for institution ID {inst_id}: {e}")
+                results.append({
+                    'institution_id': inst_id,
+                    'institution_name': inst_name,
+                    'error': str(e),
+                    'status': 'failed'
+                })
+
+        return {'rollovers_processed': len(results), 'details': results}

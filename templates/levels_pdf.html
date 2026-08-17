@@ -1,954 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        {% if report_type == 'class' and selected_class %}{{ selected_class.name }} — {% elif report_type ==
-        'all_classes' %}All Classes — {% endif %}Levels Report · Campus Player
-    </title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        /* ===== CSS VARIABLES ===== */
-        :root {
-            --primary: #4f46e5;
-            --primary-light: #818cf8;
-            --secondary: #06b6d4;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --gold: #f59e0b;
-            --silver: #94a3b8;
-            --bronze: #b45309;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --text-muted: #64748b;
-            --accent-purple: #7c3aed;
-            --accent-cyan: #0891b2;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* ===== TOPBAR ===== */
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            height: 60px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-        }
-
-        .topbar-logo {
-            font-size: 1rem;
-            font-weight: 800;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-            letter-spacing: -0.5px;
-        }
-
-        .topbar-logo span {
-            color: var(--primary-light);
-        }
-
-        .topbar-divider {
-            width: 1px;
-            height: 24px;
-            background: rgba(255, 255, 255, 0.15);
-            flex-shrink: 0;
-        }
-
-        /* Tab navigation */
-        .tab-group {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-
-        .tab {
-            padding: 6px 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .tab:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .tab.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
-        }
-
-        /* Search */
-        .search-form {
-            display: flex;
-            align-items: center;
-            gap: 0;
-        }
-
-        .search-input {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-right: none;
-            border-radius: 8px 0 0 8px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.82rem;
-            padding: 7px 14px;
-            min-width: 180px;
-            outline: none;
-            transition: all 0.2s;
-        }
-
-        .search-input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .search-input:focus {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: var(--primary-light);
-        }
-
-        .search-btn {
-            background: var(--primary);
-            border: 1px solid var(--primary);
-            border-radius: 0 8px 8px 0;
-            color: #fff;
-            padding: 7px 14px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .search-btn:hover {
-            background: #4338ca;
-        }
-
-        .class-select {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            color: #fff;
-            padding: 7px 12px;
-            font-family: inherit;
-            font-size: 0.82rem;
-            cursor: pointer;
-        }
-
-        .class-select option {
-            background: #1e1b4b;
-            color: #fff;
-        }
-
-        /* Topbar right actions */
-        .topbar-actions {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border-radius: 8px;
-            border: none;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            white-space: nowrap;
-        }
-
-        .btn-pdf {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: #fff;
-        }
-
-        .btn-pdf:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
-        }
-
-        .btn-back {
-            background: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #fff;
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-        }
-
-        /* ===== MAIN CONTAINER ===== */
-        .container {
-            max-width: 1140px;
-            margin: 0 auto;
-            padding: 32px 24px 60px;
-        }
-
-        /* ===== PRINT HEADER (shows only in print) ===== */
-        .print-header {
-            display: none;
-            border-bottom: 3px solid #0f172a;
-            margin-bottom: 28px;
-            padding-bottom: 20px;
-        }
-
-        .print-header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .print-logo {
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: #0f172a;
-            letter-spacing: -1px;
-        }
-
-        .print-subtitle {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .print-meta {
-            font-size: 0.78rem;
-            color: #64748b;
-            text-align: right;
-        }
-
-        .print-title {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #0f172a;
-            margin-top: 16px;
-        }
-
-        /* ===== PAGE HEADER ===== */
-        .page-header {
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            border-radius: 16px;
-            padding: 28px 32px;
-            margin-bottom: 28px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .page-header::before {
-            content: '';
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(79, 70, 229, 0.3), transparent 70%);
-        }
-
-        .page-header::after {
-            content: '';
-            position: absolute;
-            bottom: -40px;
-            left: 40%;
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.2), transparent 70%);
-        }
-
-        .page-header h1 {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.5px;
-            position: relative;
-        }
-
-        .page-header .subtitle {
-            color: rgba(255, 255, 255, 0.55);
-            font-size: 0.85rem;
-            margin-top: 6px;
-            position: relative;
-        }
-
-        .page-header .stats-row {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            position: relative;
-        }
-
-        .header-stat {
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 12px 18px;
-        }
-
-        .header-stat-val {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .header-stat-lbl {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-        }
-
-        /* ===== SECTION HEADERS ===== */
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 32px 0 16px;
-        }
-
-        .section-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        .section-title {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--text);
-        }
-
-        .section-badge {
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 3px 12px;
-            border-radius: 20px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .section-actions {
-            margin-left: auto;
-            display: flex;
-            gap: 8px;
-        }
-
-        .section-action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 6px 14px;
-            border-radius: 8px;
-            border: 1.5px solid;
-            font-family: inherit;
-            font-size: 0.78rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        /* ===== TABLE ===== */
-        .report-table-wrap {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
-            margin-bottom: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead tr {
-            background: linear-gradient(90deg, #0f172a, #1e1b4b);
-        }
-
-        th {
-            padding: 14px 18px;
-            text-align: left;
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.65);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
-        td {
-            padding: 13px 18px;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.88rem;
-        }
-
-        tr:last-child td {
-            border-bottom: none;
-        }
-
-        tbody tr {
-            transition: background 0.15s;
-        }
-
-        tbody tr:hover td {
-            background: #f8fafc;
-        }
-
-        /* ===== RANK BADGES ===== */
-        .rank-cell {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-        }
-
-        .rank-medal {
-            font-size: 1.3rem;
-        }
-
-        .rank-num {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 0.78rem;
-            background: #e2e8f0;
-            color: #64748b;
-        }
-
-        /* ===== NAME CELL ===== */
-        .user-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 34px;
-            height: 34px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 0.85rem;
-            color: #fff;
-            flex-shrink: 0;
-        }
-
-        .user-name {
-            font-weight: 700;
-            font-size: 0.92rem;
-            color: var(--text);
-        }
-
-        /* ===== LEVEL PILL ===== */
-        .level-pill {
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* ===== XP BAR ===== */
-        .xp-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .xp-bar {
-            height: 6px;
-            border-radius: 10px;
-            background: #e2e8f0;
-            flex: 1;
-            overflow: hidden;
-            min-width: 60px;
-        }
-
-        .xp-fill {
-            height: 100%;
-            border-radius: 10px;
-        }
-
-        .xp-pct {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            min-width: 32px;
-            text-align: right;
-        }
-
-        /* ===== CLASS CARD HEADER ===== */
-        .class-card {
-            margin-bottom: 40px;
-        }
-
-        .class-card-header {
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-            border-radius: 14px 14px 0 0;
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        .class-badge {
-            background: rgba(79, 70, 229, 0.3);
-            border: 1px solid rgba(79, 70, 229, 0.5);
-            border-radius: 8px;
-            padding: 6px 14px;
-            font-size: 1rem;
-            font-weight: 800;
-            color: #c7d2fe;
-            letter-spacing: -0.3px;
-        }
-
-        .class-card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .class-card-meta {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 2px;
-        }
-
-        .class-card-actions {
-            margin-left: auto;
-            display: flex;
-            gap: 8px;
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            background: var(--surface);
-            border: 1.5px dashed var(--border);
-            border-radius: 14px;
-            padding: 40px;
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        .empty-state .empty-icon {
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            font-size: 0.9rem;
-        }
-
-        /* ===== SEARCH HIGHLIGHT ===== */
-        .search-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(79, 70, 229, 0.1);
-            color: var(--primary);
-            border: 1px solid rgba(79, 70, 229, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-
-        .search-chip a {
-            color: inherit;
-            text-decoration: none;
-            opacity: 0.7;
-        }
-
-        .search-chip a:hover {
-            opacity: 1;
-        }
-
-        /* ===== PAGE BREAK (FOR PDF) ===== */
-        .page-break-before {
-            page-break-before: always;
-            break-before: page;
-        }
-
-        /* ===== RESPONSIVE MEDIA QUERIES ===== */
-        @media (max-width: 1024px) {
-            .topbar {
-                height: auto;
-                padding: 12px 16px;
-                flex-wrap: wrap;
-                gap: 8px;
-                justify-content: center;
-            }
-
-            .topbar-logo {
-                width: 100%;
-                justify-content: center;
-                margin-bottom: 4px;
-            }
-
-            .topbar-divider {
-                display: none;
-            }
-
-            .tab-group {
-                overflow-x: auto;
-                width: 100%;
-                justify-content: center;
-                padding-bottom: 4px;
-            }
-
-            .topbar-actions {
-                width: 100%;
-                justify-content: center;
-                margin-left: 0;
-                margin-top: 4px;
-            }
-
-            .search-form {
-                flex: 1;
-                min-width: 250px;
-            }
-
-            .search-input {
-                flex: 1;
-            }
-        }
-
-        @media (max-width: 600px) {
-            .topbar {
-                padding: 10px;
-            }
-
-            .container {
-                padding: 16px 12px;
-            }
-
-            .page-header {
-                padding: 20px 16px;
-            }
-
-            .page-header h1 {
-                font-size: 1.3rem;
-            }
-
-            .header-stat {
-                flex: 1;
-                min-width: 120px;
-                padding: 10px;
-            }
-
-            .header-stat-val {
-                font-size: 1.1rem;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .section-actions {
-                margin-left: 0;
-                width: 100%;
-                overflow-x: auto;
-                padding-bottom: 4px;
-            }
-
-            .class-card-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-                padding: 16px;
-            }
-
-            .class-card-actions {
-                margin-left: 0;
-                width: 100%;
-            }
-
-            th,
-            td {
-                padding: 10px 12px;
-                font-size: 0.8rem;
-            }
-
-            .user-avatar {
-                width: 28px;
-                height: 28px;
-                font-size: 0.75rem;
-            }
-        }
-
-        /* ===== PRINT MEDIA ===== */
-        @media print {
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            body {
-                background: #fff !important;
-            }
-
-            .topbar,
-            .no-print {
-                display: none !important;
-            }
-
-            .print-header {
-                display: block !important;
-            }
-
-            .page-header {
-                background: linear-gradient(135deg, #0f172a, #1e1b4b) !important;
-                border-radius: 10px !important;
-            }
-
-            .container {
-                padding: 20px !important;
-                max-width: 100% !important;
-            }
-
-            .class-card {
-                page-break-inside: avoid;
-            }
-
-            .report-table-wrap {
-                box-shadow: none !important;
-                border: 1px solid #e2e8f0 !important;
-            }
-
-            .section-actions {
-                display: none !important;
-            }
-
-            a {
-                text-decoration: none;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-    <!-- ===== STICKY TOPBAR ===== -->
-    <div class="topbar no-print">
-        <div class="topbar-logo">
-            🎓 <span>Campus</span>Player
+{% extends "layout.html" %}
+{% block title %}
+{% if report_type == 'class' and selected_class %}{{ selected_class.name }} — {% elif report_type == 'all_classes' %}All Classes — {% endif %}Levels & Progression Report — Campus Player
+{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto;">
+    <!-- Controls Header -->
+    <div class="flex-between mb-16 no-print" style="flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1 class="page-title font-display" style="margin:0; font-size:1.6rem;">
+                <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.8rem;">leaderboard</i>
+                Academic Levels &amp; Progression Hub
+            </h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Multi-Tier Experience (XP) &amp; Contribution (CP) Metrics</p>
         </div>
-        <div class="topbar-divider"></div>
-
-        <!-- Tabs -->
-        <div class="tab-group">
-            <a href="{{ url_for('levels_pdf') }}?type=all{% if search_query %}&q={{ search_query }}{% endif %}"
-                class="tab {{ 'active' if report_type == 'all' }}">All</a>
-            <a href="{{ url_for('levels_pdf') }}?type=students{% if search_query %}&q={{ search_query }}{% endif %}"
-                class="tab {{ 'active' if report_type == 'students' }}">Students</a>
-            <a href="{{ url_for('levels_pdf') }}?type=teachers{% if search_query %}&q={{ search_query }}{% endif %}"
-                class="tab {{ 'active' if report_type == 'teachers' }}">Teachers</a>
-            <a href="{{ url_for('levels_pdf') }}?type=class{% if class_id %}&class_id={{ class_id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
-                class="tab {{ 'active' if report_type == 'class' }}">Single Class</a>
-            <a href="{{ url_for('levels_pdf') }}?type=all_classes{% if search_query %}&q={{ search_query }}{% endif %}"
-                class="tab {{ 'active' if report_type == 'all_classes' }}">All Classes</a>
-        </div>
-
-        <div class="topbar-divider"></div>
-
-        <!-- Search -->
-        <form class="search-form" method="GET" action="{{ url_for('levels_pdf') }}">
-            <input type="hidden" name="type" value="{{ report_type }}">
-            {% if selected_class %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">{% endif %}
-            <input class="search-input" type="text" name="q" placeholder="Search by name…"
-                value="{{ search_query or '' }}" autocomplete="off">
-            <button class="search-btn" type="submit">Search</button>
-        </form>
-
-        {% if report_type in ['class', 'all_classes'] %}
-        <form method="GET" action="{{ url_for('levels_pdf') }}" style="display:flex; gap:6px; align-items:center;">
-            <input type="hidden" name="type" value="{{ report_type }}">
-            {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-            <select class="class-select" name="class_id" onchange="this.form.submit()">
-                <option value="">— Select Class —</option>
-                {% for cls in classes %}
-                <option value="{{ cls.id }}" {% if selected_class and cls.id==selected_class.id %}selected{% endif %}>
-                    {{ cls.name }}
-                </option>
-                {% endfor %}
-            </select>
-        </form>
-        {% endif %}
-
-        <!-- Action buttons -->
-        <div class="topbar-actions">
-            {% if report_type == 'class' and selected_class %}
-            <a href="{{ url_for('class_pdf', class_id=selected_class.id) }}" target="_blank"
-                class="action-btn btn-outline" title="Open single-page PDF for this class">
-                📋 Class PDF
-            </a>
-            {% endif %}
-            <button class="action-btn btn-pdf" onclick="window.print()">
-                🖨️ Save as PDF
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="window.print()" style="padding:8px 16px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">print</i> Save as PDF / Print
             </button>
-            <a href="{{ url_for('admin_dashboard') }}" class="action-btn btn-back">
-                ← Back
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">arrow_back</i> Dashboard
             </a>
         </div>
     </div>
 
-
-    <!-- ===== MAIN CONTENT ===== -->
-    <div class="container">
-
-        <!-- Print-only header -->
-        <div class="print-header">
-            <div class="print-header-top">
-                <div>
-                    <div class="print-logo">🎓 Campus Player</div>
-                    <div class="print-subtitle">Academic Report System</div>
-                </div>
-                <div class="print-meta">
-                    Generated: {{ datetime.utcnow().strftime('%B %d, %Y') }}<br>
-                    Time: {{ datetime.utcnow().strftime('%H:%M UTC') }}<br>
-                    Report: {{ report_type|title }}
-                </div>
+    <!-- Filter & Search Toolbar -->
+    <div class="card no-print" style="padding:12px 18px; margin-bottom:20px; background:var(--surface); border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <!-- Category Tabs -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <a href="{{ url_for('levels_pdf') }}?type=all{% if search_query %}&q={{ search_query }}{% endif %}"
+                    class="btn {% if report_type == 'all' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">public</i> All Users
+                </a>
+                <a href="{{ url_for('levels_pdf') }}?type=students{% if search_query %}&q={{ search_query }}{% endif %}"
+                    class="btn {% if report_type == 'students' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">school</i> Students (XP)
+                </a>
+                <a href="{{ url_for('levels_pdf') }}?type=teachers{% if search_query %}&q={{ search_query }}{% endif %}"
+                    class="btn {% if report_type == 'teachers' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">supervisor_account</i> Teachers (CP)
+                </a>
+                <a href="{{ url_for('levels_pdf') }}?type=class{% if class_id %}&class_id={{ class_id }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                    class="btn {% if report_type == 'class' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">class</i> Single Class
+                </a>
+                <a href="{{ url_for('levels_pdf') }}?type=all_classes{% if search_query %}&q={{ search_query }}{% endif %}"
+                    class="btn {% if report_type == 'all_classes' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">groups</i> All Classes
+                </a>
             </div>
-            <div class="print-title">
-                {% if report_type == 'all' %}Full Levels Report
-                {% elif report_type == 'students' %}Student Levels Report
-                {% elif report_type == 'teachers' %}Teacher Levels Report
-                {% elif report_type == 'class' and selected_class %}{{ selected_class.name }} — Class Report
-                {% elif report_type == 'all_classes' %}All Classes — Levels Report
-                {% else %}Levels Report{% endif %}
-            </div>
+
+            <!-- Search Form -->
+            <form method="GET" action="{{ url_for('levels_pdf') }}" style="display:flex; gap:6px; margin:0; align-items:center;">
+                <input type="hidden" name="type" value="{{ report_type }}">
+                {% if selected_class %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">{% endif %}
+                <input type="text" name="q" placeholder="Search by name…" value="{{ search_query or '' }}"
+                    style="margin:0; padding:6px 12px; font-size:0.78rem; border-radius:var(--radius-sm); min-height:34px; height:34px; width:180px;">
+                <button type="submit" class="btn btn-outline" style="padding:6px 12px; font-size:0.75rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.9rem;">search</i>
+                </button>
+            </form>
         </div>
 
-        <!-- Page header (screen only) -->
-        <div class="page-header no-print">
-            <h1>
-                {% if report_type == 'all' %}📊 Full Levels Report
-                {% elif report_type == 'students' %}🎓 Student Levels
-                {% elif report_type == 'teachers' %}🏫 Teacher Levels
-                {% elif report_type == 'class' and selected_class %}🏫 {{ selected_class.name }}
-                {% elif report_type == 'all_classes' %}📚 All Classes Report
-                {% else %}📊 Levels Report{% endif %}
-            </h1>
-            <div class="subtitle">
-                Generated {{ datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC') }}
-                {% if search_query %}
-                <span class="search-chip">
-                    🔍 "{{ search_query }}"
-                    <a
-                        href="{{ url_for('levels_pdf') }}?type={{ report_type }}{% if selected_class %}&class_id={{ selected_class.id }}{% endif %}">✕</a>
-                </span>
-                {% endif %}
+        {% if report_type in ['class', 'all_classes'] %}
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border); display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.75rem; color:var(--text-dim);">Select Classroom:</span>
+            <form method="GET" action="{{ url_for('levels_pdf') }}" style="margin:0; display:flex; gap:6px;">
+                <input type="hidden" name="type" value="{{ report_type }}">
+                {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+                <select name="class_id" onchange="this.form.submit()" style="padding:5px 10px; font-size:0.75rem; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); border:1px solid var(--border); margin:0;">
+                    <option value="">— Select Class —</option>
+                    {% for cls in classes %}
+                    <option value="{{ cls.id }}" {% if selected_class and cls.id==selected_class.id %}selected{% endif %}>{{ cls.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Document Summary Banner -->
+    <div class="card" style="border:1px solid var(--border); padding:20px 24px; margin-bottom:20px; background:var(--surface);">
+        <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+            <div>
+                <h2 class="font-display" style="font-size:1.4rem; font-weight:800; color:var(--text); margin:0 0 4px 0;">
+                    {% if report_type == 'all' %}Comprehensive Campus Levels Report
+                    {% elif report_type == 'students' %}Scholar Levels &amp; XP Progression
+                    {% elif report_type == 'teachers' %}Faculty Levels &amp; CP Contributions
+                    {% elif report_type == 'class' and selected_class %}{{ selected_class.name }} — Class Level Rankings
+                    {% elif report_type == 'all_classes' %}All Classrooms Breakdown
+                    {% else %}Academic Progression Report{% endif %}
+                </h2>
+                <div style="font-size:0.78rem; color:var(--text-dim);">
+                    Campus Player &bull; Generated {{ datetime.utcnow().strftime('%B %d, %Y %H:%M UTC') }}
+                </div>
             </div>
-            <div class="stats-row">
-                <div class="header-stat">
-                    <div class="header-stat-val">{{ teachers|length }}</div>
-                    <div class="header-stat-lbl">Teachers</div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 14px; text-align:center;">
+                    <div style="font-size:1.2rem; font-weight:800; color:#00e5ff;" class="font-display">{{ teachers|length }}</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim);">Faculty</div>
                 </div>
-                <div class="header-stat">
-                    <div class="header-stat-val">{{ students|length }}</div>
-                    <div class="header-stat-lbl">Students</div>
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 14px; text-align:center;">
+                    <div style="font-size:1.2rem; font-weight:800; color:#10b981;" class="font-display">{{ students|length }}</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim);">Scholars</div>
                 </div>
-                <div class="header-stat">
-                    <div class="header-stat-val">{{ classes|length }}</div>
-                    <div class="header-stat-lbl">Classes</div>
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 14px; text-align:center;">
+                    <div style="font-size:1.2rem; font-weight:800; color:var(--gold);" class="font-display">{{ classes|length }}</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim);">Classes</div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- ========== REUSABLE STUDENT/TEACHER TABLE MACRO ========== -->
-        {% macro render_table(users, fill_class, type_label) %}
-        {% if users %}
-        {% set max_xp = users[0].xp if users[0].xp > 0 else 1 %}
-        <div class="report-table-wrap">
+    <!-- Table Render Macro -->
+    {% macro render_table(users, role_type) %}
+    {% if users %}
+    {% set max_pts = users[0].xp if users[0].xp > 0 else 1 %}
+    <div class="card" style="padding:0; overflow:hidden; border:1px solid var(--border); margin-bottom:20px;">
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
-                        <th style="width:55px;">Rank</th>
-                        <th>{{ type_label }}</th>
-                        <th style="width:90px;">Level</th>
-                        <th style="width:100px;">XP Points</th>
-                        <th>Progress</th>
-                        <th style="width:110px;">Joined</th>
+                        <th style="width:60px;">Rank</th>
+                        <th>User Name</th>
+                        <th style="width:110px;">Level</th>
+                        <th style="width:120px;">{{ 'CP Points' if role_type == 'Teacher' else 'XP Points' }}</th>
+                        <th>Relative Progress</th>
+                        <th style="width:120px;">Joined</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -956,274 +135,131 @@
                     {% set rank = loop.index %}
                     <tr>
                         <td>
-                            <div class="rank-cell">
-                                {% if rank == 1 %}<span class="rank-medal">🥇</span>
-                                {% elif rank == 2 %}<span class="rank-medal">🥈</span>
-                                {% elif rank == 3 %}<span class="rank-medal">🥉</span>
-                                {% else %}<div class="rank-num">#{{ rank }}</div>
-                                {% endif %}
-                            </div>
+                            {% if rank == 1 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:var(--gold);">looks_one</i>
+                            {% elif rank == 2 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:#94a3b8;">looks_two</i>
+                            {% elif rank == 3 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:#d97706;">looks_3</i>
+                            {% else %}
+                            <span style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.8rem; font-weight:700;">#{{ rank }}</span>
+                            {% endif %}
                         </td>
                         <td>
-                            <div class="user-cell">
-                                <div class="user-avatar"
-                                    style="background: hsl({{ (loop.index * 47) % 360 }}, 60%, 50%);">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:28px; height:28px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#fff;">
                                     {{ user.username[0].upper() }}
                                 </div>
-                                <div class="user-name">{{ user.username }} #{{ user.id }}</div>
+                                <strong style="color:var(--text); font-size:0.88rem;">{{ user.username }}</strong>
                             </div>
                         </td>
                         <td>
-                            <span class="level-pill" style="background: rgba(79,70,229,0.1); color: #4f46e5;">
-                                ⬆ Lv {{ (user.xp // 500) + 1 }}
+                            <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); border:1px solid rgba(99,102,241,0.3); font-size:0.7rem; font-weight:700;">
+                                Level {{ (user.xp // 500) + 1 }}
                             </span>
                         </td>
-                        <td style="font-weight: 700; color: var(--primary);">
-                            {{ user.xp }} <span
-                                style="font-weight:400;color:var(--text-muted);font-size:0.78rem;">XP</span>
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--gold);">
+                            {{ user.xp }} <span style="font-size:0.72rem; color:var(--text-dim); font-weight:400;">{{ 'CP' if role_type == 'Teacher' else 'XP' }}</span>
                         </td>
                         <td>
-                            <div class="xp-wrap">
-                                <div class="xp-bar">
-                                    <div class="xp-fill {{ fill_class }}"
-                                        style="width: {{ [(user.xp / max_xp * 100), 100]|min }}%;"></div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="flex:1; height:6px; background:var(--surface2); border-radius:10px; overflow:hidden;">
+                                    <div style="width:{{ [(user.xp / max_pts * 100), 100]|min }}%; height:100%; background:{{ 'linear-gradient(90deg, #7c3aed, #4f46e5)' if role_type == 'Teacher' else 'var(--brand-gradient)' }}; border-radius:10px;"></div>
                                 </div>
-                                <span class="xp-pct">{{ [(user.xp / max_xp * 100)|int, 100]|min }}%</span>
+                                <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; width:35px; text-align:right;">
+                                    {{ [(user.xp / max_pts * 100)|int, 100]|min }}%
+                                </span>
                             </div>
                         </td>
-                        <td style="color: var(--text-muted); font-size: 0.82rem;">
-                            {{ user.created_at.strftime('%b %d, %Y') }}
+                        <td style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                            {{ user.created_at.strftime('%b %d, %Y') if user.created_at else '—' }}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <p>No {{ type_label|lower }}s found{% if search_query %} matching "<strong>{{ search_query }}</strong>"{%
-                endif %}.</p>
-        </div>
-        {% endif %}
-        {% endmacro %}
+    </div>
+    {% else %}
+    <div class="text-center" style="padding:30px;">
+        <p style="color:var(--text-dim); font-size:0.85rem;">No {{ role_type|lower }} records found.</p>
+    </div>
+    {% endif %}
+    {% endmacro %}
 
+    <!-- Report Sections by Mode -->
+    {% if report_type == 'all' %}
+    <div class="mb-12" style="font-weight:700; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+        <i class="material-icons" style="color:var(--primary-light);">supervisor_account</i> Faculty Contribution Rankings (CP)
+    </div>
+    {{ render_table(teachers, 'Teacher') }}
 
-        <!-- ========== ALL MODE ========== -->
-        {% if report_type == 'all' %}
+    <div class="mb-12" style="font-weight:700; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+        <i class="material-icons" style="color:#10b981;">school</i> Scholar Level Rankings (XP)
+    </div>
+    {{ render_table(students, 'Student') }}
 
-        <!-- Teachers section -->
-        <div class="section-header">
-            <div class="section-icon" style="background:rgba(124,58,237,0.12);">🏫</div>
-            <div>
-                <div class="section-title">Teachers</div>
+    {% elif report_type == 'students' %}
+    {{ render_table(students, 'Student') }}
+
+    {% elif report_type == 'teachers' %}
+    {{ render_table(teachers, 'Teacher') }}
+
+    {% elif report_type == 'class' %}
+    {% if selected_class %}
+    {{ render_table(class_students, 'Student') }}
+    {% else %}
+    <div class="card text-center" style="padding:40px;">
+        <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.4;">class</i>
+        <p style="color:var(--text-dim); font-size:0.9rem; margin-top:8px;">Please select a class from the dropdown above to view rankings.</p>
+    </div>
+    {% endif %}
+
+    {% elif report_type == 'all_classes' %}
+    {% for cdata in all_classes_data %}
+    <div class="card" style="border:1px solid var(--border); padding:16px 20px; margin-bottom:16px;">
+        <div class="flex-between" style="margin-bottom:12px;">
+            <div style="font-weight:800; font-size:1.1rem; color:var(--text);" class="font-display">
+                <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.2rem;">school</i> {{ cdata.classroom.name }}
             </div>
-            <span class="section-badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;">{{ teachers|length }}
-                Total</span>
-            <div class="section-actions">
-                <button class="section-action-btn" onclick="window.print()"
-                    style="background:rgba(79,70,229,0.1);color:var(--primary);border-color:rgba(79,70,229,0.3);">
-                    🖨️ Print This
-                </button>
-            </div>
+            <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light);">{{ cdata.students|length }} Enrolled</span>
         </div>
-        {{ render_table(teachers, 'xp-fill-teacher', 'Teacher') }}
+        {{ render_table(cdata.students, 'Student') }}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
 
-        <!-- Students section -->
-        <div class="section-header" style="margin-top:36px;">
-            <div class="section-icon" style="background:rgba(6,182,212,0.12);">🎓</div>
-            <div>
-                <div class="section-title">Students</div>
-            </div>
-            <span class="section-badge" style="background:rgba(6,182,212,0.1);color:#0891b2;">{{ students|length }}
-                Total</span>
-        </div>
-        {{ render_table(students, 'xp-fill-student', 'Student') }}
-
-        <!-- ========== STUDENTS ONLY ========== -->
-        {% elif report_type == 'students' %}
-        <div class="section-header">
-            <div class="section-icon" style="background:rgba(6,182,212,0.12);">🎓</div>
-            <div>
-                <div class="section-title">Student Rankings</div>
-            </div>
-            <span class="section-badge" style="background:rgba(6,182,212,0.1);color:#0891b2;">{{ students|length }}
-                Students</span>
-        </div>
-        {{ render_table(students, 'xp-fill-student', 'Student') }}
-
-        <!-- ========== TEACHERS ONLY ========== -->
-        {% elif report_type == 'teachers' %}
-        <div class="section-header">
-            <div class="section-icon" style="background:rgba(124,58,237,0.12);">🏫</div>
-            <div>
-                <div class="section-title">Teacher Rankings</div>
-            </div>
-            <span class="section-badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;">{{ teachers|length }}
-                Teachers</span>
-        </div>
-        {{ render_table(teachers, 'xp-fill-teacher', 'Teacher') }}
-
-        <!-- ========== SINGLE CLASS ========== -->
-        {% elif report_type == 'class' %}
-        {% if not selected_class %}
-        <div class="empty-state" style="margin-top: 24px;">
-            <div class="empty-icon">🏫</div>
-            <p>Please select a class from the dropdown in the top bar.</p>
-        </div>
-        {% else %}
-        <div class="section-header">
-            <div class="section-icon" style="background:rgba(16,185,129,0.12);">📋</div>
-            <div>
-                <div class="section-title">{{ selected_class.name }}</div>
-            </div>
-            <span class="section-badge" style="background:rgba(16,185,129,0.1);color:#059669;">{{ class_students|length
-                }} Students</span>
-            <div class="section-actions no-print">
-                <a href="{{ url_for('class_pdf', class_id=selected_class.id) }}" target="_blank"
-                    class="section-action-btn"
-                    style="background:rgba(6,182,212,0.1);color:#0891b2;border-color:rgba(6,182,212,0.3);">
-                    📋 Full Class PDF
-                </a>
-                <button onclick="window.print()" class="section-action-btn"
-                    style="background:rgba(79,70,229,0.1);color:var(--primary);border-color:rgba(79,70,229,0.3);">
-                    🖨️ Save as PDF
-                </button>
-            </div>
-        </div>
-        {{ render_table(class_students, 'xp-fill-student', 'Student') }}
-        {% endif %}
-
-        <!-- ========== ALL CLASSES (PAGE-BREAK SEPARATED) ========== -->
-        {% elif report_type == 'all_classes' %}
-        {% if not all_classes_data %}
-        <div class="empty-state" style="margin-top:24px;">
-            <div class="empty-icon">🏫</div>
-            <p>No classes found in the system.</p>
-        </div>
-        {% else %}
-        <div style="margin-bottom:16px;" class="no-print">
-            <p style="color:var(--text-muted); font-size:0.88rem;">
-                📄 Shows <strong>{{ all_classes_data|length }} classes</strong> each on a separate section.
-                Each class will print on its own page. Use <strong>Save as PDF</strong> to download all at once.
-            </p>
-        </div>
-        {% for item in all_classes_data %}
-        {% set cls = item.classroom %}
-        {% set cls_students = item.students %}
-        <div class="class-card {{ 'page-break-before' if not loop.first }}">
-            <!-- Class header -->
-            <div class="class-card-header">
-                <div class="class-badge">{{ cls.name }}</div>
-                <div>
-                    <div class="class-card-title">Class Report</div>
-                    <div class="class-card-meta">{{ cls_students|length }} student(s) enrolled</div>
-                </div>
-                <div class="class-card-actions no-print">
-                    <a href="{{ url_for('class_pdf', class_id=cls.id) }}" target="_blank" class="action-btn"
-                        style="background:rgba(6,182,212,0.2);color:#0891b2;border:1px solid rgba(6,182,212,0.4);font-size:0.78rem;padding:6px 12px;">
-                        📥 Download PDF
-                    </a>
-                    <a href="{{ url_for('levels_pdf') }}?type=class&class_id={{ cls.id }}" class="action-btn"
-                        style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.2);font-size:0.78rem;padding:6px 12px;">
-                        🔍 View
-                    </a>
-                </div>
-            </div>
-            <!-- Table (no wrap border-radius for top since header above) -->
-            <div
-                style="border:1px solid var(--border); border-top:none; border-radius:0 0 14px 14px; overflow:hidden; background:#fff; margin-bottom:0;">
-                {% if cls_students %}
-                {% set mx = cls_students[0].xp if cls_students[0].xp > 0 else 1 %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:55px;">Rank</th>
-                            <th>Student</th>
-                            <th style="width:90px;">Level</th>
-                            <th style="width:100px;">XP</th>
-                            <th>Progress</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in cls_students %}
-                        {% set rank = loop.index %}
-                        <tr>
-                            <td>
-                                <div class="rank-cell">
-                                    {% if rank == 1 %}<span class="rank-medal">🥇</span>
-                                    {% elif rank == 2 %}<span class="rank-medal">🥈</span>
-                                    {% elif rank == 3 %}<span class="rank-medal">🥉</span>
-                                    {% else %}<div class="rank-num">#{{ rank }}</div>
-                                    {% endif %}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="user-cell">
-                                    <div class="user-avatar"
-                                        style="background: hsl({{ (loop.index * 47) % 360 }}, 60%, 50%);">
-                                        {{ user.username[0].upper() }}
-                                    </div>
-                                    <div class="user-name">{{ user.username }} #{{ user.id }}</div>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="level-pill" style="background:rgba(6,182,212,0.1);color:#0891b2;">
-                                    ⬆ Lv {{ (user.xp // 500) + 1 }}
-                                </span>
-                            </td>
-                            <td style="font-weight:700;color:var(--primary);">{{ user.xp }} <span
-                                    style="font-weight:400;color:var(--text-muted);font-size:0.78rem;">XP</span></td>
-                            <td>
-                                <div class="xp-wrap">
-                                    <div class="xp-bar">
-                                        <div class="xp-fill xp-fill-student"
-                                            style="width:{{ [(user.xp / mx * 100), 100]|min }}%;"></div>
-                                    </div>
-                                    <span class="xp-pct">{{ [(user.xp / mx * 100)|int, 100]|min }}%</span>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div style="padding:28px;text-align:center;color:var(--text-muted);">No students enrolled yet.</div>
-                {% endif %}
-            </div>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endif %}
-
-    </div><!-- /container -->
-
-    <style>
-        /* XP fill colors (not duplicated anywhere) */
-        .xp-fill-teacher {
-            background: linear-gradient(90deg, #4f46e5, #7c3aed);
-        }
-
-        .xp-fill-student {
-            background: linear-gradient(90deg, #06b6d4, #0891b2);
-        }
-    </style>
-
-    <script>
-        // Auto-submit class selector
-        document.querySelectorAll('select.class-select').forEach(function (sel) {
-            sel.addEventListener('change', function () { this.closest('form').submit(); });
-        });
-
-        // Keyboard shortcut: Ctrl+P already triggers print, but we add Ctrl+S too
-        document.addEventListener('keydown', function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                window.print();
-            }
-        });
-    </script>
-
-</body>
-
-</html>
+<style>
+@media print {
+    .sidebar, .topbar, .no-print, header, nav {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .card {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    table {
+        color: #000 !important;
+    }
+    th {
+        background: #f1f5f9 !important;
+        color: #000 !important;
+    }
+    td {
+        color: #000 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+}
+</style>
+{% endblock %}

@@ -75,6 +75,7 @@ def migrate():
                                 total_quiz_score INTEGER DEFAULT 0,
                                 total_quizzes_taken INTEGER DEFAULT 0,
                                 achievements_json TEXT DEFAULT '[]',
+                                quests_json TEXT DEFAULT '{}',
                                 UNIQUE (username, institution_id),
                                 FOREIGN KEY(institution_id) REFERENCES institution(id)
                             )
@@ -108,6 +109,7 @@ def migrate():
                     ('total_quiz_score', 'INTEGER DEFAULT 0'),
                     ('total_quizzes_taken', 'INTEGER DEFAULT 0'),
                     ('achievements_json', 'TEXT DEFAULT \'[]\''),
+                    ('quests_json', 'TEXT DEFAULT \'{}\''),
                     ('bio', 'TEXT'),
                     ('email_sender_address', 'VARCHAR(150)'),
                     ('encrypted_app_password', 'VARCHAR(500)'),
@@ -126,10 +128,56 @@ def migrate():
                     ('ix_user_inst_role', 'institution_id, role'),
                 ]
             },
+            'assignment': {
+                'columns': [
+                    ('question_file_path', 'VARCHAR(500)'),
+                    ('question_file_name', 'VARCHAR(300)'),
+                    ('response_mode', 'VARCHAR(20) DEFAULT \'either\''),
+                ],
+                'indexes': [
+                    ('ix_assignment_institution_id', 'institution_id'),
+                    ('ix_assignment_classroom_id', 'classroom_id'),
+                    ('ix_assignment_teacher_id', 'teacher_id'),
+                    ('ix_assignment_created_at', 'created_at'),
+                    ('ix_assignment_due_date', 'due_date'),
+                ]
+            },
+            'assignment_submission': {
+                'columns': [
+                    ('file_name', 'VARCHAR(300)'),
+                ],
+                'indexes': [
+                    ('ix_assignment_submission_institution_id', 'institution_id'),
+                    ('ix_assignment_submission_assignment_id', 'assignment_id'),
+                    ('ix_assignment_submission_student_id', 'student_id'),
+                    ('ix_assignment_submission_status', 'status'),
+                    ('ix_assignment_submission_submitted_at', 'submitted_at'),
+                ]
+            },
+            'attendance': {
+                'columns': [
+                    ('session_id', 'INTEGER'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_attendance_institution_id', 'institution_id'),
+                    ('ix_attendance_student_id', 'student_id'),
+                    ('ix_attendance_classroom_id', 'classroom_id'),
+                    ('ix_attendance_date', 'date'),
+                    ('ix_attendance_status', 'status'),
+                    ('ix_attendance_session_id', 'session_id'),
+                    ('ix_attendance_class_date', 'classroom_id, date'),
+                    ('ix_attendance_student_class', 'student_id, classroom_id'),
+                    ('ix_attendance_session_student', 'session_id, student_id'),
+                ]
+            },
             'video': {
                 'columns': [
                     ('chapters_json', 'TEXT'),
                     ('difficulty', 'VARCHAR(20) DEFAULT \'intermediate\''),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_video_institution_id', 'institution_id'),
@@ -184,6 +232,29 @@ def migrate():
                     ('ix_view_analytics_completed', 'completed'),
                 ]
             },
+            'question': {
+                'columns': [
+                    ('points', 'INTEGER DEFAULT 1'),
+                ],
+                'indexes': [
+                    ('ix_question_institution_id', 'institution_id'),
+                    ('ix_question_quiz_id', 'quiz_id'),
+                ]
+            },
+            'quiz_result': {
+                'columns': [
+                    ('time_taken_seconds', 'INTEGER DEFAULT 0'),
+                    ('passed', 'BOOLEAN DEFAULT 0'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_quiz_result_institution_id', 'institution_id'),
+                    ('ix_quiz_result_quiz_id', 'quiz_id'),
+                    ('ix_quiz_result_student_id', 'student_id'),
+                    ('ix_quiz_result_timestamp', 'timestamp'),
+                ]
+            },
             'notification': {
                 'columns': [
                     ('action_url', 'VARCHAR(500)'),
@@ -210,6 +281,8 @@ def migrate():
                     ('auto_backup_enabled', 'BOOLEAN DEFAULT 0'),
                     ('backup_interval_hours', 'INTEGER DEFAULT 24'),
                     ('min_attendance_percentage', 'FLOAT DEFAULT 75.0'),
+                    ('scheduled_academic_year_end_date', 'DATETIME'),
+                    ('academic_year_rollover_processed', 'BOOLEAN DEFAULT 0'),
                 ],
                 'indexes': [
                     ('ix_site_settings_institution_id', 'institution_id'),
@@ -228,27 +301,6 @@ def migrate():
                     ('ix_quiz_created_at', 'created_at'),
                 ]
             },
-            'question': {
-                'columns': [
-                    ('points', 'INTEGER DEFAULT 1'),
-                ],
-                'indexes': [
-                    ('ix_question_institution_id', 'institution_id'),
-                    ('ix_question_quiz_id', 'quiz_id'),
-                ]
-            },
-            'quiz_result': {
-                'columns': [
-                    ('time_taken_seconds', 'INTEGER DEFAULT 0'),
-                    ('passed', 'BOOLEAN DEFAULT 0'),
-                ],
-                'indexes': [
-                    ('ix_quiz_result_institution_id', 'institution_id'),
-                    ('ix_quiz_result_quiz_id', 'quiz_id'),
-                    ('ix_quiz_result_student_id', 'student_id'),
-                    ('ix_quiz_result_timestamp', 'timestamp'),
-                ]
-            },
             'chat_message': {
                 'columns': [],
                 'indexes': [
@@ -256,22 +308,6 @@ def migrate():
                     ('ix_chat_message_classroom_id', 'classroom_id'),
                     ('ix_chat_message_user_id', 'user_id'),
                     ('ix_chat_message_timestamp', 'timestamp'),
-                ]
-            },
-            'attendance': {
-                'columns': [
-                    ('session_id', 'INTEGER'),
-                ],
-                'indexes': [
-                    ('ix_attendance_institution_id', 'institution_id'),
-                    ('ix_attendance_student_id', 'student_id'),
-                    ('ix_attendance_classroom_id', 'classroom_id'),
-                    ('ix_attendance_date', 'date'),
-                    ('ix_attendance_status', 'status'),
-                    ('ix_attendance_session_id', 'session_id'),
-                    ('ix_attendance_class_date', 'classroom_id, date'),
-                    ('ix_attendance_student_class', 'student_id, classroom_id'),
-                    ('ix_attendance_session_student', 'session_id, student_id'),
                 ]
             },
             'attendance_session': {
@@ -307,34 +343,10 @@ def migrate():
                     ('ix_system_metric_recorded_at', 'recorded_at'),
                 ]
             },
-            'assignment': {
-                'columns': [
-                    ('question_file_path', 'VARCHAR(500)'),
-                    ('question_file_name', 'VARCHAR(300)'),
-                    ('response_mode', 'VARCHAR(20) DEFAULT \'either\''),
-                ],
-                'indexes': [
-                    ('ix_assignment_institution_id', 'institution_id'),
-                    ('ix_assignment_classroom_id', 'classroom_id'),
-                    ('ix_assignment_teacher_id', 'teacher_id'),
-                    ('ix_assignment_created_at', 'created_at'),
-                    ('ix_assignment_due_date', 'due_date'),
-                ]
-            },
-            'assignment_submission': {
-                'columns': [
-                    ('file_name', 'VARCHAR(300)'),
-                ],
-                'indexes': [
-                    ('ix_assignment_submission_institution_id', 'institution_id'),
-                    ('ix_assignment_submission_assignment_id', 'assignment_id'),
-                    ('ix_assignment_submission_student_id', 'student_id'),
-                    ('ix_assignment_submission_status', 'status'),
-                    ('ix_assignment_submission_submitted_at', 'submitted_at'),
-                ]
-            },
             'student_profile': {
-                'columns': [],
+                'columns': [
+                    ('requires_admin_review', 'BOOLEAN DEFAULT 0'),
+                ],
                 'indexes': [
                     ('ix_student_profile_institution_id', 'institution_id'),
                 ]

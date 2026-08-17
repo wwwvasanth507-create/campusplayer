@@ -4,25 +4,27 @@
 {% block content %}
 <div style="max-width:860px; margin:0 auto;">
     <div class="text-center mb-16">
-        <h1 class="page-title font-display" style="margin:0; font-size:1.8rem;">🏆 Academic Hall of Fame</h1>
-        <p class="page-sub" style="margin:4px 0 0 0;">Track scholar rankings, study streaks, and level progression across the campus</p>
+        <h1 class="page-title font-display" style="margin:0; font-size:1.8rem;">
+            <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:2rem;">emoji_events</i> Academic Hall of Fame
+        </h1>
+        <p class="page-sub" style="margin:4px 0 0 0;">Track scholar rankings, faculty contributions, study streaks, and level progression across the campus</p>
     </div>
 
     <!-- Filter Bar -->
     <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
         <a href="{{ url_for('leaderboard', category='global') }}" class="btn {% if category == 'global' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            🌍 Global Fleet
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">public</i> Global Fleet
         </a>
         <a href="{{ url_for('leaderboard', category='students') }}" class="btn {% if category == 'students' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            🎓 Scholars
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">school</i> Scholars
         </a>
         <a href="{{ url_for('leaderboard', category='teachers') }}" class="btn {% if category == 'teachers' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            👨‍🏫 Faculty
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">supervisor_account</i> Faculty
         </a>
         {% if current_user.enrolled_classes %}
         {% for c in current_user.enrolled_classes %}
         <a href="{{ url_for('leaderboard', category='class', class_id=c.id) }}" class="btn {% if category == 'class' and class_id == c.id %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            📚 {{ c.name }}
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">class</i> {{ c.name }}
         </a>
         {% endfor %}
         {% endif %}
@@ -36,15 +38,25 @@
         {% set entry = ranked_users[i] %}
         {% set isFirst = (i == 0) %}
         <div class="card" style="text-align:center; padding:{{ '24px 20px' if isFirst else '18px 16px' }}; min-width:{{ '210px' if isFirst else '180px' }}; transform:{{ 'scale(1.05)' if isFirst else 'none' }}; border:1px solid {{ 'rgba(245,158,11,0.4)' if isFirst else 'var(--border)' }}; box-shadow:{{ '0 8px 30px rgba(245,158,11,0.15)' if isFirst else 'var(--shadow)' }}; margin-bottom:0;">
-            <div style="font-size:1.5rem; margin-bottom:6px;">
-                {% if i == 0 %}🥇{% elif i == 1 %}🥈{% else %}🥉{% endif %}
+            <div style="margin-bottom:6px;">
+                {% if i == 0 %}
+                <i class="material-icons" style="font-size:2rem; color:var(--gold);">looks_one</i>
+                {% elif i == 1 %}
+                <i class="material-icons" style="font-size:1.7rem; color:#94a3b8;">looks_two</i>
+                {% else %}
+                <i class="material-icons" style="font-size:1.7rem; color:#d97706;">looks_3</i>
+                {% endif %}
             </div>
             <div style="width:{{ '64px' if isFirst else '52px' }}; height:{{ '64px' if isFirst else '52px' }}; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-size:{{ '1.4rem' if isFirst else '1.1rem' }}; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid {{ 'var(--gold)' if i == 0 else ('#94a3b8' if i == 1 else '#d97706') }};">
                 {{ entry.user.username[:2].upper() }}
             </div>
             <div style="font-weight:700; font-size:0.95rem; color:var(--text);" class="font-display">{{ entry.user.username }}</div>
-            <div style="font-size:0.8rem; font-weight:800; color:var(--gold); margin-top:2px; font-family:'JetBrains Mono',monospace;">{{ entry.user.xp }} XP</div>
-            <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">Rank {{ entry.level }} Scholar</div>
+            <div style="font-size:0.8rem; font-weight:800; color:var(--gold); margin-top:2px; font-family:'JetBrains Mono',monospace;">
+                {{ entry.user.xp }} {{ 'CP' if entry.user.role == 'teacher' else 'XP' }}
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                Rank {{ entry.level }} {{ 'Faculty' if entry.user.role == 'teacher' else 'Scholar' }}
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -55,7 +67,15 @@
         {% for entry in ranked_users %}
         <div class="card" style="padding:12px 18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-color:{% if entry.user.id == current_user.id %}var(--primary){% else %}var(--border){% endif %}; background:{% if entry.user.id == current_user.id %}rgba(99,102,241,0.06){% else %}var(--surface){% endif %};">
             <div style="width:32px; height:32px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.82rem; color:var(--text); flex-shrink:0; font-family:'JetBrains Mono',monospace;">
-                {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}
+                {% if loop.index == 1 %}
+                <i class="material-icons" style="font-size:1.2rem; color:var(--gold);">looks_one</i>
+                {% elif loop.index == 2 %}
+                <i class="material-icons" style="font-size:1.2rem; color:#94a3b8;">looks_two</i>
+                {% elif loop.index == 3 %}
+                <i class="material-icons" style="font-size:1.2rem; color:#d97706;">looks_3</i>
+                {% else %}
+                {{ loop.index }}
+                {% endif %}
             </div>
             <div style="width:36px; height:36px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:#fff; flex-shrink:0;">
                 {{ entry.user.username[:2].upper() }}
@@ -68,14 +88,18 @@
                     {% endif %}
                     {% if entry.user.streak_days and entry.user.streak_days >= 3 %}
                     <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25); font-size:0.68rem;">
-                        🔥 {{ entry.user.streak_days }}d streak
+                        <i class="material-icons" style="font-size:0.8rem; vertical-align:middle;">local_fire_department</i> {{ entry.user.streak_days }}d streak
                     </span>
                     {% endif %}
                 </div>
-                <div style="font-size:0.75rem; color:var(--text-dim); text-transform:capitalize;">{{ entry.user.role }} &bull; Level {{ entry.level }}</div>
+                <div style="font-size:0.75rem; color:var(--text-dim); text-transform:capitalize;">
+                    {{ entry.user.role }} &bull; Level {{ entry.level }} {{ 'Faculty' if entry.user.role == 'teacher' else 'Scholar' }}
+                </div>
             </div>
             <div style="text-align:right; flex-shrink:0;">
-                <div style="font-weight:800; color:var(--gold); font-size:0.9rem; font-family:'JetBrains Mono',monospace;">{{ entry.user.xp }} XP</div>
+                <div style="font-weight:800; color:var(--gold); font-size:0.9rem; font-family:'JetBrains Mono',monospace;">
+                    {{ entry.user.xp }} {{ 'CP' if entry.user.role == 'teacher' else 'XP' }}
+                </div>
                 <div style="width:80px; height:4px; background:var(--surface2); border-radius:var(--radius-pill); overflow:hidden; margin-top:4px; margin-left:auto;">
                     <div style="width:{{ (entry.xp_progress / 500 * 100)|round }}%; height:100%; background:var(--brand-gradient);"></div>
                 </div>
@@ -86,7 +110,7 @@
     {% else %}
     <div class="card text-center" style="padding:50px;">
         <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">military_tech</i>
-        <p style="color:var(--text-dim); font-size:0.9rem;">No XP rankings recorded yet. Complete quizzes and assignments to claim the top podium!</p>
+        <p style="color:var(--text-dim); font-size:0.9rem;">No rankings recorded yet. Complete quizzes, assignments, and lectures to claim the top podium!</p>
     </div>
     {% endif %}
 </div>

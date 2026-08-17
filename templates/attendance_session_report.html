@@ -1,221 +1,167 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "layout.html" %}
+{% block title %}{{ report.session.name }} — Attendance Session Report — Campus Player{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ report.session.name }} — Attendance Session Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg: #f8fafc;
-            --surface: #fff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --muted: #64748b;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            height: 58px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            flex-wrap: wrap;
-        }
-
-        .topbar-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .topbar-sub { font-size: 0.75rem; color: rgba(255,255,255,0.55); }
-        .topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border-radius: 8px;
-            border: none;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .btn-pdf { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff; }
-        .btn-pdf:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-back { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2); }
-        .btn-back:hover { background: rgba(255,255,255,0.15); color: #fff; }
-
-        .container { max-width: 1100px; margin: 28px auto 60px; padding: 0 20px; }
-
-        .print-header { display: none; border-bottom: 3px solid #0f172a; padding-bottom: 16px; margin-bottom: 24px; }
-        .print-logo { font-size: 1.4rem; font-weight: 900; color: #0f172a; }
-        .print-meta { font-size: 0.78rem; color: #64748b; margin-top: 4px; }
-        .print-title { font-size: 1.6rem; font-weight: 800; margin-top: 10px; }
-
-        .report-header {
-            background: linear-gradient(135deg, #0f172a, #1e3a5f);
-            border-radius: 16px;
-            padding: 26px 30px;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .report-header h1 { font-size: 1.4rem; font-weight: 800; color: #fff; }
-        .report-header .sub { color: rgba(255,255,255,0.6); font-size: 0.82rem; margin-top: 6px; }
-
-        .stats-row { display: flex; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
-        .stat-box { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 18px; }
-        .stat-val { font-size: 1.4rem; font-weight: 800; color: #fff; }
-        .stat-lbl { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.6px; color: rgba(255,255,255,0.5); margin-top: 2px; }
-
-        .table-wrap { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; padding: 12px 16px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); background: #f1f5f9; border-bottom: 1px solid var(--border); }
-        td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover { background: #f8fafc; }
-
-        .pct-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; }
-        .pct-good { background: rgba(16,185,129,0.12); color: #059669; }
-        .pct-bad { background: rgba(239,68,68,0.12); color: #dc2626; }
-        .pct-na { background: rgba(100,116,139,0.12); color: #64748b; }
-
-        .legend { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; font-size: 0.75rem; color: var(--muted); }
-        .legend span { background: var(--surface); border: 1px solid var(--border); padding: 4px 10px; border-radius: 8px; }
-
-        @media print {
-            .topbar { display: none; }
-            .print-header { display: block; }
-            body { background: #fff; }
-            .container { margin: 0; max-width: 100%; padding: 0; }
-            .report-header { background: #0f172a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .table-wrap { border: 1px solid #000; }
-        }
-    </style>
-</head>
-
-<body>
-    <div class="topbar">
+{% block content %}
+<div style="max-width:1100px; margin:0 auto;">
+    <div class="flex-between mb-16 no-print" style="flex-wrap:wrap; gap:12px;">
         <div>
-            <div class="topbar-title">{{ report.session.name }}</div>
-            <div class="topbar-sub">{{ report.classroom.name if report.classroom else '' }} · Session Attendance Report</div>
+            <h1 class="page-title font-display" style="margin:0; font-size:1.6rem;">
+                <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.8rem;">event_note</i>
+                {{ report.session.name }}
+            </h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">
+                {{ report.classroom.name if report.classroom else '' }} &bull; Session Attendance Report
+            </p>
         </div>
-        <div class="topbar-actions">
-            <button class="btn btn-pdf" onclick="window.print()">🖨️ Save as PDF</button>
-            <a href="{{ url_for('attendance_reports_hub') }}" class="btn btn-back">← Back</a>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="window.print()" style="padding:8px 16px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">print</i> Save as PDF / Print
+            </button>
+            <a href="{{ url_for('attendance_reports_hub') }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">arrow_back</i> Back to Hub
+            </a>
         </div>
     </div>
 
-    <div class="container">
-        <div class="print-header">
-            <div class="print-logo">🎓 Campus Player</div>
-            <div class="print-meta">
-                Generated: {{ datetime.utcnow().strftime('%B %d, %Y %H:%M UTC') }}<br>
-                Class: {{ report.classroom.name if report.classroom else '—' }}
-            </div>
-            <div class="print-title">{{ report.session.name }} — Attendance Report</div>
-        </div>
-
-        <div class="report-header">
-            <h1>{{ report.session.name }}</h1>
-            <div class="sub">
-                {{ report.classroom.name if report.classroom else '' }}
-                &nbsp;·&nbsp; Session: {{ report.session.start_date.strftime('%b %d, %Y') }} → {{ report.session.end_date.strftime('%b %d, %Y') }}
-                &nbsp;·&nbsp; Current percentage calculated through {{ report.current_end_date.strftime('%b %d, %Y') }}
-            </div>
-            <div class="stats-row">
-                <div class="stat-box">
-                    <div class="stat-val">{{ report.rows|length }}</div>
-                    <div class="stat-lbl">Students</div>
+    <!-- Report Header Banner -->
+    <div class="card" style="background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:20px 24px; margin-bottom:20px;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+            <div>
+                <h2 class="font-display" style="font-size:1.3rem; font-weight:800; color:var(--text); margin:0 0 4px 0;">{{ report.session.name }}</h2>
+                <div style="font-size:0.8rem; color:var(--text-dim);">
+                    <strong>{{ report.classroom.name if report.classroom else 'All Classes' }}</strong>
+                    &bull; Session: {{ report.session.start_date.strftime('%b %d, %Y') }} &rarr; {{ report.session.end_date.strftime('%b %d, %Y') }}
+                    &bull; Calculated through {{ report.current_end_date.strftime('%b %d, %Y') }}
                 </div>
-                <div class="stat-box">
-                    <div class="stat-val">{{ report.min_attendance_percentage }}%</div>
-                    <div class="stat-lbl">Minimum Required</div>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                    <div style="font-size:1.3rem; font-weight:800; color:var(--text);" class="font-display">{{ report.rows|length }}</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Students</div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-val" style="color:#f87171;">{{ report.rows|selectattr('below_minimum')|list|length }}</div>
-                    <div class="stat-lbl">Below Minimum</div>
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                    <div style="font-size:1.3rem; font-weight:800; color:var(--gold);" class="font-display">{{ report.min_attendance_percentage }}%</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Min Required</div>
+                </div>
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                    <div style="font-size:1.3rem; font-weight:800; color:#f43f5e;" class="font-display">{{ report.rows|selectattr('below_minimum')|list|length }}</div>
+                    <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Below Threshold</div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="legend">
-            <span>✅ Present = 100%</span>
-            <span>🕒 Late / Half Day = 50%</span>
-            <span>❌ Absent = 0%</span>
-            <span>➖ Holiday / Medical Leave / OD = excluded (no change)</span>
-            <span>📅 No attendance taken that day = counted as Holiday</span>
-        </div>
+    <!-- Attendance Legend -->
+    <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; font-size:0.75rem; color:var(--text-dim);">
+        <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#10b981;">check_circle</i> Present = 100%
+        </span>
+        <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#f59e0b;">schedule</i> Late / Half Day = 50%
+        </span>
+        <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#f43f5e;">cancel</i> Absent = 0%
+        </span>
+        <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary-light);">event_busy</i> Holiday / Med. / OD = Excluded
+        </span>
+    </div>
 
+    <!-- Attendance Data Table -->
+    <div class="card" style="padding:0; overflow:hidden; border:1px solid var(--border);">
         <div class="table-wrap">
             <table>
-                <tr>
-                    <th>#</th>
-                    <th>Student</th>
-                    <th>Present</th>
-                    <th>Absent</th>
-                    <th>Late / Half Day</th>
-                    <th>Holiday / OD / Med.</th>
-                    <th>Session Percentage</th>
-                    <th>Current Percentage</th>
-                </tr>
-                {% for row in report.rows %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td><strong>{{ row.student.username }}</strong></td>
-                    <td>{{ row.full.counts['Present'] }}</td>
-                    <td>{{ row.full.counts['Absent'] }}</td>
-                    <td>{{ row.full.counts['Late'] + row.full.counts['Half Day'] }}</td>
-                    <td>{{ row.full.neutral_days }}</td>
-                    <td>
-                        {% if row.percentage is not none %}
-                        <span class="pct-badge {{ 'pct-good' if row.percentage >= report.min_attendance_percentage else 'pct-bad' }}">{{ row.percentage }}%</span>
-                        {% else %}
-                        <span class="pct-badge pct-na">N/A</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if row.current_percentage is not none %}
-                        <span class="pct-badge {{ 'pct-good' if not row.below_minimum else 'pct-bad' }}">{{ row.current_percentage }}%</span>
-                        {% else %}
-                        <span class="pct-badge pct-na">N/A</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No students enrolled in this class yet.</td></tr>
-                {% endfor %}
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Late / Half</th>
+                        <th>Holiday / OD</th>
+                        <th>Full Session %</th>
+                        <th>Current Standing %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report.rows %}
+                    <tr>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.75rem;">{{ loop.index }}</td>
+                        <td><strong style="color:var(--text);">{{ row.student.username }}</strong></td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:#10b981; font-weight:700;">{{ row.full.counts['Present'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:#f43f5e; font-weight:700;">{{ row.full.counts['Absent'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:#f59e0b;">{{ row.full.counts['Late'] + row.full.counts['Half Day'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim);">{{ row.full.neutral_days }}</td>
+                        <td>
+                            {% if row.percentage is not none %}
+                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700;
+                                background:{{ 'rgba(16,185,129,0.15)' if row.percentage >= report.min_attendance_percentage else 'rgba(244,63,94,0.15)' }};
+                                color:{{ '#10b981' if row.percentage >= report.min_attendance_percentage else '#f43f5e' }};
+                                border:1px solid {{ 'rgba(16,185,129,0.3)' if row.percentage >= report.min_attendance_percentage else 'rgba(244,63,94,0.3)' }};">
+                                {{ row.percentage }}%
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background:var(--surface2); color:var(--text-dim);">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if row.current_percentage is not none %}
+                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700;
+                                background:{{ 'rgba(16,185,129,0.15)' if not row.below_minimum else 'rgba(244,63,94,0.15)' }};
+                                color:{{ '#10b981' if not row.below_minimum else '#f43f5e' }};
+                                border:1px solid {{ 'rgba(16,185,129,0.3)' if not row.below_minimum else 'rgba(244,63,94,0.3)' }};">
+                                {{ row.current_percentage }}%
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background:var(--surface2); color:var(--text-dim);">N/A</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-dim text-center" style="padding:28px;">No students enrolled in this class yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
+</div>
 
-    {% if download %}
-    <script>window.onload = function(){ window.print(); };</script>
-    {% endif %}
-</body>
+<style>
+@media print {
+    .sidebar, .topbar, .no-print, header, nav {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .card {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    table {
+        color: #000 !important;
+    }
+    th {
+        background: #f1f5f9 !important;
+        color: #000 !important;
+    }
+    td {
+        color: #000 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+}
+</style>
 
-</html>
+{% if download %}
+<script>window.onload = function(){ window.print(); };</script>
+{% endif %}
+{% endblock %}

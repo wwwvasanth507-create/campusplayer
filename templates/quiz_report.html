@@ -1,113 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "layout.html" %}
+{% block title %}Quiz Report — {{ quiz.title }} — Campus Player{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Report - {{ quiz.title }}</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 40px;
-            color: #000;
-            background: #fff;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 20px;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 24px;
-        }
-
-        p {
-            margin: 5px 0;
-            color: #555;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            font-weight: bold;
-        }
-
-        .footer {
-            margin-top: 40px;
-            text-align: right;
-            font-size: 12px;
-            color: #777;
-        }
-
-        @media print {
-            .no-print {
-                display: none;
-            }
-
-            body {
-                padding: 0;
-            }
-        }
-    </style>
-</head>
-
-<body>
-    <button onclick="window.print()" class="no-print"
-        style="margin-bottom: 20px; padding: 10px 20px; background: #000; color: #fff; border: none; cursor: pointer;">Print
-        Report</button>
-
-    <div class="header">
-        <h1>Quiz Report: {{ quiz.title }}</h1>
-        <p>Generated on: {{ datetime.utcnow().strftime('%B %d, %Y %H:%M') }}</p>
+{% block content %}
+<div style="max-width:980px; margin:0 auto;">
+    <div class="flex-between mb-16 no-print" style="flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1 class="page-title font-display" style="margin:0; font-size:1.6rem;">
+                <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.8rem;">quiz</i>
+                Quiz Assessment Report
+            </h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">{{ quiz.title }} &bull; Performance & Score Breakdown</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button onclick="window.print()" class="btn btn-primary" style="padding:8px 16px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">print</i> Save as PDF / Print
+            </button>
+            <a href="javascript:history.back()" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">arrow_back</i> Back
+            </a>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Student Name</th>
-                <th>Score</th>
-                <th>Total Questions</th>
-                <th>Percentage</th>
-                <th>Date Taken</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for result in results %}
-            <tr>
-                <td>{{ result.student.username }}</td>
-                <td>{{ result.score }}</td>
-                <td>{{ result.total }}</td>
-                <td>{{ "%.1f"|format((result.score / result.total) * 100) }}%</td>
-                <td>{{ result.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="5" style="text-align: center;">No results found for this quiz.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Printable Header Card -->
+    <div class="card" style="margin-bottom:16px; border:1px solid var(--border); background:var(--surface);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:14px;">
+            <div>
+                <div style="font-size:1.25rem; font-weight:800; color:var(--text);" class="font-display">{{ quiz.title }}</div>
+                <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
+                    Teacher: <b style="color:var(--text);">{{ quiz.teacher.username }}</b> &bull;
+                    Passing Threshold: <b style="color:var(--gold);">{{ quiz.passing_percent or 50 }}%</b>
+                </div>
+            </div>
+            <div style="text-align:right;">
+                <div class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:700; font-family:'JetBrains Mono',monospace;">
+                    {{ results|length }} Submissions Recorded
+                </div>
+                <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                    Generated: {{ datetime.utcnow().strftime('%B %d, %Y %H:%M UTC') }}
+                </div>
+            </div>
+        </div>
 
-    <div class="footer">
-        <p>Campus Video Player System &copy; {{ datetime.now().year }}</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Student Name</th>
+                        <th>Score</th>
+                        <th>Total Questions</th>
+                        <th>Percentage</th>
+                        <th>Status</th>
+                        <th>Date Taken</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    {% set pct = (result.score / result.total * 100) if result.total > 0 else 0 %}
+                    {% set is_pass = pct >= (quiz.passing_percent or 50) %}
+                    <tr>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.75rem;">{{ loop.index }}</td>
+                        <td style="font-weight:700; color:var(--text);">{{ result.student.username }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--gold);">{{ result.score }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim);">{{ result.total }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:700; color:{{ '#10b981' if is_pass else '#f43f5e' }};">
+                            {{ "%.1f"|format(pct) }}%
+                        </td>
+                        <td>
+                            <span class="badge" style="background:{{ 'rgba(16,185,129,0.15)' if is_pass else 'rgba(244,63,94,0.15)' }};
+                                color:{{ '#10b981' if is_pass else '#f43f5e' }};
+                                border:1px solid {{ 'rgba(16,185,129,0.3)' if is_pass else 'rgba(244,63,94,0.3)' }};
+                                font-size:0.68rem; font-weight:700;">
+                                {{ 'PASSED' if is_pass else 'FAILED' }}
+                            </span>
+                        </td>
+                        <td style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                            {{ result.date.strftime('%Y-%m-%d %H:%M') if result.date else '—' }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-dim text-center" style="padding:24px;">No student submissions recorded for this quiz yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</body>
+</div>
 
-</html>
+<style>
+@media print {
+    .sidebar, .topbar, .no-print, header, nav {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .card {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    table {
+        color: #000 !important;
+    }
+    th {
+        background: #f1f5f9 !important;
+        color: #000 !important;
+    }
+    td {
+        color: #000 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+}
+</style>
+{% endblock %}

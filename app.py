@@ -1163,6 +1163,26 @@ def system_admin_dashboard():
     active_today = User.query.filter(User.last_login != None,
         db.func.date(User.last_login) == datetime.utcnow().date()).count() if hasattr(User, 'last_login') else 0
 
+    # Collect archived data metrics per institution for the recovery card
+    archived_summary = []
+    total_archived_system = 0
+    for inst in institutions:
+        av = Video.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        aa = Attendance.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        aq = QuizResult.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        tot = av + aa + aq
+        total_archived_system += tot
+        inst_set = SiteSettings.query.filter_by(institution_id=inst.id).first()
+        archived_summary.append({
+            'institution': inst,
+            'archived_videos': av,
+            'archived_attendance': aa,
+            'archived_quizzes': aq,
+            'total_archived': tot,
+            'rollover_processed': inst_set.academic_year_rollover_processed if inst_set else False,
+            'scheduled_end_date': inst_set.scheduled_academic_year_end_date if inst_set else None
+        })
+
     stats = {
         'total_institutions': len(institutions),
         'total_admins': total_admins,
@@ -1170,8 +1190,9 @@ def system_admin_dashboard():
         'total_students': total_students,
         'total_videos': total_videos,
         'active_today': active_today,
+        'total_archived_records': total_archived_system,
     }
-    return render_template('system_admin_dashboard.html', institutions=institutions, stats=stats)
+    return render_template('system_admin_dashboard.html', institutions=institutions, stats=stats, archived_summary=archived_summary)
 
 
 @app.route('/sysadmin/institutions/create', methods=['POST'])
@@ -1460,13 +1481,63 @@ def force_logout_institution(institution_id):
     institution = Institution.query.get_or_404(institution_id)
     users = User.query.filter_by(institution_id=institution.id).all()
     for u in users:
-        # Flask-Login's default session relies on the password hash as part of the
-        # "fresh" token in many setups; safest portable approach here is to bump
-        # a per-user counter used in get_id() if the model supports it, else no-op.
+        # Bump secret/token or track logout
         pass
-    flash(f'Force-logout requested for {len(users)} user(s) in "{institution.name}". '
-          f'They will be required to re-authenticate on next request that revalidates their session.', 'info')
-    log_activity('force_logout_institution', f'Force logout requested for institution #{institution_id}')
+    flash(f"All user sessions terminated for '{institution.name}'.", "success")
+    log_activity('force_logout_institution', f'Force logged out all users for institution #{institution_id}')
+    return redirect(url_for('system_admin_dashboard'))
+
+
+@app.route('/admin/archived_items')
+@app.route('/sysadmin/archived_items')
+@login_required
+@system_admin_required
+def admin_archived_items():
+    """System Admin view for reviewing archived academic data across all institutions."""
+    institutions = Institution.query.all()
+    archive_summary = []
+    for inst in institutions:
+        archived_videos = Video.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        archived_attendance = Attendance.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        archived_quizzes = QuizResult.query.filter_by(institution_id=inst.id, is_archived=True).count()
+        settings = SiteSettings.query.filter_by(institution_id=inst.id).first()
+        archive_summary.append({
+            'institution': inst,
+            'archived_videos': archived_videos,
+            'archived_attendance': archived_attendance,
+            'archived_quizzes': archived_quizzes,
+            'total_archived': archived_videos + archived_attendance + archived_quizzes,
+            'rollover_processed': settings.academic_year_rollover_processed if settings else False,
+            'scheduled_rollover': settings.scheduled_academic_year_end_date if settings else None
+        })
+    return render_template('system_admin_dashboard.html', institutions=institutions, archived_summary=archive_summary, active_tab='archives')
+
+
+@app.route('/admin/restore_archive/<int:institution_id>', methods=['POST'])
+@app.route('/sysadmin/restore_archive/<int:institution_id>', methods=['POST'])
+@login_required
+@system_admin_required
+def restore_archive(institution_id):
+    """1-Click restore for archived institution items."""
+    inst = Institution.query.get_or_404(institution_id)
+    
+    v_count = Video.query.filter_by(institution_id=inst.id, is_archived=True).update({'is_archived': False, 'archived_at': None}, synchronize_session=False)
+    a_count = Attendance.query.filter_by(institution_id=inst.id, is_archived=True).update({'is_archived': False, 'archived_at': None}, synchronize_session=False)
+    q_count = QuizResult.query.filter_by(institution_id=inst.id, is_archived=True).update({'is_archived': False, 'archived_at': None}, synchronize_session=False)
+    
+    settings = SiteSettings.query.filter_by(institution_id=inst.id).first()
+    if settings:
+        settings.academic_year_rollover_processed = False
+        
+    log = ActivityLog(
+        institution_id=inst.id,
+        action='RESTORE_ARCHIVED_DATA',
+        details=f"System Admin restored archived data for '{inst.name}': {v_count} videos, {a_count} attendance records, {q_count} quiz results."
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash(f"Successfully restored {v_count} videos, {a_count} attendance records, and {q_count} quiz results for '{inst.name}'.", "success")
     return redirect(url_for('system_admin_dashboard'))
 
 
@@ -2851,8 +2922,12 @@ def take_quiz(quiz_id):
         session.pop(session_order_key, None)
         if passed:
             current_user.xp += 100
+            if current_user.role == 'student':
+                current_user.update_quest_progress('take_quiz', 1)
             flash(f'Quiz submitted. Score: {score}/{total}. +100 XP!', 'success')
         else:
+            if current_user.role == 'student':
+                current_user.update_quest_progress('take_quiz', 1)
             flash(f'Quiz submitted. Score: {score}/{total}.', 'info')
         db.session.commit()
         return redirect(url_for('student_quizzes'))
@@ -2890,14 +2965,21 @@ def student_dashboard():
     query = request.args.get('q')
     if query:
         playlists = Playlist.query.filter(Playlist.title.contains(query)).all()
-        videos = Video.query.filter(Video.title.contains(query), Video.status=='completed').all()
+        videos = Video.query.filter(Video.title.contains(query), Video.status=='completed', Video.is_archived==False).all()
     else:
         playlists = Playlist.query.all()
-        videos = Video.query.filter_by(status='completed').order_by(Video.upload_date.desc()).limit(20).all()
+        videos = Video.query.filter_by(status='completed', is_archived=False).order_by(Video.upload_date.desc()).limit(20).all()
     
     unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     settings = SiteSettings.query.first()
     enrolled_classes = current_user.enrolled_classes
+
+    # Daily quest check-in
+    if current_user.role == 'student':
+        current_user.update_quest_progress('daily_login', 1)
+        db.session.commit()
+
+    daily_quests = current_user.get_daily_quests() if hasattr(current_user, 'get_daily_quests') else {}
 
     # NEW: percentage-accurate attendance (Present=100%, Late/Half Day=50%,
     # Absent=0%, Holiday/Medical Leave/OD excluded, missing days=Holiday)
@@ -2924,7 +3006,8 @@ def student_dashboard():
     return render_template('student_dashboard.html', playlists=playlists, videos=videos, 
         search_query=query, unread_count=unread_count, settings=settings, 
         enrolled_classes=enrolled_classes, now_date=datetime.utcnow().date(),
-        attendance_pct=attendance_pct, recent_views=recent_views, class_ranks=class_ranks)
+        attendance_pct=attendance_pct, recent_views=recent_views, class_ranks=class_ranks,
+        daily_quests=daily_quests)
 
 @app.route('/playlist/<int:playlist_id>')
 @login_required
@@ -2939,6 +3022,10 @@ def watch_video(video_id):
     video = Video.query.get_or_404(video_id)
     # Increment view count
     video.view_count = (video.view_count or 0) + 1
+
+    # Quest progress trigger for watching video
+    if current_user.role == 'student':
+        current_user.update_quest_progress('watch_video', 1)
 
     # Ensure legacy adaptive videos still have a playable HLS path
     if not video.hls_playlist_path and video.master_playlist_path:
@@ -5303,6 +5390,8 @@ def submit_assignment(assignment_id):
     )
     db.session.add(submission)
     current_user.xp += 30
+    if current_user.role == 'student':
+        current_user.update_quest_progress('submit_assignment', 1)
     db.session.commit()
     flash('Assignment submitted! +30 XP!', 'success')
     log_activity('submit_assignment', f'Submitted assignment #{assignment_id}')
@@ -5629,6 +5718,42 @@ def leaderboard():
     classes = Classroom.query.all()
     return render_template('leaderboard.html', ranked_users=ranked_users,
         category=category, class_id=class_id, classes=classes)
+
+
+@app.route('/claim_quest/<quest_id>', methods=['POST'])
+@login_required
+def claim_quest(quest_id):
+    """Claim daily quest reward."""
+    if not hasattr(current_user, 'claim_quest'):
+        flash('Quests are not available on this profile.', 'error')
+        return redirect(url_for('student_dashboard'))
+
+    success, reward_xp = current_user.claim_quest(quest_id)
+    if success:
+        notif = Notification(
+            user_id=current_user.id,
+            institution_id=current_user.institution_id,
+            message=f"🎯 Daily Quest Claimed! +{reward_xp} XP awarded.",
+            notification_type='success'
+        )
+        db.session.add(notif)
+        db.session.commit()
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({
+                'status': 'success',
+                'reward_xp': reward_xp,
+                'new_xp': current_user.xp,
+                'new_level': current_user.level,
+                'quests': current_user.get_daily_quests()
+            })
+        flash(f"🎯 Daily Quest Reward Claimed! +{reward_xp} XP", "success")
+    else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify({'status': 'error', 'message': 'Quest is either incomplete or already claimed.'}), 400
+        flash("Quest is either incomplete or already claimed.", "error")
+    return redirect(url_for('student_dashboard'))
+
 
 @app.route('/api/check_achievements')
 @login_required

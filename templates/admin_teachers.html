@@ -80,14 +80,14 @@
                                     ID #{{ teacher.id }}
                                 </span>
                             </div>
-                            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap;">
-                                <span style="color:#10b981; font-weight:600;">🟢 Active</span>
+                            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                <span style="color:#10b981; font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:#10b981;">check_circle</i> Active</span>
                                 <span>Joined {{ teacher.created_at.strftime('%b %d, %Y') }}</span>
-                                <span style="color:var(--gold); font-weight:600;">⚡ {{ teacher.xp }} XP</span>
+                                <span style="color:var(--gold); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--gold);">bolt</i> {{ teacher.xp }} CP</span>
                                 {% if teacher.phone %}
-                                <span style="color:var(--accent);">📲 {{ teacher.phone }}</span>
+                                <span style="color:var(--accent);"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">phone_iphone</i> {{ teacher.phone }}</span>
                                 {% else %}
-                                <span style="color:var(--text-dim); opacity:0.6;">📵 No phone</span>
+                                <span style="color:var(--text-dim); opacity:0.6;"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">phonelink_erase</i> No phone</span>
                                 {% endif %}
                             </div>
                         </div>
@@ -121,7 +121,7 @@
                 <div id="phone-{{ teacher.id }}" style="display:none; margin-top:10px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
                     <form action="{{ url_for('admin_update_teacher_phone', teacher_id=teacher.id) }}" method="POST"
                         style="display:flex; gap:8px; align-items:center; margin:0;">
-                        <span style="font-size:0.85rem;">📲</span>
+                        <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">phone_iphone</i>
                         <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ teacher.phone or '' }}"
                             required style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
                         <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Save Phone</button>
@@ -156,9 +156,9 @@
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
     function copyLevelsLink(name, url) {
-        const text = `📊 Levels Report for ${name}: ${url}`;
+        const text = `Levels & CP Report for ${name}: ${url}`;
         navigator.clipboard.writeText(text).then(() => {
-            alert('Report link copied to clipboard!');
+            alert(`Report link copied for ${name}!`);
         });
     }
 </script>

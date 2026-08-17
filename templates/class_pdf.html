@@ -1,508 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "layout.html" %}
+{% block title %}{{ classroom.name }} — Class Report — Campus Player{% endblock %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ classroom.name }} — Class Report · Campus Player</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --secondary: #06b6d4;
-            --success: #10b981;
-            --bg: #f8fafc;
-            --surface: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
-            --muted: #64748b;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        /* ===== TOOLBAR ===== */
-        .toolbar {
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            padding: 14px 28px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .toolbar-logo {
-            font-size: 1rem;
-            font-weight: 800;
-            color: #c7d2fe;
-            letter-spacing: -0.5px;
-        }
-
-        .toolbar-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .toolbar-actions {
-            margin-left: auto;
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 18px;
-            border-radius: 8px;
-            border: none;
-            font-family: inherit;
-            font-size: 0.82rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-        }
-
-        .btn-pdf {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: #fff;
-        }
-
-        .btn-pdf:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .btn-back {
-            background: rgba(255, 255, 255, 0.08);
-            color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-back:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: #fff;
-        }
-
-        /* Keyboard shortcut hint */
-        .key-hint {
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.4);
-            background: rgba(255, 255, 255, 0.06);
-            padding: 3px 8px;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-        }
-
-        /* Switch class */
-        .class-select {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            padding: 7px 12px;
-            font-family: inherit;
-            font-size: 0.82rem;
-            cursor: pointer;
-        }
-
-        .class-select option {
-            background: #1e1b4b;
-        }
-
-        /* ===== MAIN DOC ===== */
-        .doc {
-            max-width: 900px;
-            margin: 32px auto;
-            background: var(--surface);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
-        }
-
-        /* Doc header */
-        .doc-header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 60%, #1e3a5f 100%);
-            padding: 36px 40px 32px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .doc-header::after {
-            content: '';
-            position: absolute;
-            top: -80px;
-            right: -80px;
-            width: 280px;
-            height: 280px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(79, 70, 229, 0.25), transparent 70%);
-        }
-
-        .doc-header::before {
-            content: '';
-            position: absolute;
-            bottom: -60px;
-            left: 30%;
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.15), transparent 70%);
-        }
-
-        .org-name {
-            font-size: 0.78rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.45);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
-            position: relative;
-        }
-
-        .class-name {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: -1.5px;
-            line-height: 1.1;
-            position: relative;
-        }
-
-        .report-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 8px;
-            position: relative;
-        }
-
-        .doc-stats {
-            display: flex;
-            gap: 16px;
-            margin-top: 24px;
-            position: relative;
-            flex-wrap: wrap;
-        }
-
-        .doc-stat {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 10px;
-            padding: 12px 20px;
-        }
-
-        .stat-val {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .stat-lbl {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-        }
-
-        /* Doc body */
-        .doc-body {
-            padding: 32px 40px 40px;
-        }
-
-        .section-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        /* ===== TABLE ===== */
-        .report-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .report-table thead tr {
-            background: #f1f5f9;
-        }
-
-        .report-table th {
-            padding: 11px 16px;
-            text-align: left;
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #475569;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            border-bottom: 2px solid var(--border);
-        }
-
-        .report-table td {
-            padding: 13px 16px;
-            border-bottom: 1px solid #f1f5f9;
-            font-size: 0.88rem;
-        }
-
-        .report-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .report-table tbody tr:hover td {
-            background: #f8fafc;
-        }
-
-        /* Rank */
-        .rank-medal {
-            font-size: 1.3rem;
-        }
-
-        .rank-num {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            background: #e2e8f0;
-            color: #64748b;
-            font-weight: 800;
-            font-size: 0.78rem;
-        }
-
-        /* User cell */
-        .user-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 0.9rem;
-            color: #fff;
-            flex-shrink: 0;
-        }
-
-        .user-name {
-            font-weight: 700;
-            font-size: 0.92rem;
-        }
-
-        /* Level */
-        .level-pill {
-            display: inline-block;
-            background: rgba(79, 70, 229, 0.1);
-            color: var(--primary);
-            border-radius: 20px;
-            padding: 3px 10px;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        /* XP bar */
-        .xp-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .xp-bar {
-            height: 7px;
-            background: #e2e8f0;
-            border-radius: 10px;
-            flex: 1;
-            min-width: 70px;
-            overflow: hidden;
-        }
-
-        .xp-fill {
-            height: 100%;
-            border-radius: 10px;
-            background: linear-gradient(90deg, #06b6d4, #0891b2);
-        }
-
-        .xp-pct {
-            font-size: 0.72rem;
-            font-weight: 700;
-            color: var(--muted);
-            min-width: 32px;
-            text-align: right;
-        }
-
-        /* ===== EMPTY ===== */
-        .empty-state {
-            text-align: center;
-            padding: 60px 40px;
-            color: var(--muted);
-        }
-
-        .empty-state .emoji {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-
-        /* ===== FOOTER ===== */
-        .doc-footer {
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-            padding: 18px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78rem;
-            color: var(--muted);
-        }
-
-        /* ===== PRINT ===== */
-        @media print {
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-
-            body {
-                background: #fff !important;
-            }
-
-            .toolbar {
-                display: none !important;
-            }
-
-            .doc {
-                border-radius: 0 !important;
-                box-shadow: none !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-            }
-
-            .doc-body {
-                padding: 24px 28px !important;
-            }
-
-            .doc-header {
-                padding: 24px 28px !important;
-            }
-
-            .doc-footer {
-                padding: 14px 28px !important;
-            }
-        }
-
-        @page {
-            margin: 15mm;
-            size: A4;
-        }
-    </style>
-</head>
-
-<body>
-
-    <!-- ===== TOOLBAR ===== -->
-    <div class="toolbar">
-        <div class="toolbar-logo">🎓 Campus Player</div>
-        <div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div>
-        <div class="toolbar-title">{{ classroom.name }} – Class Report</div>
-
-        <form method="GET" style="display:flex;gap:0;margin-left:16px;" id="cls-switch">
-            <select class="class-select" name="class_id" onchange="this.form.submit()">
-                {% for cls in all_classes %}
-                <option value="{{ cls.id }}" {% if cls.id==classroom.id %}selected{% endif %}>{{ cls.name }}</option>
-                {% endfor %}
-            </select>
-        </form>
-
-        <div class="toolbar-actions">
-            <span class="key-hint">Ctrl+P to Save PDF</span>
-            <button class="btn btn-pdf" onclick="window.print()">🖨️ Save as PDF</button>
-            <a href="{{ url_for('levels_pdf') }}?type=all_classes" class="btn btn-back">← All Classes</a>
-            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-back">⌂ Dashboard</a>
+{% block content %}
+<div style="max-width:1050px; margin:0 auto;">
+    <!-- Controls Header -->
+    <div class="flex-between mb-16 no-print" style="flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1 class="page-title font-display" style="margin:0; font-size:1.6rem;">
+                <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.8rem;">school</i>
+                {{ classroom.name }} — Academic Class Report
+            </h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Comprehensive Scholar Rankings &amp; XP Progression</p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <form method="GET" style="display:flex; margin:0;">
+                <select name="class_id" onchange="this.form.submit()" style="padding:6px 12px; font-size:0.78rem; border-radius:var(--radius-sm); background:var(--surface); color:var(--text); border:1px solid var(--border); margin-bottom:0; min-height:36px;">
+                    {% for cls in all_classes %}
+                    <option value="{{ cls.id }}" {% if cls.id==classroom.id %}selected{% endif %}>{{ cls.name }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <button class="btn btn-primary" onclick="window.print()" style="padding:8px 16px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">print</i> Save as PDF / Print
+            </button>
+            <a href="{{ url_for('levels_pdf') }}?type=all_classes" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:1.05rem;">groups</i> All Classes
+            </a>
         </div>
     </div>
 
-    <!-- ===== DOCUMENT ===== -->
-    <div class="doc">
-
-        <!-- Header -->
-        <div class="doc-header">
-            <div class="org-name">Campus Player — Academic Report</div>
-            <div class="class-name">{{ classroom.name }}</div>
-            <div class="report-label">
-                Student Levels &amp; XP Report &nbsp;·&nbsp;
-                Generated {{ datetime.utcnow().strftime('%B %d, %Y') }}
-            </div>
-            <div class="doc-stats">
-                <div class="doc-stat">
-                    <div class="stat-val">{{ students|length }}</div>
-                    <div class="stat-lbl">Students</div>
+    <!-- Document Card -->
+    <div class="card" style="border:1px solid var(--border); padding:24px; margin-bottom:20px; background:var(--surface);">
+        <!-- Summary Header -->
+        <div style="border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:20px;">
+            <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+                <div>
+                    <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); font-size:0.72rem; font-weight:700; text-transform:uppercase;">
+                        Class Performance Report
+                    </span>
+                    <h2 class="font-display" style="font-size:1.6rem; font-weight:800; color:var(--text); margin:6px 0 2px 0;">{{ classroom.name }}</h2>
+                    <div style="font-size:0.78rem; color:var(--text-dim);">
+                        Campus Player &bull; Generated {{ datetime.utcnow().strftime('%B %d, %Y %H:%M UTC') }}
+                    </div>
                 </div>
-                {% if students %}
-                <div class="doc-stat">
-                    <div class="stat-val">{{ (students|sum(attribute='xp') / students|length)|int }}</div>
-                    <div class="stat-lbl">Avg XP</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--text);" class="font-display">{{ students|length }}</div>
+                        <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Scholars</div>
+                    </div>
+                    {% if students %}
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--primary-light);" class="font-display">{{ (students|sum(attribute='xp') / students|length)|int }}</div>
+                        <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Avg XP</div>
+                    </div>
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--gold);" class="font-display">{{ students[0].xp }}</div>
+                        <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Top XP</div>
+                    </div>
+                    {% endif %}
                 </div>
-                <div class="doc-stat">
-                    <div class="stat-val">{{ students[0].xp }}</div>
-                    <div class="stat-lbl">Top XP</div>
-                </div>
-                <div class="doc-stat">
-                    <div class="stat-val">{{ ((students[0].xp // 500) + 1) }}</div>
-                    <div class="stat-lbl">Top Level</div>
-                </div>
-                {% endif %}
             </div>
         </div>
 
-        <!-- Body -->
-        <div class="doc-body">
-            <div class="section-label">Student Rankings</div>
-
-            {% if students %}
-            {% set max_xp = students[0].xp if students[0].xp > 0 else 1 %}
-            <table class="report-table">
+        <!-- Student Rankings Table -->
+        {% if students %}
+        {% set max_xp = students[0].xp if students[0].xp > 0 else 1 %}
+        <div class="table-wrap">
+            <table>
                 <thead>
                     <tr>
-                        <th style="width:55px;">Rank</th>
+                        <th style="width:60px;">Rank</th>
                         <th>Student Name</th>
-                        <th style="width:90px;">Level</th>
-                        <th style="width:105px;">XP Points</th>
-                        <th>Progress (relative to top)</th>
-                        <th style="width:110px;">Enrolled Since</th>
+                        <th style="width:110px;">Level</th>
+                        <th style="width:110px;">XP Points</th>
+                        <th>Relative Progress</th>
+                        <th style="width:120px;">Enrolled Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -510,66 +82,96 @@
                     {% set rank = loop.index %}
                     <tr>
                         <td>
-                            {% if rank == 1 %}<span class="rank-medal">🥇</span>
-                            {% elif rank == 2 %}<span class="rank-medal">🥈</span>
-                            {% elif rank == 3 %}<span class="rank-medal">🥉</span>
-                            {% else %}<span class="rank-num">#{{ rank }}</span>
+                            {% if rank == 1 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:var(--gold);">looks_one</i>
+                            {% elif rank == 2 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:#94a3b8;">looks_two</i>
+                            {% elif rank == 3 %}
+                            <i class="material-icons" style="font-size:1.3rem; color:#d97706;">looks_3</i>
+                            {% else %}
+                            <span style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.8rem; font-weight:700;">#{{ rank }}</span>
                             {% endif %}
                         </td>
                         <td>
-                            <div class="user-cell">
-                                <div class="avatar" style="background: hsl({{ (loop.index * 47) % 360 }}, 60%, 50%);">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="width:30px; height:30px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#fff;">
                                     {{ student.username[0].upper() }}
                                 </div>
-                                <div class="user-name">{{ student.username }}</div>
+                                <strong style="color:var(--text); font-size:0.9rem;">{{ student.username }}</strong>
                             </div>
                         </td>
                         <td>
-                            <span class="level-pill">⬆ Level {{ (student.xp // 500) + 1 }}</span>
+                            <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); border:1px solid rgba(99,102,241,0.3); font-size:0.7rem; font-weight:700;">
+                                Level {{ (student.xp // 500) + 1 }}
+                            </span>
+                        </td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--gold);">
+                            {{ student.xp }} <span style="font-size:0.72rem; color:var(--text-dim); font-weight:400;">XP</span>
                         </td>
                         <td>
-                            <span style="font-weight:700;color:#4f46e5;">{{ student.xp }}</span>
-                            <span style="color:#94a3b8;font-size:0.78rem;">XP</span>
-                        </td>
-                        <td>
-                            <div class="xp-wrap">
-                                <div class="xp-bar">
-                                    <div class="xp-fill" style="width:{{ [(student.xp / max_xp * 100), 100]|min }}%;">
-                                    </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <div style="flex:1; height:6px; background:var(--surface2); border-radius:10px; overflow:hidden;">
+                                    <div style="width:{{ [(student.xp / max_xp * 100), 100]|min }}%; height:100%; background:var(--brand-gradient); border-radius:10px;"></div>
                                 </div>
-                                <span class="xp-pct">{{ [(student.xp / max_xp * 100)|int, 100]|min }}%</span>
+                                <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; width:35px; text-align:right;">
+                                    {{ [(student.xp / max_xp * 100)|int, 100]|min }}%
+                                </span>
                             </div>
                         </td>
-                        <td style="color:#64748b;font-size:0.82rem;">{{ student.created_at.strftime('%b %d, %Y') }}</td>
+                        <td style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                            {{ student.created_at.strftime('%b %d, %Y') if student.created_at else '—' }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            {% else %}
-            <div class="empty-state">
-                <div class="emoji">👥</div>
-                <p>No students are enrolled in <strong>{{ classroom.name }}</strong> yet.</p>
-            </div>
-            {% endif %}
         </div>
-
-        <!-- Footer -->
-        <div class="doc-footer">
-            <span>🎓 Campus Player &mdash; Academic Report</span>
-            <span>{{ classroom.name }} &nbsp;·&nbsp; {{ datetime.utcnow().strftime('%B %d, %Y') }}</span>
-            <span>{{ students|length }} student(s)</span>
+        {% else %}
+        <div class="text-center" style="padding:40px;">
+            <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.4;">group_off</i>
+            <p style="color:var(--text-dim); font-size:0.9rem; margin-top:8px;">No students are enrolled in <strong>{{ classroom.name }}</strong> yet.</p>
         </div>
+        {% endif %}
+    </div>
+</div>
 
-    </div><!-- /doc -->
+<style>
+@media print {
+    .sidebar, .topbar, .no-print, header, nav {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .card {
+        border: 1px solid #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+    table {
+        color: #000 !important;
+    }
+    th {
+        background: #f1f5f9 !important;
+        color: #000 !important;
+    }
+    td {
+        color: #000 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+}
+</style>
 
-    <script>
-        // Auto-trigger print when page loads if ?autoprint=1
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('autoprint') === '1') {
-            window.addEventListener('load', () => setTimeout(() => window.print(), 800));
-        }
-    </script>
-
-</body>
-
-</html>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('autoprint') === '1') {
+        window.addEventListener('load', () => setTimeout(() => window.print(), 800));
+    }
+</script>
+{% endblock %}

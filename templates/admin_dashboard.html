@@ -278,7 +278,7 @@
                     if (jobForWorker) {
                         tile.style.background = 'rgba(0, 229, 255, 0.08)';
                         tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
                         statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
                         statusEl.style.color = '#00e5ff';
                         descEl.innerHTML = `<b style="color:#fff;">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
@@ -286,7 +286,7 @@
                         const fallbackJob = activeJobs[w - 1];
                         tile.style.background = 'rgba(0, 229, 255, 0.08)';
                         tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
                         statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
                         statusEl.style.color = '#00e5ff';
                         descEl.innerHTML = `<b style="color:#fff;">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
@@ -310,15 +310,15 @@
                 data.jobs.forEach(j => {
                     let statusBadge = '';
                     if (j.status === 'completed') {
-                        statusBadge = '<span style="color:#4caf50;font-weight:700;">✓ Completed</span>';
+                        statusBadge = '<span style="color:#4caf50;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
                     } else if (j.status === 'processing') {
-                        statusBadge = '<span style="color:#00e5ff;font-weight:700;">⚡ Processing</span>';
+                        statusBadge = '<span style="color:#00e5ff;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
                     } else if (j.status === 'queued') {
-                        statusBadge = '<span style="color:#ff9800;font-weight:700;">⏳ Queued</span>';
+                        statusBadge = '<span style="color:#ff9800;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
                     } else if (j.status === 'interrupted') {
-                        statusBadge = '<span style="color:#bb86fc;font-weight:700;">⏸ Interrupted</span>';
+                        statusBadge = '<span style="color:#bb86fc;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
                     } else {
-                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}">! Failed</span>`;
+                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
                     }
 
                     const progressPercent = j.progress || 0;

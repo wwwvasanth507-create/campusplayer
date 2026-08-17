@@ -471,12 +471,12 @@
                     badge.style.background = 'rgba(0, 229, 255, 0.15)';
                     badge.style.borderColor = 'rgba(0, 229, 255, 0.4)';
                     badge.style.color = '#00e5ff';
-                    badge.innerText = `Stream ${workerSlot + 1}: Chunk #${chunkIdx + 1} ⚡`;
+                    badge.innerText = `Stream ${workerSlot + 1}: Chunk #${chunkIdx + 1} (Active)`;
                 } else {
                     badge.style.background = 'rgba(255, 255, 255, 0.04)';
                     badge.style.borderColor = 'rgba(255, 255, 255, 0.06)';
                     badge.style.color = 'var(--text-secondary)';
-                    badge.innerText = `Stream ${workerSlot + 1}: Done ✓`;
+                    badge.innerText = `Stream ${workerSlot + 1}: Done`;
                 }
             }
 

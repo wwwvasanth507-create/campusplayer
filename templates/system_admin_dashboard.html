@@ -78,7 +78,9 @@
                 </div>
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                <a href="{{ url_for('institution_report_pdf', institution_id=inst.id) }}" class="btn btn-outline" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">📄 Report PDF</a>
+                <a href="{{ url_for('institution_report_pdf', institution_id=inst.id) }}" class="btn btn-outline" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">description</i> Report PDF
+                </a>
                 {% if inst.status == 'active' %}
                 <form method="POST" action="{{ url_for('suspend_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -114,6 +116,74 @@
     {% endif %}
 </div>
 
+<!-- Archived Items Recovery Portal Card -->
+<div class="card" id="sysAdminArchiveRecoveryCard">
+    <div class="flex-between" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <div>
+            <div class="card-title font-display" style="margin:0;">
+                <i class="material-icons" style="color:var(--gold);">history_edu</i>
+                Archived Items & Academic Rollover Recovery
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
+                Review archived academic year videos, attendance logs, and quiz records with 1-click restoration.
+            </div>
+        </div>
+        <div>
+            <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:700; font-family:'JetBrains Mono',monospace;">
+                {{ stats.total_archived_records or 0 }} Total System Archives
+            </span>
+        </div>
+    </div>
+
+    {% if archived_summary %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:12px;">
+        {% for item in archived_summary %}
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px;">
+            <div class="flex-between" style="margin-bottom:8px;">
+                <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ item.institution.name }}</span>
+                <span class="badge" style="font-size:0.68rem; font-weight:700;
+                    background:{{ 'rgba(16,185,129,0.15)' if item.rollover_processed else 'rgba(99,102,241,0.15)' }};
+                    color:{{ '#10b981' if item.rollover_processed else 'var(--primary-light)' }};">
+                    {{ 'Rollover Done' if item.rollover_processed else 'Active Term' }}
+                </span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; margin-bottom:10px; font-family:'JetBrains Mono',monospace;">
+                <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
+                    <div style="font-size:1.1rem; font-weight:800; color:#ff9800;">{{ item.archived_videos }}</div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Videos</div>
+                </div>
+                <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
+                    <div style="font-size:1.1rem; font-weight:800; color:#00e5ff;">{{ item.archived_attendance }}</div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Attendance</div>
+                </div>
+                <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
+                    <div style="font-size:1.1rem; font-weight:800; color:#10b981;">{{ item.archived_quizzes }}</div>
+                    <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Quizzes</div>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <span style="font-size:0.72rem; color:var(--text-dim);">
+                    Scheduled: <b style="color:var(--text);">{{ item.scheduled_end_date.strftime('%b %d, %Y') if item.scheduled_end_date else 'Not scheduled' }}</b>
+                </span>
+                {% if item.total_archived > 0 %}
+                <form method="POST" action="{{ url_for('restore_archive', institution_id=item.institution.id) }}" style="margin:0;" onsubmit="return confirm('Restore all {{ item.total_archived }} archived items for {{ item.institution.name }} back to active status?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn" style="padding:6px 12px; font-size:0.72rem; min-height:30px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">
+                        <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">restore</i> Restore All ({{ item.total_archived }})
+                    </button>
+                </form>
+                {% else %}
+                <span style="font-size:0.72rem; color:var(--text-dim); font-style:italic;">No archived items</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--text-dim); font-size:0.85rem;">No institutions found.</p>
+    {% endif %}
+</div>
+
 <!-- System-Wide Live Video Conversion Queue & Workers -->
 <div class="card conv-panel-card" id="sysAdminConversionCard">
     <div class="flex-between conv-header-row" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
@@ -123,13 +193,13 @@
         </div>
         <div class="conv-header-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:6px 10px; font-size:0.75rem; border-radius:8px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
-                <option value="">🏢 All Institutions</option>
+                <option value="">All Institutions</option>
                 {% for inst in institutions %}
                 <option value="{{ inst.id }}">{{ inst.name }}</option>
                 {% endfor %}
             </select>
             <button onclick="sysAdminRetryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
-                ↻ Retry All Failed
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">autorenew</i> Retry All Failed
             </button>
         </div>
     </div>
@@ -205,7 +275,7 @@
                     if (jobForWorker) {
                         tile.style.background = 'rgba(0, 229, 255, 0.08)';
                         tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
                         statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
                         statusEl.style.color = '#00e5ff';
                         descEl.innerHTML = `<b style="color:#fff;">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
@@ -213,7 +283,7 @@
                         const fallbackJob = activeJobs[w - 1];
                         tile.style.background = 'rgba(0, 229, 255, 0.08)';
                         tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                        statusEl.textContent = '⚡ Transcoding';
+                        statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
                         statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
                         statusEl.style.color = '#00e5ff';
                         descEl.innerHTML = `<b style="color:#fff;">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
@@ -237,15 +307,15 @@
                 data.jobs.forEach(j => {
                     let statusBadge = '';
                     if (j.status === 'completed') {
-                        statusBadge = '<span style="color:#4caf50;font-weight:700;">✓ Completed</span>';
+                        statusBadge = '<span style="color:#4caf50;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
                     } else if (j.status === 'processing') {
-                        statusBadge = '<span style="color:#00e5ff;font-weight:700;">⚡ Processing</span>';
+                        statusBadge = '<span style="color:#00e5ff;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
                     } else if (j.status === 'queued') {
-                        statusBadge = '<span style="color:#ff9800;font-weight:700;">⏳ Queued</span>';
+                        statusBadge = '<span style="color:#ff9800;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
                     } else if (j.status === 'interrupted') {
-                        statusBadge = '<span style="color:#bb86fc;font-weight:700;">⏸ Interrupted</span>';
+                        statusBadge = '<span style="color:#bb86fc;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
                     } else {
-                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}">! Failed</span>`;
+                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
                     }
 
                     const progressPercent = j.progress || 0;

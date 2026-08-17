@@ -13,8 +13,8 @@
                 </p>
             </div>
             {% if remaining_seconds is not none %}
-            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-family:'JetBrains Mono',monospace;">
-                ⏱️ <span id="quizTimerText">--:--</span>
+            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-family:'JetBrains Mono',monospace; display:inline-flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1.1rem; color:var(--gold);">timer</i> <span id="quizTimerText">--:--</span>
             </div>
             {% endif %}
         </div>
