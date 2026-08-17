@@ -1,0 +1,78 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="auth-card-wrap">
+    <div class="card card-royal auth-card">
+        <div class="card-title" style="justify-content:center;">
+            <i class="material-icons">school</i> CampusPlayer
+        </div>
+        <p class="text-muted text-center fs-small mb-16">Sign in to your account</p>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="Enter username" required>
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Enter password" required>
+            <label>I am a</label>
+            <select name="role" required>
+                <option value="">Select role...</option>
+                <option value="system_admin">System Admin</option>
+                <option value="admin">Admin</option>
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.auth-card-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+    padding: 20px 0;
+}
+
+.auth-card {
+    max-width: 380px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 420px) {
+    .auth-card-wrap {
+        min-height: calc(100vh - 120px);
+        padding: 12px 0;
+    }
+
+    .auth-card {
+        padding: 20px 16px;
+        border-radius: 16px !important;
+    }
+
+    .auth-card .card-title {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+    .auth-card-wrap {
+        min-height: auto;
+        padding: 8px 0;
+    }
+
+    .auth-card {
+        padding: 16px 14px;
+    }
+
+    .auth-card .card-title {
+        margin-bottom: 8px;
+    }
+
+    .auth-card p.mb-16 {
+        margin-bottom: 8px;
+    }
+}
+</style>
+{% endblock %}

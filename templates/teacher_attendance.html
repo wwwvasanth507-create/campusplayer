@@ -1,0 +1,520 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    .att-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 28px;
+        align-items: flex-start;
+    }
+
+    @media(max-width:900px) {
+        .att-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .class-panel {
+        background: var(--surface-color);
+        border-radius: 20px;
+        padding: 0;
+        border: 1px solid var(--glass-border);
+        overflow: hidden;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .class-panel-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.02);
+    }
+
+    .cls-item {
+        display: block;
+        padding: 14px 20px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-bottom: 1px solid var(--glass-border);
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .cls-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+        color: #fff;
+    }
+
+    .cls-item.active {
+        background: rgba(0, 229, 255, 0.12);
+        color: #00e5ff;
+        font-weight: 700;
+        border-left: 3px solid #00e5ff;
+    }
+
+    .cls-item-count {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .att-student {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        background: var(--surface-color);
+        border-radius: 16px;
+        margin-bottom: 12px;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s;
+    }
+
+    .att-student:hover {
+        border-color: rgba(0, 229, 255, 0.3);
+    }
+
+    .s-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary-color), #00e5ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1rem;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .s-name {
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .s-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .today-status {
+        font-size: 0.78rem;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+    }
+
+    .st-present {
+        background: rgba(0, 230, 118, 0.15);
+        color: #00e676;
+        border: 1px solid rgba(0, 230, 118, 0.3);
+    }
+
+    .st-late {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+        border: 1px solid rgba(255, 152, 0, 0.3);
+    }
+
+    .st-absent {
+        background: rgba(255, 82, 82, 0.15);
+        color: #ff5252;
+        border: 1px solid rgba(255, 82, 82, 0.3);
+    }
+
+    .search-wrap {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .search-wrap input {
+        padding-left: 52px;
+        font-size: 1rem;
+        background: var(--surface-color);
+        margin: 0;
+    }
+
+    .search-wrap .si {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+
+    .att-lock-banner {
+        background: rgba(255, 82, 82, 0.1);
+        border: 1px solid rgba(255, 82, 82, 0.3);
+        padding: 14px 20px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #ff5252;
+        font-weight: 600;
+    }
+</style>
+
+<div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
+            class="material-icons">arrow_back</i></a>
+    <div>
+        <h1
+            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+            Attendance Monitor</h1>
+        <p style="margin:4px 0 0; color:var(--text-secondary);">Mark attendance for {{ now_date.strftime('%B %d, %Y') }}
+        </p>
+    </div>
+</div>
+
+{% if not attendance_open %}
+<div class="att-lock-banner">
+    <i class="material-icons">lock_clock</i>
+    Attendance is not yet available. It opens after
+    <strong>{{ settings.attendance_lock_time if settings else '09:10' }}</strong> today.
+</div>
+{% endif %}
+
+<div class="att-layout">
+    <!-- Left: Class Selector -->
+    <div>
+        <div class="card" style="padding:20px; margin-bottom:16px;">
+            <div class="search-wrap">
+                <form method="GET" action="{{ url_for('teacher_attendance_page') }}">
+                    {% if selected_class %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">{% endif
+                    %}
+                    <i class="material-icons si">search</i>
+                    <input type="text" name="q" placeholder="Search classes..." value="{{ search_query or '' }}"
+                        oninput="this.form.submit()">
+                </form>
+            </div>
+        </div>
+        <div class="class-panel">
+            <div class="class-panel-header">
+                <div
+                    style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-secondary);">
+                    Your Classes</div>
+            </div>
+            {% for cls in classes %}
+            <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}"
+                class="cls-item {{ 'active' if selected_class and cls.id == selected_class.id }}">
+                <div><i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">school</i> {{ cls.name
+                    }}</div>
+                <div class="cls-item-count">{{ cls.students.count() }} students</div>
+            </a>
+            {% else %}
+            <div style="padding:20px; color:var(--text-secondary); text-align:center; font-size:0.9rem;">No classes
+                found</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right: Student Attendance -->
+    <div>
+        {% if selected_class %}
+        <div
+            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <h2 style="margin:0; color:#00e5ff; font-weight:700;">{{ selected_class.name }}</h2>
+                <a href="{{ url_for('download_class_sms_report', class_id=selected_class.id) }}"
+                    class="btn btn-secondary"
+                    style="padding:6px 14px; font-size:0.75rem; border:1px solid rgba(0, 229, 255, 0.2); color:#00e5ff;"
+                    title="Download all SMS texts for this class as a .txt file">
+                    <i class="material-icons" style="font-size:1rem; vertical-align:middle;">download_for_offline</i>
+                    SMS Report
+                </a>
+                <button type="button" onclick="sendClassSms({{ selected_class.id }})" class="btn"
+                    style="padding:6px 14px; font-size:0.75rem; background:rgba(0, 229, 255, 0.15); border:1px solid rgba(0, 229, 255, 0.3); color:#00e5ff; margin-left:8px;"
+                    title="Send SMS reports to all students in this class">
+                    <i class="material-icons" style="font-size:1rem; vertical-align:middle;">send</i>
+                    Send Class SMS
+                </button>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                {% if attendance_open %}
+                <span
+                    style="background:rgba(0,230,118,0.15); color:#00e676; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">🟢
+                    Attendance Open</span>
+                {% else %}
+                <span
+                    style="background:rgba(255,82,82,0.1); color:#ff5252; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">🔴
+                    Locked</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="search-wrap">
+            <form method="GET" action="{{ url_for('teacher_attendance_page') }}">
+                <input type="hidden" name="class_id" value="{{ selected_class.id }}">
+                <i class="material-icons si">search</i>
+                <input type="text" name="q" placeholder="Search students in class..." value="{{ search_query or '' }}"
+                    oninput="this.form.submit()">
+            </form>
+        </div>
+
+        <!-- NEW: Attendance Sessions panel -->
+        <div style="background:var(--surface-color); border:1px solid var(--glass-border); border-radius:16px; padding:18px; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0; font-size:1rem;">📅 Attendance Sessions</h3>
+                <button type="button" class="btn" style="padding:6px 14px; font-size:0.78rem;"
+                    onclick="document.getElementById('createSessionForm').classList.toggle('hidden-form')">
+                    + New Session
+                </button>
+            </div>
+
+            <form id="createSessionForm" class="hidden-form" method="POST"
+                action="{{ url_for('create_attendance_session', class_id=selected_class.id) }}"
+                style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+                <input type="text" name="name" placeholder="Session name (e.g. Term 1)" style="flex:1; min-width:160px; padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-secondary);">Starting Date (fixed)</label>
+                    <input type="date" name="start_date" required style="padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                </div>
+                <div>
+                    <label style="font-size:0.7rem; color:var(--text-secondary);">Ending Date</label>
+                    <input type="date" name="end_date" required style="padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding:8px 16px; font-size:0.8rem;">Create</button>
+            </form>
+
+            {% if attendance_sessions %}
+            <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+                {% for s in attendance_sessions %}
+                <div style="background:var(--bg-primary); border-radius:10px; padding:12px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div>
+                            <strong>{{ s.name }}</strong>
+                            <div style="font-size:0.75rem; color:var(--text-secondary);">
+                                Start: {{ s.start_date.strftime('%b %d, %Y') }} (fixed) &nbsp;→&nbsp; End: {{ s.end_date.strftime('%b %d, %Y') }}
+                                &nbsp;·&nbsp; {{ s.sub_sessions|length }} session(s)
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <a href="{{ url_for('attendance_session_report', session_id=s.id) }}"
+                                class="btn" style="padding:6px 10px; font-size:0.72rem; background:rgba(212,168,83,0.15); border:1px solid rgba(212,168,83,0.3); color:var(--accent);">
+                                <i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">bar_chart</i> View Report
+                            </a>
+                            {% if s.can_edit_end_date(current_user) %}
+                            <form method="POST" action="{{ url_for('edit_attendance_session_end_date', session_id=s.id) }}" style="display:flex; gap:6px; align-items:center; margin:0;">
+                                <input type="date" name="end_date" value="{{ s.end_date }}" style="padding:6px 8px; font-size:0.75rem; border-radius:6px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
+                                <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">Update End Date</button>
+                            </form>
+                            {% else %}
+                            <span style="font-size:0.7rem; color:var(--text-secondary);" title="Only the Class Teacher can edit the ending date">🔒 End date locked</span>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('add_attendance_subsession', session_id=s.id) }}" style="display:flex; gap:6px; align-items:center; margin:0;">
+                                <input type="text" name="name" placeholder="New session name" style="padding:6px 8px; font-size:0.75rem; border-radius:6px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border); width:130px;">
+                                <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">+ Add Session</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% if s.sub_sessions %}
+                    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                        {% for sub in s.sub_sessions %}
+                        <span style="font-size:0.7rem; background:rgba(212,168,83,0.12); color:var(--accent); padding:3px 8px; border-radius:12px;">{{ sub.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:10px;">No attendance sessions created yet for this class.</p>
+            {% endif %}
+        </div>
+        <style>.hidden-form { display: none !important; }</style>
+
+        {% set ns = namespace(students=selected_class.students|list) %}
+        {% if search_query %}
+        {% set ns.students = ns.students|selectattr('username', 'contains', search_query)|list %}
+        {% endif %}
+
+        {% if ns.students %}
+        {% for student in ns.students %}
+        {% set today_att = student.attendance_records|selectattr('classroom_id', 'equalto',
+        selected_class.id)|selectattr('date', 'equalto', now_date)|list|first %}
+        <div class="att-student">
+            <div class="s-avatar">{{ student.username[0].upper() }}</div>
+            <div class="s-name">{{ student.username }}</div>
+            <div class="s-actions">
+                {% if today_att %}
+                <span
+                    class="today-status {{ 'st-present' if today_att.status=='Present' else ('st-late' if today_att.status=='Late' else 'st-absent') }}">
+                    ✓ {{ today_att.status }}
+                </span>
+                {% elif attendance_open %}
+                <form
+                    action="{{ url_for('mark_attendance', class_id=selected_class.id, student_id=student.id) }}"
+                    method="POST" style="margin:0; display:flex; gap:6px; align-items:center;">
+                    <select name="status"
+                        style="padding:7px 10px; font-size:0.8rem; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Medical Leave">Medical Leave</option>
+                        <option value="OD">OD</option>
+                        <option value="Holiday">Holiday</option>
+                        <option value="Late">Late</option>
+                        <option value="Half Day">Half Day</option>
+                    </select>
+                    <button type="submit" class="btn"
+                        style="background:rgba(0,230,118,0.15); color:#00e676; padding:7px 12px; font-size:0.8rem; border:1px solid rgba(0,230,118,0.3);">
+                        <i class="material-icons" style="font-size:0.9rem;">check</i> Mark
+                    </button>
+                </form>
+                {% else %}
+                <span class="today-status st-absent">Locked</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="text-align:center; padding:40px; color:var(--text-secondary);">
+            <i class="material-icons" style="font-size:3rem; opacity:0.2;">people_outline</i>
+            <p>{% if search_query %}No students matching "{{ search_query }}"{% else %}No students enrolled in this
+                class.{% endif %}</p>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="card" style="text-align:center; padding:60px; color:var(--text-secondary);">
+            <i class="material-icons" style="font-size:4rem; opacity:0.2;">fact_check</i>
+            <p>Select a class on the left to start marking attendance.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- SMS Progress Modal -->
+<div id="smsProgressModal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px);">
+    <div style="background:var(--card-bg); width:100%; max-width:450px; padding:30px; border-radius:24px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+        <h3 style="margin:0 0 10px 0; display:flex; align-items:center; gap:10px; color:#00e5ff;">
+            <i class="material-icons">message</i>
+            Sending Class SMS Reports
+        </h3>
+        <p id="sms-modal-status-text" style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:20px;">
+            Preparing bulk send...
+        </p>
+
+        <!-- Progress Bar -->
+        <div style="width:100%; height:8px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden; margin-bottom:20px;">
+            <div id="sms-modal-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#7c4dff); transition:width 0.4s;"></div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+            <button id="sms-modal-close-btn" onclick="closeSmsProgressModal()" class="btn btn-secondary" style="display:none; border-radius:12px;">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let smsPollInterval = null;
+
+    function sendClassSms(classId) {
+        if (!confirm("Send daily report SMS to all parents in this class via Google Messages Web?")) {
+            return;
+        }
+
+        const modal = document.getElementById('smsProgressModal');
+        const statusText = document.getElementById('sms-modal-status-text');
+        const progressBar = document.getElementById('sms-modal-progress-bar');
+        const closeBtn = document.getElementById('sms-modal-close-btn');
+
+        modal.style.display = 'flex';
+        statusText.innerText = 'Queuing SMS reports...';
+        progressBar.style.width = '0%';
+        closeBtn.style.display = 'none';
+
+        fetch(`/teacher/send_class_sms_report/${classId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Server error'); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.job_id) {
+                pollSmsStatus(data.job_id);
+            } else {
+                throw new Error('Failed to start bulk SMS job.');
+            }
+        })
+        .catch(err => {
+            statusText.innerText = 'Error: ' + err.message;
+            statusText.style.color = '#ff5252';
+            progressBar.style.background = '#ff5252';
+            progressBar.style.width = '100%';
+            closeBtn.style.display = 'block';
+        });
+    }
+
+    function pollSmsStatus(jobId) {
+        const statusText = document.getElementById('sms-modal-status-text');
+        const progressBar = document.getElementById('sms-modal-progress-bar');
+        const closeBtn = document.getElementById('sms-modal-close-btn');
+
+        const STATUS_LABELS = {
+            queued: '⏳ Queued...',
+            starting: '🚀 Launching Chrome...',
+            waiting: '📱 Waiting for Google Messages login...',
+            sending: '📤 Sending SMS...',
+            done: '✅ Done!',
+            error: '❌ Error'
+        };
+
+        smsPollInterval = setInterval(() => {
+            fetch(`/api/sms_status/${jobId}`)
+                .then(r => r.json())
+                .then(data => {
+                    const status = data.status || 'unknown';
+                    const msg = data.msg || '';
+                    const total = data.total || 0;
+                    const current = data.current || 0;
+
+                    let percent = 0;
+                    if (total > 0) {
+                        percent = Math.round((current / total) * 100);
+                    }
+
+                    let label = STATUS_LABELS[status] || status;
+                    if (status === 'sending') {
+                        label = `📤 Sending SMS reports (${current}/${total})...`;
+                        progressBar.style.width = percent + '%';
+                    } else if (status === 'done') {
+                        label = `✅ SMS reports sent successfully! (${current}/${total})`;
+                        progressBar.style.width = '100%';
+                        progressBar.style.background = 'linear-gradient(90deg,#00e676,#00b0ff)';
+                        clearInterval(smsPollInterval);
+                        closeBtn.style.display = 'block';
+                    } else if (status === 'error') {
+                        label = `❌ Error: ${msg}`;
+                        progressBar.style.width = '100%';
+                        progressBar.style.background = '#ff5252';
+                        clearInterval(smsPollInterval);
+                        closeBtn.style.display = 'block';
+                    } else {
+                        progressBar.style.width = '5%';
+                    }
+
+                    statusText.innerText = label;
+                })
+                .catch(err => {
+                    statusText.innerText = 'Connection error. Retrying...';
+                });
+        }, 2000);
+    }
+
+    function closeSmsProgressModal() {
+        if (smsPollInterval) {
+            clearInterval(smsPollInterval);
+        }
+        document.getElementById('smsProgressModal').style.display = 'none';
+        location.reload();
+    }
+</script>
+{% endblock %}

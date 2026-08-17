@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .playlist-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+    }
+
+    .playlist-header-card {
+        background: linear-gradient(135deg, var(--surface-color), #231d33);
+        border-radius: 24px;
+        padding: 40px;
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--card-shadow);
+    }
+
+    .playlist-art {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 24px rgba(124, 77, 255, 0.3);
+        flex-shrink: 0;
+    }
+
+    .video-grid-item {
+        background: var(--surface-color);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        position: relative;
+    }
+
+    .video-grid-item:hover {
+        transform: translateY(-8px);
+        border-color: var(--primary-color);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .v-thumb {
+        height: 180px;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .v-order-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        background: rgba(0, 0, 0, 0.8);
+        color: var(--secondary-color);
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .playlist-header-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 32px;
+        }
+    }
+</style>
+
+<div class="playlist-wrapper">
+    <!-- Back Button -->
+    <div>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">
+            <i class="material-icons">arrow_back</i> Return to Library
+        </a>
+    </div>
+
+    <!-- Header Card -->
+    <div class="playlist-header-card">
+        {% if playlist.thumbnail_path %}
+        <div class="playlist-art" style="background-image:url('{{ url_for('static', filename=playlist.thumbnail_path) }}'); background-size:cover; background-position:center;">
+        </div>
+        {% elif settings and settings.global_playlist_thumbnail %}
+        <div class="playlist-art" style="background-image:url('{{ url_for('static', filename=settings.global_playlist_thumbnail) }}'); background-size:cover; background-position:center;">
+        </div>
+        {% else %}
+        <div class="playlist-art">
+            <i class="material-icons" style="font-size: 4rem; color: #000;">auto_stories</i>
+        </div>
+        {% endif %}
+        <div>
+            <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800; color:var(--text);">{{ playlist.title }}</h1>
+            <div
+                style="display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; justify-content: inherit;">
+                <div
+                    style="display: flex; align-items: center; gap: 6px; color: var(--secondary-color); font-weight: 600;">
+                    <i class="material-icons" style="font-size: 1.2rem;">person</i>
+                    {{ playlist.creator.username }}
+                </div>
+                <div style="color: var(--text-secondary);">&bull;</div>
+                <div style="color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                    <i class="material-icons" style="font-size: 1.2rem;">video_library</i>
+                    {{ playlist.videos|length }} modules
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    {% if playlist.videos %}
+    <div class="grid-container">
+        {% for video in playlist.videos %}
+        <a href="{{ url_for('watch_video', video_id=video.id) }}" style="text-decoration: none; color: inherit;">
+            <div class="video-grid-item">
+                <div class="v-thumb">
+                    <div class="v-order-badge">MODULE {{ loop.index }}</div>
+                    <i class="material-icons"
+                        style="font-size: 4rem; color:var(--text); opacity: 0.2;">play_circle_outline</i>
+                </div>
+                <div style="padding: 24px;">
+                    <h3 style="margin: 0 0 8px 0; font-weight: 700; color:var(--text);">{{ video.title }}</h3>
+                    <div
+                        style="color: var(--text-secondary); font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="material-icons" style="font-size: 1rem;">history</i>
+                        Published: {{ video.upload_date.strftime('%b %d, %Y') }}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 80px 40px; border-style: dashed;">
+        <i class="material-icons" style="font-size: 4rem; opacity: 0.1; margin-bottom: 20px;">folder_open</i>
+        <h3 style="color: var(--text-secondary);">Empty Playlist</h3>
+        <p style="color: var(--text-secondary); max-width: 400px; margin: 0 auto;">There are no videos in this
+            collection yet. Check back later for updates from the teacher.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

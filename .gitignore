@@ -1,0 +1,124 @@
+# ==============================================================================
+# Campus Player - Git Ignore Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment & Credentials
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# ------------------------------------------------------------------------------
+# 2. Python & Bytecode Cache
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ------------------------------------------------------------------------------
+# 3. Virtual Environments
+# ------------------------------------------------------------------------------
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ------------------------------------------------------------------------------
+# 4. Testing & Code Quality
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.htmlcov/
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# 5. Database & Instance Files (Flask / SQLite)
+# ------------------------------------------------------------------------------
+instance/*
+!instance/.gitkeep
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ------------------------------------------------------------------------------
+# 6. Logging, Background Worker & Celery Cache
+# ------------------------------------------------------------------------------
+*.log
+campusplayer.log
+celerybeat-schedule
+celerybeat.pid
+*.pid
+
+# ------------------------------------------------------------------------------
+# 7. Generated PDFs & Dynamic Uploads
+# ------------------------------------------------------------------------------
+generated_pdfs/*
+!generated_pdfs/.gitkeep
+static/uploads/*
+!static/uploads/.gitkeep
+static/subtitles/*
+!static/subtitles/.gitkeep
+static/hls/*
+!static/hls/.gitkeep
+
+# Transcoded Video Segments & Playlists (HLS)
+*.m3u8
+*.ts
+
+# ------------------------------------------------------------------------------
+# 8. GitHub Actions Runner & CI Local Working Directories
+# ------------------------------------------------------------------------------
+actions-runner/
+.runner
+_diag/
+_work/
+
+# ------------------------------------------------------------------------------
+# 9. IDE, OS & System Files
+# ------------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

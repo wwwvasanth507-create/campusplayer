@@ -1,0 +1,565 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 32px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .search-wrap {
+        position: relative;
+        margin-bottom: 28px;
+    }
+
+    .search-wrap input {
+        padding-left: 52px;
+        font-size: 1rem;
+        background: var(--surface-color);
+    }
+
+    .search-wrap .si {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+    }
+
+    .vcard {
+        background: var(--surface-color);
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .vcard:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+
+    .thumb {
+        height: 155px;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .status-chip {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 800;
+    }
+
+    .chip-ok {
+        background: rgba(0, 230, 118, 0.2);
+        color: #00e676;
+    }
+
+    .chip-proc {
+        background: rgba(0, 229, 255, 0.2);
+        color: #00e5ff;
+    }
+
+    .chip-fail {
+        background: rgba(255, 82, 82, 0.2);
+        color: #ff5252;
+    }
+
+    .vbody {
+        padding: 18px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .vtitle {
+        font-weight: 700;
+        font-size: 1rem;
+        margin-bottom: 6px;
+    }
+
+    .vmeta {
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        margin-bottom: 14px;
+    }
+
+    .vactions {
+        display: flex;
+        gap: 8px;
+        margin-top: auto;
+    }
+
+    .upload-card {
+        background: var(--surface-color);
+        border-radius: 20px;
+        padding: 28px;
+        border: 1px solid var(--glass-border);
+        margin-bottom: 32px;
+    }
+
+    @media (max-width: 800px) {
+        .upload-card form>div {
+            grid-template-columns: 1fr !important;
+        }
+
+        .upload-card {
+            padding: 20px !important;
+        }
+
+        .vactions {
+            flex-direction: column;
+        }
+
+        .video-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
+            class="material-icons">arrow_back</i></a>
+    <div>
+        <h1
+            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#ffeb3b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+            All Campus Videos</h1>
+        <p style="margin:4px 0 0; color:var(--text-secondary);">{{ videos|length }} total video(s)</p>
+    </div>
+</div>
+
+<!-- Upload Card -->
+<div class="upload-card">
+    <h3 style="margin-top:0; color:#ffeb3b; display:flex; align-items:center; gap:8px;"><i
+            class="material-icons">cloud_upload</i> Upload New Video (Supports up to 20 GB)</h3>
+    <form id="upload-form" enctype="multipart/form-data">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:16px; margin-bottom:16px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Video Title *</label>
+                <input type="text" name="title" id="video-title" placeholder="Video Title" required
+                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Classroom Association</label>
+                <select name="classroom_id" id="video-classroom"
+                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                    <option value="-1">None (Global Video)</option>
+                    {% for c in classes %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Select Video File *</label>
+                <div style="position:relative; display:flex; gap:8px;">
+                    <input type="file" name="video_file" id="video-file" required accept="video/*"
+                        style="opacity:0; position:absolute; z-index:-1;" onchange="document.getElementById('file-chosen-label').innerText = this.files[0] ? this.files[0].name : 'No file chosen'">
+                    <button type="button" class="btn btn-secondary" style="margin:0; padding:12px 16px; border-radius:10px; min-height:44px; flex:1;"
+                        onclick="document.getElementById('video-file').click()">
+                        <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">attach_file</i> Choose Video
+                    </button>
+                    <span id="file-chosen-label" style="font-size:0.75rem; color:var(--text-secondary); align-self:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;">No file chosen</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:16px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Description</label>
+                <textarea id="video-desc" placeholder="Provide a brief description of the video content..." 
+                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:80px; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Tags (Comma separated)</label>
+                <input type="text" id="video-tags" placeholder="e.g. python, tutorial, basics"
+                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                
+                <button type="submit" id="upload-btn" class="btn" style="margin-top:auto; white-space:nowrap; padding:12px 22px; border-radius:10px; min-height:44px; font-weight:700; background:linear-gradient(135deg, #7c4dff, #00e5ff); color:#fff; border:none; cursor:pointer;">
+                    <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">upload</i> Upload Video
+                </button>
+            </div>
+        </div>
+
+        <div id="upload-progress-container"
+            style="display:none; margin-top:16px; background:rgba(255,255,255,0.03); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+            <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span
+                        style="font-size:0.8rem; color:#bb86fc; font-weight:600;">1. Server Upload</span><span
+                        id="upload-percentage" style="font-size:0.8rem; font-weight:700; color:#bb86fc;">0%</span></div>
+                <div
+                    style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+                    <div id="upload-progress-bar"
+                        style="width:0%; height:100%; background:linear-gradient(90deg,#bb86fc,#00e5ff); transition:width 0.3s;">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span
+                        style="font-size:0.8rem; color:#00e5ff; font-weight:600;">2. HLS Processing</span><span
+                        id="processing-percentage" style="font-size:0.8rem; font-weight:700; color:#00e5ff;">0%</span>
+                </div>
+                <div
+                    style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+                    <div id="processing-progress-bar"
+                        style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#00b8d4); transition:width 0.3s;">
+                    </div>
+                </div>
+            </div>
+            <p id="system-status"
+                style="font-size:0.75rem; color:var(--text-secondary); margin:10px 0 0; text-align:center;">Preparing...
+            </p>
+        </div>
+    </form>
+</div>
+
+<!-- Search -->
+<div class="search-wrap">
+    <form method="GET">
+        <i class="material-icons si">search</i>
+        <input type="text" name="q" placeholder="Search all videos..." value="{{ search_query or '' }}"
+            oninput="this.form.submit()">
+    </form>
+</div>
+
+<!-- Active Processing -->
+<div id="active-tasks-container" style="display:none; margin-bottom:28px;">
+    <h3 style="color:#00e5ff; display:flex; align-items:center; gap:8px; margin-bottom:16px;"><i
+            class="material-icons">auto_mode</i> Background Processing</h3>
+    <div id="active-tasks-list" class="video-grid"></div>
+</div>
+
+<!-- Video Grid -->
+{% if videos %}
+<div class="video-grid">
+    {% for video in videos %}
+    <div class="vcard">
+        {% if video.thumbnail_path %}
+        <div class="thumb"
+            style="background-image:url('{{ url_for('static', filename=video.thumbnail_path) }}'); background-size:cover; background-position:center;">
+            {% else %}
+            <div class="thumb">
+                <i class="material-icons" style="font-size:3rem; color:var(--text); opacity:0.2;">movie</i>
+                {% endif %}
+                {% if video.status == 'completed' %}<span class="status-chip chip-ok">✓ Ready</span>
+                {% elif video.status == 'processing' %}<span class="status-chip chip-proc">{{ video.processing_progress
+                    }}%</span>
+                {% elif video.status == 'failed' %}<span class="status-chip chip-fail">! Failed</span>
+                {% endif %}
+            </div>
+            <div class="vbody">
+                <div class="vtitle">{{ video.title }}</div>
+                <div class="vmeta">By: {{ video.uploader.username }} &bull; {{ video.upload_date.strftime('%b %d, %Y')
+                    }}</div>
+                <form action="{{ url_for('add_to_playlist') }}" method="POST" style="margin-bottom:10px;">
+                    <input type="hidden" name="video_id" value="{{ video.id }}">
+                    <select name="playlist_id"
+                        style="font-size:0.8rem; padding:8px; background:var(--bg-color); margin:0;">
+                        <option value="">Add to Playlist...</option>
+                        {% for p in playlists %}<option value="{{ p.id }}">{{ p.title }}</option>{% endfor %}
+                    </select>
+                    <div class="vactions" style="margin-top:8px;">
+                        {% if video.status == 'completed' %}
+                        <a href="{{ url_for('watch_video', video_id=video.id) }}" class="btn"
+                            style="flex:1; font-size:0.8rem; padding:9px; text-decoration:none;">
+                            <i class="material-icons" style="font-size:1rem;">play_arrow</i> Watch
+                        </a>
+                        {% else %}
+                        <button class="btn" disabled
+                            style="flex:1; font-size:0.8rem; padding:9px; opacity:0.5; background:#333;">
+                            <i class="material-icons" style="font-size:1rem;">hourglass_empty</i> Processing
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="btn btn-secondary" style="flex:1; font-size:0.8rem; padding:9px;"
+                            {% if video.status!='completed' %}disabled{% endif %}>Add</button>
+                        <button type="button" class="btn"
+                            style="background:rgba(255,82,82,0.1);color:#ff5252;padding:9px;"
+                            onclick="if(confirm('Delete video?')) document.getElementById('dv-{{ video.id }}').submit()">
+                            <i class="material-icons" style="font-size:1.1rem;">delete</i>
+                        </button>
+                    </div>
+                </form>
+                <form id="dv-{{ video.id }}" action="{{ url_for('delete_video', video_id=video.id) }}" method="POST"
+                    style="display:none;"></form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align:center; padding:50px; color:var(--text-secondary);">
+        <i class="material-icons" style="font-size:3.5rem; opacity:0.2;">video_call</i>
+        <p>{% if search_query %}No videos matching "{{ search_query }}"{% else %}No videos uploaded yet. Use the form
+            above!{% endif %}</p>
+    </div>
+    {% endif %}
+
+    <script>
+        const processingTasks = new Set();
+        document.addEventListener('DOMContentLoaded', function () {
+            checkProcessingVideos();
+            setInterval(checkProcessingVideos, 3000);
+        });
+        async function checkProcessingVideos() {
+            try {
+                const resp = await fetch('/api/teacher/processing_videos');
+                const videos = await resp.json();
+                const list = document.getElementById('active-tasks-list');
+                const container = document.getElementById('active-tasks-container');
+                if (videos.length === 0) { container.style.display = 'none'; return; }
+                container.style.display = 'block';
+                const serverIds = new Set(videos.map(v => v.id));
+                videos.forEach(video => {
+                    let el = document.getElementById(`task-${video.id}`);
+                    if (!el) { el = document.createElement('div'); el.id = `task-${video.id}`; el.className = 'vcard'; list.appendChild(el); }
+                    el.innerHTML = `<div style="padding:20px; border-left:3px solid #00e5ff;"><strong>${video.title}</strong><div style="margin:10px 0 4px; display:flex; justify-content:space-between;"><span style="font-size:0.75rem;color:var(--text-secondary);">HLS Conversion</span><span style="font-size:0.75rem;color:#00e5ff;font-weight:700;">${video.progress}%</span></div><div style="height:4px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:hidden;"><div style="width:${video.progress}%;height:100%;background:#00e5ff;transition:width 0.5s;"></div></div></div>`;
+                });
+                Array.from(list.children).forEach(child => {
+                    const id = parseInt(child.id.split('-')[1]);
+                    if (!serverIds.has(id)) { child.innerHTML = '<p style="text-align:center;padding:20px;">✓ Complete! Refreshing...</p>'; setTimeout(() => { child.remove(); if (!list.children.length) window.location.reload(); }, 2000); }
+                });
+            } catch (e) { }
+        }
+        document.getElementById('upload-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const fi = document.getElementById('video-file');
+            const ti = document.getElementById('video-title');
+            const btn = document.getElementById('upload-btn');
+            const pc = document.getElementById('upload-progress-container');
+            const ub = document.getElementById('upload-progress-bar');
+            const up = document.getElementById('upload-percentage');
+            const status = document.getElementById('system-status');
+            
+            const file = fi.files[0];
+            if (!file) { alert('Please select a video file.'); return; }
+            
+            const title = ti.value;
+            const classroomSelect = document.getElementById('video-classroom');
+            const classroomId = classroomSelect ? classroomSelect.value : '-1';
+            const description = document.getElementById('video-desc').value;
+            const tags = document.getElementById('video-tags').value;
+            
+            // Dynamic adaptive chunk sizing (8MB to 32MB) for optimal network throughput
+            function getOptimalChunkSize(fileSize) {
+                if (fileSize < 64 * 1024 * 1024) return 8 * 1024 * 1024;      // 8 MB for < 64 MB
+                if (fileSize < 512 * 1024 * 1024) return 16 * 1024 * 1024;   // 16 MB for < 512 MB
+                if (fileSize < 2 * 1024 * 1024 * 1024) return 24 * 1024 * 1024; // 24 MB for < 2 GB
+                return 32 * 1024 * 1024;                                      // 32 MB for >= 2 GB
+            }
+
+            const CHUNK_SIZE = getOptimalChunkSize(file.size);
+            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            const uploadUuid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Date.now();
+            
+            // Parallel worker pool (up to 4 concurrent upload streams)
+            const CONCURRENCY = Math.min(4, Math.max(1, totalChunks));
+            
+            pc.style.display = 'block';
+            btn.disabled = true;
+            btn.innerText = 'Uploading...';
+            status.innerText = `Initializing high-speed parallel upload (${CONCURRENCY} streams)...`;
+            status.style.color = '#bb86fc';
+
+            let chunkQueue = Array.from({ length: totalChunks }, (_, i) => i);
+            let activeWorkers = 0;
+            let completedChunks = 0;
+            let isAborted = false;
+            let chunkBytesLoaded = new Array(totalChunks).fill(0);
+            let chunkRetries = {};
+            let finalResponseReceived = null;
+            
+            let lastUpdate = Date.now();
+            let lastBytes = 0;
+            let currentSpeedBytesPerSec = 0;
+
+            function formatBytes(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+            }
+
+            function formatETA(seconds) {
+                if (!isFinite(seconds) || seconds < 0) return '--';
+                if (seconds < 60) return Math.ceil(seconds) + 's';
+                const m = Math.floor(seconds / 60);
+                const s = Math.ceil(seconds % 60);
+                return `${m}m ${s}s`;
+            }
+
+            function updateProgressDisplay() {
+                const totalUploadedBytes = Math.min(file.size, chunkBytesLoaded.reduce((a, b) => a + b, 0));
+                const overallProgress = Math.min(99, Math.round((totalUploadedBytes / file.size) * 100));
+                
+                ub.style.width = overallProgress + '%';
+                up.innerText = overallProgress + '%';
+
+                const now = Date.now();
+                const deltaMs = now - lastUpdate;
+                if (deltaMs >= 500) {
+                    const deltaBytes = totalUploadedBytes - lastBytes;
+                    const instantSpeed = deltaBytes / (deltaMs / 1000);
+                    currentSpeedBytesPerSec = currentSpeedBytesPerSec === 0 ? instantSpeed : (0.7 * instantSpeed + 0.3 * currentSpeedBytesPerSec);
+                    lastUpdate = now;
+                    lastBytes = totalUploadedBytes;
+                }
+
+                const remainingBytes = Math.max(0, file.size - totalUploadedBytes);
+                const etaSeconds = currentSpeedBytesPerSec > 0 ? (remainingBytes / currentSpeedBytesPerSec) : 0;
+                const speedText = currentSpeedBytesPerSec > 0 ? `${formatBytes(currentSpeedBytesPerSec)}/s` : 'Calculating...';
+                const etaText = currentSpeedBytesPerSec > 0 ? formatETA(etaSeconds) : '--';
+
+                status.innerText = `Uploading in parallel (${CONCURRENCY} streams): ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
+            }
+
+            function handleUploadSuccess(resp) {
+                ub.style.width = '100%';
+                up.innerText = '100%';
+                
+                ti.value = '';
+                fi.value = '';
+                document.getElementById('video-desc').value = '';
+                document.getElementById('video-tags').value = '';
+                document.getElementById('file-chosen-label').innerText = 'No file chosen';
+                
+                status.innerText = 'Upload complete! Starting HLS processing...';
+                status.style.color = '#4caf50';
+                checkProcessingVideos();
+                setTimeout(() => {
+                    pc.style.display = 'none';
+                    btn.disabled = false;
+                    btn.innerText = 'Upload Video';
+                    ub.style.width = '0%';
+                    up.innerText = '0%';
+                }, 3000);
+            }
+
+            function handleUploadError(errMsg) {
+                if (isAborted) return;
+                isAborted = true;
+                alert('Upload failed: ' + errMsg);
+                btn.disabled = false;
+                btn.innerText = 'Upload Video';
+                status.innerText = 'Upload failed: ' + errMsg;
+                status.style.color = '#ff5252';
+            }
+
+            function processNextQueueItem() {
+                if (isAborted) return;
+
+                if (chunkQueue.length === 0) {
+                    return;
+                }
+
+                const chunkIndex = chunkQueue.shift();
+                activeWorkers++;
+
+                const start = chunkIndex * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+
+                const fd = new FormData();
+                fd.append('chunk', chunk);
+                fd.append('chunkIndex', chunkIndex);
+                fd.append('totalChunks', totalChunks);
+                fd.append('uuid', uploadUuid);
+                fd.append('filename', file.name);
+
+                // Always send metadata with every chunk so any finishing parallel worker has full video details
+                fd.append('title', title);
+                fd.append('classroom_id', classroomId);
+                fd.append('description', description);
+                fd.append('tags', tags);
+
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable) {
+                        chunkBytesLoaded[chunkIndex] = e.loaded;
+                        updateProgressDisplay();
+                    }
+                });
+
+                xhr.onload = function () {
+                    activeWorkers--;
+                    if (xhr.status === 200) {
+                        try {
+                            const resp = JSON.parse(xhr.responseText);
+                            chunkBytesLoaded[chunkIndex] = chunk.size;
+                            completedChunks++;
+                            updateProgressDisplay();
+
+                            if (resp.video_id) {
+                                finalResponseReceived = resp;
+                            }
+
+                            if (completedChunks === totalChunks) {
+                                const result = finalResponseReceived || resp;
+                                if (result.success) {
+                                    handleUploadSuccess(result);
+                                } else {
+                                    handleUploadError(result.error || 'Assembly failed');
+                                }
+                            } else {
+                                processNextQueueItem();
+                            }
+                        } catch (err) {
+                            handleChunkFailure(chunkIndex, 'Invalid response');
+                        }
+                    } else {
+                        handleChunkFailure(chunkIndex, `HTTP ${xhr.status}`);
+                    }
+                };
+
+                xhr.onerror = function () {
+                    activeWorkers--;
+                    handleChunkFailure(chunkIndex, 'Network error');
+                };
+
+                xhr.open('POST', '/teacher/upload_chunk', true);
+                xhr.send(fd);
+            }
+
+            function handleChunkFailure(chunkIndex, reason) {
+                if (isAborted) return;
+                chunkRetries[chunkIndex] = (chunkRetries[chunkIndex] || 0) + 1;
+                if (chunkRetries[chunkIndex] <= 3) {
+                    console.warn(`[Upload] Retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}/3): ${reason}`);
+                    chunkBytesLoaded[chunkIndex] = 0;
+                    setTimeout(() => {
+                        chunkQueue.push(chunkIndex);
+                        processNextQueueItem();
+                    }, 500 * chunkRetries[chunkIndex]);
+                } else {
+                    handleUploadError(`Chunk ${chunkIndex + 1} failed after 3 attempts (${reason})`);
+                }
+            }
+
+            // Launch parallel worker pool
+            for (let i = 0; i < CONCURRENCY; i++) {
+                processNextQueueItem();
+            }
+        });
+    </script>
+    {% endblock %}

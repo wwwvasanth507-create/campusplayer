@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusPlayer — The Future of Campus Education</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --primary: #7c4dff;
+            --cyan: #00e5ff;
+            --green: #00e676;
+            --orange: #ff9800;
+            --pink: #ff4081;
+            --gold: #ffd740;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #020b18;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ====== STARS ====== */
+        .stars {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background: radial-gradient(ellipse at 20% 50%, rgba(124, 77, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 229, 255, 0.06) 0%, transparent 60%),
+                #020b18;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: .2;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.4)
+            }
+        }
+
+        /* ====== SLIDES ====== */
+        .slide {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            transform: scale(0.96);
+            pointer-events: none;
+            transition: opacity 0.8s cubic-bezier(.4, 0, .2, 1), transform 0.8s cubic-bezier(.4, 0, .2, 1);
+            padding: 40px;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+        }
+
+        .slide.exit {
+            opacity: 0;
+            transform: scale(1.04);
+        }
+
+        /* ====== PROGRESS ====== */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--cyan));
+            z-index: 100;
+            transition: width 0.3s;
+            box-shadow: 0 0 12px var(--cyan);
+        }
+
+        /* ====== NAV DOTS ====== */
+        .dots {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+            width: 24px;
+            border-radius: 4px;
+        }
+
+        /* ====== SKIP BUTTON ====== */
+        .skip-btn {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .skip-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        /* ====== LOGO ====== */
+        .logo {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 100;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        /* ====== TYPOGRAPHY ====== */
+        .title-hero {
+            font-size: clamp(3rem, 8vw, 7rem);
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: -3px;
+            text-align: center;
+        }
+
+        .grad-purple {
+            background: linear-gradient(90deg, #b388ff, #7c4dff, #00e5ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-cyan {
+            background: linear-gradient(90deg, #00e5ff, #18ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-green {
+            background: linear-gradient(90deg, #00e676, #69f0ae);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-orange {
+            background: linear-gradient(90deg, #ff9800, #ffcc02);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grad-pink {
+            background: linear-gradient(90deg, #ff4081, #ff80ab);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.6rem);
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-top: 20px;
+            max-width: 700px;
+            line-height: 1.5;
+        }
+
+        .slide-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .slide-sub {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.55);
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        /* ====== FEATURE GRID ====== */
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .feat-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px 24px;
+            transition: transform 0.3s, border-color 0.3s;
+            animation: fadeUp 0.6s ease both;
+        }
+
+        .feat-card:hover {
+            transform: translateY(-6px);
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .feat-icon {
+            font-size: 2.2rem;
+            margin-bottom: 14px;
+        }
+
+        .feat-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .feat-desc {
+            font-size: 0.82rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+        }
+
+        /* delay children */
+        .feat-card:nth-child(1) {
+            animation-delay: 0.1s
+        }
+
+        .feat-card:nth-child(2) {
+            animation-delay: 0.2s
+        }
+
+        .feat-card:nth-child(3) {
+            animation-delay: 0.3s
+        }
+
+        .feat-card:nth-child(4) {
+            animation-delay: 0.4s
+        }
+
+        .feat-card:nth-child(5) {
+            animation-delay: 0.5s
+        }
+
+        .feat-card:nth-child(6) {
+            animation-delay: 0.6s
+        }
+
+        /* ====== STAT ROW ====== */
+        .stat-row {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-num {
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .stat-lbl {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 6px;
+        }
+
+        /* ====== ROLE ROW ====== */
+        .role-row {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 960px;
+        }
+
+        .role-card {
+            flex: 1;
+            min-width: 240px;
+            max-width: 300px;
+            border-radius: 24px;
+            padding: 36px 28px;
+            text-align: center;
+            animation: fadeUp 0.6s ease both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0.08;
+            background: var(--rc);
+        }
+
+        .role-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .role-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .role-list {
+            list-style: none;
+            text-align: left;
+        }
+
+        .role-list li {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.65);
+            padding: 5px 0;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .role-list li::before {
+            content: '✓';
+            color: var(--rc);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ====== HERO CTA ====== */
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+            color: #fff;
+            padding: 18px 48px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            margin-top: 40px;
+            text-decoration: none;
+            box-shadow: 0 8px 32px rgba(124, 77, 255, 0.4);
+            animation: pulse-cta 2s infinite;
+            transition: transform 0.2s;
+        }
+
+        .cta-btn:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pulse-cta {
+
+            0%,
+            100% {
+                box-shadow: 0 8px 32px rgba(124, 77, 255, 0.4)
+            }
+
+            50% {
+                box-shadow: 0 8px 48px rgba(0, 229, 255, 0.5)
+            }
+        }
+
+        /* ====== PHONE MOCKUP ====== */
+        .mockup-row {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .phone-frame {
+            width: 220px;
+            height: 440px;
+            background: #0d1117;
+            border-radius: 36px;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-12px)
+            }
+        }
+
+        .phone-header {
+            background: linear-gradient(135deg, #0d1117, #161b22);
+            padding: 24px 16px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .phone-nav {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .phone-nav span {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 700;
+        }
+
+        .phone-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--primary), var(--cyan));
+        }
+
+        .phone-body {
+            padding: 12px;
+        }
+
+        .phone-stat {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .phone-stat-num {
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .phone-stat-lbl {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .phone-video {
+            height: 80px;
+            background: linear-gradient(135deg, rgba(124, 77, 255, 0.2), rgba(0, 229, 255, 0.2));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* ====== XP BAR ====== */
+        .xp-showcase {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .xp-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .xp-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .xp-val {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .xp-track {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .xp-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--gold));
+            animation: fillBar 1.5s ease forwards;
+        }
+
+        @keyframes fillBar {
+            from {
+                width: 0
+            }
+
+            to {
+                width: var(--w)
+            }
+        }
+
+        .level-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(255, 215, 64, 0.12), rgba(255, 152, 0, 0.12));
+            border: 1px solid rgba(255, 215, 64, 0.3);
+            border-radius: 16px;
+            padding: 14px 24px;
+            margin: 10px auto;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        /* ====== NOTIFICATION ====== */
+        .notif {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            max-width: 480px;
+            margin: 8px auto;
+            animation: slideIn 0.5s ease both;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .notif:nth-child(2) {
+            animation-delay: 0.3s
+        }
+
+        .notif:nth-child(3) {
+            animation-delay: 0.6s
+        }
+
+        .notif-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+
+        .notif-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .notif-sub {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Fixed UI -->
+    <div class="logo">
+        <div class="logo-icon">🎓</div> CampusPlayer
+    </div>
+    <button class="skip-btn" onclick="goToSlide(totalSlides-1)">Skip to End ⟶</button>
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="dots" id="dots"></div>
+
+    <!-- =================== SLIDE 1: HERO =================== -->
+    <div class="slide active" id="slide-0">
+        <div style="text-align:center;">
+            <div style="font-size:5rem;margin-bottom:20px;animation:fadeUp 0.5s ease">🎓</div>
+            <div class="title-hero"><span class="grad-purple">Campus</span><span class="grad-cyan">Player</span></div>
+            <div class="subtitle">The all-in-one <strong style="color:#fff">campus education platform</strong> that
+                transforms how teachers teach and students learn.</div>
+            <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px;">
+                <div
+                    style="background:rgba(124,77,255,0.15);border:1px solid rgba(124,77,255,0.4);border-radius:24px;padding:10px 24px;font-size:0.9rem;font-weight:700;color:#b388ff;">
+                    📹 Video Streaming</div>
+                <div
+                    style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.4);border-radius:24px;padding:10px 24px;font-size:0.9rem;font-weight:700;color:#00e5ff;">
+                    🧠 AI Assistant</div>
+                <div
+                    style="background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.4);border-radius:24px;padding:10px 24px;font-size:0.9rem;font-weight:700;color:#00e676;">
+                    📋 Attendance</div>
+                <div
+                    style="background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.4);border-radius:24px;padding:10px 24px;font-size:0.9rem;font-weight:700;color:#ff9800;">
+                    🏆 Gamification</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 2: STATS =================== -->
+    <div class="slide" id="slide-1">
+        <div class="slide-title"><span class="grad-cyan">Powerful Numbers</span></div>
+        <div class="slide-sub">Everything your campus needs in one platform</div>
+        <div class="stat-row">
+            <div class="stat-box">
+                <div class="stat-num grad-purple">3</div>
+                <div class="stat-lbl">User Roles<br>(Admin, Teacher, Student)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num grad-cyan">∞</div>
+                <div class="stat-lbl">Videos to Upload<br>& Stream (HLS)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num grad-green">100%</div>
+                <div class="stat-lbl">Attendance Tracked<br>with Auto-Alerts</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num grad-orange">XP</div>
+                <div class="stat-lbl">Gamified Learning<br>Levels & Rewards</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 3: ROLES =================== -->
+    <div class="slide" id="slide-2">
+        <div class="slide-title"><span class="grad-purple">Three Powerful Roles</span></div>
+        <div class="slide-sub">Tailored dashboards for every user</div>
+        <div class="role-row">
+            <div class="role-card"
+                style="background:rgba(124,77,255,0.12);border:1px solid rgba(124,77,255,0.3);--rc:#7c4dff;">
+                <span class="role-icon">🔐</span>
+                <div class="role-title">Admin</div>
+                <ul class="role-list">
+                    <li>Manage all teachers & students</li>
+                    <li>Control site-wide settings</li>
+                    <li>View attendance reports</li>
+                    <li>Manage global content</li>
+                    <li>Reset passwords</li>
+                </ul>
+            </div>
+            <div class="role-card"
+                style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);--rc:#00e5ff;animation-delay:0.2s">
+                <span class="role-icon">👨‍🏫</span>
+                <div class="role-title">Teacher</div>
+                <ul class="role-list">
+                    <li>Upload & stream HLS videos</li>
+                    <li>Create quizzes & questions</li>
+                    <li>Mark daily attendance</li>
+                    <li>Manage classes & chatroom</li>
+                    <li>Send SMS alerts to parents</li>
+                </ul>
+            </div>
+            <div class="role-card"
+                style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.25);--rc:#00e676;animation-delay:0.4s">
+                <span class="role-icon">🎓</span>
+                <div class="role-title">Student</div>
+                <ul class="role-list">
+                    <li>Watch teacher videos</li>
+                    <li>Take quizzes & earn XP</li>
+                    <li>View attendance history</li>
+                    <li>Chat in class chatrooms</li>
+                    <li>Track level & progress</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 4: VIDEO FEATURES =================== -->
+    <div class="slide" id="slide-3">
+        <div class="slide-title"><span class="grad-cyan">📹 Video Management</span></div>
+        <div class="slide-sub">Professional-grade video streaming for education</div>
+        <div class="mockup-row">
+            <div style="max-width: 480px;">
+                <div class="feat-grid" style="grid-template-columns:repeat(2,1fr);gap:16px;">
+                    <div class="feat-card" style="border-color:rgba(0,229,255,0.2)">
+                        <div class="feat-icon">⚡</div>
+                        <div class="feat-name">HLS Streaming</div>
+                        <div class="feat-desc">FFmpeg-powered adaptive video conversion for smooth playback</div>
+                    </div>
+                    <div class="feat-card" style="border-color:rgba(124,77,255,0.2)">
+                        <div class="feat-icon">🖼️</div>
+                        <div class="feat-name">Auto Thumbnails</div>
+                        <div class="feat-desc">Automatic thumbnail generation from video content</div>
+                    </div>
+                    <div class="feat-card" style="border-color:rgba(0,230,118,0.2)">
+                        <div class="feat-icon">📂</div>
+                        <div class="feat-name">Playlists</div>
+                        <div class="feat-desc">Organize videos into structured learning playlists</div>
+                    </div>
+                    <div class="feat-card" style="border-color:rgba(255,152,0,0.2)">
+                        <div class="feat-icon">💬</div>
+                        <div class="feat-name">Comments</div>
+                        <div class="feat-desc">Threaded comments and replies on every video</div>
+                    </div>
+                    <div class="feat-card" style="border-color:rgba(255,64,129,0.2)">
+                        <div class="feat-icon">🔒</div>
+                        <div class="feat-name">Admin Controls</div>
+                        <div class="feat-desc">Lock video speed & skipping to enforce engagement</div>
+                    </div>
+                    <div class="feat-card" style="border-color:rgba(255,215,64,0.2)">
+                        <div class="feat-icon">📊</div>
+                        <div class="feat-name">Analytics</div>
+                        <div class="feat-desc">Track which students watched each video and for how long</div>
+                    </div>
+                </div>
+            </div>
+            <div class="phone-frame">
+                <div class="phone-header">
+                    <div class="phone-nav">
+                        <div class="phone-icon"></div><span>My Videos</span>
+                    </div>
+                </div>
+                <div class="phone-body">
+                    <div class="phone-video">🎬 <span
+                            style="font-size:0.7rem;color:rgba(255,255,255,0.6);margin-left:8px">HLS Streaming</span>
+                    </div>
+                    <div class="phone-stat">
+                        <div class="phone-stat-num grad-cyan">4</div>
+                        <div class="phone-stat-lbl">VIDEOS UPLOADED</div>
+                    </div>
+                    <div class="phone-stat">
+                        <div class="phone-stat-num" style="color:#ff9800">3</div>
+                        <div class="phone-stat-lbl">PLAYLISTS</div>
+                    </div>
+                    <div class="phone-stat">
+                        <div class="phone-stat-num grad-green">✅</div>
+                        <div class="phone-stat-lbl">PROCESSING DONE</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 5: ATTENDANCE =================== -->
+    <div class="slide" id="slide-4">
+        <div class="slide-title"><span class="grad-green">📋 Smart Attendance</span></div>
+        <div class="slide-sub">Never miss tracking a student again</div>
+        <div style="max-width: 700px; width:100%;">
+            <div class="feat-grid" style="grid-template-columns:repeat(3,1fr);">
+                <div class="feat-card" style="border-color:rgba(0,230,118,0.25); text-align:center;">
+                    <div class="feat-icon">🟢</div>
+                    <div class="feat-name">Present</div>
+                    <div class="feat-desc">One-click marking</div>
+                </div>
+                <div class="feat-card" style="border-color:rgba(255,152,0,0.25); text-align:center;">
+                    <div class="feat-icon">⏰</div>
+                    <div class="feat-name">Late</div>
+                    <div class="feat-desc">Automatic late detection</div>
+                </div>
+                <div class="feat-card" style="border-color:rgba(255,82,82,0.25); text-align:center;">
+                    <div class="feat-icon">❌</div>
+                    <div class="feat-name">Absent</div>
+                    <div class="feat-desc">SMS alert to parents</div>
+                </div>
+            </div>
+            <div style="margin-top:24px;">
+                <div class="notif">
+                    <div class="notif-icon">📱</div>
+                    <div>
+                        <div class="notif-title">SMS Alert Sent!</div>
+                        <div class="notif-sub">Ravi Kumar has been absent for 3 days. Parent notified via SMS.</div>
+                    </div>
+                </div>
+                <div class="notif">
+                    <div class="notif-icon">🔒</div>
+                    <div>
+                        <div class="notif-title">Time-Locked Attendance</div>
+                        <div class="notif-sub">Attendance window set: opens after 09:10 AM automatically.</div>
+                    </div>
+                </div>
+                <div class="notif">
+                    <div class="notif-icon">📄</div>
+                    <div>
+                        <div class="notif-title">PDF Report Generated</div>
+                        <div class="notif-sub">Monthly attendance report ready to print or share.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 6: GAMIFICATION =================== -->
+    <div class="slide" id="slide-5">
+        <div class="slide-title"><span class="grad-orange">🏆 Gamified Learning</span></div>
+        <div class="slide-sub">Motivate students with XP, Levels & Achievements</div>
+        <div style="width:100%; max-width:580px; text-align:center;">
+            <div class="level-badge">
+                🏆 <span style="color:var(--gold)">Level 8</span> — <span
+                    style="color:rgba(255,255,255,0.7);font-weight:400;font-size:1rem">Master Learner</span>
+            </div>
+            <div class="xp-showcase" style="margin:24px auto;">
+                <div class="xp-row"><span class="xp-label">Experience Points</span><span class="xp-val">3,850 / 4,000
+                        XP</span></div>
+                <div class="xp-track">
+                    <div class="xp-fill" style="--w:96%"></div>
+                </div>
+
+                <div class="xp-row"><span class="xp-label">Video Watched</span><span class="xp-val">+10 XP</span></div>
+                <div class="xp-track">
+                    <div class="xp-fill" style="--w:70%; background:linear-gradient(90deg,#00e676,#69f0ae)"></div>
+                </div>
+
+                <div class="xp-row"><span class="xp-label">Quiz Completed</span><span class="xp-val">+25 XP</span></div>
+                <div class="xp-track">
+                    <div class="xp-fill" style="--w:45%; background:linear-gradient(90deg,#00e5ff,#18ffff)"></div>
+                </div>
+
+                <div class="xp-row"><span class="xp-label">Class Chatroom</span><span class="xp-val">+5 XP</span></div>
+                <div class="xp-track">
+                    <div class="xp-fill" style="--w:85%; background:linear-gradient(90deg,#ff4081,#ff80ab)"></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+                <div
+                    style="background:rgba(124,77,255,0.15);border:1px solid rgba(124,77,255,0.3);border-radius:12px;padding:12px 20px;font-weight:700;">
+                    📹 Teacher earns XP on upload</div>
+                <div
+                    style="background:rgba(255,215,64,0.1);border:1px solid rgba(255,215,64,0.3);border-radius:12px;padding:12px 20px;font-weight:700;">
+                    🏅 Leaderboard PDF Report</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 7: AI + QUIZ + CHAT =================== -->
+    <div class="slide" id="slide-6">
+        <div class="slide-title"><span class="grad-pink">🧠 AI, Quizzes & Chatrooms</span></div>
+        <div class="slide-sub">Interactive tools that make learning engaging</div>
+        <div class="feat-grid" style="max-width:860px;">
+            <div class="feat-card" style="border-color:rgba(255,64,129,0.3);">
+                <div class="feat-icon">🤖</div>
+                <div class="feat-name">AI Assistant</div>
+                <div class="feat-desc">Built-in AI chatbot that answers student queries about coursework, quizzes, and
+                    videos instantly.</div>
+            </div>
+            <div class="feat-card" style="border-color:rgba(187,134,252,0.3);">
+                <div class="feat-icon">📝</div>
+                <div class="feat-name">Quiz System</div>
+                <div class="feat-desc">Teachers create MCQ quizzes with 4 options. Students take them and earn XP. Full
+                    report available.</div>
+            </div>
+            <div class="feat-card" style="border-color:rgba(0,229,255,0.3);">
+                <div class="feat-icon">💬</div>
+                <div class="feat-name">Live Chatroom</div>
+                <div class="feat-desc">Real-time class chatroom with 3-second polling. Teachers can delete individual or
+                    all messages.</div>
+            </div>
+            <div class="feat-card" style="border-color:rgba(0,230,118,0.3);">
+                <div class="feat-icon">📲</div>
+                <div class="feat-name">SMS Notifications</div>
+                <div class="feat-desc">Selenium-powered SMS bot sends automatic parent alerts for absent students via
+                    Google Messages.</div>
+            </div>
+            <div class="feat-card" style="border-color:rgba(255,152,0,0.3);">
+                <div class="feat-icon">📊</div>
+                <div class="feat-name">Struggling Topics</div>
+                <div class="feat-desc">Analytics identify which content students are struggling with based on quiz
+                    results and viewing patterns.</div>
+            </div>
+            <div class="feat-card" style="border-color:rgba(255,215,64,0.3);">
+                <div class="feat-icon">🔔</div>
+                <div class="feat-name">Notifications</div>
+                <div class="feat-desc">In-app notification system for quiz assignments, attendance alerts, and system
+                    updates.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================== SLIDE 8: CTA =================== -->
+    <div class="slide" id="slide-7">
+        <div style="text-align:center;">
+            <div style="font-size:4rem;margin-bottom:16px;animation:fadeUp 0.5s ease">🚀</div>
+            <div class="title-hero" style="font-size:clamp(2.5rem,6vw,5rem)"><span class="grad-purple">Ready to
+                    Transform</span><br><span class="grad-cyan">Your Campus?</span></div>
+            <div class="subtitle">CampusPlayer — Built for teachers who care, students who aspire, and admins who lead.
+            </div>
+            <div style="margin-top:40px; display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+                <div
+                    style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; font-size:0.9rem;">
+                    <div style="font-size:1.5rem; font-weight:800; color:#00e5ff;">✅ Free to Host</div>
+                    <div style="color:rgba(255,255,255,0.5); margin-top:4px;">On your own PC or server</div>
+                </div>
+                <div
+                    style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; font-size:0.9rem;">
+                    <div style="font-size:1.5rem; font-weight:800; color:#ff9800;">⚡ Instant Setup</div>
+                    <div style="color:rgba(255,255,255,0.5); margin-top:4px;">Run with python app.py</div>
+                </div>
+                <div
+                    style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px 32px; font-size:0.9rem;">
+                    <div style="font-size:1.5rem; font-weight:800; color:#00e676;">🔒 Fully Secure</div>
+                    <div style="color:rgba(255,255,255,0.5); margin-top:4px;">Role-based access control</div>
+                </div>
+            </div>
+            <div style="margin-top:36px; color:rgba(255,255,255,0.3); font-size:0.9rem;">
+                🎓 CampusPlayer · Built with Flask + SQLite + FFmpeg + Selenium
+            </div>
+            <div style="margin-top:10px; color:rgba(255,255,255,0.25); font-size:0.78rem;">
+                © 2026 Vasanth V. — CampusPlayer. All Rights Reserved.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====== STARS ======
+        const starsEl = document.getElementById('stars');
+        for (let i = 0; i < 120; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 100}%;width:${Math.random() * 2.5 + 0.5}px;height:${s.style.width};animation-delay:${Math.random() * 3}s;animation-duration:${2 + Math.random() * 3}s`;
+            starsEl.appendChild(s);
+        }
+
+        // ====== SLIDES ======
+        const totalSlides = 8;
+        let current = 0;
+        let autoTimer;
+
+        const dotsEl = document.getElementById('dots');
+        const progressEl = document.getElementById('progressBar');
+        const dotEls = [];
+
+        for (let i = 0; i < totalSlides; i++) {
+            const d = document.createElement('div');
+            d.className = 'dot' + (i === 0 ? ' active' : '');
+            d.onclick = () => goToSlide(i);
+            dotsEl.appendChild(d);
+            dotEls.push(d);
+        }
+
+        function updateProgress() {
+            progressEl.style.width = ((current + 1) / totalSlides * 100) + '%';
+            dotEls.forEach((d, i) => d.classList.toggle('active', i === current));
+        }
+
+        function goToSlide(n) {
+            clearTimeout(autoTimer);
+            const prev = document.getElementById('slide-' + current);
+            prev.classList.remove('active');
+            prev.classList.add('exit');
+            setTimeout(() => prev.classList.remove('exit'), 800);
+            current = Math.max(0, Math.min(totalSlides - 1, n));
+            const next = document.getElementById('slide-' + current);
+            next.classList.add('active');
+            updateProgress();
+            if (current < totalSlides - 1) autoTimer = setTimeout(() => goToSlide(current + 1), 5000);
+        }
+
+        updateProgress();
+        autoTimer = setTimeout(() => goToSlide(1), 5000);
+
+        // keyboard navigation
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goToSlide(current + 1);
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goToSlide(current - 1);
+            if (e.key === ' ') { e.preventDefault(); goToSlide(current + 1); }
+        });
+    </script>
+</body>
+
+</html>

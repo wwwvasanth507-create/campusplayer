@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page-title">My Bio Data</div>
+<p class="page-sub">Keep your student profile complete and up to date.</p>
+
+<div class="card">
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <div class="card-title"><i class="material-icons">badge</i> Personal Details</div>
+        <label>Student Name</label>
+        <input type="text" name="student_name" value="{{ profile.student_name or '' }}">
+        <label>Student ID</label>
+        <input type="text" name="student_id_number" value="{{ profile.student_id_number or '' }}">
+        <label>Roll Number</label>
+        <input type="text" name="roll_number" value="{{ profile.roll_number or '' }}">
+        <label>Department</label>
+        <input type="text" name="department" value="{{ profile.department or '' }}">
+        <label>Year</label>
+        <input type="text" name="year" value="{{ profile.year or '' }}">
+        <label>Section</label>
+        <input type="text" name="section" value="{{ profile.section or '' }}">
+        <label>Date of Birth</label>
+        <input type="date" name="date_of_birth" value="{{ profile.date_of_birth.strftime('%Y-%m-%d') if profile.date_of_birth else '' }}">
+        <label>Gender</label>
+        <select name="gender">
+            <option value="">-- Select --</option>
+            {% for g in ['Male','Female','Other'] %}
+            <option value="{{ g }}" {% if profile.gender == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+        </select>
+        <label>Blood Group</label>
+        <input type="text" name="blood_group" value="{{ profile.blood_group or '' }}" placeholder="e.g. O+">
+        <label>Phone Number</label>
+        <input type="tel" name="phone_number" value="{{ profile.phone_number or '' }}">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ profile.email or '' }}">
+        <label>Nationality</label>
+        <input type="text" name="nationality" value="{{ profile.nationality or '' }}">
+        <label>Religion (Optional)</label>
+        <input type="text" name="religion" value="{{ profile.religion or '' }}">
+        <label>Category (Optional)</label>
+        <input type="text" name="category" value="{{ profile.category or '' }}">
+
+        <div class="divider"></div>
+        <div class="card-title"><i class="material-icons">family_restroom</i> Family Details</div>
+        <label>Father Name</label>
+        <input type="text" name="father_name" value="{{ profile.father_name or '' }}">
+        <label>Mother Name</label>
+        <input type="text" name="mother_name" value="{{ profile.mother_name or '' }}">
+        <label>Father Phone</label>
+        <input type="tel" name="father_phone" value="{{ profile.father_phone or '' }}">
+        <label>Mother Phone</label>
+        <input type="tel" name="mother_phone" value="{{ profile.mother_phone or '' }}">
+        <label>Father Email</label>
+        <input type="email" name="father_email" value="{{ profile.father_email or '' }}">
+        <label>Mother Email</label>
+        <input type="email" name="mother_email" value="{{ profile.mother_email or '' }}">
+        <label>Guardian Name</label>
+        <input type="text" name="guardian_name" value="{{ profile.guardian_name or '' }}">
+        <label>Guardian Phone</label>
+        <input type="tel" name="guardian_phone" value="{{ profile.guardian_phone or '' }}">
+
+        <div class="divider"></div>
+        <div class="card-title"><i class="material-icons">home</i> Address</div>
+        <label>Communication Address (max 5000 characters)</label>
+        <textarea name="communication_address" maxlength="5000" rows="4">{{ profile.communication_address or '' }}</textarea>
+        <label>Permanent Address (max 5000 characters)</label>
+        <textarea name="permanent_address" maxlength="5000" rows="4">{{ profile.permanent_address or '' }}</textarea>
+
+        <div class="divider"></div>
+        <div class="card-title"><i class="material-icons">emergency</i> Emergency Contact</div>
+        <label>Emergency Contact Name</label>
+        <input type="text" name="emergency_contact" value="{{ profile.emergency_contact or '' }}">
+        <label>Emergency Phone</label>
+        <input type="tel" name="emergency_phone" value="{{ profile.emergency_phone or '' }}">
+
+        <div class="divider"></div>
+        <div class="card-title"><i class="material-icons">upload_file</i> Documents</div>
+        <label>Photo {% if profile.photo_path %}(uploaded — choose a file to replace){% endif %}</label>
+        <input type="file" name="photo" accept="image/*">
+        <label>Signature {% if profile.signature_path %}(uploaded — choose a file to replace){% endif %}</label>
+        <input type="file" name="signature" accept="image/*">
+        <label>Aadhaar (Optional) {% if profile.aadhaar_path %}(uploaded){% endif %}</label>
+        <input type="file" name="aadhaar">
+        <label>Transfer Certificate {% if profile.transfer_certificate_path %}(uploaded){% endif %}</label>
+        <input type="file" name="transfer_certificate">
+        <label>Community Certificate {% if profile.community_certificate_path %}(uploaded){% endif %}</label>
+        <input type="file" name="community_certificate">
+        <label>Other Certificate (add one at a time — submit again to add more)</label>
+        <input type="file" name="other_certificate">
+        {% if profile and profile.get_other_certificates() %}
+        <p style="font-size:12px; color:var(--text-secondary); margin-top:6px;">
+            Already uploaded: {% for c in profile.get_other_certificates() %}{{ c.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+        </p>
+        {% endif %}
+
+        <div class="divider"></div>
+        <button type="submit" class="btn btn-primary">Save Bio Data</button>
+    </form>
+</div>
+{% endblock %}

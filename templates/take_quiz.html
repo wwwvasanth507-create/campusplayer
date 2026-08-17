@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <h1 style="margin-top: 0;">{{ quiz.title }}</h1>
+        {% if remaining_seconds is not none %}
+        <div id="quizTimer" style="font-size:1.2rem; font-weight:700; padding:8px 16px; border-radius:8px; background: rgba(212,168,83,0.12); color: var(--accent);">
+            ⏱️ <span id="quizTimerText">--:--</span>
+        </div>
+        {% endif %}
+    </div>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">
+        Answer all questions to complete the quiz.
+        {% if remaining_seconds is not none %}The quiz will close automatically when the time runs out.{% endif %}
+    </p>
+
+    <form method="POST" id="quizForm">
+        {% for q in questions %}
+        <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+            <h3 style="font-size: 1.1rem; margin-bottom: 16px;">{{ loop.index }}. {{ q.text }}</h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="A" required>
+                    <span>{{ q.option_a }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="B">
+                    <span>{{ q.option_b }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="C">
+                    <span>{{ q.option_c }}</span>
+                </label>
+                <label
+                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                    <input type="radio" name="q_{{ q.id }}" value="D">
+                    <span>{{ q.option_d }}</span>
+                </label>
+            </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn" style="width: 100%;">Submit Quiz</button>
+    </form>
+</div>
+
+{% if remaining_seconds is not none %}
+<script>
+(function() {
+    var remaining = {{ remaining_seconds }};
+    var textEl = document.getElementById('quizTimerText');
+    var timerBox = document.getElementById('quizTimer');
+    var form = document.getElementById('quizForm');
+    var autoSubmitted = false;
+
+    function render() {
+        var m = Math.floor(remaining / 60);
+        var s = remaining % 60;
+        textEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        if (remaining <= 60) { timerBox.style.color = '#dc2626'; timerBox.style.background = 'rgba(220,38,38,0.12)'; }
+    }
+    render();
+
+    var interval = setInterval(function() {
+        remaining -= 1;
+        if (remaining <= 0) {
+            remaining = 0;
+            render();
+            clearInterval(interval);
+            if (!autoSubmitted) {
+                autoSubmitted = true;
+                form.submit();
+            }
+            return;
+        }
+        render();
+    }, 1000);
+})();
+</script>
+{% endif %}
+{% endblock %}

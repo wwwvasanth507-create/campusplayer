@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="page-title">Profile Settings</div>
+<p class="page-sub">Manage your account preferences</p>
+
+<div class="card">
+    <div class="card-title"><i class="material-icons">person</i> Account Info</div>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Username</label>
+        <input type="text" value="{{ current_user.username }}" disabled style="opacity:0.6;">
+        <label>Role</label>
+        <input type="text" value="{{ current_user.role.title() }}" disabled style="opacity:0.6;">
+        <label>Display Name</label>
+        <input type="text" name="display_name" value="{{ current_user.display_name or '' }}" placeholder="Your display name">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ current_user.email or '' }}" placeholder="your@email.com">
+        <label>Phone</label>
+        <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="+919876543210">
+        <label>Theme Preference</label>
+        <select name="theme_preference">
+            <option value="dark" {% if current_user.theme_preference == 'dark' %}selected{% endif %}>🌙 Dark</option>
+            <option value="light" {% if current_user.theme_preference == 'light' %}selected{% endif %}>☀️ Light</option>
+        </select>
+        <div class="divider"></div>
+        <div class="card-title"><i class="material-icons">lock</i> Change Password</div>
+        <label>Current Password</label>
+        <input type="password" name="current_password" placeholder="Leave blank to keep current">
+        <label>New Password</label>
+        <input type="password" name="new_password" placeholder="Min 4 characters" minlength="4">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+
+
+<div class="card">
+    <div class="card-title"><i class="material-icons">bar_chart</i> Account Stats</div>
+    <div class="stat-row">
+        <div class="stat-card stat-gold">
+            <div class="stat-val">{{ current_user.xp }}</div>
+            <div class="stat-lbl">Total XP</div>
+        </div>
+        <div class="stat-card stat-purple">
+            <div class="stat-val">{{ (current_user.xp // 500) + 1 }}</div>
+            <div class="stat-lbl">Level</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val">{{ current_user.login_count or 0 }}</div>
+            <div class="stat-lbl">Logins</div>
+        </div>
+    </div>
+    {% if current_user.last_login %}
+    <p class="text-dim fs-small">Last login: {{ current_user.last_login.strftime('%b %d, %Y %H:%M') }}</p>
+    {% endif %}
+    <p class="text-dim fs-small">Joined: {{ current_user.created_at.strftime('%b %d, %Y') }}</p>
+</div>
+
+<style>
+    select { appearance: auto; }
+</style>
+{% endblock %}

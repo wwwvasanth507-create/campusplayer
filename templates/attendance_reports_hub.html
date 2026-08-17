@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="flex-between" style="margin-bottom:8px;">
+    <div class="page-title" style="margin:0;">Attendance Session Reports</div>
+</div>
+<p class="page-sub">View &amp; download percentage-based attendance reports by session
+    {% if settings %}· Minimum required: <strong>{{ settings.min_attendance_percentage or 75 }}%</strong>{% endif %}
+</p>
+
+{% if classes_data %}
+{% for entry in classes_data %}
+<div class="card" style="margin-bottom:18px;">
+    <div class="card-title">
+        <i class="material-icons">school</i> {{ entry.classroom.name }}
+        <span class="text-dim fs-small" style="margin-left:8px;">{{ entry.classroom.students.count() }} students</span>
+    </div>
+    {% if entry.sessions %}
+    <div class="table-wrap">
+        <table>
+            <tr><th>Session</th><th>Start Date</th><th>End Date</th><th>Sub-sessions</th><th></th></tr>
+            {% for s in entry.sessions %}
+            <tr>
+                <td><b>{{ s.name }}</b></td>
+                <td>{{ s.start_date.strftime('%d %b %Y') }}</td>
+                <td>{{ s.end_date.strftime('%d %b %Y') }}</td>
+                <td>{{ s.sub_sessions|length }}</td>
+                <td style="white-space:nowrap;">
+                    <a href="{{ url_for('attendance_session_report', session_id=s.id) }}" class="btn btn-outline"
+                        style="width:auto;padding:6px 12px;font-size:0.75rem;" target="_blank">
+                        <i class="material-icons" style="font-size:0.9rem;">bar_chart</i> View
+                    </a>
+                    <a href="{{ url_for('attendance_session_report', session_id=s.id, download=1) }}" class="btn btn-outline"
+                        style="width:auto;padding:6px 12px;font-size:0.75rem;" target="_blank">
+                        <i class="material-icons" style="font-size:0.9rem;">download</i> Download
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+    <p class="text-dim fs-small">No attendance sessions created yet for this class.
+        <a href="{{ url_for('teacher_attendance_page', class_id=entry.classroom.id) }}">Create one →</a>
+    </p>
+    {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<div class="card text-center" style="padding:40px;">
+    <p class="text-dim fs-small">No classes found.</p>
+</div>
+{% endif %}
+{% endblock %}

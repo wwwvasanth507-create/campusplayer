@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 style="margin-bottom: 30px;">Available Quizzes</h1>
+
+<div class="grid-container">
+    {% for quiz in quizzes %}
+    <div class="card">
+        <h3 style="margin-top: 0;">{{ quiz.title }}</h3>
+        <p style="color: var(--text-secondary);">
+            {{ quiz.questions|length }} Questions
+            {% if quiz.video %}
+            &bull; Related to video: {{ quiz.video_link.title if quiz.video_link else 'Video ID ' ~ quiz.video_id }}
+            {% endif %}
+        </p>
+
+        {% if quiz.id in taken_ids %}
+        <div style="margin-top: 20px;">
+            <span class="btn btn-secondary" style="width: 100%; cursor: default; opacity: 0.7;">
+                <i class="material-icons">check_circle</i> Completed
+            </span>
+            <!-- Optional: Show Retake button -->
+        </div>
+        {% else %}
+        <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn" style="width: 100%; margin-top: 20px;">
+            Start Quiz
+        </a>
+        {% endif %}
+    </div>
+    {% else %}
+    <p>No quizzes available at the moment.</p>
+    {% endfor %}
+</div>
+{% endblock %}

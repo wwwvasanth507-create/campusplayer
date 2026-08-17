@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusPlayer - Email Address Updated</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #101114;
+            color: #f6f7fb;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrapper {
+            width: 100%;
+            background-color: #101114;
+            padding: 30px 0;
+        }
+        .container {
+            max-width: 580px;
+            margin: 0 auto;
+            background-color: #181b20;
+            border-radius: 14px;
+            border: 1px solid rgba(181,189,202,0.15);
+            overflow: hidden;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+        }
+        .header {
+            background: linear-gradient(135deg, #171a1f 0%, #101114 100%);
+            padding: 28px 24px 22px;
+            text-align: center;
+            border-bottom: 2px solid #f4b04d;
+        }
+        .header .logo-badge {
+            display: inline-block;
+            background: rgba(244,176,77,0.12);
+            border: 1px solid rgba(244,176,77,0.4);
+            border-radius: 50px;
+            padding: 6px 18px;
+            margin-bottom: 14px;
+            color: #f4b04d;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .header h1 {
+            color: #ffd58a;
+            margin: 0 0 6px;
+            font-size: 22px;
+            letter-spacing: 0.5px;
+            font-family: Georgia, serif;
+        }
+        .header p {
+            color: #9da7b7;
+            margin: 0;
+            font-size: 13px;
+            font-style: italic;
+        }
+        .content {
+            padding: 32px 30px 28px;
+        }
+        .greeting {
+            font-size: 17px;
+            font-weight: 600;
+            color: #e8ecf4;
+            margin: 0 0 12px;
+        }
+        .body-text {
+            font-size: 14px;
+            color: #9da7b7;
+            line-height: 1.7;
+            margin: 0 0 24px;
+        }
+        /* Info card */
+        .info-card {
+            background-color: #20252d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid #4da6f4;
+        }
+        .info-card .label {
+            font-size: 11px;
+            color: #7a8499;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .info-card .value {
+            font-size: 15px;
+            color: #d4e0f7;
+            font-weight: 600;
+        }
+        .info-card .arrow {
+            color: #4da6f4;
+            font-size: 18px;
+            margin: 8px 0;
+        }
+        .info-card .value-new {
+            font-size: 16px;
+            color: #58e2a0;
+            font-weight: 700;
+        }
+        /* Security notice */
+        .security-box {
+            background: rgba(244, 176, 77, 0.07);
+            border: 1px solid rgba(244, 176, 77, 0.25);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 26px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .security-box .icon {
+            font-size: 18px;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+        .security-box .text {
+            font-size: 13px;
+            color: #c8a85a;
+            line-height: 1.6;
+        }
+        /* CTA Button */
+        .btn-wrapper {
+            text-align: center;
+            margin: 28px 0 16px;
+        }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #f4b04d, #e8961e);
+            color: #101114 !important;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 13px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(181,189,202,0.1);
+            margin: 24px 0;
+        }
+        /* Footer */
+        .footer {
+            background-color: #13161b;
+            padding: 18px 24px;
+            text-align: center;
+            border-top: 1px solid rgba(181,189,202,0.08);
+        }
+        .footer p {
+            color: #5a6278;
+            font-size: 12px;
+            margin: 0 0 4px;
+        }
+        .footer .brand {
+            color: #f4b04d;
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .timestamp {
+            font-size: 12px;
+            color: #5a6278;
+            text-align: center;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo-badge">CampusPlayer</div>
+      <h1>Email Address Updated</h1>
+      <p>Security confirmation for your account</p>
+    </div>
+
+    <!-- Body -->
+    <div class="content">
+      <p class="greeting">Hello, {{ student_name }}!</p>
+      <p class="body-text">
+        Your CampusPlayer account email address has been successfully updated.
+        All future academic progress reports and notifications will now be delivered to your new address.
+      </p>
+
+      <!-- Email Change Info Card -->
+      <div class="info-card">
+        <div class="label">Previous Email</div>
+        <div class="value">{{ old_email }}</div>
+        <div class="arrow">&#8595;</div>
+        <div class="label">Updated To</div>
+        <div class="value-new">{{ new_email }}</div>
+      </div>
+
+      <!-- Security Warning -->
+      <div class="security-box">
+        <div class="icon">&#9888;</div>
+        <div class="text">
+          <strong style="color:#f4b04d;">Not you?</strong> If you did not make this change, please contact your teacher or system administrator immediately.
+          Your account security is important &mdash; log in and revert this change as soon as possible.
+        </div>
+      </div>
+
+      <!-- Details row -->
+      <table style="width:100%; font-size:13px; color:#7a8499; border-collapse:collapse;">
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">Student ID:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">CP-{{ student_id }}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">Account Username:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">{{ account_username }}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">Changed At:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">{{ changed_at }}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">Class:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">{{ class_name }}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">IP Address:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">{{ remote_ip }}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 0;"><strong style="color:#9da7b7;">Browser:</strong></td>
+          <td style="padding:4px 0; text-align:right; color:#d4e0f7;">{{ browser_info }}</td>
+        </tr>
+      </table>
+
+      <hr class="divider">
+
+      <p class="body-text" style="margin-bottom: 0;">
+        You can log in to your CampusPlayer portal at any time to review your profile, check your progress, and manage your settings.
+      </p>
+
+      <div class="info-card" style="border-left-color: #5d9bd5; margin-top: 18px;">
+        <div class="label">Need help?</div>
+        <div class="value-new">{{ teacher_contact }}</div>
+        <div class="body-text" style="margin-top: 10px; color:#9da7b7; font-size:13px;">
+          If this update was not authorized by you, contact support immediately and change your password.
+        </div>
+      </div>
+
+      <!-- CTA Button -->
+      <div class="btn-wrapper">
+        <a href="{{ login_link }}" class="btn">Go to My Portal &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p class="brand">CampusPlayer</p>
+      <p>This is an automated security notification. Please do not reply.</p>
+      <p>Sent by: <strong style="color:#9da7b7;">{{ teacher_name }}</strong></p>
+      <p>Support contact: <strong style="color:#9da7b7;">{{ teacher_contact }}</strong></p>
+    </div>
+  </div>
+  <p class="timestamp" style="color:#3a4055; text-align:center; margin-top:14px; font-size:11px;">
+    {{ changed_at }} &bull; CampusPlayer Academic Portal
+  </p>
+</div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+{% extends "layout.html" %}
+{% block title %}My Assignments{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+:root {
+  --bg-primary: #0f172a; --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9; --text-secondary: #94a3b8;
+  --accent: #d4a853; --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+}
+body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Segoe UI', sans-serif; }
+.page-container { max-width: 900px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 28px; color: var(--accent); margin-bottom: 24px; }
+.card { background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(212,168,83,0.1); }
+.assignment-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.assignment-title { margin: 0; color: var(--accent); font-size: 18px; }
+.assignment-meta { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0; font-size: 13px; color: var(--text-secondary); }
+.submit-area { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(212,168,83,0.1); }
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-pending { background: rgba(245,158,11,0.15); color: var(--warning); }
+.status-submitted { background: rgba(34,197,94,0.15); color: var(--success); }
+.status-graded { background: rgba(59,130,246,0.15); color: #3b82f6; }
+.btn { padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+.btn-primary { background: var(--accent); color: #0f172a; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.form-group textarea, .form-group input[type="file"] { width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid rgba(212,168,83,0.2); border-radius: 8px; color: var(--text-primary); margin-top: 8px; }
+.form-group textarea { min-height: 80px; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+.grade-display { background: rgba(34,197,94,0.1); border-radius: 12px; padding: 16px; margin-top: 12px; }
+.grade-score { font-size: 24px; font-weight: 700; color: var(--success); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>📚 My Assignments</h1>
+
+    {% if assignment_data %}
+    {% for item in assignment_data %}
+    {% set a = item.assignment %}
+    {% set sub = item.submission %}
+    <div class="card">
+        <div class="assignment-header">
+            <div>
+                <h3 class="assignment-title">{{ a.title }}</h3>
+                <div class="assignment-meta">
+                    <span>📂 {{ a.classroom.name if a.classroom else 'Class' }}</span>
+                    <span>⏰ Due: {{ a.due_date.strftime('%b %d, %Y %H:%M') if a.due_date else 'No deadline' }}</span>
+                    <span>🎯 {{ a.total_points }} pts</span>
+                    <span>📝 {{ a.assignment_type|title }}</span>
+                </div>
+            </div>
+            <span class="status-badge status-{{ item.status }}">{{ item.status|title }}</span>
+        </div>
+
+        <p style="color:var(--text-secondary); font-size:14px;">{{ a.description or '' }}</p>
+
+        {% if a.question_file_path %}
+        <div class="form-group" style="margin-bottom:16px;">
+            <label>📄 Question Paper: {{ a.question_file_name or 'Download' }}</label>
+            {% set qext = (a.question_file_name or '').lower() %}
+            {% if qext.endswith('.pdf') %}
+            <iframe src="{{ url_for('static', filename=a.question_file_path) }}" style="width:100%; height:500px; border:1px solid rgba(212,168,83,0.2); border-radius:8px; margin-top:8px;"></iframe>
+            {% endif %}
+            <div style="margin-top:8px;">
+                <a href="{{ url_for('static', filename=a.question_file_path) }}" target="_blank" class="btn btn-sm" style="background:var(--bg-primary);color:var(--accent);">⬇️ Open / Download Question Paper</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if sub %}
+        <div class="grade-display">
+            <div class="grade-score">{% if sub.grade is not none %}{{ sub.grade }}/{{ a.total_points }}{% else %}Not Graded Yet{% endif %}</div>
+            <div style="color:var(--text-secondary); font-size:13px;">Submitted: {{ sub.submitted_at.strftime('%b %d, %Y %H:%M') }}
+                {% if sub.is_late %}<span style="color:var(--warning);"> (Late)</span>{% endif %}
+            </div>
+            {% if sub.feedback %}
+            <div style="margin-top:8px; padding:8px; background:var(--bg-primary); border-radius:8px; font-size:13px;">
+                <strong style="color:var(--accent);">Feedback:</strong> {{ sub.feedback }}
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="submit-area">
+            {% set rmode = a.response_mode or 'either' %}
+            <form method="POST" action="{{ url_for('submit_assignment', assignment_id=a.id) }}" enctype="multipart/form-data">
+                {% if rmode in ('either', 'type_only') %}
+                <div class="form-group">
+                    <label>{% if rmode == 'type_only' %}Type your answer *{% else %}Type your answer{% endif %}</label>
+                    <textarea name="content" placeholder="Write your response here..." {% if rmode == 'type_only' %}required{% endif %}></textarea>
+                </div>
+                {% endif %}
+                {% if rmode in ('either', 'file_only') %}
+                <div class="form-group">
+                    <label>{% if rmode == 'file_only' %}Upload document *{% else %}Or upload a document{% endif %}</label>
+                    <input type="file" name="file" {% if rmode == 'file_only' %}required{% endif %}>
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-primary btn-sm" style="margin-top:8px;">Submit Assignment</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:64px;">📋</div>
+        <h3>No Assignments Yet</h3>
+        <p>Your teachers haven't posted any assignments yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<style>
+    .notif-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .notif-item {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        padding: 24px;
+        border-radius: 20px;
+        background: var(--surface-color);
+        border: 1px solid var(--glass-border);
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .notif-unread {
+        border-left: 4px solid var(--primary-color);
+        background: rgba(124, 77, 255, 0.05);
+    }
+
+    .notif-read {
+        opacity: 0.7;
+    }
+
+    .notif-icon-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .icon-unread {
+        background: var(--primary-color);
+        color: #fff;
+    }
+
+    .icon-read {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+    }
+
+    .notif-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notif-message {
+        font-size: 1.05rem;
+        line-height: 1.5;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+    }
+
+    .notif-footer {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .notif-time {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+</style>
+
+<div class="notif-container">
+    <div class="notif-header">
+        <div>
+            <h1
+                style="margin:0; font-weight: 800; font-size: 2.2rem; background: linear-gradient(90deg, #fff, var(--primary-color)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                Notifications</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px;">
+                {% if unread_count > 0 %}
+                You have <span style="color: var(--primary-color); font-weight: 700;">{{ unread_count }}</span> new
+                alert{{ 's' if unread_count != 1 else '' }}.
+                {% else %}
+                Your inbox is clean.
+                {% endif %}
+            </p>
+        </div>
+        {% if unread_count > 0 %}
+        <button id="mark-all-read-btn" class="btn btn-secondary">
+            <i class="material-icons">task_alt</i> Mark All Read
+        </button>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+    <div id="notifications-list">
+        {% for notif in notifications %}
+        <div class="notif-item {{ 'notif-unread' if not notif.is_read else 'notif-read' }}" id="notif-{{ notif.id }}">
+            <div class="notif-icon-box {{ 'icon-unread' if not notif.is_read else 'icon-read' }}">
+                <i class="material-icons">
+                    {% if "replied" in notif.message %}reply{% else %}chat_bubble{% endif %}
+                </i>
+            </div>
+
+            <div class="notif-content">
+                <div class="notif-message">{{ notif.message }}</div>
+                <div class="notif-footer">
+                    <span class="notif-time">
+                        <i class="material-icons" style="font-size: 1.1rem;">schedule</i>
+                        {{ notif.created_at.strftime('%b %d at %I:%M %p') }}
+                    </span>
+
+                    <div style="display: flex; gap: 8px;">
+                        {% if notif.video_id %}
+                        <a href="{{ url_for('watch_video', video_id=notif.video_id) }}" class="btn btn-secondary"
+                            style="padding: 6px 14px; font-size: 0.85rem;">
+                            Go to Video
+                        </a>
+                        {% endif %}
+
+                        {% if not notif.is_read %}
+                        <button onclick="markOneRead({{ notif.id }})" class="btn"
+                            style="padding: 6px 14px; font-size: 0.85rem; background: rgba(124, 77, 255, 0.1); color: var(--primary-color);">
+                            Mark Seen
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 80px 40px;">
+        <i class="material-icons"
+            style="font-size: 4rem; color: var(--surface-hover); margin-bottom: 20px;">notifications_off</i>
+        <h3 style="margin-bottom: 10px;">Safe and Sound</h3>
+        <p style="color: var(--text-secondary);">No notifications at the moment. We'll let you know when things happen.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    const markAllBtn = document.getElementById('mark-all-read-btn');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function () {
+            fetch('/api/notifications/mark_read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+        });
+    }
+
+    function markOneRead(notifId) {
+        fetch(`/api/notifications/mark_one_read/${notifId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const item = document.getElementById(`notif-${notifId}`);
+                    item.classList.remove('notif-unread');
+                    item.classList.add('notif-read');
+                    const btn = item.querySelector('button[onclick]');
+                    if (btn) btn.remove();
+                    const iconBox = item.querySelector('.notif-icon-box');
+                    iconBox.classList.remove('icon-unread');
+                    iconBox.classList.add('icon-read');
+                }
+            });
+    }
+</script>
+{% endblock %}

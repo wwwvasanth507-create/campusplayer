@@ -1,0 +1,301 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+    .quiz-layout {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 28px;
+        align-items: flex-start;
+    }
+
+    @media(max-width:900px) {
+        .quiz-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .q-item {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 14px;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    .q-item:hover {
+        border-color: rgba(187, 134, 252, 0.4);
+    }
+
+    .q-num {
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        background: linear-gradient(135deg, #9c27b0, #7c4dff);
+        color: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 3px 12px;
+        border-radius: 20px;
+        letter-spacing: 1px;
+    }
+
+    .q-text {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 12px;
+        color: #fff;
+        line-height: 1.5;
+    }
+
+    .opts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .opt {
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        color: var(--text-secondary);
+    }
+
+    .opt.correct {
+        background: rgba(0, 230, 118, 0.1);
+        border-color: rgba(0, 230, 118, 0.3);
+        color: #00e676;
+        font-weight: 700;
+    }
+
+    .opt-label {
+        font-weight: 800;
+        margin-right: 6px;
+    }
+
+    .add-form {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 28px;
+    }
+
+    .add-form h3 {
+        margin-top: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.1rem;
+        color: #bb86fc;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .correct-select {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    .correct-opt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 2px solid var(--glass-border);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .correct-opt:hover {
+        border-color: #bb86fc;
+    }
+
+    .correct-opt input[type=radio] {
+        display: none;
+    }
+
+    .correct-opt.selected {
+        border-color: #00e676;
+        background: rgba(0, 230, 118, 0.1);
+    }
+
+    .correct-opt-label {
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .q-delete {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: none;
+        border: none;
+        color: rgba(255, 82, 82, 0.5);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .q-delete:hover {
+        color: #ff5252;
+        background: rgba(255, 82, 82, 0.1);
+    }
+</style>
+
+<div style="display:flex; align-items:center; gap:16px; margin-bottom:32px; flex-wrap:wrap;">
+    <a href="{{ url_for('teacher_quizzes_page') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
+            class="material-icons">arrow_back</i></a>
+    <div style="flex:1;">
+        <h1
+            style="margin:0; font-weight:800; font-size:1.7rem; background:linear-gradient(90deg,#fff,#bb86fc); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+            {{ quiz.title }}</h1>
+        <p style="margin:4px 0 0; color:var(--text-secondary);">{{ quiz.questions|length }} question(s) &bull; Click any
+            option to set as correct</p>
+    </div>
+    <a href="{{ url_for('quiz_report', quiz_id=quiz.id) }}" class="btn btn-secondary"
+        style="padding:10px 18px; text-decoration:none; color:#00e5ff; border-color:rgba(0,229,255,0.3);">
+        <i class="material-icons" style="font-size:1rem;">bar_chart</i> View Report
+    </a>
+</div>
+
+<div class="quiz-layout">
+    <!-- Left: Questions List -->
+    <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+            <h2
+                style="margin:0; font-size:1.15rem; font-weight:700; color:#bb86fc; display:flex; align-items:center; gap:8px;">
+                <i class="material-icons">list_alt</i> Questions
+            </h2>
+            <span
+                style="background:rgba(187,134,252,0.15); color:#bb86fc; padding:4px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">{{
+                quiz.questions|length }} Total</span>
+        </div>
+
+        {% if quiz.questions %}
+        {% for q in quiz.questions %}
+        <div class="q-item">
+            <span class="q-num">Q{{ loop.index }}</span>
+            <div class="q-text" style="margin-top:8px;">{{ q.text }}</div>
+            <div class="opts">
+                <div class="opt {{ 'correct' if q.correct_option == 'A' }}"><span class="opt-label">A</span>{{
+                    q.option_a }}</div>
+                <div class="opt {{ 'correct' if q.correct_option == 'B' }}"><span class="opt-label">B</span>{{
+                    q.option_b }}</div>
+                <div class="opt {{ 'correct' if q.correct_option == 'C' }}"><span class="opt-label">C</span>{{
+                    q.option_c }}</div>
+                <div class="opt {{ 'correct' if q.correct_option == 'D' }}"><span class="opt-label">D</span>{{
+                    q.option_d }}</div>
+            </div>
+            <form action="{{ url_for('delete_question', question_id=q.id) }}" method="POST"
+                onsubmit="return confirm('Delete this question?');" style="margin:0;">
+                <button type="submit" class="q-delete" title="Delete question"><i class="material-icons"
+                        style="font-size:1.1rem;">close</i></button>
+            </form>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="card" style="text-align:center; padding:40px; color:var(--text-secondary); border-style:dashed;">
+            <i class="material-icons" style="font-size:3rem; opacity:0.2;">quiz</i>
+            <p>No questions yet. Add the first one →</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right: Add Form -->
+    <div class="add-form">
+        <h3><i class="material-icons" style="color:#bb86fc;">add_circle</i> Add Question</h3>
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">Question Text</label>
+                <textarea name="text" rows="3" required placeholder="Type your question here..."
+                    style="background:var(--bg-color); resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div class="form-group">
+                    <label class="form-label" style="color:#4caf50;">Option A</label>
+                    <input type="text" name="option_a" required placeholder="Option A"
+                        style="background:var(--bg-color); border-color:rgba(76,175,80,0.3);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#2196f3;">Option B</label>
+                    <input type="text" name="option_b" required placeholder="Option B"
+                        style="background:var(--bg-color); border-color:rgba(33,150,243,0.3);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#ff9800;">Option C</label>
+                    <input type="text" name="option_c" required placeholder="Option C"
+                        style="background:var(--bg-color); border-color:rgba(255,152,0,0.3);">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="color:#f44336;">Option D</label>
+                    <input type="text" name="option_d" required placeholder="Option D"
+                        style="background:var(--bg-color); border-color:rgba(244,67,54,0.3);">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Correct Answer</label>
+                <div class="correct-select" id="opt-selector">
+                    <label class="correct-opt" onclick="selectOpt(this,'A')">
+                        <input type="radio" name="correct_option" value="A">
+                        <span
+                            style="width:28px;height:28px;border-radius:8px;background:rgba(76,175,80,0.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:#4caf50;">A</span>
+                        <span class="correct-opt-label">Option A</span>
+                    </label>
+                    <label class="correct-opt" onclick="selectOpt(this,'B')">
+                        <input type="radio" name="correct_option" value="B">
+                        <span
+                            style="width:28px;height:28px;border-radius:8px;background:rgba(33,150,243,0.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:#2196f3;">B</span>
+                        <span class="correct-opt-label">Option B</span>
+                    </label>
+                    <label class="correct-opt" onclick="selectOpt(this,'C')">
+                        <input type="radio" name="correct_option" value="C">
+                        <span
+                            style="width:28px;height:28px;border-radius:8px;background:rgba(255,152,0,0.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:#ff9800;">C</span>
+                        <span class="correct-opt-label">Option C</span>
+                    </label>
+                    <label class="correct-opt" onclick="selectOpt(this,'D')">
+                        <input type="radio" name="correct_option" value="D">
+                        <span
+                            style="width:28px;height:28px;border-radius:8px;background:rgba(244,67,54,0.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;color:#f44336;">D</span>
+                        <span class="correct-opt-label">Option D</span>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn"
+                style="width:100%; margin-top:4px; background:linear-gradient(135deg,#9c27b0,#7c4dff);">
+                <i class="material-icons">add</i> Add Question
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectOpt(el, val) {
+        document.querySelectorAll('.correct-opt').forEach(o => o.classList.remove('selected'));
+        el.classList.add('selected');
+        el.querySelector('input').checked = true;
+    }
+</script>
+{% endblock %}
