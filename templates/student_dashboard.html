@@ -18,57 +18,97 @@
                 </div>
             </div>
             <div>
-                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:8px;">
-                    Welcome back, {{ current_user.username }}
-                    <span class="badge" style="background:rgba(99,102,241,0.2); color:var(--primary-light); border:1px solid rgba(99,102,241,0.4); font-size:0.7rem; font-family:'JetBrains Mono',monospace; padding:2px 8px;">
-                        LEVEL {{ (current_user.xp // 500) + 1 }}
+                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.15rem; color:var(--text); display:flex; align-items:center; gap:8px;">
+                    ✨ Welcome back, {{ current_user.username }}
+                    <span class="badge" style="background:linear-gradient(135deg, rgba(99,102,241,0.3), rgba(0,229,255,0.3)); color:#00e5ff; border:1px solid rgba(0,229,255,0.4); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:12px;">
+                        ⚡ LEVEL {{ (current_user.xp // 500) + 1 }}
                     </span>
                 </div>
-                <div style="font-size:0.76rem; color:var(--text-dim); margin-top:2px;">
-                    <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
+                <div style="font-size:0.78rem; color:var(--text-dim); margin-top:3px;">
+                    🏆 <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
                 </div>
             </div>
         </div>
 
-        <!-- Academic Telemetry Badges & Quick Action -->
+        <!-- Academic Telemetry Badges & Quick Actions -->
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <!-- Attendance Metric -->
-            <div class="cp-badge-stat">
-                <i class="material-icons" style="font-size:1.05rem; color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }};">
-                    {{ 'verified' if attendance_pct >= 75 else 'report_problem' }}
-                </i>
+            <!-- Attendance Metric Box -->
+            <div class="cp-badge-stat" style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); padding:8px 16px; border-radius:14px;">
+                <span style="font-size:1.1rem; margin-right:4px;">{{ '🟢' if attendance_pct >= 75 else '🔴' }}</span>
                 <div>
-                    <span style="color:var(--text-dim);">Attendance:</span>
-                    <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace;">{{ attendance_pct }}%</strong>
+                    <span style="color:var(--text-dim); font-size:0.75rem;">Attendance Standing:</span>
+                    <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace; font-size:0.9rem;"> {{ attendance_pct }}%</strong>
                 </div>
             </div>
 
-            <!-- Daily Quests Action -->
+            <!-- Daily Quests Action Box -->
             {% if daily_quests %}
             {% set unclaimed_count = daily_quests.values() | selectattr('claimed', 'equalto', false) | selectattr('progress', 'ge', 1) | list | length %}
-            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:6px 14px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:36px; position:relative;">
-                <i class="material-icons" style="font-size:1rem; color:var(--gold);">military_tech</i>
-                <span>Daily Quests</span>
+            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:8px 16px; font-size:0.8rem; border-radius:14px; min-height:40px; position:relative; gap:6px;">
+                <span style="font-size:1.05rem;">🎯</span>
+                <span style="font-weight:700;">Daily Quests</span>
                 {% if unclaimed_count > 0 %}
-                <span style="position:absolute; top:-4px; right:-4px; background:#f59e0b; color:#000; font-weight:800; font-size:0.65rem; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 8px rgba(245,158,11,0.6);">
+                <span style="position:absolute; top:-4px; right:-4px; background:#f59e0b; color:#000; font-weight:800; font-size:0.68rem; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(245,158,11,0.7);">
                     {{ unclaimed_count }}
                 </span>
                 {% endif %}
             </button>
             {% endif %}
 
-            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:6px 16px; font-size:0.78rem; border-radius:var(--radius-pill); min-height:36px;">
-                <i class="material-icons" style="font-size:1rem;">cloud_upload</i> Submit Homework
+            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:8px 18px; font-size:0.8rem; border-radius:14px; min-height:40px; gap:6px; box-shadow:0 4px 16px rgba(99,102,241,0.4);">
+                <span style="font-size:1.05rem;">📌</span> <span style="font-weight:700;">Submit Homework</span>
             </a>
         </div>
     </div>
 
+    <!-- ── 2. TOP CLASSROOM DISCUSSION CHATROOM BOX ── -->
+    {% if enrolled_classes %}
+    <div class="cp-pulse-banner mb-28" style="background:linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(0,229,255,0.08) 100%); border:1px solid rgba(0,229,255,0.3); padding:18px 22px;">
+        <div style="width:100%;">
+            <div class="flex-between mb-12" style="align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:1.6rem;">💬</span>
+                    <div>
+                        <h3 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
+                            Live Classroom Discussion Hubs
+                        </h3>
+                        <p style="font-size:0.76rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
+                    </div>
+                </div>
+                <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:20px;">
+                    🟢 {{ enrolled_classes|length }} ACTIVE ROOMS
+                </span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
+                {% for cls in enrolled_classes %}
+                <div style="background:rgba(13,17,28,0.85); border:1px solid var(--glass-border); border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:transform 0.2s ease, border-color 0.2s ease;"
+                     onmouseover="this.style.borderColor='rgba(0,229,255,0.5)'; this.style.transform='translateY(-2px)';"
+                     onmouseout="this.style.borderColor='var(--glass-border)'; this.style.transform='none';">
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-weight:700; font-size:0.92rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            💬 {{ cls.name }}
+                        </div>
+                        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                            👨‍🏫 {{ cls.teacher.username }} &bull; 🎓 <b>{{ cls.students.count() }}</b> Scholars
+                        </div>
+                    </div>
+                    <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:20px; font-weight:700; flex-shrink:0;">
+                        Open Chat 🚀
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- 🎯 Daily Quests Collapsible Drawer -->
     {% if daily_quests %}
-    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.04) 0%, rgba(99,102,241,0.04) 100%);">
+    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.4); background:linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(99,102,241,0.06) 100%); border-radius:20px;">
         <div class="flex-between mb-12">
-            <div class="card-title font-display" style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
-                <i class="material-icons" style="color:var(--gold);">stars</i> Daily Quests &amp; Milestone Challenges
+            <div class="card-title font-display" style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
+                <span>🏆</span> Daily Quests &amp; Milestone Challenges
             </div>
             <button onclick="toggleQuestsDrawer()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
                 <i class="material-icons">close</i>
@@ -76,48 +116,48 @@
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
             {% for q_id, q in daily_quests.items() %}
-            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(16,185,129,0.4)' if q.claimed else ('rgba(245,158,11,0.4)' if q.progress >= q.target else 'var(--glass-border)') }}; border-radius:var(--radius); padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(16,185,129,0.4)' if q.claimed else ('rgba(245,158,11,0.4)' if q.progress >= q.target else 'var(--glass-border)') }}; border-radius:14px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
                     <div class="flex-between mb-8" style="gap:8px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="width:32px; height:32px; border-radius:8px; background:{{ 'rgba(16,185,129,0.15)' if q.claimed else ('rgba(245,158,11,0.15)' if q.progress >= q.target else 'rgba(99,102,241,0.15)') }}; display:flex; align-items:center; justify-content:center;">
-                                <i class="material-icons" style="font-size:1.05rem; color:{{ '#10b981' if q.claimed else ('var(--gold)' if q.progress >= q.target else 'var(--primary-light)') }};">{{ q.icon }}</i>
+                            <div style="width:34px; height:34px; border-radius:10px; background:{{ 'rgba(16,185,129,0.15)' if q.claimed else ('rgba(245,158,11,0.15)' if q.progress >= q.target else 'rgba(99,102,241,0.15)') }}; display:flex; align-items:center; justify-content:center;">
+                                <i class="material-icons" style="font-size:1.1rem; color:{{ '#10b981' if q.claimed else ('var(--gold)' if q.progress >= q.target else 'var(--primary-light)') }};">{{ q.icon }}</i>
                             </div>
                             <div>
-                                <div style="font-weight:700; font-size:0.85rem; color:var(--text);">{{ q.title }}</div>
-                                <div style="font-size:0.68rem; color:var(--text-dim);">{{ q.desc }}</div>
+                                <div style="font-weight:700; font-size:0.88rem; color:var(--text);">{{ q.title }}</div>
+                                <div style="font-size:0.7rem; color:var(--text-dim);">{{ q.desc }}</div>
                             </div>
                         </div>
-                        <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:800; font-size:0.68rem; font-family:'JetBrains Mono',monospace;">
+                        <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace;">
                             +{{ q.xp }} XP
                         </span>
                     </div>
                     
                     <div style="margin:6px 0;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-bottom:4px; font-family:'JetBrains Mono',monospace;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-dim); margin-bottom:4px; font-family:'JetBrains Mono',monospace;">
                             <span>Progress</span>
                             <span>{{ q.progress }}/{{ q.target }}</span>
                         </div>
-                        <div style="width:100%; height:5px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
+                        <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
                             <div style="width:{{ [((q.progress / q.target) * 100), 100]|min }}%; height:100%; background:{{ '#10b981' if q.claimed else ('linear-gradient(90deg, #f59e0b, #d97706)' if q.progress >= q.target else 'var(--brand-gradient)') }};"></div>
                         </div>
                     </div>
                 </div>
 
-                <div style="margin-top:6px;">
+                <div style="margin-top:8px;">
                     {% if q.claimed %}
-                    <span style="font-size:0.72rem; color:#10b981; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
-                        <i class="material-icons" style="font-size:0.85rem;">check_circle</i> Claimed
+                    <span style="font-size:0.74rem; color:#10b981; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                        ✅ Claimed
                     </span>
                     {% elif q.progress >= q.target %}
                     <form method="POST" action="{{ url_for('claim_quest', quest_id=q_id) }}" style="margin:0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-primary" style="width:100%; padding:5px 10px; font-size:0.74rem; font-weight:800; border-radius:var(--radius-sm); background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none;">
-                            Claim +{{ q.xp }} XP
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:6px 10px; font-size:0.76rem; font-weight:800; border-radius:10px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#000; border:none;">
+                            Claim +{{ q.xp }} XP 🎉
                         </button>
                     </form>
                     {% else %}
-                    <span style="font-size:0.7rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">In Progress...</span>
+                    <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">⏳ In Progress...</span>
                     {% endif %}
                 </div>
             </div>
@@ -126,31 +166,31 @@
     </div>
     {% endif %}
 
-    <!-- ── 2. Campus Player Category Segment Bar ── -->
+    <!-- ── 3. Campus Player Category Segment Bar ── -->
     <div class="cp-category-nav" id="cpCategoryNav">
         <button class="cp-tab-pill active" onclick="setCpCategory('all', this)">
-            <i class="material-icons">dashboard</i> All Streams
+            <span style="font-size:1rem;">📊</span> All Streams
         </button>
         <button class="cp-tab-pill" onclick="setCpCategory('lectures', this)">
-            <i class="material-icons" style="color:var(--accent);">local_fire_department</i> Latest Lectures
+            <span style="font-size:1rem;">🔥</span> Latest Lectures
         </button>
         <button class="cp-tab-pill" onclick="setCpCategory('playlists', this)">
-            <i class="material-icons" style="color:var(--gold);">auto_stories</i> Curated Tracks
+            <span style="font-size:1rem;">📚</span> Curated Tracks
         </button>
         <button class="cp-tab-pill" onclick="setCpCategory('classes', this)">
-            <i class="material-icons" style="color:var(--primary-light);">school</i> Enrolled Classes
+            <span style="font-size:1rem;">🏫</span> Enrolled Classes
         </button>
         <a href="{{ url_for('student_assignments') }}" class="cp-tab-pill">
-            <i class="material-icons">assignment</i> Assignments
+            <span style="font-size:1rem;">📝</span> Assignments
         </a>
         <a href="{{ url_for('student_quizzes') }}" class="cp-tab-pill">
-            <i class="material-icons">quiz</i> Quizzes
+            <span style="font-size:1rem;">❓</span> Quizzes
         </a>
         <a href="{{ url_for('leaderboard') }}" class="cp-tab-pill">
-            <i class="material-icons" style="color:var(--gold);">emoji_events</i> Leaderboards
+            <span style="font-size:1rem;">🏆</span> Leaderboards
         </a>
         <a href="{{ url_for('ai_assistant') }}" class="cp-tab-pill">
-            <i class="material-icons" style="color:#10b981;">auto_awesome</i> AI Tutor
+            <span style="font-size:1rem;">🤖</span> AI Tutor
         </a>
     </div>
 
