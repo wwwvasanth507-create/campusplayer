@@ -466,23 +466,27 @@ def transcode_rendition_resumable(
     else:
         logger.info(f"[HLS] Starting fresh conversion for rendition {name} (0/{estimated_total_segments} segments)")
 
+    fps = float(source_info.get('fps') or 30.0)
+    gop_size = max(30, int(fps * 2))
+
     cmd += [
         '-i', input_path,
         '-vf', f'scale=w={width}:h={height}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2',
         '-c:v', 'libx264', '-profile:v', profile, '-level', level, '-pix_fmt', 'yuv420p',
-        '-preset', FFMPEG_PRESET, '-crf', '23',
+        '-preset', FFMPEG_PRESET, '-crf', '22',
         '-b:v', bitrate, '-maxrate:v', maxrate, '-bufsize:v', bufsize,
+        '-movflags', '+faststart'
     ]
 
     if source_info.get('has_audio', True):
-        cmd += ['-c:a', 'aac', '-b:a', audio_bitrate, '-ac', '2']
+        cmd += ['-c:a', 'aac', '-b:a', audio_bitrate, '-ar', '48000', '-ac', '2']
     else:
         cmd += ['-an']
 
     temp_playlist_path = os.path.join(output_dir, f"{name}_temp.m3u8")
 
     cmd += [
-        '-g', '60', '-keyint_min', '60', '-sc_threshold', '0',
+        '-g', str(gop_size), '-keyint_min', str(gop_size), '-sc_threshold', '0',
         '-start_number', str(next_idx),
         '-hls_time', str(segment_duration), '-hls_playlist_type', 'vod',
         '-hls_segment_filename', os.path.join(output_dir, f"{name}_%03d.ts"),
