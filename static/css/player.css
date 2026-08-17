@@ -1474,33 +1474,33 @@ body.campus-body-fullscreen .vp-hero::after {
     font-size: 0.78rem;
 }
 
-/* ── Campus Player Video Card Grid (3 Videos Per Row on Desktop) ── */
+/* ── Campus Player Video Card Grid (3 Videos Laptop/PC, 2 Tablet, 1 Mobile) ── */
 .cp-video-grid,
 .video-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 22px !important;
+    gap: 16px !important;
     width: 100% !important;
-    margin-bottom: 36px !important;
+    margin-bottom: 28px !important;
 }
 
-@media (max-width: 991px) {
+@media (max-width: 991px) and (min-width: 768px) {
     .cp-video-grid,
     .video-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 18px !important;
+        gap: 14px !important;
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
     .cp-video-grid,
     .video-grid {
         grid-template-columns: 1fr !important;
-        gap: 16px !important;
+        gap: 12px !important;
     }
 }
 
-/* ── Campus Player Cyber-Glass Card ── */
+/* ── Campus Player Compact Cyber-Glass Card (Small Size) ── */
 .cp-card,
 .video-card {
     display: flex !important;
@@ -1509,18 +1509,18 @@ body.campus-body-fullscreen .vp-hero::after {
     color: inherit !important;
     background: var(--surface) !important;
     border: 1px solid var(--glass-border) !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
     overflow: hidden !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
-    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    transition: all 0.24s cubic-bezier(0.4, 0, 0.2, 1) !important;
     position: relative !important;
 }
 
 .cp-card:hover,
 .video-card:hover {
-    transform: translateY(-5px) !important;
+    transform: translateY(-3px) !important;
     border-color: rgba(99, 102, 241, 0.45) !important;
-    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(99, 102, 241, 0.18) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(99, 102, 241, 0.16) !important;
 }
 
 /* ── 16:9 Viewport & Media Frame ── */

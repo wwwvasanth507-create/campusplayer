@@ -1161,19 +1161,30 @@ pre, code {
     flex-wrap: wrap;
 }
 
-@media (min-width: 640px) {
-    .video-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 18px;
+@media (min-width: 992px) {
+    .video-grid,
+    .cp-video-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 16px !important;
     }
 }
 
-@media (min-width: 1024px) {
-    .video-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-        gap: 22px;
+@media (min-width: 768px) and (max-width: 991px) {
+    .video-grid,
+    .cp-video-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .video-grid,
+    .cp-video-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
     }
 }
 
