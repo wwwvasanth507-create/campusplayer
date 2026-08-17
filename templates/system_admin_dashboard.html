@@ -88,20 +88,20 @@
 </div>
 
 <!-- System-Wide Live Video Conversion Queue & Workers -->
-<div class="card" id="sysAdminConversionCard">
-    <div class="flex-between" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+<div class="card conv-panel-card" id="sysAdminConversionCard">
+    <div class="flex-between conv-header-row" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
         <div>
             <div class="card-title" style="margin:0;"><i class="material-icons">video_settings</i> System-Wide Video Conversion & Parallel Workers (5 Workers/Inst)</div>
             <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">Real-time transcode status and worker fleet monitoring across all institutions and admins</div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div class="conv-header-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
             <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:6px 10px; font-size:0.75rem; border-radius:8px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
                 <option value="">🏢 All Institutions</option>
                 {% for inst in institutions %}
                 <option value="{{ inst.id }}">{{ inst.name }}</option>
                 {% endfor %}
             </select>
-            <button onclick="sysAdminRetryAllFailed()" class="btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
+            <button onclick="sysAdminRetryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
                 ↻ Retry All Failed
             </button>
         </div>
@@ -115,9 +115,9 @@
     </div>
 
     <!-- 5-Worker Fleet Visual Tiles -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:18px;" id="sysAdminWorkerFleetGrid">
+    <div class="conv-worker-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:18px;" id="sysAdminWorkerFleetGrid">
         {% for w in range(1, 6) %}
-        <div id="sys-worker-tile-{{ w }}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; transition:all 0.3s ease;">
+        <div id="sys-worker-tile-{{ w }}" class="conv-worker-tile" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 12px; transition:all 0.3s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#00e5ff;">memory</i> Worker {{ w }}</span>
                 <span id="sys-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">Idle</span>
@@ -127,7 +127,7 @@
         {% endfor %}
     </div>
 
-    <div class="table-wrap">
+    <div class="table-wrap conv-table-wrap">
         <table id="sysAdminConversionJobsTable">
             <thead>
                 <tr>

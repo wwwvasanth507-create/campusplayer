@@ -1368,5 +1368,252 @@ pre, code {
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   ADMIN DASHBOARDS & VIDEO CONVERSION PANEL MOBILE SCREEN FIT
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Base Conversion Card & Worker Fleet */
+.conv-panel-card,
+#conversionJobsCard,
+#sysAdminConversionCard {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    margin-bottom: 24px !important;
+}
+
+.conv-worker-grid,
+#adminWorkerFleetGrid,
+#sysAdminWorkerFleetGrid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.conv-worker-tile {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Smooth Touch-Scroll Table Wrap */
+.conv-table-wrap,
+.table-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+}
+
+#conversionJobsTable,
+#sysAdminConversionJobsTable {
+    width: 100% !important;
+    min-width: 600px !important;
+    border-collapse: collapse !important;
+}
+
+#conversionJobsTable th,
+#conversionJobsTable td,
+#sysAdminConversionJobsTable th,
+#sysAdminConversionJobsTable td {
+    padding: 10px 12px !important;
+    font-size: 0.78rem !important;
+    vertical-align: middle !important;
+}
+
+/* Tablet & Mobile Screens (<= 768px) */
+@media (max-width: 768px) {
+    /* Admin Top Bar & Header */
+    .admin-header-wrap,
+    .flex-between:has(.page-title) {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+
+    .admin-header-actions,
+    .flex-between:has(.page-title) > div:last-child {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    .admin-header-actions .btn,
+    .flex-between:has(.page-title) > div:last-child .btn {
+        flex: 1 1 calc(33.333% - 6px) !important;
+        min-width: 90px !important;
+        padding: 8px 10px !important;
+        font-size: 0.72rem !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    /* Stat Cards 2x2 Grid */
+    .stat-row {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .stat-card {
+        padding: 12px 10px !important;
+        min-width: 0 !important;
+    }
+
+    .stat-val {
+        font-size: 1.3rem !important;
+    }
+
+    .stat-lbl {
+        font-size: 0.7rem !important;
+    }
+
+    /* Video Conversion Panel Mobile Rules */
+    .conv-header-row,
+    #conversionJobsCard .flex-between,
+    #sysAdminConversionCard .flex-between {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .conv-header-controls,
+    #conversionJobsCard .flex-between > div:last-child,
+    #sysAdminConversionCard .flex-between > div:last-child {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    #sysAdminInstFilter {
+        flex: 1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 0.75rem !important;
+        height: 38px !important;
+    }
+
+    .conv-retry-btn,
+    #conversionJobsCard button,
+    #sysAdminConversionCard button {
+        height: 38px !important;
+        padding: 8px 14px !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* Summary Badges Mobile Wrapping */
+    #conversionSummaryBadges,
+    #sysAdminConversionSummaryBadges {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    #conversionSummaryBadges .badge,
+    #sysAdminConversionSummaryBadges .badge {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        padding: 6px 8px !important;
+        font-size: 0.72rem !important;
+    }
+
+    /* 5-Worker Fleet Grid: Responsive 2-column or 3-column on mobile */
+    .conv-worker-grid,
+    #adminWorkerFleetGrid,
+    #sysAdminWorkerFleetGrid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .conv-worker-tile,
+    [id^="adm-worker-tile-"],
+    [id^="sys-worker-tile-"] {
+        padding: 8px 10px !important;
+        border-radius: 10px !important;
+    }
+
+    /* Highlight worker 5 as spanning across if odd number */
+    #adm-worker-tile-5,
+    #sys-worker-tile-5 {
+        grid-column: span 2 !important;
+    }
+
+    /* Site Settings & Forms */
+    .card form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .card form input,
+    .card form select,
+    .card form textarea {
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}
+
+/* Small Smartphone Screen Fit (<= 480px) */
+@media (max-width: 480px) {
+    .card {
+        padding: 12px 10px !important;
+        border-radius: 14px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .page-title {
+        font-size: 1.4rem !important;
+    }
+
+    .page-sub {
+        font-size: 0.75rem !important;
+        margin-bottom: 12px !important;
+    }
+
+    .card-title {
+        font-size: 0.95rem !important;
+    }
+
+    .stat-row {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+
+    /* Worker fleet tiles font scaling */
+    .conv-worker-tile span:first-child,
+    [id^="adm-worker-tile-"] span:first-child,
+    [id^="sys-worker-tile-"] span:first-child {
+        font-size: 0.72rem !important;
+    }
+
+    .conv-worker-desc,
+    [id^="adm-worker-desc-"],
+    [id^="sys-worker-desc-"] {
+        font-size: 0.66rem !important;
+    }
+
+    /* Action buttons in tables */
+    .conv-table button,
+    .table-wrap table button {
+        padding: 4px 8px !important;
+        font-size: 0.68rem !important;
+        min-height: 28px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    END OF RESPONSIVE SYSTEM
    ═══════════════════════════════════════════════════════════════ */
