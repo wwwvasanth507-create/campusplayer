@@ -1,34 +1,66 @@
 {% extends "layout.html" %}
+{% block title %}Available Quizzes — CampusPlayer{% endblock %}
 
 {% block content %}
-<h1 style="margin-bottom: 30px;">Available Quizzes</h1>
-
-<div class="grid-container">
-    {% for quiz in quizzes %}
-    <div class="card">
-        <h3 style="margin-top: 0;">{{ quiz.title }}</h3>
-        <p style="color: var(--text-secondary);">
-            {{ quiz.questions|length }} Questions
-            {% if quiz.video %}
-            &bull; Related to video: {{ quiz.video_link.title if quiz.video_link else 'Video ID ' ~ quiz.video_id }}
-            {% endif %}
-        </p>
-
-        {% if quiz.id in taken_ids %}
-        <div style="margin-top: 20px;">
-            <span class="btn btn-secondary" style="width: 100%; cursor: default; opacity: 0.7;">
-                <i class="material-icons">check_circle</i> Completed
-            </span>
-            <!-- Optional: Show Retake button -->
-        </div>
-        {% else %}
-        <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn" style="width: 100%; margin-top: 20px;">
-            Start Quiz
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
         </a>
-        {% endif %}
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">📝 Available Examinations &amp; Quizzes</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Test your knowledge, reinforce lecture concepts, and earn scholar XP</p>
+        </div>
     </div>
-    {% else %}
-    <p>No quizzes available at the moment.</p>
+</div>
+
+{% if quizzes %}
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+    {% for quiz in quizzes %}
+    <div class="card" style="padding:20px; display:flex; flex-direction:column; justify-content:space-between; margin-bottom:0;">
+        <div>
+            <div class="flex-between mb-8" style="align-items:flex-start;">
+                <div style="width:38px; height:38px; border-radius:10px; background:rgba(99,102,241,0.12); color:var(--primary-light); display:flex; align-items:center; justify-content:center;">
+                    <i class="material-icons" style="font-size:1.2rem;">quiz</i>
+                </div>
+                {% if quiz.id in taken_ids %}
+                <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">
+                    <i class="material-icons" style="font-size:0.75rem;">check_circle</i> Completed
+                </span>
+                {% else %}
+                <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">
+                    Available
+                </span>
+                {% endif %}
+            </div>
+
+            <h3 class="font-display" style="margin:0 0 6px 0; font-size:1.05rem; color:var(--text);">{{ quiz.title }}</h3>
+            <p style="color:var(--text-dim); font-size:0.78rem; margin:0 0 16px 0; line-height:1.4;">
+                {{ quiz.questions|length }} Assessment Questions
+                {% if quiz.video_link %}
+                <br>&bull; Tied to Lecture: <b>{{ quiz.video_link.title }}</b>
+                {% endif %}
+            </p>
+        </div>
+
+        <div>
+            {% if quiz.id in taken_ids %}
+            <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-outline" style="width:100%; font-size:0.8rem; min-height:36px;">
+                <i class="material-icons" style="font-size:0.95rem;">replay</i> Retake Quiz
+            </a>
+            {% else %}
+            <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary" style="width:100%; font-size:0.8rem; min-height:36px;">
+                <i class="material-icons" style="font-size:0.95rem;">play_arrow</i> Begin Quiz (+XP)
+            </a>
+            {% endif %}
+        </div>
+    </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="card text-center" style="padding:50px;">
+    <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">quiz</i>
+    <p style="color:var(--text-dim); font-size:0.9rem;">No quizzes currently published for your enrolled courses.</p>
+</div>
+{% endif %}
 {% endblock %}

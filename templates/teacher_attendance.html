@@ -4,7 +4,7 @@
     .att-layout {
         display: grid;
         grid-template-columns: 280px 1fr;
-        gap: 28px;
+        gap: 20px;
         align-items: flex-start;
     }
 
@@ -15,80 +15,85 @@
     }
 
     .class-panel {
-        background: var(--surface-color);
-        border-radius: 20px;
+        background: var(--surface);
+        border-radius: var(--radius);
         padding: 0;
         border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow);
         overflow: hidden;
         max-height: 80vh;
         overflow-y: auto;
     }
 
     .class-panel-header {
-        padding: 20px;
-        border-bottom: 1px solid var(--glass-border);
-        background: rgba(255, 255, 255, 0.02);
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
     }
 
     .cls-item {
         display: block;
         padding: 14px 20px;
-        color: var(--text-secondary);
+        color: var(--text-dim);
         text-decoration: none;
-        border-bottom: 1px solid var(--glass-border);
-        transition: all 0.2s;
+        border-bottom: 1px solid var(--border);
+        transition: all 0.2s ease;
         font-weight: 500;
     }
 
     .cls-item:hover {
-        background: rgba(255, 255, 255, 0.04);
-        color: #fff;
+        background: var(--surface2);
+        color: var(--text);
     }
 
     .cls-item.active {
-        background: rgba(0, 229, 255, 0.12);
-        color: #00e5ff;
+        background: rgba(99, 102, 241, 0.15);
+        color: var(--primary-light);
         font-weight: 700;
-        border-left: 3px solid #00e5ff;
+        border-left: 3px solid var(--primary);
     }
 
     .cls-item-count {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        margin-top: 2px;
     }
 
     .att-student {
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 16px 20px;
-        background: var(--surface-color);
-        border-radius: 16px;
-        margin-bottom: 12px;
-        border: 1px solid var(--glass-border);
-        transition: all 0.3s;
+        gap: 14px;
+        padding: 14px 18px;
+        background: var(--surface);
+        border-radius: var(--radius-sm);
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        transition: all 0.25s ease;
     }
 
     .att-student:hover {
-        border-color: rgba(0, 229, 255, 0.3);
+        border-color: rgba(99, 102, 241, 0.3);
     }
 
     .s-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, var(--primary-color), #00e5ff);
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--brand-gradient);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
-        font-size: 1rem;
+        font-size: 0.95rem;
         color: #fff;
         flex-shrink: 0;
     }
 
     .s-name {
         font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text);
         flex: 1;
     }
 
@@ -100,114 +105,90 @@
     }
 
     .today-status {
-        font-size: 0.78rem;
-        padding: 3px 10px;
-        border-radius: 20px;
+        font-size: 0.75rem;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
         font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
     }
 
     .st-present {
-        background: rgba(0, 230, 118, 0.15);
-        color: #00e676;
-        border: 1px solid rgba(0, 230, 118, 0.3);
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .st-late {
-        background: rgba(255, 152, 0, 0.15);
-        color: #ff9800;
-        border: 1px solid rgba(255, 152, 0, 0.3);
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     .st-absent {
-        background: rgba(255, 82, 82, 0.15);
-        color: #ff5252;
-        border: 1px solid rgba(255, 82, 82, 0.3);
-    }
-
-    .search-wrap {
-        position: relative;
-        margin-bottom: 20px;
-    }
-
-    .search-wrap input {
-        padding-left: 52px;
-        font-size: 1rem;
-        background: var(--surface-color);
-        margin: 0;
-    }
-
-    .search-wrap .si {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
+        background: rgba(244, 63, 94, 0.15);
+        color: #f43f5e;
+        border: 1px solid rgba(244, 63, 94, 0.3);
     }
 
     .att-lock-banner {
-        background: rgba(255, 82, 82, 0.1);
-        border: 1px solid rgba(255, 82, 82, 0.3);
+        background: rgba(244, 63, 94, 0.12);
+        border: 1px solid rgba(244, 63, 94, 0.3);
         padding: 14px 20px;
-        border-radius: 14px;
+        border-radius: var(--radius-sm);
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 12px;
-        color: #ff5252;
+        color: #f43f5e;
         font-weight: 600;
+        font-size: 0.88rem;
     }
 </style>
 
-<div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
-            class="material-icons">arrow_back</i></a>
-    <div>
-        <h1
-            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            Attendance Monitor</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">Mark attendance for {{ now_date.strftime('%B %d, %Y') }}
-        </p>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Attendance Monitor</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Mark and monitor daily attendance for <b style="color:var(--text);">{{ now_date.strftime('%B %d, %Y') }}</b></p>
+        </div>
     </div>
 </div>
 
 {% if not attendance_open %}
 <div class="att-lock-banner">
     <i class="material-icons">lock_clock</i>
-    Attendance is not yet available. It opens after
-    <strong>{{ settings.attendance_lock_time if settings else '09:10' }}</strong> today.
+    <span>Attendance is currently locked. It opens after <strong>{{ settings.attendance_lock_time if settings else '09:10' }}</strong> today.</span>
 </div>
 {% endif %}
 
 <div class="att-layout">
     <!-- Left: Class Selector -->
     <div>
-        <div class="card" style="padding:20px; margin-bottom:16px;">
-            <div class="search-wrap">
-                <form method="GET" action="{{ url_for('teacher_attendance_page') }}">
-                    {% if selected_class %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">{% endif
-                    %}
-                    <i class="material-icons si">search</i>
-                    <input type="text" name="q" placeholder="Search classes..." value="{{ search_query or '' }}"
-                        oninput="this.form.submit()">
-                </form>
-            </div>
+        <div class="card" style="padding:14px; margin-bottom:14px;">
+            <form method="GET" action="{{ url_for('teacher_attendance_page') }}" style="margin:0; position:relative;">
+                {% if selected_class %}<input type="hidden" name="class_id" value="{{ selected_class.id }}">{% endif %}
+                <i class="material-icons" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-dim); font-size:1.1rem;">search</i>
+                <input type="text" name="q" placeholder="Search classes..." value="{{ search_query or '' }}"
+                    style="padding-left:36px; margin-bottom:0; height:40px; font-size:0.82rem; border-radius:var(--radius-pill);">
+            </form>
         </div>
         <div class="class-panel">
             <div class="class-panel-header">
-                <div
-                    style="font-size:0.85rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-secondary);">
-                    Your Classes</div>
+                <div class="font-display" style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim);">
+                    Your Classrooms
+                </div>
             </div>
             {% for cls in classes %}
             <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}"
                 class="cls-item {{ 'active' if selected_class and cls.id == selected_class.id }}">
-                <div><i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">school</i> {{ cls.name
-                    }}</div>
-                <div class="cls-item-count">{{ cls.students.count() }} students</div>
+                <div style="font-weight:600;"><i class="material-icons" style="font-size:0.95rem; vertical-align:middle; color:var(--accent);">school</i> {{ cls.name }}</div>
+                <div class="cls-item-count">{{ cls.students.count() }} students enrolled</div>
             </a>
             {% else %}
-            <div style="padding:20px; color:var(--text-secondary); text-align:center; font-size:0.9rem;">No classes
-                found</div>
+            <div style="padding:20px; color:var(--text-dim); text-align:center; font-size:0.85rem;">No classes found</div>
             {% endfor %}
         </div>
     </div>
@@ -215,51 +196,45 @@
     <!-- Right: Student Attendance -->
     <div>
         {% if selected_class %}
-        <div
-            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:15px;">
-                <h2 style="margin:0; color:#00e5ff; font-weight:700;">{{ selected_class.name }}</h2>
+        <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h2 class="font-display" style="margin:0; font-size:1.3rem; color:var(--text);">{{ selected_class.name }}</h2>
                 <a href="{{ url_for('download_class_sms_report', class_id=selected_class.id) }}"
-                    class="btn btn-secondary"
-                    style="padding:6px 14px; font-size:0.75rem; border:1px solid rgba(0, 229, 255, 0.2); color:#00e5ff;"
+                    class="btn btn-outline" style="padding:6px 12px; font-size:0.75rem; min-height:34px;"
                     title="Download all SMS texts for this class as a .txt file">
-                    <i class="material-icons" style="font-size:1rem; vertical-align:middle;">download_for_offline</i>
+                    <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">file_download</i>
                     SMS Report
                 </a>
-                <button type="button" onclick="sendClassSms({{ selected_class.id }})" class="btn"
-                    style="padding:6px 14px; font-size:0.75rem; background:rgba(0, 229, 255, 0.15); border:1px solid rgba(0, 229, 255, 0.3); color:#00e5ff; margin-left:8px;"
+                <button type="button" onclick="sendClassSms({{ selected_class.id }})" class="btn btn-primary"
+                    style="padding:6px 12px; font-size:0.75rem; min-height:34px;"
                     title="Send SMS reports to all students in this class">
-                    <i class="material-icons" style="font-size:1rem; vertical-align:middle;">send</i>
+                    <i class="material-icons" style="font-size:0.95rem;">send</i>
                     Send Class SMS
                 </button>
             </div>
-            <div style="display:flex; gap:10px; align-items:center;">
+            <div>
                 {% if attendance_open %}
-                <span
-                    style="background:rgba(0,230,118,0.15); color:#00e676; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">🟢
-                    Attendance Open</span>
+                <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:5px 12px; border-radius:var(--radius-pill); font-size:0.75rem; font-weight:700;">🟢 Attendance Open</span>
                 {% else %}
-                <span
-                    style="background:rgba(255,82,82,0.1); color:#ff5252; padding:6px 14px; border-radius:20px; font-size:0.8rem; font-weight:700;">🔴
-                    Locked</span>
+                <span style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3); padding:5px 12px; border-radius:var(--radius-pill); font-size:0.75rem; font-weight:700;">🔴 Locked</span>
                 {% endif %}
             </div>
         </div>
 
-        <div class="search-wrap">
-            <form method="GET" action="{{ url_for('teacher_attendance_page') }}">
+        <div style="margin-bottom:16px; position:relative;">
+            <form method="GET" action="{{ url_for('teacher_attendance_page') }}" style="margin:0; position:relative;">
                 <input type="hidden" name="class_id" value="{{ selected_class.id }}">
-                <i class="material-icons si">search</i>
+                <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>
                 <input type="text" name="q" placeholder="Search students in class..." value="{{ search_query or '' }}"
-                    oninput="this.form.submit()">
+                    style="padding-left:42px; margin-bottom:0; height:44px; border-radius:var(--radius-pill);">
             </form>
         </div>
 
-        <!-- NEW: Attendance Sessions panel -->
-        <div style="background:var(--surface-color); border:1px solid var(--glass-border); border-radius:16px; padding:18px; margin-bottom:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <h3 style="margin:0; font-size:1rem;">📅 Attendance Sessions</h3>
-                <button type="button" class="btn" style="padding:6px 14px; font-size:0.78rem;"
+        <!-- Attendance Sessions Panel -->
+        <div class="card mb-16" style="padding:18px;">
+            <div class="flex-between" style="flex-wrap:wrap; gap:10px;">
+                <div class="card-title font-display" style="margin:0; font-size:1rem;"><i class="material-icons">event_note</i> Attendance Sessions</div>
+                <button type="button" class="btn btn-outline" style="padding:5px 12px; font-size:0.75rem; min-height:32px;"
                     onclick="document.getElementById('createSessionForm').classList.toggle('hidden-form')">
                     + New Session
                 </button>
@@ -267,54 +242,57 @@
 
             <form id="createSessionForm" class="hidden-form" method="POST"
                 action="{{ url_for('create_attendance_session', class_id=selected_class.id) }}"
-                style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
-                <input type="text" name="name" placeholder="Session name (e.g. Term 1)" style="flex:1; min-width:160px; padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:14px;">
                 <div>
-                    <label style="font-size:0.7rem; color:var(--text-secondary);">Starting Date (fixed)</label>
-                    <input type="date" name="start_date" required style="padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                    <label>Session Name</label>
+                    <input type="text" name="name" placeholder="e.g. Term 1" required style="margin-bottom:0; height:38px;">
                 </div>
                 <div>
-                    <label style="font-size:0.7rem; color:var(--text-secondary);">Ending Date</label>
-                    <input type="date" name="end_date" required style="padding:8px 10px; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                    <label>Starting Date (Fixed)</label>
+                    <input type="date" name="start_date" required style="margin-bottom:0; height:38px;">
                 </div>
-                <button type="submit" class="btn btn-primary" style="padding:8px 16px; font-size:0.8rem;">Create</button>
+                <div>
+                    <label>Ending Date</label>
+                    <input type="date" name="end_date" required style="margin-bottom:0; height:38px;">
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button type="submit" class="btn btn-primary" style="height:38px; min-height:38px; width:100%;">Create Session</button>
+                </div>
             </form>
 
             {% if attendance_sessions %}
-            <div style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
+            <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
                 {% for s in attendance_sessions %}
-                <div style="background:var(--bg-primary); border-radius:10px; padding:12px 14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px;">
+                    <div class="flex-between" style="flex-wrap:wrap; gap:8px;">
                         <div>
-                            <strong>{{ s.name }}</strong>
-                            <div style="font-size:0.75rem; color:var(--text-secondary);">
-                                Start: {{ s.start_date.strftime('%b %d, %Y') }} (fixed) &nbsp;→&nbsp; End: {{ s.end_date.strftime('%b %d, %Y') }}
-                                &nbsp;·&nbsp; {{ s.sub_sessions|length }} session(s)
+                            <strong style="color:var(--text); font-size:0.9rem;">{{ s.name }}</strong>
+                            <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                                Start: <span style="font-family:'JetBrains Mono',monospace;">{{ s.start_date.strftime('%b %d, %Y') }}</span> &rarr; End: <span style="font-family:'JetBrains Mono',monospace;">{{ s.end_date.strftime('%b %d, %Y') }}</span>
+                                &bull; {{ s.sub_sessions|length }} sub-session(s)
                             </div>
                         </div>
-                        <div style="display:flex; gap:8px; align-items:center;">
+                        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                             <a href="{{ url_for('attendance_session_report', session_id=s.id) }}"
-                                class="btn" style="padding:6px 10px; font-size:0.72rem; background:rgba(212,168,83,0.15); border:1px solid rgba(212,168,83,0.3); color:var(--accent);">
-                                <i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">bar_chart</i> View Report
+                                class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem; min-height:32px; color:var(--gold);">
+                                <i class="material-icons" style="font-size:0.9rem;">bar_chart</i> Report
                             </a>
                             {% if s.can_edit_end_date(current_user) %}
-                            <form method="POST" action="{{ url_for('edit_attendance_session_end_date', session_id=s.id) }}" style="display:flex; gap:6px; align-items:center; margin:0;">
-                                <input type="date" name="end_date" value="{{ s.end_date }}" style="padding:6px 8px; font-size:0.75rem; border-radius:6px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
-                                <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">Update End Date</button>
+                            <form method="POST" action="{{ url_for('edit_attendance_session_end_date', session_id=s.id) }}" style="display:flex; gap:4px; align-items:center; margin:0;">
+                                <input type="date" name="end_date" value="{{ s.end_date }}" style="padding:4px 6px; font-size:0.72rem; height:32px; min-height:32px; border-radius:6px; margin-bottom:0;">
+                                <button type="submit" class="btn btn-outline" style="padding:4px 8px; font-size:0.72rem; height:32px; min-height:32px;">Update</button>
                             </form>
-                            {% else %}
-                            <span style="font-size:0.7rem; color:var(--text-secondary);" title="Only the Class Teacher can edit the ending date">🔒 End date locked</span>
                             {% endif %}
-                            <form method="POST" action="{{ url_for('add_attendance_subsession', session_id=s.id) }}" style="display:flex; gap:6px; align-items:center; margin:0;">
-                                <input type="text" name="name" placeholder="New session name" style="padding:6px 8px; font-size:0.75rem; border-radius:6px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border); width:130px;">
-                                <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem;">+ Add Session</button>
+                            <form method="POST" action="{{ url_for('add_attendance_subsession', session_id=s.id) }}" style="display:flex; gap:4px; align-items:center; margin:0;">
+                                <input type="text" name="name" placeholder="Sub-session name" style="padding:4px 8px; font-size:0.72rem; height:32px; min-height:32px; border-radius:6px; margin-bottom:0; width:120px;">
+                                <button type="submit" class="btn btn-outline" style="padding:4px 8px; font-size:0.72rem; height:32px; min-height:32px;">+ Add</button>
                             </form>
                         </div>
                     </div>
                     {% if s.sub_sessions %}
                     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
                         {% for sub in s.sub_sessions %}
-                        <span style="font-size:0.7rem; background:rgba(212,168,83,0.12); color:var(--accent); padding:3px 8px; border-radius:12px;">{{ sub.name }}</span>
+                        <span style="font-size:0.68rem; background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); padding:2px 8px; border-radius:var(--radius-pill);">{{ sub.name }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -322,7 +300,7 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:10px;">No attendance sessions created yet for this class.</p>
+            <p style="font-size:0.78rem; color:var(--text-dim); margin-top:8px;">No attendance sessions created yet for this class.</p>
             {% endif %}
         </div>
         <style>.hidden-form { display: none !important; }</style>
@@ -350,7 +328,7 @@
                     action="{{ url_for('mark_attendance', class_id=selected_class.id, student_id=student.id) }}"
                     method="POST" style="margin:0; display:flex; gap:6px; align-items:center;">
                     <select name="status"
-                        style="padding:7px 10px; font-size:0.8rem; border-radius:8px; background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--glass-border);">
+                        style="padding:6px 10px; font-size:0.78rem; height:34px; min-height:34px; border-radius:8px; margin-bottom:0;">
                         <option value="Present">Present</option>
                         <option value="Absent">Absent</option>
                         <option value="Medical Leave">Medical Leave</option>
@@ -359,8 +337,8 @@
                         <option value="Late">Late</option>
                         <option value="Half Day">Half Day</option>
                     </select>
-                    <button type="submit" class="btn"
-                        style="background:rgba(0,230,118,0.15); color:#00e676; padding:7px 12px; font-size:0.8rem; border:1px solid rgba(0,230,118,0.3);">
+                    <button type="submit" class="btn btn-primary"
+                        style="padding:6px 12px; font-size:0.75rem; min-height:34px; height:34px;">
                         <i class="material-icons" style="font-size:0.9rem;">check</i> Mark
                     </button>
                 </form>
@@ -371,16 +349,15 @@
         </div>
         {% endfor %}
         {% else %}
-        <div class="card" style="text-align:center; padding:40px; color:var(--text-secondary);">
-            <i class="material-icons" style="font-size:3rem; opacity:0.2;">people_outline</i>
-            <p>{% if search_query %}No students matching "{{ search_query }}"{% else %}No students enrolled in this
-                class.{% endif %}</p>
+        <div class="card text-center" style="padding:40px;">
+            <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">people_outline</i>
+            <p style="color:var(--text-dim); font-size:0.88rem;">{% if search_query %}No students matching "{{ search_query }}"{% else %}No students enrolled in this class.{% endif %}</p>
         </div>
         {% endif %}
         {% else %}
-        <div class="card" style="text-align:center; padding:60px; color:var(--text-secondary);">
-            <i class="material-icons" style="font-size:4rem; opacity:0.2;">fact_check</i>
-            <p>Select a class on the left to start marking attendance.</p>
+        <div class="card text-center" style="padding:60px;">
+            <i class="material-icons" style="font-size:4rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">fact_check</i>
+            <p style="color:var(--text-dim); font-size:0.92rem;">Select a class from the list on the left to start marking attendance.</p>
         </div>
         {% endif %}
     </div>

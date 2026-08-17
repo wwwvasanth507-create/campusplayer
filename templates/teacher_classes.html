@@ -1,98 +1,87 @@
 {% extends "layout.html" %}
 {% block content %}
 <style>
-    .search-wrap {
-        position: relative;
-        margin-bottom: 24px;
-    }
-
-    .search-wrap input {
-        padding-left: 52px;
-        font-size: 1rem;
-        background: var(--surface-color);
-        margin: 0;
-    }
-
-    .search-wrap .si {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-    }
-
     .cls-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+        gap: 20px;
     }
 
     .cls-card {
-        background: var(--surface-color);
-        border-radius: 20px;
-        padding: 24px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 22px;
         border: 1px solid var(--glass-border);
-        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
     }
 
     .cls-card:hover {
-        border-color: #00e5ff;
+        border-color: rgba(99, 102, 241, 0.35);
+        box-shadow: var(--shadow-hover);
     }
 
     .cls-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
+        gap: 10px;
     }
 
     .cls-name {
-        font-size: 1.15rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.2rem;
         font-weight: 700;
-        color: #00e5ff;
+        color: var(--text);
     }
 
     .cls-meta {
-        color: var(--text-secondary);
-        font-size: 0.82rem;
-        margin-top: 4px;
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        margin-top: 3px;
     }
 
     .student-list {
         list-style: none;
         padding: 0;
         margin: 12px 0;
-        max-height: 200px;
+        max-height: 180px;
         overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 6px;
+        background: var(--surface2);
     }
 
     .student-list li {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 7px 10px;
-        border-radius: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
         margin-bottom: 4px;
-        background: rgba(255, 255, 255, 0.03);
-        font-size: 0.88rem;
-    }
-
-    .student-list li:hover {
-        background: rgba(255, 255, 255, 0.06);
+        background: var(--surface);
+        font-size: 0.84rem;
+        color: var(--text);
+        border: 1px solid var(--border);
     }
 
     .action-row {
         display: flex;
         gap: 8px;
-        margin-top: 14px;
+        margin-top: auto;
+        padding-top: 12px;
         flex-wrap: wrap;
     }
 
     /* ── Multi-Select Add Student Styles ── */
     .add-student-section {
-        background: rgba(255,255,255,0.02);
-        border: 1px solid rgba(162,155,254,0.08);
-        border-radius: 12px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
         padding: 14px;
         margin-bottom: 12px;
     }
@@ -107,40 +96,32 @@
     .add-student-section .search-input-wrap input {
         flex: 1;
         padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.08);
-        background: rgba(255,255,255,0.03);
-        color: #fff;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--text);
         font-size: 0.85rem;
         margin: 0;
     }
 
     .add-student-section .search-input-wrap input:focus {
         outline: none;
-        border-color: #a29bfe;
+        border-color: var(--primary);
     }
 
     .add-student-section .search-input-wrap .search-status {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         color: var(--text-dim);
         white-space: nowrap;
     }
 
     .available-students-list {
-        max-height: 220px;
+        max-height: 200px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 4px;
         padding: 4px 0;
-    }
-
-    .available-students-list::-webkit-scrollbar {
-        width: 4px;
-    }
-    .available-students-list::-webkit-scrollbar-thumb {
-        background: rgba(162,155,254,0.2);
-        border-radius: 4px;
     }
 
     .student-check-item {
@@ -149,59 +130,49 @@
         gap: 10px;
         padding: 8px 12px;
         border-radius: 8px;
-        background: rgba(255,255,255,0.02);
+        background: var(--surface);
         cursor: pointer;
         transition: all 0.15s ease;
-        border: 1px solid transparent;
+        border: 1px solid var(--border);
+        color: var(--text);
     }
 
     .student-check-item:hover {
-        background: rgba(162,155,254,0.06);
-        border-color: rgba(162,155,254,0.1);
+        background: var(--surface2);
+        border-color: var(--primary-light);
     }
 
     .student-check-item input[type="checkbox"] {
-        accent-color: #00e5ff;
+        accent-color: var(--primary);
         width: 16px;
         height: 16px;
         flex-shrink: 0;
+        margin: 0;
     }
 
     .student-check-item .s-name {
         flex: 1;
-        font-size: 0.85rem;
+        font-size: 0.84rem;
         font-weight: 500;
+        color: var(--text);
     }
 
     .add-btn-row {
         display: flex;
         gap: 8px;
         margin-top: 10px;
-        justify-content: flex-end;
-    }
-
-    .add-btn-row .btn {
-        padding: 8px 18px;
-        font-size: 0,8rem;
+        justify-content: flex-between;
+        align-items: center;
     }
 
     .no-results {
         color: var(--text-dim);
         font-size: 0.82rem;
         text-align: center;
-        padding: 20px;
+        padding: 16px;
     }
 
     @media (max-width: 600px) {
-        .card form {
-            flex-direction: column;
-            align-items: stretch !important;
-        }
-
-        .card form button {
-            width: 100%;
-        }
-
         .cls-grid {
             grid-template-columns: 1fr !important;
         }
@@ -209,47 +180,39 @@
         .cls-card {
             padding: 16px !important;
         }
-
-        .add-student-section .search-input-wrap {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .add-student-section .search-input-wrap .search-status {
-            text-align: right;
-        }
     }
 </style>
 
-<div style="display:flex; align-items:center; gap:16px; margin-bottom:32px;">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
-            class="material-icons">arrow_back</i></a>
-    <div>
-        <h1
-            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            All Campus Classes</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">{{ classes|length }} total class(es)</p>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">All Campus Classes</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">{{ classes|length }} total class(es) &bull; Manage student rosters & chatrooms</p>
+        </div>
     </div>
 </div>
 
 <!-- Create Form -->
-<div class="card" style="padding:24px; margin-bottom:28px;">
-    <h3 style="margin-top:0; color:#00e5ff; display:flex; align-items:center; gap:8px;"><i
-            class="material-icons">add_circle</i> Create New Class</h3>
-    <form method="POST" action="{{ url_for('create_class') }}" style="display:flex; gap:16px; align-items:center; width:100%;">
-        <input type="text" name="name" placeholder="Class name (e.g. Grade 5A)" required
-            style="flex:1; min-width:0; margin:0; background:var(--bg-color); padding:16px 20px; border-radius:14px; border:1px solid var(--glass-border); color:var(--text); font-size:1.05rem; min-height:54px; box-sizing:border-box;">
-        <button type="submit" class="btn" style="width:120px; flex-shrink:0; padding:14px 8px; border-radius:14px; min-height:54px; font-weight:700; font-size:0.9rem; white-space:nowrap; background:#00b8d4;">
-            <i class="material-icons">school</i> Create
+<div class="card card-royal mb-16" style="padding:22px;">
+    <div class="card-title font-display" style="color:var(--gold);"><i class="material-icons">add_circle</i> Create New Classroom</div>
+    <form method="POST" action="{{ url_for('create_class') }}" style="display:flex; gap:12px; align-items:center; width:100%; flex-wrap:wrap;">
+        <input type="text" name="name" placeholder="Classroom title (e.g. Grade 10 - Physics)" required
+            style="flex:1; min-width:200px; margin:0; height:46px;">
+        <button type="submit" class="btn btn-primary" style="height:46px; padding:0 24px;">
+            <i class="material-icons">school</i> Create Class
         </button>
     </form>
 </div>
 
-<div class="search-wrap">
-    <form method="GET">
-        <i class="material-icons si">search</i>
-        <input type="text" name="q" placeholder="Search classes..." value="{{ search_query or '' }}"
-            oninput="this.form.submit()">
+<!-- Search -->
+<div style="margin-bottom:20px; position:relative;">
+    <form method="GET" style="margin:0; position:relative;">
+        <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>
+        <input type="text" name="q" placeholder="Search classrooms..." value="{{ search_query or '' }}"
+            style="padding-left:42px; margin-bottom:0; height:46px; border-radius:var(--radius-pill);">
     </form>
 </div>
 
@@ -260,48 +223,45 @@
         <div class="cls-header">
             <div>
                 <div class="cls-name">{{ cls.name }}</div>
-                <div class="cls-meta">Teacher: {{ cls.teacher.username }} &bull; {{ cls.students.count() }} students
-                </div>
-                <div class="cls-meta" style="opacity: 0.7;">Created {{ cls.created_at.strftime('%b %d, %Y') }}</div>
+                <div class="cls-meta">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b> &bull; {{ cls.students.count() }} students</div>
+                <div class="cls-meta" style="font-family:'JetBrains Mono',monospace; color:var(--gold);">Code: {{ cls.class_code or '—' }}</div>
             </div>
             <form action="{{ url_for('delete_class', class_id=cls.id) }}" method="POST"
                 onsubmit="return confirm('Delete class \'{{ cls.name }}\' and all its data?');" style="margin:0;">
-                <button type="submit"
-                    style="background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); border-radius:10px; color:#ff5252; cursor:pointer; padding:7px 10px; display:flex; align-items:center; gap:4px; font-size:0.8rem; font-weight:700;">
-                    <i class="material-icons" style="font-size:1rem;">delete_forever</i> Delete
+                <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem; min-height:32px; height:32px;">
+                    <i class="material-icons" style="font-size:0.95rem;">delete</i>
                 </button>
             </form>
         </div>
 
         <!-- Reassign Teacher -->
-        <form action="{{ url_for('change_class_teacher', class_id=cls.id) }}" method="POST" style="display:flex; gap:6px; margin-bottom:10px; align-items:center;">
-            <label style="flex:1; color:var(--text-secondary); font-size:0.85rem;">
-                Reassign to teacher
-                <select name="new_teacher_id" required style="width:100%; margin-top:6px; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.02); color:var(--text);">
-                    <option value="">Select teacher...</option>
+        <form action="{{ url_for('change_class_teacher', class_id=cls.id) }}" method="POST" style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+            <div style="flex:1;">
+                <select name="new_teacher_id" required style="margin:0; height:38px; font-size:0.8rem; padding:6px 10px;">
+                    <option value="">Reassign teacher...</option>
                     {% for teacher in teachers %}
                     <option value="{{ teacher.id }}" {% if teacher.id == cls.teacher_id %}selected{% endif %}>{{ teacher.username }}</option>
                     {% endfor %}
                 </select>
-            </label>
-            <button type="submit" class="btn" style="padding:10px 14px; font-size:0.8rem;">Change</button>
+            </div>
+            <button type="submit" class="btn btn-outline" style="height:38px; min-height:38px; padding:0 12px; font-size:0.75rem;">Change</button>
         </form>
 
         <!-- Add Student Section with Search & Multi-Select -->
         <div class="add-student-section" data-class-id="{{ cls.id }}">
             <div class="search-input-wrap">
-                <input type="text" class="student-search-input" placeholder="Search students to add..."
+                <input type="text" class="student-search-input" placeholder="Search students to enroll..."
                     data-class-id="{{ cls.id }}" autocomplete="off">
                 <span class="search-status" id="status-{{ cls.id }}">Type to search</span>
             </div>
             <div class="available-students-list" id="student-list-{{ cls.id }}">
-                <div class="no-results">Type a name to search for students</div>
+                <div class="no-results">Type student name to search</div>
             </div>
             <div class="add-btn-row" style="display:none;" id="add-btn-row-{{ cls.id }}">
                 <span class="search-status" id="selected-count-{{ cls.id }}">0 selected</span>
-                <button type="button" class="btn btn-add-selected" data-class-id="{{ cls.id }}"
-                    style="padding:8px 18px; font-size:0.85rem; background:linear-gradient(135deg,#00e5ff,#00b8d4);">
-                    <i class="material-icons" style="font-size:1rem;">person_add</i> Add Selected
+                <button type="button" class="btn btn-primary btn-add-selected" data-class-id="{{ cls.id }}"
+                    style="padding:6px 14px; font-size:0.78rem; min-height:34px;">
+                    <i class="material-icons" style="font-size:0.95rem;">person_add</i> Enroll Selected
                 </button>
             </div>
         </div>
@@ -316,32 +276,31 @@
                     <input type="hidden" name="class_id" value="{{ cls.id }}">
                     <input type="hidden" name="student_id" value="{{ student.id }}">
                     <button type="submit"
-                        style="background:none; border:none; color:#ff5252; cursor:pointer; font-size:1.1rem; padding:0;">&times;</button>
+                        style="background:none; border:none; color:#f43f5e; cursor:pointer; font-size:1.1rem; padding:0; line-height:1;">&times;</button>
                 </form>
             </li>
             {% else %}
-            <li style="color:var(--text-secondary); justify-content:center;">No students enrolled yet</li>
+            <li style="color:var(--text-dim); justify-content:center; border:none; background:transparent;">No students enrolled yet</li>
             {% endfor %}
         </ul>
 
         <div class="action-row">
-            <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-secondary"
-                style="flex:1; text-decoration:none; font-size:0.82rem; padding:8px 12px;">
-                <i class="material-icons" style="font-size:1rem;">chat</i> Chatroom
+            <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
+                style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
+                <i class="material-icons" style="font-size:1rem; color:var(--accent);">chat</i> Chatroom
             </a>
-            <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}" class="btn"
-                style="flex:1; text-decoration:none; font-size:0.82rem; padding:8px 12px; background:rgba(0,229,255,0.15); color:#00e5ff; border:1px solid rgba(0,229,255,0.3);">
-                <i class="material-icons" style="font-size:1rem;">fact_check</i> Attendance
+            <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}" class="btn btn-outline"
+                style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
+                <i class="material-icons" style="font-size:1rem; color:#10b981;">fact_check</i> Attendance
             </a>
         </div>
     </div>
     {% endfor %}
 </div>
 {% else %}
-<div class="card" style="text-align:center; padding:50px; color:var(--text-secondary);">
-    <i class="material-icons" style="font-size:3.5rem; opacity:0.2;">school</i>
-    <p>{% if search_query %}No classes matching "{{ search_query }}"{% else %}No classes created yet. Create one
-        above!{% endif %}</p>
+<div class="card text-center" style="padding:40px;">
+    <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">school</i>
+    <p style="color:var(--text-dim); font-size:0.88rem;">{% if search_query %}No classes matching "{{ search_query }}"{% else %}No classes created yet. Create one above!{% endif %}</p>
 </div>
 {% endif %}
 

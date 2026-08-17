@@ -1,219 +1,69 @@
 {% extends "layout.html" %}
-{% block content %}
-<style>
-    .settings-container {
-        max-width: 600px;
-        margin: 0 auto;
-    }
-    .settings-card {
-        background: var(--surface-color);
-        border-radius: 18px;
-        padding: 30px;
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--card-shadow);
-    }
-    .settings-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 24px;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding-bottom: 16px;
-    }
-    .settings-header i {
-        font-size: 2.2rem;
-        color: var(--gold);
-    }
-    .settings-header h2 {
-        margin: 0;
-        font-weight: 800;
-        font-size: 1.5rem;
-        color: var(--gold-light);
-    }
-    .form-group {
-        margin-bottom: 20px;
-    }
-    .form-group label {
-        display: block;
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 8px;
-        font-weight: 600;
-    }
-    .form-group input[type="text"],
-    .form-group input[type="email"],
-    .form-group input[type="password"] {
-        width: 100%;
-        padding: 14px 16px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        color: var(--text);
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        margin: 0;
-    }
-    .form-group input:focus {
-        border-color: var(--gold);
-        background: rgba(255,255,255,0.06);
-        box-shadow: 0 0 0 3px rgba(244, 176, 77, 0.15);
-    }
-    .toggle-container {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background: rgba(255,255,255,0.02);
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        margin-bottom: 24px;
-    }
-    .toggle-info h4 {
-        margin: 0;
-        font-size: 0.95rem;
-        color: var(--text);
-    }
-    .toggle-info p {
-        margin: 4px 0 0;
-        font-size: 0.75rem;
-        color: var(--text-dim);
-    }
-    /* Switch styling */
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 50px;
-        height: 26px;
-    }
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(255,255,255,0.1);
-        transition: .4s;
-        border-radius: 34px;
-    }
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 18px; width: 18px;
-        left: 4px; bottom: 4px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-    }
-    input:checked + .slider {
-        background-color: var(--gold);
-    }
-    input:checked + .slider:before {
-        transform: translateX(24px);
-    }
-    .info-box {
-        background: rgba(79, 140, 255, 0.05);
-        border: 1px solid rgba(79, 140, 255, 0.15);
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 24px;
-        font-size: 0.82rem;
-        color: var(--text-muted);
-        line-height: 1.5;
-    }
-    .info-box h5 {
-        color: var(--primary-light);
-        margin: 0 0 6px 0;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .info-box ul {
-        margin: 8px 0 0;
-        padding-left: 18px;
-    }
-    .info-box li {
-        margin-bottom: 4px;
-    }
-    .actions-row {
-        display: flex;
-        gap: 12px;
-        margin-top: 30px;
-    }
-    .actions-row .btn {
-        flex: 1;
-        padding: 16px 20px;
-        border-radius: 12px;
-        font-size: 0.95rem;
-    }
-</style>
+{% block title %}Email Automation Settings — CampusPlayer{% endblock %}
 
-<div class="settings-container">
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:28px;">
-        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px; width:auto; min-height:auto; height:38px;"><i class="material-icons">arrow_back</i></a>
-        <div>
-            <h1 style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,var(--gold)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Email Automation Settings</h1>
-            <p style="margin:4px 0 0; color:var(--text-secondary);">Configure your teacher account for sending report emails</p>
+{% block content %}
+<div style="max-width:680px; margin:0 auto;">
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0;">Email Dispatch Settings</h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">Configure teacher Gmail SMTP & app password for automated reports</p>
+            </div>
         </div>
     </div>
 
-    <div class="settings-card">
-        <div class="settings-header">
-            <i class="material-icons">mail_lock</i>
-            <div>
-                <h2>SMTP Credentials</h2>
-            </div>
+    <div class="card" style="padding:26px;">
+        <div class="card-title font-display" style="margin-bottom:16px; font-size:1.1rem;">
+            <i class="material-icons" style="color:var(--gold);">mail_lock</i> Secure SMTP Credentials
         </div>
 
-        <div class="info-box">
-            <h5><i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">info</i> Gmail Configuration Required</h5>
-            To protect your primary Google account password, you must use a Google App Password:
-            <ul>
-                <li>Enable 2-Step Verification on your Google Account settings.</li>
-                <li>Go to Google Account -> Security -> App passwords.</li>
-                <li>Generate a password for App: <b>"Mail"</b>, Device: <b>"Other (Custom)"</b> (e.g. CampusPlayer).</li>
-                <li>Copy the 16-character generated code and paste it in the field below.</li>
+        <div style="background:var(--surface2); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-sm); padding:14px; margin-bottom:20px; font-size:0.8rem; line-height:1.5;">
+            <div style="font-weight:700; color:var(--text); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1rem; color:var(--accent);">info</i> Google App Password Setup Guide
+            </div>
+            <ul style="margin:0; padding-left:18px; color:var(--text-dim); display:flex; flex-direction:column; gap:4px;">
+                <li>Enable <b>2-Step Verification</b> on your Google account.</li>
+                <li>Navigate to <b>Google Account &rarr; Security &rarr; App Passwords</b>.</li>
+                <li>Generate a token for App: <b>"Mail"</b>, Device: <b>"CampusPlayer"</b>.</li>
+                <li>Paste the 16-character code below.</li>
             </ul>
         </div>
 
-        <form method="POST" action="">
-            <div class="form-group">
-                <label for="email_sender_address">Gmail Address</label>
-                <input type="email" id="email_sender_address" name="email_sender_address" placeholder="e.g. teacher@gmail.com" required
+        <form method="POST" action="" style="margin:0;">
+            <div>
+                <label>Gmail Sender Address *</label>
+                <input type="email" id="email_sender_address" name="email_sender_address" placeholder="e.g. instructor@gmail.com" required
                        value="{{ current_user.email_sender_address or '' }}">
             </div>
 
-            <div class="form-group">
-                <label for="app_password">Gmail App Password</label>
+            <div>
+                <label>Gmail App Password *</label>
                 <input type="password" id="app_password" name="app_password" 
-                       placeholder="{% if has_password %}•••••••••••••••• (Leave blank to keep current){% else %}Enter 16-character app password{% endif %}" 
+                       placeholder="{% if has_password %}•••••••••••••••• (Leave blank to preserve current){% else %}16-character app password{% endif %}" 
                        {% if not has_password %}required{% endif %}>
             </div>
 
-            <div class="toggle-container">
-                <div class="toggle-info">
-                    <h4>Enable Delivery</h4>
-                    <p>Use this configuration to deliver reports for your classes</p>
+            <div class="flex-between mb-16" style="background:var(--surface2); padding:14px 16px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <div>
+                    <div style="font-weight:700; font-size:0.9rem; color:var(--text);">Enable Automated Report Delivery</div>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Dispatches monthly student progress cards via this mailbox</div>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" name="email_enabled" {% if current_user.email_enabled %}checked{% endif %}>
-                    <span class="slider"></span>
+                <label style="margin:0; cursor:pointer; display:flex; align-items:center;">
+                    <input type="checkbox" name="email_enabled" {% if current_user.email_enabled %}checked{% endif %} style="width:20px; height:20px; accent-color:var(--primary); margin:0;">
                 </label>
             </div>
 
-            <div class="actions-row">
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
                 {% if current_user.email_sender_address %}
-                <button type="submit" name="action" value="delete" class="btn btn-danger" onclick="return confirm('Are you sure you want to remove your email configuration? This will disable automated email sending for all your classes.')">
-                    <i class="material-icons">delete_forever</i> Clear Settings
+                <button type="submit" name="action" value="delete" class="btn btn-danger" onclick="return confirm('Remove your email configuration and disable automated sending?')">
+                    <i class="material-icons" style="font-size:1rem;">delete_forever</i> Remove Settings
                 </button>
                 {% endif %}
                 <button type="submit" class="btn btn-primary">
-                    <i class="material-icons">save</i> Save Settings
+                    <i class="material-icons" style="font-size:1rem;">save</i> Save Configuration
                 </button>
             </div>
         </form>

@@ -1,198 +1,94 @@
 {% extends "layout.html" %}
-{% block content %}
-<style>
-    .admin-stats {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 28px;
-        flex-wrap: wrap;
-    }
-    .admin-stat-card {
-        background: var(--surface-color);
-        border-radius: 18px;
-        padding: 24px;
-        border: 1px solid var(--glass-border);
-        flex: 1;
-        min-width: 180px;
-        box-shadow: var(--card-shadow);
-        position: relative;
-        overflow: hidden;
-    }
-    .admin-stat-card::after {
-        content: '';
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 4px;
-    }
-    .card-sent::after { background: #4caf50; }
-    .card-failed::after { background: #e05252; }
-    .card-time::after { background: var(--primary-color); }
-    
-    .admin-stat-val {
-        font-size: 2.2rem;
-        font-weight: 800;
-        font-family: 'Playfair Display', serif;
-    }
-    .card-sent .admin-stat-val { color: #4caf50; }
-    .card-failed .admin-stat-val { color: #e05252; }
-    .card-time .admin-stat-val { color: var(--primary-light); font-size: 1.1rem; padding-top: 15px; min-height: 44px; }
-    
-    .admin-stat-lbl {
-        font-size: 0.72rem;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-top: 6px;
-        font-weight: 600;
-    }
-    
-    .section-box {
-        background: var(--surface-color);
-        border-radius: 18px;
-        padding: 28px;
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--card-shadow);
-        margin-bottom: 28px;
-    }
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding-bottom: 12px;
-    }
-    .section-header h3 {
-        margin: 0;
-        font-family: 'Playfair Display', serif;
-        font-size: 1.3rem;
-        color: var(--gold-light);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .section-header h3 i {
-        color: var(--gold);
-    }
-    
-    .status-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.7rem;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    .status-sent {
-        background: rgba(76, 175, 80, 0.15);
-        color: #4caf50;
-        border: 1px solid rgba(76, 175, 80, 0.2);
-    }
-    .status-failed {
-        background: rgba(224, 82, 82, 0.15);
-        color: #e05252;
-        border: 1px solid rgba(224, 82, 82, 0.2);
-    }
-    
-    .tab-btn {
-        background: transparent;
-        border: none;
-        color: var(--text-dim);
-        font-size: 0.9rem;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 8px 16px;
-        border-radius: 8px;
-        transition: all 0.3s;
-    }
-    .tab-btn.active {
-        background: rgba(255,255,255,0.05);
-        color: var(--gold-light);
-    }
-</style>
+{% block title %}Email Delivery Monitoring — CampusPlayer{% endblock %}
 
-<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; flex-wrap:wrap; gap:16px;">
-    <div>
-        <h1 style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,var(--primary-color)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Email Monitoring Dashboard</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">Manage and track student report automated email deliveries</p>
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Email Delivery Operations</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Monitor automated student report cards, queue states & delivery logs</p>
+        </div>
     </div>
-    
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <form action="{{ url_for('admin_retry_failed_reports') }}" method="POST" style="margin:0;">
-            <button type="submit" class="btn btn-secondary" style="padding:10px 18px; width:auto; border-radius:12px; border-color:rgba(224,82,82,0.3); color:#e05252;">
-                <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">sync_problem</i> Retry Failed
+            <button type="submit" class="btn btn-danger" style="padding:8px 14px; font-size:0.78rem; min-height:36px;">
+                <i class="material-icons" style="font-size:0.95rem;">sync_problem</i> Retry Failed
             </button>
         </form>
-        <form action="{{ url_for('admin_send_all_reports') }}" method="POST" style="margin:0;" onsubmit="return confirm('Trigger delivery of reports for all classrooms in the platform? This will send emails using each classroom teacher\'s configuration.')">
-            <button type="submit" class="btn btn-primary" style="padding:10px 18px; width:auto; border-radius:12px;">
-                <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">mail</i> Send All Class Reports
+        <form action="{{ url_for('admin_send_all_reports') }}" method="POST" style="margin:0;" onsubmit="return confirm('Trigger global dispatch of student reports for all classes?')">
+            <button type="submit" class="btn btn-primary" style="padding:8px 14px; font-size:0.78rem; min-height:36px;">
+                <i class="material-icons" style="font-size:0.95rem;">outgoing_mail</i> Dispatch All Reports
             </button>
         </form>
-        <a href="{{ url_for('admin_export_report_pdfs', start_date=start_date, end_date=end_date) }}" class="btn btn-outline" style="padding:10px 18px; width:auto; border-radius:12px; border-color:rgba(148,163,184,0.3); color:#94a3b8;">
-            <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">download</i> Export PDF Backups
+        <a href="{{ url_for('admin_export_report_pdfs', start_date=start_date, end_date=end_date) }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem; min-height:36px;">
+            <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">download</i> PDF Backups
         </a>
     </div>
 </div>
 
-<div class="card" style="margin-bottom:24px; padding:20px; background:var(--surface-color); border:1px solid var(--glass-border); border-radius:18px;">
-    <form method="GET" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            Start Date
-            <input type="date" name="start_date" value="{{ start_date or '' }}" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--bg-color); border:1px solid var(--glass-border); color:var(--text);">
-        </label>
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            End Date
-            <input type="date" name="end_date" value="{{ end_date or '' }}" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--bg-color); border:1px solid var(--glass-border); color:var(--text);">
-        </label>
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            Status
-            <select name="status" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--bg-color); border:1px solid var(--glass-border); color:var(--text);">
-                <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
-                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent</option>
-                <option value="stored" {% if status == 'stored' %}selected{% endif %}>Stored</option>
-                <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
+<!-- Date & Filter Controls -->
+<div class="card mb-16" style="padding:16px;">
+    <form method="GET" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)) 130px; gap:10px; margin:0; align-items:flex-end;">
+        <div>
+            <label>Start Date</label>
+            <input type="date" name="start_date" value="{{ start_date or '' }}" style="margin-bottom:0; height:38px;">
+        </div>
+        <div>
+            <label>End Date</label>
+            <input type="date" name="end_date" value="{{ end_date or '' }}" style="margin-bottom:0; height:38px;">
+        </div>
+        <div>
+            <label>Delivery Status</label>
+            <select name="status" style="margin-bottom:0; height:38px;">
+                <option value="all" {% if status == 'all' %}selected{% endif %}>All Records</option>
+                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent (Success)</option>
+                <option value="stored" {% if status == 'stored' %}selected{% endif %}>Stored Local</option>
+                <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed Only</option>
             </select>
-        </label>
-        <button type="submit" class="btn btn-primary" style="padding:10px 18px; min-width:140px;">Filter reports</button>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-outline" style="height:38px; min-height:38px; width:100%; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:0.95rem;">filter_alt</i> Apply Filter
+            </button>
+        </div>
     </form>
 </div>
 
 <!-- Metrics Row -->
-<div class="admin-stats">
-    <div class="admin-stat-card card-sent">
-        <div class="admin-stat-val">{{ total_sent }}</div>
-        <div class="admin-stat-lbl">Emails Sent Successfully</div>
+<div class="stat-row" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px;">
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:#10b981;">{{ total_sent }}</div>
+        <div class="stat-lbl">Dispatched Successfully</div>
     </div>
-    <div class="admin-stat-card card-failed">
-        <div class="admin-stat-val">{{ total_failed }}</div>
-        <div class="admin-stat-lbl">Failed Deliveries</div>
+    <div class="stat-card">
+        <div class="stat-val font-display" style="color:#f43f5e;">{{ total_failed }}</div>
+        <div class="stat-lbl">Delivery Failures</div>
     </div>
-    <div class="admin-stat-card card-time">
-        <div class="admin-stat-val">
-            {% if last_execution_time %}
-                {{ last_execution_time.strftime('%b %d, %I:%M %p') }}
-            {% else %}
-                Never Executed
-            {% endif %}
+    <div class="stat-card stat-purple">
+        <div class="stat-val font-display" style="font-size:1.1rem; padding-top:6px;">
+            {% if last_execution_time %}{{ last_execution_time.strftime('%b %d, %I:%M %p') }}{% else %}Never{% endif %}
         </div>
-        <div class="admin-stat-lbl">Last Execution Time</div>
+        <div class="stat-lbl">Last Cron Execution</div>
     </div>
 </div>
 
-<!-- Class Breakdown -->
-<div class="section-box">
-    <div class="section-header">
-        <h3><i class="material-icons">school</i> Class Delivery Status</h3>
+<!-- Class Breakdown Table -->
+<div class="card mb-16" style="padding:18px;">
+    <div class="card-title font-display" style="margin-bottom:14px; font-size:1rem;">
+        <i class="material-icons">school</i> Classroom Delivery Coverage
     </div>
-    <div class="table-wrap">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Class Name</th>
-                    <th>Instructor</th>
-                    <th>Students Emailed</th>
-                    <th>Sent Successfully</th>
-                    <th>Failed Deliveries</th>
+                    <th>Classroom</th>
+                    <th>Teacher</th>
+                    <th>Students</th>
+                    <th>Dispatched</th>
+                    <th>Failed</th>
                 </tr>
             </thead>
             <tbody>
@@ -202,13 +98,13 @@
                         <td style="font-weight:600; color:var(--text);">{{ c.name }}</td>
                         <td>{{ c.teacher_name }}</td>
                         <td>{{ c.students_count }} student(s)</td>
-                        <td style="color:#4caf50; font-weight:bold;">{{ c.sent_count }}</td>
-                        <td style="color:#e05252; font-weight:bold;">{{ c.failed_count }}</td>
+                        <td style="color:#10b981; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.sent_count }}</td>
+                        <td style="color:#f43f5e; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.failed_count }}</td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="5" style="text-align:center; padding:30px; color:var(--text-dim);">No classrooms registered in the platform.</td>
+                        <td colspan="5" style="text-align:center; padding:24px; color:var(--text-dim);">No active classrooms registered.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -216,19 +112,19 @@
     </div>
 </div>
 
-<!-- Teacher Breakdown -->
-<div class="section-box">
-    <div class="section-header">
-        <h3><i class="material-icons">supervisor_account</i> Teacher Sending Accounts</h3>
+<!-- Teacher Accounts Breakdown -->
+<div class="card mb-16" style="padding:18px;">
+    <div class="card-title font-display" style="margin-bottom:14px; font-size:1rem;">
+        <i class="material-icons">supervisor_account</i> Teacher SMTP Configurations
     </div>
-    <div class="table-wrap">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Teacher</th>
-                    <th>Configured Address</th>
+                    <th>Instructor</th>
+                    <th>SMTP Address</th>
                     <th>Status</th>
-                    <th>Last Delivery Run</th>
+                    <th>Last Run</th>
                     <th>Sent</th>
                     <th>Failed</th>
                 </tr>
@@ -238,28 +134,24 @@
                     {% for t in teacher_stats %}
                     <tr>
                         <td style="font-weight:600; color:var(--text);">{{ t.username }}</td>
-                        <td>{{ t.email_sender_address }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ t.email_sender_address or '—' }}</td>
                         <td>
                             {% if t.email_enabled %}
-                                <span class="status-badge status-sent">Enabled</span>
+                                <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">Enabled</span>
                             {% else %}
-                                <span class="status-badge status-failed">Disabled</span>
+                                <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Disabled</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if t.last_report_sent %}
-                                {{ t.last_report_sent.strftime('%Y-%m-%d %H:%M') }}
-                            {% else %}
-                                Never
-                            {% endif %}
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">
+                            {% if t.last_report_sent %}{{ t.last_report_sent.strftime('%Y-%m-%d %H:%M') }}{% else %}Never{% endif %}
                         </td>
-                        <td style="color:#4caf50;">{{ t.sent_count }}</td>
-                        <td style="color:#e05252;">{{ t.failed_count }}</td>
+                        <td style="color:#10b981; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.sent_count }}</td>
+                        <td style="color:#f43f5e; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.failed_count }}</td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="6" style="text-align:center; padding:30px; color:var(--text-dim);">No teachers registered in the platform.</td>
+                        <td colspan="6" style="text-align:center; padding:24px; color:var(--text-dim);">No faculty registered.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -267,66 +159,65 @@
     </div>
 </div>
 
-<!-- Audit logs -->
-<div class="section-box">
-    <div class="section-header">
-        <h3><i class="material-icons">assignment</i> Email Delivery History</h3>
+<!-- Audit Log Table -->
+<div class="card mb-16" style="padding:18px;">
+    <div class="card-title font-display" style="margin-bottom:14px; font-size:1rem;">
+        <i class="material-icons">receipt_long</i> Transmission History & Audit Logs
     </div>
-    
-    <div class="table-wrap">
+    <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>Sent At</th>
-                    <th>Recipient Student</th>
-                    <th>Class</th>
+                    <th>Timestamp</th>
+                    <th>Student Recipient</th>
+                    <th>Classroom</th>
                     <th>Instructor</th>
-                    <th>Status</th>
-                    <th>Details / Error</th>
-                    <th style="text-align:right;">Actions</th>
+                    <th>Delivery Status</th>
+                    <th>Telemetry / Error</th>
+                    <th style="text-align:right;">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {% if history_logs %}
                     {% for log in history_logs %}
                     <tr>
-                        <td>{{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
                         <td>
-                            <b>{{ log.student.username }}</b><br>
-                            <span class="student-email" data-student-id="{{ log.student_id }}" style="font-size:0.75rem; color:var(--text-dim);">{{ log.student_email }}</span>
+                            <b style="color:var(--text);">{{ log.student.username }}</b><br>
+                            <span class="student-email" data-student-id="{{ log.student_id }}" style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">{{ log.student_email }}</span>
                         </td>
                         <td>{{ log.classroom.name }}</td>
                         <td>{{ log.teacher.username }}</td>
                         <td>
                             {% if log.status == 'sent' %}
-                                <span class="status-badge status-sent">Sent</span>
+                                <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">Sent</span>
                             {% else %}
-                                <span class="status-badge status-failed">Failed</span>
+                                <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Failed</span>
                             {% endif %}
                         </td>
-                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ log.error_message or '' }}">
+                        <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ log.error_message or '' }}">
                             {% if log.status == 'sent' %}
-                                <span style="color:#4caf50;">Delivered</span>
+                                <span style="color:#10b981; font-size:0.75rem;">✓ Delivered</span>
                             {% else %}
-                                <span style="color:#e05252; font-size:0.75rem;">{{ log.error_message or 'Unknown Error' }}</span>
+                                <span style="color:#f43f5e; font-size:0.75rem;">{{ log.error_message or 'Delivery Timeout' }}</span>
                             {% endif %}
                         </td>
                         <td style="text-align:right;">
                             {% if log.status == 'failed' %}
                             <form action="{{ url_for('admin_retry_single_report', log_id=log.id) }}" method="POST" style="margin:0; display:inline-block;">
-                                <button type="submit" class="btn btn-secondary" style="padding:4px 8px; font-size:0.7rem; border-radius:6px; min-height:auto; height:28px; width:auto;" title="Retry Delivery">
-                                    <i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">sync</i> Retry
+                                <button type="submit" class="btn btn-outline" style="padding:4px 8px; font-size:0.7rem; min-height:28px;" title="Retry Transmission">
+                                    <i class="material-icons" style="font-size:0.9rem;">sync</i> Retry
                                 </button>
                             </form>
                             {% else %}
-                                &mdash;
+                                <span style="color:var(--text-dim); font-size:0.75rem;">—</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="7" style="text-align:center; padding:40px; color:var(--text-dim);">No report email logs found in the system database.</td>
+                        <td colspan="7" style="text-align:center; padding:30px; color:var(--text-dim);">No delivery logs match the active filter criteria.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -339,32 +230,20 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const socket = io();
-        
-        socket.on('connect', () => {
-            console.log('SocketIO connected to email monitoring dashboard.');
-        });
-        
         socket.on('student_email_updated', function(data) {
-            console.log('Live email update detected:', data);
             const spans = document.querySelectorAll('.student-email[data-student-id="' + data.student_id + '"]');
             spans.forEach(span => {
                 span.textContent = data.new_email;
-                span.style.transition = 'none';
-                span.style.backgroundColor = 'rgba(244, 176, 77, 0.4)';
-                span.style.color = '#ffd58a';
+                span.style.backgroundColor = 'rgba(245, 158, 11, 0.3)';
+                span.style.color = '#f59e0b';
                 span.style.borderRadius = '4px';
-                span.style.padding = '2px 6px';
-                span.style.fontWeight = 'bold';
-                
-                span.offsetHeight; // trigger reflow
-                
+                span.style.padding = '2px 4px';
                 setTimeout(() => {
-                    span.style.transition = 'all 2.5s ease-out';
+                    span.style.transition = 'all 2s ease-out';
                     span.style.backgroundColor = 'transparent';
                     span.style.color = 'var(--text-dim)';
                     span.style.padding = '0';
-                    span.style.fontWeight = 'normal';
-                }, 1000);
+                }, 1500);
             });
         });
     });

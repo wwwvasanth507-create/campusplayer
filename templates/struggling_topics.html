@@ -1,77 +1,67 @@
 {% extends "layout.html" %}
+{% block title %}Struggling Topics &amp; Engagement Analytics — CampusPlayer{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 40px;">
-    <h1
-        style="font-weight: 800; font-size: 2.2rem; background: linear-gradient(90deg, #fff, #ff5252); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">
-        <i class="material-icons" style="vertical-align: middle; font-size: 2.5rem;">analytics</i>
-        Struggling Topics Report
-    </h1>
-    <p style="color: var(--text-secondary); margin-top: 10px;">
-        Topics identified by high student re-watch frequency. Higher view counts on specific videos may indicate
-        students are finding these concepts difficult.
-    </p>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">📊 Academic Friction &amp; Struggling Topics</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Identifies topics with high student replay &amp; repeat watch frequency</p>
+        </div>
+    </div>
 </div>
 
-<div class="card" style="padding: 30px; border: 1px solid var(--glass-border);">
-    <table style="width: 100%; border-collapse: collapse;">
-        <thead>
-            <tr style="border-bottom: 2px solid var(--glass-border); text-align: left;">
-                <th style="padding: 15px; color: var(--text-secondary); font-weight: 600;">TOPIC / LESSON VIDEO</th>
-                <th style="padding: 15px; color: var(--text-secondary); font-weight: 600;">TEACHER</th>
-                <th style="padding: 15px; color: var(--text-secondary); font-weight: 600; text-align: center;">TOTAL
-                    VIEWS</th>
-                <th style="padding: 15px; color: var(--text-secondary); font-weight: 600; text-align: center;">ACTION
-                    NEEDED</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if stats %}
-            {% for row in stats %}
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.3s;"
-                onmouseover="this.style.background='rgba(255,255,255,0.02)'"
-                onmouseout="this.style.background='transparent'">
-                <td style="padding: 20px; font-weight: 700; font-size: 1.1rem; color:var(--text);">
-                    {{ row.title }}
-                </td>
-                <td style="padding: 20px; color: var(--text-secondary);">
-                    {{ row.uploader_name }}
-                </td>
-                <td style="padding: 20px; text-align: center;">
-                    <span
-                        style="background: rgba(255, 82, 82, 0.1); color: #ff5252; padding: 6px 15px; border-radius: 20px; font-weight: 700;">
-                        {{ row.view_count }} Views
-                    </span>
-                </td>
-                <td style="padding: 20px; text-align: center;">
-                    {% if row.view_count > 10 %}
-                    <div
-                        style="color: #ff9800; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem;">
-                        <i class="material-icons" style="font-size: 1.2rem;">warning</i> High Recall Needed
-                    </div>
-                    {% else %}
-                    <div
-                        style="color: #4caf50; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem;">
-                        <i class="material-icons" style="font-size: 1.2rem;">check_circle</i> Normal Engagement
-                    </div>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            {% else %}
-            <tr>
-                <td colspan="4" style="padding: 40px; text-align: center; color: var(--text-secondary);">
-                    No engagement data available yet.
-                </td>
-            </tr>
-            {% endif %}
-        </tbody>
-    </table>
-</div>
-
-<div style="margin-top: 30px; display: flex; gap: 15px;">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">
-        <i class="material-icons" style="vertical-align: middle; font-size: 1.1rem;">arrow_back</i> Back to Dashboard
-    </a>
+<div class="card" style="padding:0; overflow:hidden;">
+    <div class="table-responsive">
+        <table class="data-table" style="margin:0;">
+            <thead>
+                <tr>
+                    <th style="padding:14px 18px;">Topic / Lesson Video</th>
+                    <th style="padding:14px 18px;">Instructor</th>
+                    <th style="padding:14px 18px; text-align:center;">Total Replays</th>
+                    <th style="padding:14px 18px; text-align:center;">Pedagogical Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if stats %}
+                {% for row in stats %}
+                <tr>
+                    <td style="padding:14px 18px; font-weight:700; color:var(--text); font-size:0.9rem;">
+                        {{ row.title }}
+                    </td>
+                    <td style="padding:14px 18px; color:var(--text-dim); font-size:0.85rem;">
+                        {{ row.uploader_name }}
+                    </td>
+                    <td style="padding:14px 18px; text-align:center;">
+                        <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25); font-family:'JetBrains Mono',monospace;">
+                            {{ row.view_count }} views
+                        </span>
+                    </td>
+                    <td style="padding:14px 18px; text-align:center;">
+                        {% if row.view_count > 10 %}
+                        <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">
+                            <i class="material-icons" style="font-size:0.8rem;">warning</i> High Friction / Review Needed
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">
+                            <i class="material-icons" style="font-size:0.8rem;">check_circle</i> Normal Engagement
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center" style="padding:40px; color:var(--text-dim);">
+                        No friction analytics recorded yet.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

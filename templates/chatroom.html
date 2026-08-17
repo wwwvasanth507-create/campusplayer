@@ -1,22 +1,22 @@
 {% extends "layout.html" %}
+{% block title %}{{ classroom.name }} — Classroom Discussion{% endblock %}
 
 {% block content %}
 <style>
     .chat-wrap {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 140px);
-        max-width: 600px;
+        height: calc(100vh - 130px);
+        max-width: 680px;
         margin: 0 auto;
         position: relative;
     }
 
-    /* ─── TOP DETAILS BAR ─── */
     .chat-top {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius) var(--radius) 0 0;
-        padding: 10px 14px;
+        padding: 12px 16px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -26,71 +26,53 @@
         width: 38px;
         height: 38px;
         border-radius: 50%;
-        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+        background: var(--brand-gradient);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        color: #fff;
     }
-    .chat-top-av i { font-size: 1.2rem; color: #0a0a0f; }
     .chat-top-info { flex: 1; min-width: 0; }
     .chat-top-name {
-        font-family: 'Playfair Display', serif;
+        font-family: 'Outfit', sans-serif;
         font-weight: 700;
-        font-size: 0.95rem;
-        color: var(--gold-light);
+        font-size: 1rem;
+        color: var(--text);
     }
     .chat-top-sub {
-        font-size: 0.6rem;
+        font-size: 0.72rem;
         color: var(--text-dim);
         margin-top: 1px;
     }
-    .chat-top-right {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-    }
     .status-dot {
-        width: 6px; height: 6px;
+        width: 8px; height: 8px;
         border-radius: 50%;
-        background: #4caf50;
-        animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .status-lbl {
-        font-size: 0.55rem;
-        font-weight: 700;
-        color: #4caf50;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        background: #10b981;
+        box-shadow: 0 0 8px rgba(16,185,129,0.5);
     }
 
-    /* ─── MESSAGES AREA ─── */
     .chat-msgs {
         flex: 1;
         overflow-y: auto;
-        padding: 8px 10px;
-        background: rgba(0,0,0,0.2);
+        padding: 16px;
+        background: var(--surface2);
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 10px;
         scroll-behavior: smooth;
     }
-    .chat-msgs::-webkit-scrollbar { width: 3px; }
-    .chat-msgs::-webkit-scrollbar-thumb { background: rgba(212,168,83,0.15); border-radius: 10px; }
 
     .msg {
         display: flex;
         align-items: flex-end;
-        gap: 6px;
-        margin-bottom: 3px;
+        gap: 8px;
         animation: pop 0.2s ease;
     }
     .msg.own { flex-direction: row-reverse; }
-    @keyframes pop { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+    @keyframes pop { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
     .msg-pic {
         width: 28px;
@@ -100,57 +82,60 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.6rem;
-        color: #0a0a0f;
+        font-size: 0.7rem;
+        color: #fff;
         flex-shrink: 0;
-        margin-bottom: 2px;
     }
-    .msg-pic.me { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); }
-    .msg-pic.you { background: linear-gradient(135deg, #7c3aed, #512da8); }
-    .msg-pic.staff { background: linear-gradient(135deg, #ff9800, #e65100); }
+    .msg-pic.me { background: var(--brand-gradient); }
+    .msg-pic.you { background: linear-gradient(135deg, #0284c7, #0369a1); }
+    .msg-pic.staff { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
-    .msg-box { max-width: 74%; min-width: 70px; }
+    .msg-box { max-width: 76%; min-width: 90px; }
 
     .msg-bub {
-        padding: 7px 11px 4px;
-        border-radius: 12px;
+        padding: 8px 14px 6px;
+        border-radius: 14px;
         position: relative;
         word-wrap: break-word;
+        box-shadow: var(--shadow);
     }
     .msg.own .msg-bub {
-        background: linear-gradient(135deg, #1a3a2a, #0d2818);
-        border: 1px solid rgba(212,168,83,0.1);
+        background: var(--primary);
+        color: #ffffff;
         border-bottom-right-radius: 2px;
     }
+    .msg.own .msg-bub .msg-txt {
+        color: #ffffff;
+    }
     .msg.other .msg-bub {
-        background: var(--surface2);
+        background: var(--surface);
         border: 1px solid var(--border);
         border-bottom-left-radius: 2px;
     }
     .msg.other.staff-msg .msg-bub {
-        background: rgba(212,168,83,0.06);
-        border-color: rgba(212,168,83,0.12);
+        border-color: rgba(245,158,11,0.3);
+        background: var(--surface);
     }
 
     .msg-author {
-        font-size: 0.6rem;
+        font-size: 0.68rem;
         font-weight: 700;
-        color: var(--gold);
-        margin-bottom: 1px;
+        color: var(--primary-light);
+        margin-bottom: 2px;
         display: flex;
         align-items: center;
         gap: 4px;
     }
-    .msg.own .msg-author { display: none; }
     .staff-tag {
-        font-size: 0.48rem;
-        background: rgba(212,168,83,0.15);
+        font-size: 0.52rem;
+        background: rgba(245,158,11,0.15);
         color: var(--gold);
         padding: 1px 5px;
-        border-radius: 3px;
+        border-radius: 4px;
+        font-weight: 800;
     }
     .msg-txt {
-        font-size: 0.88rem;
+        font-size: 0.86rem;
         line-height: 1.45;
         color: var(--text);
     }
@@ -158,151 +143,88 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        gap: 3px;
-        margin-top: 2px;
+        gap: 4px;
+        margin-top: 3px;
     }
     .msg-tym {
-        font-size: 0.52rem;
-        color: var(--text-dim);
-    }
-    .msg.own .msg-tym { color: rgba(255,255,255,0.35); }
-    .msg-rcpt {
         font-size: 0.6rem;
-        color: rgba(255,255,255,0.25);
+        color: var(--text-dim);
+        font-family: 'JetBrains Mono', monospace;
     }
+    .msg.own .msg-tym { color: rgba(255,255,255,0.7); }
+    .msg.own .msg-rcpt { color: rgba(255,255,255,0.85); font-size: 0.65rem; }
+
     .msg-del {
         position: absolute;
-        top: 1px;
-        right: 2px;
+        top: 4px;
+        right: 4px;
         background: none;
         border: none;
-        color: #ff5252;
+        color: #f43f5e;
         cursor: pointer;
-        font-size: 0.55rem;
+        font-size: 0.7rem;
         opacity: 0;
         transition: opacity 0.2s;
-        padding: 1px 3px;
-        border-radius: 3px;
-        line-height: 1;
     }
-    .msg-bub:hover .msg-del,
-    .msg-bub:active .msg-del { opacity: 0.5; }
+    .msg-bub:hover .msg-del { opacity: 0.7; }
+    .msg-bub:hover .msg-del:hover { opacity: 1; }
 
-    .empty-msgs {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: var(--text-dim);
-        text-align: center;
-        padding: 20px;
-    }
-    .empty-msgs i { font-size: 2.6rem; opacity: 0.1; margin-bottom: 10px; color: var(--gold); }
-    .empty-msgs p { font-size: 0.8rem; }
-
-    /* ─── BAR BETWEEN MESSAGES & TYPING ─── */
     .chat-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 5px 12px;
+        padding: 6px 16px;
         background: var(--surface);
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
         border-top: 1px solid var(--border);
         flex-shrink: 0;
-    }
-    .bar-left {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 0.6rem;
+        font-size: 0.72rem;
         color: var(--text-dim);
     }
-    .bar-left i { font-size: 0.75rem; }
-    .bar-right { display: flex; gap: 5px; }
-    .bar-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 3px;
-        padding: 3px 9px;
-        border-radius: 7px;
-        font-size: 0.58rem;
-        font-weight: 600;
-        cursor: pointer;
-        border: 1px solid var(--border);
-        background: transparent;
-        color: var(--text-dim);
-        transition: all 0.2s;
-    }
-    .bar-btn:active { background: rgba(255,255,255,0.04); }
-    .bar-btn.dngr { color: #ff5252; border-color: rgba(255,82,82,0.15); }
-    .bar-btn.dngr:active { background: rgba(255,82,82,0.08); }
-    .bar-btn i { font-size: 0.7rem; }
 
-    /* ─── TYPING BAR ─── */
     .chat-type {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 0 0 var(--radius) var(--radius);
-        padding: 8px 10px 10px;
+        padding: 10px 14px;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         flex-shrink: 0;
     }
     .type-input {
         flex: 1;
         background: var(--surface2);
         border: 1px solid var(--border);
-        border-radius: 22px;
+        border-radius: var(--radius-pill);
         padding: 10px 16px;
         color: var(--text);
-        font-family: 'Inter', sans-serif;
-        font-size: 0.85rem;
+        font-family: inherit;
+        font-size: 0.88rem;
         outline: none;
-        transition: all 0.3s ease;
+        margin: 0;
     }
     .type-input:focus {
-        border-color: var(--gold);
-        background: rgba(255,255,255,0.04);
+        border-color: var(--primary);
     }
-    .type-input::placeholder { color: var(--text-dim); opacity: 0.4; }
-    .type-send {
-        width: 42px; height: 42px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-        border: none;
-        color: #0a0a0f;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        box-shadow: 0 3px 12px rgba(212,168,83,0.25);
-        flex-shrink: 0;
-    }
-    .type-send:active { transform: scale(0.85); }
-    .type-send i { font-size: 1.15rem; }
 </style>
 
 <div class="chat-wrap">
-
-    <!-- ─── TOP: Details ─── -->
+    <!-- Top Details -->
     <div class="chat-top">
-        <div class="chat-top-av"><i class="material-icons">forum</i></div>
+        <div class="chat-top-av"><i class="material-icons" style="font-size:1.15rem;">forum</i></div>
         <div class="chat-top-info">
             <div class="chat-top-name">{{ classroom.name }}</div>
-            <div class="chat-top-sub">{{ classroom.students.count() }} members · {{ classroom.teacher.username }}</div>
+            <div class="chat-top-sub">{{ classroom.students.count() }} scholars &bull; Faculty: {{ classroom.teacher.username }}</div>
         </div>
-        <div class="chat-top-right">
+        <div style="display:flex; align-items:center; gap:6px;">
             <span class="status-dot"></span>
-            <span class="status-lbl">Live</span>
+            <span style="font-size:0.68rem; font-weight:700; color:#10b981; text-transform:uppercase;">Live</span>
         </div>
     </div>
 
-    <!-- ─── MESSAGES ─── -->
+    <!-- Messages List -->
     <div class="chat-msgs" id="chatMessages">
         {% if messages %}
         {% for msg in messages %}
@@ -317,7 +239,7 @@
                     {% if msg.user_id != current_user.id %}
                     <div class="msg-author">
                         <span>{{ msg.user.username }}</span>
-                        {% if msg.user.role == 'teacher' %}<span class="staff-tag">STAFF</span>{% endif %}
+                        {% if msg.user.role == 'teacher' %}<span class="staff-tag">FACULTY</span>{% endif %}
                     </div>
                     {% endif %}
                     <div class="msg-txt">{{ msg.content }}</div>
@@ -329,7 +251,7 @@
                     </div>
                     {% if current_user.role in ['teacher', 'admin'] %}
                     <button class="msg-del" onclick="deleteMessage({{ msg.id }})" title="Delete">
-                        <i class="material-icons" style="font-size:0.65rem;">close</i>
+                        <i class="material-icons" style="font-size:0.8rem;">close</i>
                     </button>
                     {% endif %}
                 </div>
@@ -337,37 +259,34 @@
         </div>
         {% endfor %}
         {% else %}
-        <div class="empty-msgs" id="emptyChat">
-            <i class="material-icons">forum</i>
-            <p>No messages yet.<br>Start the conversation!</p>
+        <div class="text-center" id="emptyChat" style="padding:50px 20px; margin:auto;">
+            <i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:8px;">forum</i>
+            <p style="font-size:0.85rem; color:var(--text-dim); margin:0;">No messages yet.<br>Start the classroom discussion!</p>
         </div>
         {% endif %}
     </div>
 
-    <!-- ─── BAR: Options ─── -->
+    <!-- Options Bar -->
     <div class="chat-bar">
-        <div class="bar-left">
-            <i class="material-icons">forum</i>
-            <span>{{ messages|length }} msgs</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+            <i class="material-icons" style="font-size:0.9rem;">chat</i>
+            <span>{{ messages|length }} messages</span>
         </div>
-        <div class="bar-right">
-            {% if current_user.role in ['teacher', 'admin'] %}
-            <button class="bar-btn dngr" onclick="deleteAllChats()">
-                <i class="material-icons">delete_sweep</i> Clear
-            </button>
-            {% endif %}
-        </div>
+        {% if current_user.role in ['teacher', 'admin'] %}
+        <button class="btn btn-outline" onclick="deleteAllChats()" style="padding:2px 8px; font-size:0.68rem; min-height:26px; color:#f43f5e;">
+            <i class="material-icons" style="font-size:0.85rem;">delete_sweep</i> Clear Chat
+        </button>
+        {% endif %}
     </div>
 
-    <!-- ─── TYPING: Bottom ─── -->
+    <!-- Typing Bar -->
     <div class="chat-type">
-        <input type="text" id="chatInput" class="type-input" placeholder="Type a message…" autocomplete="off"
+        <input type="text" id="chatInput" class="type-input" placeholder="Type a message to the classroom…" autocomplete="off"
             onkeydown="if(event.key==='Enter') sendMessage();">
-        <button class="type-send" onclick="sendMessage()" id="sendBtn">
-            <i class="material-icons">send</i>
+        <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" style="width:40px; height:40px; min-height:40px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <i class="material-icons" style="font-size:1.1rem;">send</i>
         </button>
     </div>
-
 </div>
 
 <script>
@@ -390,8 +309,6 @@
         if (!txt) return;
         inp.value = '';
         inp.focus();
-        document.getElementById('sendBtn').style.transform = 'scale(0.85)';
-        setTimeout(() => document.getElementById('sendBtn').style.transform = '', 200);
 
         fetch(`/api/chatroom/${classId}/send`, {
             method: 'POST',
@@ -413,9 +330,9 @@
 
         const l = (m.username || '?')[0].toUpperCase();
         let bad = '';
-        if (st && !own) bad = '<span class="staff-tag">STAFF</span>';
+        if (st && !own) bad = '<span class="staff-tag">FACULTY</span>';
         let del = '';
-        if (isTeacherOwner) del = `<button class="msg-del" onclick="deleteMessage(${m.id})"><i class="material-icons" style="font-size:0.65rem;">close</i></button>`;
+        if (isTeacherOwner) del = `<button class="msg-del" onclick="deleteMessage(${m.id})"><i class="material-icons" style="font-size:0.8rem;">close</i></button>`;
         let chk = '';
         if (own) chk = '<span class="msg-rcpt">✓✓</span>';
         let auth = '';
@@ -448,11 +365,11 @@
     }
 
     function deleteAllChats() {
-        if (!confirm('Delete ALL messages?')) return;
+        if (!confirm('Delete all messages in this classroom chat?')) return;
         fetch(`/api/chatroom/${classId}/delete_all`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
         .then(r => r.json())
         .then(d => {
-            if (d.success) document.getElementById('chatMessages').innerHTML = `<div class="empty-msgs" id="emptyChat"><i class="material-icons">forum</i><p>No messages yet.<br>Start the conversation!</p></div>`;
+            if (d.success) document.getElementById('chatMessages').innerHTML = `<div class="text-center" id="emptyChat" style="padding:50px 20px; margin:auto;"><i class="material-icons" style="font-size:3rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:8px;">forum</i><p style="font-size:0.85rem; color:var(--text-dim); margin:0;">No messages yet.<br>Start the classroom discussion!</p></div>`;
         });
     }
 

@@ -1,115 +1,36 @@
 {% extends "layout.html" %}
+{% block title %}CampusPlayer — Official Academic Video Portal{% endblock %}
 
 {% block content %}
-<style>
-    .hero-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 85vh;
-        text-align: center;
-        padding: 40px 20px;
-        position: relative;
-        overflow: hidden;
-    }
+<div style="min-height:80vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:40px 20px; position:relative;">
+    <div style="max-width:760px; position:relative; z-index:1;">
+        <div class="badge mb-16" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-size:0.82rem; padding:6px 18px; letter-spacing:1px; text-transform:uppercase;">
+            ✨ Official Institutional Learning Engine
+        </div>
 
-    .hero-bg-glow {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(124, 77, 255, 0.1) 0%, transparent 60%);
-        z-index: 0;
-    }
+        <h1 class="page-title font-display" style="font-size:clamp(2.2rem, 6vw, 3.8rem); line-height:1.15; margin:0 0 16px 0;">
+            Empowering Campus Learning Through High-Definition Video
+        </h1>
 
-    .hero-content {
-        position: relative;
-        z-index: 1;
-        max-width: 800px;
-    }
-
-    .hero-tag {
-        display: inline-block;
-        background: rgba(124, 77, 255, 0.1);
-        color: var(--primary-color);
-        padding: 8px 16px;
-        border-radius: 50px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        letter-spacing: 2px;
-        text-transform: uppercase;
-        margin-bottom: 30px;
-        border: 1px solid rgba(124, 77, 255, 0.2);
-    }
-
-    .hero-title {
-        font-size: clamp(2.5rem, 8vw, 4.5rem);
-        font-weight: 900;
-        line-height: 1.1;
-        margin-bottom: 24px;
-        background: linear-gradient(135deg, #fff 30%, var(--primary-color));
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .hero-desc {
-        font-size: 1.25rem;
-        line-height: 1.6;
-        color: var(--text-secondary);
-        margin-bottom: 48px;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .cta-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        background: linear-gradient(135deg, var(--primary-color), #512da8);
-        color: #fff;
-        padding: 20px 48px;
-        border-radius: 100px;
-        font-size: 1.2rem;
-        font-weight: 800;
-        text-decoration: none;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        box-shadow: 0 10px 30px rgba(124, 77, 255, 0.4);
-    }
-
-    .cta-button:hover {
-        transform: scale(1.05) translateY(-5px);
-        box-shadow: 0 15px 40px rgba(124, 77, 255, 0.6);
-    }
-</style>
-
-<div class="hero-container">
-    <div class="hero-bg-glow"></div>
-    <div class="hero-content">
-        <div class="hero-tag">Official Academic Portal</div>
-        <h1 class="hero-title">Empowering Education Through Video</h1>
-        <p class="hero-desc">
-            A premium digital library for authorized scholars and staff.
-            Stream modules, track progress, and engage in meaningful academic discourse.
+        <p class="page-sub" style="font-size:1.1rem; max-width:620px; margin:0 auto 36px auto; line-height:1.6;">
+            A royal, secure digital knowledge repository. Adaptive multi-tenant HLS streaming, interactive discussions, automated attendance auditing, and AI academic assistance.
         </p>
-        <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-            <a href="{{ url_for('login') }}" class="cta-button">
-                Start Learning <i class="material-icons">arrow_forward</i>
+
+        <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding:14px 36px; font-size:1.05rem; border-radius:var(--radius-pill); box-shadow:0 8px 30px rgba(99,102,241,0.35);">
+                Enter Academic Portal <i class="material-icons" style="font-size:1.2rem;">arrow_forward</i>
             </a>
         </div>
 
-        <div style="margin-top: 60px; display: flex; justify-content: center; gap: 40px; opacity: 0.5;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="material-icons">verified_user</i> Secure Access
+        <div style="margin-top:60px; display:flex; justify-content:center; gap:32px; flex-wrap:wrap; color:var(--text-dim); font-size:0.85rem;">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="color:var(--accent); font-size:1.1rem;">security</i> Multi-Tenant Isolation
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="material-icons">auto_awesome</i> HLS Streaming
+            <div style="display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="color:var(--gold); font-size:1.1rem;">bolt</i> Distributed HLS Fleet
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="material-icons">devices</i> All Platforms
+            <div style="display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="color:#10b981; font-size:1.1rem;">devices</i> Universal Screen Adaptive
             </div>
         </div>
     </div>

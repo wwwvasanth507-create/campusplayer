@@ -1,93 +1,95 @@
 {% extends "layout.html" %}
-{% block title %}Teacher Report History - CampusPlayer{% endblock %}
-{% block content %}
-<h1 class="page-title"><i class="material-icons" style="vertical-align:middle;">history</i> Report History</h1>
-<p class="page-sub">View progress report deliveries for your classes.</p>
+{% block title %}Report Delivery History — CampusPlayer{% endblock %}
 
-<div class="card card-royal" style="margin-bottom:20px;">
-    <div class="card-title">
-        <i class="material-icons">info</i> Report Delivery Overview
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Class Report Transmission Log</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Review automated student progress report history & download PDF cards</p>
+        </div>
     </div>
-    <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6;">
-        Track all reports sent for your classes, filter by date and status, and retry any failed deliveries if enabled.
-    </p>
 </div>
 
-<div class="card" style="margin-bottom:20px; padding:20px;">
-    <form method="GET" style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            Start Date
-            <input type="date" name="start_date" value="{{ start_date or '' }}" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--surface-color); border:1px solid var(--glass-border); color:var(--text);">
-        </label>
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            End Date
-            <input type="date" name="end_date" value="{{ end_date or '' }}" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--surface-color); border:1px solid var(--glass-border); color:var(--text);">
-        </label>
-        <label style="display:flex; flex-direction:column; min-width:180px; color:var(--text-secondary);">
-            Status
-            <select name="status" style="margin-top:6px; padding:10px; border-radius:10px; background:var(--surface-color); border:1px solid var(--glass-border); color:var(--text);">
-                <option value="all" {% if status == 'all' %}selected{% endif %}>All</option>
-                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent</option>
-                <option value="stored" {% if status == 'stored' %}selected{% endif %}>Stored</option>
+<div class="card mb-16" style="padding:16px;">
+    <form method="GET" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)) 130px; gap:10px; margin:0; align-items:flex-end;">
+        <div>
+            <label>Start Date</label>
+            <input type="date" name="start_date" value="{{ start_date or '' }}" style="margin-bottom:0; height:38px;">
+        </div>
+        <div>
+            <label>End Date</label>
+            <input type="date" name="end_date" value="{{ end_date or '' }}" style="margin-bottom:0; height:38px;">
+        </div>
+        <div>
+            <label>Delivery Status</label>
+            <select name="status" style="margin-bottom:0; height:38px;">
+                <option value="all" {% if status == 'all' %}selected{% endif %}>All Records</option>
+                <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent (Success)</option>
+                <option value="stored" {% if status == 'stored' %}selected{% endif %}>Stored Local</option>
                 <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
             </select>
-        </label>
-        <button type="submit" class="btn btn-primary" style="padding:10px 18px; min-width:140px;">Apply filter</button>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary" style="height:38px; min-height:38px; width:100%; font-size:0.78rem;">
+                <i class="material-icons" style="font-size:0.95rem;">filter_alt</i> Filter
+            </button>
+        </div>
     </form>
 </div>
 
 {% if logs %}
-<div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th>Sent At</th>
-                <th>Student</th>
-                <th>Class</th>
-                <th>Status</th>
-                <th>Subject</th>
-                <th>Description</th>
-                <th>PDF</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for log in logs %}
-            <tr>
-                <td>{{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>{{ log.student.username if log.student else 'Unknown Student' }}</td>
-                <td>{{ log.classroom.name if log.classroom else 'Unknown Class' }}</td>
-                <td>
-                    {% if log.status == 'sent' %}
-                    <span style="color:#4caf50;font-weight:600;">Sent</span>
-                    {% elif log.status == 'stored' %}
-                    <span style="color:#fbc02d;font-weight:600;">Stored</span>
-                    {% else %}
-                    <span style="color:#e05252;font-weight:600;">Failed</span>
-                    {% endif %}
-                </td>
-                <td>{{ log.subject or 'Progress Report' }}</td>
-                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ log.error_message or log.notes or 'No additional details' }}</td>
-                <td>
-                    <a href="{{ url_for('download_report_pdf', log_id=log.id) }}" class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;width:auto;min-height:auto;display:inline-flex;">
-                        <i class="material-icons" style="font-size:1rem;">picture_as_pdf</i> PDF
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card" style="padding:18px;">
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Student Recipient</th>
+                    <th>Classroom</th>
+                    <th>Delivery Status</th>
+                    <th>Subject</th>
+                    <th>Notes / Telemetry</th>
+                    <th style="text-align:right;">PDF Report</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ log.sent_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td style="font-weight:700; color:var(--text);">{{ log.student.username if log.student else 'Unknown Student' }}</td>
+                    <td>{{ log.classroom.name if log.classroom else 'Global' }}</td>
+                    <td>
+                        {% if log.status == 'sent' %}
+                        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">Sent</span>
+                        {% elif log.status == 'stored' %}
+                        <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">Stored</span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Failed</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.8rem; color:var(--text);">{{ log.subject or 'Progress Report' }}</td>
+                    <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.75rem; color:var(--text-dim);" title="{{ log.error_message or log.notes or '' }}">
+                        {{ log.error_message or log.notes or '—' }}
+                    </td>
+                    <td style="text-align:right;">
+                        <a href="{{ url_for('download_report_pdf', log_id=log.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:30px;">
+                            <i class="material-icons" style="font-size:0.9rem; color:var(--accent);">picture_as_pdf</i> PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
-<div class="card" style="text-align:center;padding:40px 20px;">
-    <i class="material-icons" style="font-size:3rem;color:var(--text-dim);margin-bottom:16px;display:block;">history</i>
-    <h3 style="color:var(--text-muted);margin-bottom:8px;">No report deliveries found</h3>
-    <p style="color:var(--text-dim);font-size:0.85rem;">
-        There are no report delivery logs for your classes yet. Reports will appear here after teachers send them.
-    </p>
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-primary" style="display:inline-flex;width:auto;margin-top:16px;padding:10px 24px;">
-        <i class="material-icons">arrow_back</i> Back to Dashboard
-    </a>
+<div class="card text-center" style="padding:50px;">
+    <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">history</i>
+    <p style="color:var(--text-dim); font-size:0.9rem;">No report delivery logs found for your classes.</p>
 </div>
 {% endif %}
-
 {% endblock %}

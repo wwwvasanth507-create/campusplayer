@@ -1,137 +1,121 @@
 {% extends "layout.html" %}
 {% block content %}
 
-<div class="flex-between mb-16">
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
     <div>
-        <h1 class="page-title">Welcome, {{ current_user.username }}</h1>
-        <p class="page-sub">Your teaching command center</p>
+        <h1 class="page-title font-display">Teacher Command Center</h1>
+        <p class="page-sub">Welcome back, <b style="color:var(--text);">{{ current_user.username }}</b> &bull; Manage coursework, lectures & student performance</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('teacher_videos_page') }}" class="btn btn-primary" style="width:auto; padding:8px 16px; font-size:0.8rem;">
+            <i class="material-icons" style="font-size:1.05rem;">cloud_upload</i> Upload Video
+        </a>
     </div>
 </div>
 
-<!-- XP & Level Hero -->
-<div class="card card-royal">
-    <div class="flex-between">
+<!-- XP & Level Hero Card -->
+<div class="card card-royal mb-16" style="padding:22px;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; align-items:center;">
         <div>
-            <div style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--gold);line-height:1;">{{ current_user.xp }}</div>
-            <div style="font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px;">Total XP</div>
+            <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Educator Academic XP</div>
+            <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--gold); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">XP</span></div>
         </div>
         <div style="text-align:right;">
-            <div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:800;color:var(--gold-light);">Level {{ (current_user.xp // 500) + 1 }}</div>
-            <div style="font-size:0.65rem;color:var(--text-dim);margin-top:2px;">Scholar Rank</div>
-            <div style="margin-top:8px;height:4px;background:rgba(212,168,83,0.15);border-radius:10px;overflow:hidden;width:120px;margin-left:auto;">
-                <div style="width:{{ ((current_user.xp % 500) / 500 * 100)|int }}%;height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:10px;"></div>
+            <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--primary-light); background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); padding:3px 10px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace;">
+                    LEVEL {{ (current_user.xp // 500) + 1 }}
+                </span>
+                <span style="font-size:0.75rem; color:var(--text-dim);">Scholar Rank</span>
             </div>
-            <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;">{{ current_user.xp % 500 }}/500 XP to next</div>
+            {% set xp_progress = ((current_user.xp % 500) / 500 * 100)|int %}
+            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; width:100%; max-width:180px; margin-left:auto;">
+                <div style="width:{{ xp_progress }}%; height:100%; background:var(--brand-gradient); border-radius:10px;"></div>
+            </div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px; font-family:'JetBrains Mono',monospace;">{{ current_user.xp % 500 }}/500 XP to next level</div>
         </div>
     </div>
 </div>
 
-<!-- Action Buttons Row -->
-<div class="action-btn-row">
-    <a href="{{ url_for('analytics') }}" class="btn btn-outline action-btn-item">
-        <i class="material-icons">insights</i> Analytics
+<!-- Primary Action Bar -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:20px;">
+    <a href="{{ url_for('analytics') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
+        <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">insights</i> Analytics
     </a>
-    <a href="{{ url_for('struggling_topics_report') }}" class="btn btn-outline action-btn-item">
-        <i class="material-icons">trending_down</i> Struggling
+    <a href="{{ url_for('struggling_topics_report') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
+        <i class="material-icons" style="font-size:1.1rem; color:#f43f5e;">trending_down</i> Struggling
     </a>
-    <a href="{{ url_for('teacher_assignments') }}" class="btn btn-outline action-btn-item">
-        <i class="material-icons">assignment</i> Assignments
+    <a href="{{ url_for('teacher_assignments') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
+        <i class="material-icons" style="font-size:1.1rem; color:#10b981;">assignment</i> Assignments
     </a>
-    <a href="{{ url_for('teacher_report_logs') }}" class="btn btn-outline action-btn-item">
-        <i class="material-icons">history</i> Report History
+    <a href="{{ url_for('teacher_report_logs') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
+        <i class="material-icons" style="font-size:1.1rem; color:var(--gold);">history</i> Report Logs
     </a>
 </div>
 
-<!-- Stats Grid -->
-<div class="quick-grid">
+<!-- 8-Card Quick Metric Grid -->
+<div class="quick-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:20px;">
     <a href="{{ url_for('teacher_videos_page') }}" class="quick-item">
         <i class="material-icons" style="color:#ff9800;">videocam</i>
-        <span>{{ teacher_stats.videos }}</span>
+        <span class="font-display">{{ teacher_stats.videos }}</span>
         <small>Videos</small>
     </a>
     <a href="{{ url_for('teacher_playlists_page') }}" class="quick-item">
         <i class="material-icons" style="color:#00e5ff;">playlist_play</i>
-        <span>{{ teacher_stats.playlists }}</span>
+        <span class="font-display">{{ teacher_stats.playlists }}</span>
         <small>Playlists</small>
     </a>
     <a href="{{ url_for('teacher_classes_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#00e676;">school</i>
-        <span>{{ teacher_stats.classes }}</span>
+        <i class="material-icons" style="color:#10b981;">school</i>
+        <span class="font-display">{{ teacher_stats.classes }}</span>
         <small>Classes</small>
     </a>
     <a href="{{ url_for('teacher_assignments') }}" class="quick-item">
-        <i class="material-icons" style="color:#4caf50;">assignment</i>
-        <span>{{ teacher_stats.assignments }}</span>
+        <i class="material-icons" style="color:#6366f1;">assignment</i>
+        <span class="font-display">{{ teacher_stats.assignments }}</span>
         <small>Assignments</small>
     </a>
     <a href="{{ url_for('teacher_quizzes_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#bb86fc;">quiz</i>
-        <span>{{ teacher_stats.quizzes }}</span>
+        <i class="material-icons" style="color:#a855f7;">quiz</i>
+        <span class="font-display">{{ teacher_stats.quizzes }}</span>
         <small>Quizzes</small>
     </a>
     <a href="{{ url_for('teacher_enrolled_students_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#f48fb1;">group</i>
-        <span>{{ teacher_stats.students_added }}</span>
+        <i class="material-icons" style="color:#f43f5e;">group</i>
+        <span class="font-display">{{ teacher_stats.students_added }}</span>
         <small>Students</small>
     </a>
     <a href="{{ url_for('teacher_attendance_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#80cbc4;">fact_check</i>
-        <span>📅</span>
+        <i class="material-icons" style="color:#0ea5e9;">fact_check</i>
+        <span class="font-display">Live</span>
         <small>Attendance</small>
     </a>
     <a href="{{ url_for('attendance_reports_hub') }}" class="quick-item">
-        <i class="material-icons" style="color:#d4a853;">event_note</i>
-        <span>📊</span>
+        <i class="material-icons" style="color:var(--gold);">event_note</i>
+        <span class="font-display">Export</span>
         <small>Session Reports</small>
     </a>
-</div>
-
-<!-- Quick Actions -->
-<div class="card">
-    <div class="card-title">
-        <i class="material-icons">bolt</i>
-        Quick Actions
-    </div>
-    <div class="quick-actions-grid">
-        <a href="{{ url_for('teacher_videos_page') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">cloud_upload</i> Upload
-        </a>
-        <a href="{{ url_for('create_quiz') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">add_circle</i> New Quiz
-        </a>
-        <a href="{{ url_for('teacher_attendance_page') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">how_to_reg</i> Attendance
-        </a>
-        <a href="{{ url_for('teacher_enrolled_students_page') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">person_add</i> +Student
-        </a>
-        <a href="{{ url_for('teacher_classes_page') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">add_task</i> Classes
-        </a>
-        <a href="{{ url_for('ai_assistant') }}" class="btn btn-outline quick-action-btn">
-            <i class="material-icons">auto_awesome</i> AI
-        </a>
-    </div>
 </div>
 
 <!-- Active Classes Chatrooms -->
 {% if classes %}
 <div class="card">
-    <div class="card-title">
+    <div class="card-title font-display">
         <i class="material-icons">chat</i>
-        Class Chatrooms
+        Classroom Chatrooms ({{ classes|length }})
     </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
     {% for cls in classes %}
     <a href="{{ url_for('chatroom', class_id=cls.id) }}"
-        style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:8px;text-decoration:none;color:var(--text);border:1px solid var(--border);">
-        <i class="material-icons" style="color:var(--gold);">chat</i>
+        style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface2); border-radius:var(--radius-sm); text-decoration:none; color:var(--text); border:1px solid var(--border); transition:all 0.25s ease;">
+        <i class="material-icons" style="color:var(--accent);">chat</i>
         <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.85rem;">{{ cls.name }}</div>
-            <div style="font-size:0.68rem;color:var(--text-dim);">{{ cls.students.count() }} students</div>
+            <div class="font-display" style="font-weight:700; font-size:0.92rem;">{{ cls.name }}</div>
+            <div style="font-size:0.72rem; color:var(--text-dim);">{{ cls.students.count() }} enrolled students</div>
         </div>
-        <i class="material-icons" style="color:var(--text-dim);font-size:1.1rem;">chevron_right</i>
+        <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">chevron_right</i>
     </a>
     {% endfor %}
+    </div>
 </div>
 {% endif %}
 

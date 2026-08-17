@@ -1,381 +1,188 @@
 {% extends "layout.html" %}
+{% block title %}Enrolled Students — CampusPlayer{% endblock %}
+
 {% block content %}
-<style>
-    .search-wrap {
-        position: relative;
-        margin-bottom: 24px;
-    }
-
-    .search-bar {
-        display: flex;
-        align-items: center;
-        gap: 0;
-        background: var(--surface-color);
-        border-radius: 50px;
-        border: 2px solid rgba(255,255,255,0.1);
-        transition: all 0.3s ease;
-        overflow: hidden;
-    }
-    .search-bar:focus-within {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
-    }
-    .search-bar .si {
-        padding: 0 0 0 20px;
-        color: var(--text-secondary);
-        font-size: 1.3rem;
-        flex-shrink: 0;
-    }
-    .search-bar input {
-        flex: 1;
-        padding: 22px 16px;
-        font-size: 1.1rem;
-        background: transparent;
-        margin: 0;
-        border: none;
-        outline: none;
-        color: var(--text);
-    }
-    .search-bar input::placeholder {
-        color: var(--text-secondary);
-        opacity: 0.6;
-    }
-    .search-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 14px 24px;
-        margin: 4px;
-        background: linear-gradient(135deg, #7c4dff, #00e5ff);
-        border: none;
-        border-radius: 50px;
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.3s;
-        flex-shrink: 0;
-    }
-    .search-btn:hover {
-        transform: scale(1.03);
-        box-shadow: 0 4px 20px rgba(124, 77, 255, 0.3);
-    }
-    .search-btn:active {
-        transform: scale(0.97);
-    }
-    .search-btn i {
-        font-size: 1.2rem;
-    }
-    .search-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-    }
-    .search-meta .clear-link {
-        color: var(--primary-color);
-        text-decoration: none;
-        font-weight: 600;
-        cursor: pointer;
-    }
-    .search-meta .clear-link:hover {
-        text-decoration: underline;
-    }
-
-    .std-card {
-        background: var(--surface-color);
-        border-radius: 18px;
-        padding: 20px 24px;
-        border: 1px solid var(--glass-border);
-        margin-bottom: 14px;
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        transition: all 0.3s;
-    }
-
-    .std-card:hover {
-        border-color: var(--primary-color);
-        transform: translateX(4px);
-    }
-
-    .s-avatar {
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #7c4dff, #00e5ff);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        color: #fff;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-    }
-
-    .s-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .s-name {
-        font-weight: 700;
-        font-size: 1rem;
-    }
-
-    .s-meta {
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        margin-top: 3px;
-    }
-
-    .cls-chips {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-        margin-top: 5px;
-    }
-
-    .cls-chip {
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-size: 0.72rem;
-        background: rgba(0, 229, 255, 0.1);
-        color: #00e5ff;
-        border: 1px solid rgba(0, 229, 255, 0.2);
-    }
-
-    .s-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-shrink: 0;
-    }
-
-    .stats-summary {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 28px;
-        flex-wrap: wrap;
-    }
-
-    .sstat {
-        background: var(--surface-color);
-        border-radius: 16px;
-        padding: 18px 24px;
-        border: 1px solid var(--glass-border);
-        flex: 1;
-        min-width: 130px;
-        text-align: center;
-    }
-
-    .sstat-val {
-        font-size: 2rem;
-        font-weight: 800;
-    }
-
-    .sstat-lbl {
-        font-size: 0.78rem;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-top: 4px;
-    }
-</style>
-
-<div style="display:flex; align-items:center; gap:16px; margin-bottom:28px;">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
-            class="material-icons">arrow_back</i></a>
-    <div>
-        <h1
-            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,var(--primary-color)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            Enrolled Students</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">Students across all campus classes</p>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Enrolled Student Directory</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Manage student accounts, credentials, contact numbers & reports</p>
+        </div>
+    </div>
+    <div class="stat-card" style="padding:8px 16px; margin:0; display:flex; align-items:center; gap:10px;">
+        <span class="font-display" style="font-size:1.3rem; font-weight:800; color:var(--primary-light);">{{ enrolled_list|length }}</span>
+        <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Students</span>
     </div>
 </div>
 
-<!-- Stats -->
-<div class="stats-summary">
-    <div class="sstat">
-        <div class="sstat-val" style="color:var(--primary-color);">{{ enrolled_list|length }}</div>
-        <div class="sstat-lbl">Unique Students</div>
+<!-- Add Student Card -->
+<div class="card mb-16" style="padding:18px;">
+    <div class="card-title font-display" style="margin-bottom:12px; font-size:1rem;">
+        <i class="material-icons">person_add</i> Create New Student Account
     </div>
-</div>
-
-<!-- Add Student -->
-<div class="card" style="padding:24px; margin-bottom:28px;">
-    <h3 style="margin-top:0; color:var(--primary-color); display:flex; align-items:center; gap:8px;"><i
-            class="material-icons">person_add</i> Create New Student Account</h3>
-    <form method="POST" action="{{ url_for('add_student') }}"
-        style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-        <input type="text" name="username" placeholder="New student username" required
-            style="flex:1; min-width:180px; padding:22px 20px; font-size:1.1rem; background:var(--bg-color); border-radius:16px; border:1px solid rgba(255,255,255,0.15); margin:0; height:auto;">
-        <input type="text" name="password" placeholder="Initial password" required
-            style="flex:1; min-width:160px; padding:22px 20px; font-size:1.1rem; background:var(--bg-color); border-radius:16px; border:1px solid rgba(255,255,255,0.15); margin:0; height:auto;">
-        <button type="submit" class="btn" style="flex-shrink:0; white-space:nowrap; padding:22px 24px; border-radius:16px;">
-            <i class="material-icons">add</i> Create Student
-        </button>
-    </form>
-</div>
-
-<div class="search-wrap">
-    <form method="GET" action="" id="searchForm">
-        <div class="search-bar">
-            <i class="material-icons si">search</i>
-            <input type="text" name="q" id="searchInput" placeholder="Search students by name, phone, class..." value="{{ search_query or '' }}" autocomplete="off">
-            <button type="submit" class="search-btn">
-                <i class="material-icons">search</i> Search
+    <form method="POST" action="{{ url_for('add_student') }}" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)) 160px; gap:10px; margin:0; align-items:flex-end;">
+        <div>
+            <label>Student Username *</label>
+            <input type="text" name="username" placeholder="Username (e.g. john_doe)" required style="margin-bottom:0; height:40px;">
+        </div>
+        <div>
+            <label>Initial Password *</label>
+            <input type="text" name="password" placeholder="Temporary password" required style="margin-bottom:0; height:40px;">
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary" style="height:40px; min-height:40px; width:100%; font-size:0.8rem;">
+                <i class="material-icons" style="font-size:0.95rem;">add</i> Create Account
             </button>
         </div>
     </form>
+</div>
+
+<!-- Search Bar -->
+<div class="mb-16" style="position:relative;">
+    <form method="GET" action="" id="searchForm" style="margin:0; position:relative;">
+        <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>
+        <input type="text" name="q" id="searchInput" placeholder="Search students by username, phone number, classroom..." value="{{ search_query or '' }}" autocomplete="off"
+            style="padding-left:42px; margin-bottom:0; height:44px; border-radius:var(--radius-pill);">
+    </form>
     {% if search_query %}
-    <div class="search-meta">
-        <span>Showing results for "<strong>{{ search_query }}</strong>" — {{ enrolled_list|length }} student{% if enrolled_list|length != 1 %}s{% endif %} found</span>
-        <a href="{{ url_for('teacher_enrolled_students_page') }}" class="clear-link">✕ Clear search</a>
+    <div class="flex-between" style="margin-top:8px; font-size:0.75rem; color:var(--text-dim);">
+        <span>Showing results for "<strong>{{ search_query }}</strong>" ({{ enrolled_list|length }} found)</span>
+        <a href="{{ url_for('teacher_enrolled_students_page') }}" style="color:var(--primary-light); font-weight:600; text-decoration:none;">✕ Clear Filter</a>
     </div>
     {% endif %}
 </div>
 
 {% if enrolled_list %}
-{% for item in enrolled_list %}
-{% set student = item.student %}
-{% set classes = item.classes %}
-<div class="std-card">
-    <div class="s-avatar">{{ student.username[0].upper() }}</div>
-    <div class="s-info">
-        <div class="s-name">{{ student.username }}</div>
-        <div class="s-meta">XP: {{ student.xp }} &bull; Level {{ (student.xp // 500) + 1 }} &bull; Joined {{
-            student.created_at.strftime('%b %d, %Y') }}</div>
-        <div class="cls-chips">
-            {% for cls_name in classes %}<span class="cls-chip">{{ cls_name }}</span>{% endfor %}
+<div style="display:flex; flex-direction:column; gap:12px;">
+    {% for item in enrolled_list %}
+    {% set student = item.student %}
+    {% set classes = item.classes %}
+    <div class="card" style="margin-bottom:0; padding:16px;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
+                <div style="width:42px; height:42px; border-radius:10px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#fff; flex-shrink:0;">
+                    {{ student.username[0].upper() }}
+                </div>
+                <div style="min-width:0;">
+                    <div style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.username }}</div>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
+                        <span style="color:var(--gold); font-weight:600;">⚡ {{ student.xp }} XP</span> &bull;
+                        Level {{ (student.xp // 500) + 1 }} &bull;
+                        Joined {{ student.created_at.strftime('%b %d, %Y') }}
+                    </div>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">
+                        {% for cls_name in classes %}
+                        <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-size:0.68rem; padding:2px 8px;">
+                            {{ cls_name }}
+                        </span>
+                        {% endfor %}
+                        {% if student.phone %}
+                        <span class="badge" style="background:rgba(0,229,255,0.12); color:var(--accent); border:1px solid rgba(0,229,255,0.25); font-size:0.68rem; padding:2px 8px;">
+                            📲 {{ student.phone }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                {% if student.phone %}
+                <button onclick="openSmsModal({{ student.id }}, '{{ student.username }}')" class="btn btn-outline"
+                    style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--accent);" title="SMS Report">
+                    <i class="material-icons" style="font-size:0.95rem;">message</i>
+                </button>
+                {% endif %}
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" onclick="toggleReset('sp-{{ student.id }}')" title="Set Phone">
+                    <i class="material-icons" style="font-size:0.95rem;">phone</i>
+                </button>
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" onclick="toggleReset('sr-{{ student.id }}')" title="Reset Password">
+                    <i class="material-icons" style="font-size:0.95rem;">vpn_key</i>
+                </button>
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--gold);" onclick="toggleReset('srm-{{ student.id }}')" title="Teacher Remarks">
+                    <i class="material-icons" style="font-size:0.95rem;">rate_review</i>
+                </button>
+                <a href="{{ url_for('monthly_report', student_id=student.id) }}" class="btn btn-outline"
+                    style="padding:6px 10px; font-size:0.75rem; min-height:34px;" title="Performance Report">
+                    <i class="material-icons" style="font-size:0.95rem;">assessment</i>
+                </a>
+                <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST"
+                    onsubmit="return confirm('Delete student account \'{{ student.username }}\'?')" style="margin:0;">
+                    <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" title="Delete Student">
+                        <i class="material-icons" style="font-size:0.95rem;">person_remove</i>
+                    </button>
+                </form>
+            </div>
         </div>
-        {% if student.phone %}
-        <div
-            style="font-size:0.75rem; color:#00e5ff; margin-top:5px; display:inline-flex; align-items:center; gap:4px;">
-            📲 {{ student.phone }}
+
+        <!-- Inline Remarks Form -->
+        <div id="srm-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+            <h4 class="font-display" style="margin:0 0 8px 0; font-size:0.82rem; color:var(--gold);">Teacher Remarks for {{ student.username }}</h4>
+            {% set ns = namespace(my_classes=0) %}
+            {% for cls in item.class_details %}
+                {% if current_user.role == 'admin' or cls.teacher_id == current_user.id %}
+                    <form action="{{ url_for('save_student_remark', classroom_id=cls.id, student_id=student.id) }}" method="POST"
+                        style="display:flex; gap:6px; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:0.75rem; width:110px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; color:var(--text-dim);" title="{{ cls.name }}">{{ cls.name }}:</span>
+                        <input type="text" name="remark" value="{{ cls.remark }}" placeholder="Enter performance remark..."
+                            style="flex:1; margin:0; padding:6px 10px; font-size:0.78rem; height:32px; min-height:32px; border-radius:6px;">
+                        <button type="submit" class="btn btn-primary" style="padding:4px 10px; font-size:0.72rem; height:32px; min-height:32px;">Save</button>
+                    </form>
+                    {% set ns.my_classes = ns.my_classes + 1 %}
+                {% endif %}
+            {% endfor %}
+            {% if ns.my_classes == 0 %}
+                <p style="font-size:0.72rem; color:var(--text-dim); margin:0;">You are not teaching this student in any active classes.</p>
+            {% endif %}
         </div>
-        {% else %}
-        <span style="font-size:0.75rem; color:rgba(255,255,255,0.3); margin-top:5px; display:inline-block;">📵 No phone
-            set</span>
-        {% endif %}
-    </div>
-    <div class="s-actions">
-        <!-- SMS send status modal -->
-        {% if student.phone %}
-        <button onclick="openSmsModal({{ student.id }}, '{{ student.username }}')" class="btn btn-secondary"
-            style="padding:8px 12px; color:#00e5ff;" title="Send SMS Text Report">
-            <i class="material-icons" style="font-size:1rem;">message</i>
-        </button>
-        {% endif %}
-         <!-- Set Phone -->
-        <button class="btn btn-secondary" style="padding:8px 12px;" onclick="toggleReset('sp-{{ student.id }}')" title="Set Phone Number">
-            <i class="material-icons" style="font-size:1rem;">phone</i>
-        </button>
-        <button class="btn btn-secondary" style="padding:8px 12px;" onclick="toggleReset('sr-{{ student.id }}')" title="Change Password">
-            <i class="material-icons" style="font-size:1rem;">vpn_key</i>
-        </button>
-        <!-- Set Remarks -->
-        <button class="btn btn-secondary" style="padding:8px 12px;" onclick="toggleReset('srm-{{ student.id }}')" title="Edit Remarks">
-            <i class="material-icons" style="font-size:1rem;">rate_review</i>
-        </button>
-        <a href="{{ url_for('monthly_report', student_id=student.id) }}" class="btn btn-secondary"
-            style="padding:8px 12px; text-decoration:none; color:#00e5ff;" title="Performance Report">
-            <i class="material-icons" style="font-size:1rem;">assessment</i>
-        </a>
-        <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST"
-            onsubmit="return confirm('Delete student {{ student.username }}?')" style="margin:0;">
-            <button type="submit" class="btn" style="background:rgba(255,82,82,0.1); color:#ff5252; padding:8px 12px;" title="Delete Student">
-                <i class="material-icons" style="font-size:1rem;">person_remove</i>
-            </button>
-        </form>
-    </div>
-</div>
-<!-- Inline Remarks Form -->
-<div id="srm-{{ student.id }}"
-    style="display:none; margin:-8px 0 14px 0; padding:16px; background:rgba(244,176,77,0.04); border:1px solid rgba(244,176,77,0.2); border-radius:14px;">
-    <h4 style="margin:0 0 10px 0; font-size:0.85rem; color:var(--gold); font-family:'Playfair Display', serif;">Teacher Remarks for {{ student.username }}</h4>
-    {% set ns = namespace(my_classes=0) %}
-    {% for cls in item.class_details %}
-        {% if current_user.role == 'admin' or cls.teacher_id == current_user.id %}
-            <form action="{{ url_for('save_student_remark', classroom_id=cls.id, student_id=student.id) }}" method="POST"
-                style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-                <span style="font-size:0.75rem; width:120px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="{{ cls.name }}">{{ cls.name }}:</span>
-                <input type="text" name="remark" value="{{ cls.remark }}" placeholder="Enter remark..."
-                    style="flex:1; margin:0; padding:10px 14px; font-size:0.85rem; background:var(--bg-color); border-radius:8px; border:1px solid rgba(255,255,255,0.15); height:auto; min-height:auto;">
-                <button type="submit" class="btn btn-secondary"
-                    style="padding:6px 12px; border-radius:8px; font-size:0.7rem; width:auto; min-height:auto; height:34px; background:var(--gold); color:#000;">Save</button>
+
+        <!-- Inline Phone Update Form -->
+        <div id="sp-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+            <form action="{{ url_for('teacher_update_student_phone', student_id=student.id) }}" method="POST"
+                style="display:flex; gap:8px; align-items:center; margin:0;">
+                <span style="font-size:0.85rem;">📲</span>
+                <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ student.phone or '' }}"
+                    style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
+                <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Save Phone</button>
             </form>
-            {% set ns.my_classes = ns.my_classes + 1 %}
-        {% endif %}
+        </div>
+
+        <!-- Inline Password Reset Form -->
+        <div id="sr-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+            <form action="{{ url_for('change_student_password') }}" method="POST"
+                style="display:flex; gap:8px; align-items:center; margin:0;">
+                <input type="hidden" name="student_id" value="{{ student.id }}">
+                <input type="password" name="new_password" placeholder="New password for {{ student.username }}" required
+                    style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
+                <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Set Password</button>
+            </form>
+        </div>
+    </div>
     {% endfor %}
-    {% if ns.my_classes == 0 %}
-        <p style="font-size:0.75rem; color:var(--text-dim);">You are not teaching this student in any active classes.</p>
-    {% endif %}
 </div>
-<!-- Inline Phone Update Form -->
-<div id="sp-{{ student.id }}"
-    style="display:none; margin:-8px 0 14px 0; padding:16px; background:rgba(0,229,118,0.04); border:1px solid rgba(0,229,118,0.2); border-radius:14px;">
-    <form action="{{ url_for('teacher_update_student_phone', student_id=student.id) }}" method="POST"
-        style="display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span>📲</span>
-            <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ student.phone or '' }}"
-                style="flex:1; margin:0; padding:26px 22px; font-size:1.05rem; background:var(--bg-color); border-radius:16px; border:1px solid rgba(255,255,255,0.2); height:auto;">
-        </div>
-        <button type="submit" class="btn btn-secondary"
-            style="padding:6px 12px; align-self:flex-end; white-space:nowrap; border-radius:8px; font-size:0.7rem; width:auto;">Save Phone</button>
-    </form>
-</div>
-<!-- Inline reset form -->
-<div id="sr-{{ student.id }}"
-    style="display:none; margin:-8px 0 14px 0; padding:16px; background:rgba(124,77,255,0.05); border:1px solid rgba(124,77,255,0.2); border-radius:14px;">
-    <form action="{{ url_for('change_student_password') }}" method="POST"
-        style="display:flex; flex-direction:column; gap:8px;">
-        <input type="hidden" name="student_id" value="{{ student.id }}">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <input type="password" name="new_password" placeholder="New password for {{ student.username }}" required
-                style="flex:1; margin:0; padding:26px 22px; font-size:1.05rem; background:var(--bg-color); border-radius:16px; border:1px solid rgba(255,255,255,0.2); height:auto;">
-        </div>
-        <button type="submit" class="btn btn-secondary"
-            style="padding:6px 12px; align-self:flex-end; white-space:nowrap; border-radius:8px; font-size:0.7rem; width:auto;">Set Password</button>
-    </form>
-</div>
-{% endfor %}
 {% else %}
-<div class="card" style="text-align:center; padding:60px; color:var(--text-secondary);">
-    <i class="material-icons" style="font-size:4rem; opacity:0.2;">people_outline</i>
-    <p>{% if search_query %}No students matching "{{ search_query }}"{% else %}No students enrolled across your classes
-        yet.{% endif %}</p>
+<div class="card text-center" style="padding:50px;">
+    <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">people_outline</i>
+    <p style="color:var(--text-dim); font-size:0.9rem;">{% if search_query %}No students matching "{{ search_query }}"{% else %}No enrolled students found across your classes yet.{% endif %}</p>
 </div>
 {% endif %}
 
-
 <!-- SMS Modal -->
-<div id="smsModal"
-    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px);">
-    <div
-        style="background:var(--card-bg); width:100%; max-width:400px; padding:30px; border-radius:24px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-        <button onclick="closeSmsModal()"
-            style="float:right; background:none; border:none; color:#fff; cursor:pointer;"><i
-                class="material-icons">close</i></button>
-        <h3 style="margin:0 0 10px 0; display:flex; align-items:center; gap:10px;">
-            <i class="material-icons" style="color:#00e5ff;">message</i>
-            SMS Text Report
-        </h3>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:20px;">Text summary for <b
-                id="smsStudentName">Student</b></p>
-
+<div id="smsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(6px);">
+    <div class="card" style="width:100%; max-width:420px; padding:24px; border-radius:var(--radius-lg); margin:0;">
+        <div class="flex-between mb-12">
+            <div class="card-title font-display" style="margin:0; font-size:1rem;"><i class="material-icons" style="color:var(--accent);">message</i> SMS Progress Report</div>
+            <button onclick="closeSmsModal()" class="btn btn-outline" style="min-height:30px; padding:2px 6px; border-radius:50%;">&times;</button>
+        </div>
+        <p style="font-size:0.78rem; color:var(--text-dim); margin-bottom:14px;">Parent summary dispatch for <b id="smsStudentName" style="color:var(--text);">Student</b></p>
         <textarea id="smsPreviewText" readonly
-            style="width:100%; height:130px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:var(--text); padding:12px; font-family:monospace; font-size:0.85rem; resize:none; margin-bottom:20px;"></textarea>
-
-        <div style="display:flex; gap:10px;">
-            <button onclick="copySmsText()" class="btn btn-secondary" style="flex:1;">📋 Copy Text</button>
-            <a id="smsDirectLink" href="#" class="btn btn-secondary"
-                style="flex:1; background:rgba(0,229,255,0.1); color:#00e5ff; text-decoration:none; display:flex; align-items:center; justify-content:center;">📲
-                Send SMS</a>
+            style="width:100%; height:120px; font-family:'JetBrains Mono',monospace; font-size:0.75rem; resize:none; margin-bottom:14px;"></textarea>
+        <div style="display:flex; gap:8px;">
+            <button onclick="copySmsText()" class="btn btn-outline" style="flex:1; font-size:0.78rem;">📋 Copy Text</button>
+            <a id="smsDirectLink" href="#" class="btn btn-primary" style="flex:1; font-size:0.78rem;">📲 Dispatch SMS</a>
         </div>
     </div>
 </div>
@@ -405,7 +212,7 @@
         const txt = document.getElementById('smsPreviewText');
         txt.select();
         document.execCommand('copy');
-        alert('Text report copied!');
+        alert('Text report copied to clipboard!');
     }
 </script>
 {% endblock %}

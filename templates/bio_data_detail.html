@@ -1,83 +1,122 @@
 {% extends "layout.html" %}
+{% block title %}{{ student.username }} Bio Data Record — CampusPlayer{% endblock %}
+
 {% block content %}
-<div class="page-title">{{ student.username }} — Bio Data</div>
-<p class="page-sub"><a href="{{ url_for('bio_data_list') }}">&larr; Back to list</a></p>
-
-{% if not profile %}
-<div class="card">
-    <p style="color:var(--text-secondary);">This student has not submitted their bio data yet.</p>
-</div>
-{% else %}
-<div class="card" style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
-    {% if profile.photo_path %}
-    <img src="{{ url_for('static', filename=profile.photo_path) }}" alt="Photo" style="width:100px; height:100px; object-fit:cover; border-radius:12px;">
-    {% endif %}
-    <div>
-        <h2 style="margin:0;">{{ profile.student_name or student.username }}</h2>
-        <p style="color:var(--text-secondary); margin:4px 0 0 0;">{{ profile.department or '—' }} | {{ profile.year or '' }} {{ profile.section or '' }}</p>
-    </div>
-    <a href="{{ url_for('bio_data_pdf', student_id=student.id) }}" class="btn btn-primary" style="margin-left:auto;">⬇️ Download Full PDF</a>
-</div>
-
-{% macro field_row(label, value) %}
-<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.85rem;">
-    <span style="color:var(--text-secondary);">{{ label }}</span>
-    <span>{{ value or '—' }}</span>
-</div>
-{% endmacro %}
-
-<div class="card">
-    <div class="card-title">Personal Details</div>
-    {{ field_row('Student ID', profile.student_id_number) }}
-    {{ field_row('Roll Number', profile.roll_number) }}
-    {{ field_row('Date of Birth', profile.date_of_birth.strftime('%Y-%m-%d') if profile.date_of_birth else None) }}
-    {{ field_row('Gender', profile.gender) }}
-    {{ field_row('Blood Group', profile.blood_group) }}
-    {{ field_row('Phone Number', profile.phone_number) }}
-    {{ field_row('Email', profile.email) }}
-    {{ field_row('Nationality', profile.nationality) }}
-    {{ field_row('Religion', profile.religion) }}
-    {{ field_row('Category', profile.category) }}
-</div>
-
-<div class="card">
-    <div class="card-title">Family Details</div>
-    {{ field_row('Father Name', profile.father_name) }}
-    {{ field_row('Mother Name', profile.mother_name) }}
-    {{ field_row('Father Phone', profile.father_phone) }}
-    {{ field_row('Mother Phone', profile.mother_phone) }}
-    {{ field_row('Father Email', profile.father_email) }}
-    {{ field_row('Mother Email', profile.mother_email) }}
-    {{ field_row('Guardian Name', profile.guardian_name) }}
-    {{ field_row('Guardian Phone', profile.guardian_phone) }}
-</div>
-
-<div class="card">
-    <div class="card-title">Address</div>
-    {{ field_row('Communication Address', profile.communication_address) }}
-    {{ field_row('Permanent Address', profile.permanent_address) }}
-</div>
-
-<div class="card">
-    <div class="card-title">Emergency Contact</div>
-    {{ field_row('Contact Name', profile.emergency_contact) }}
-    {{ field_row('Contact Phone', profile.emergency_phone) }}
-</div>
-
-<div class="card">
-    <div class="card-title">Documents</div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-        {% if profile.signature_path %}<a href="{{ url_for('static', filename=profile.signature_path) }}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.75rem;">Signature</a>{% endif %}
-        {% if profile.aadhaar_path %}<a href="{{ url_for('static', filename=profile.aadhaar_path) }}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.75rem;">Aadhaar</a>{% endif %}
-        {% if profile.transfer_certificate_path %}<a href="{{ url_for('static', filename=profile.transfer_certificate_path) }}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.75rem;">Transfer Certificate</a>{% endif %}
-        {% if profile.community_certificate_path %}<a href="{{ url_for('static', filename=profile.community_certificate_path) }}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.75rem;">Community Certificate</a>{% endif %}
-        {% for c in profile.get_other_certificates() %}
-        <a href="{{ url_for('static', filename=c.path) }}" target="_blank" class="btn" style="padding:6px 12px; font-size:0.75rem;">{{ c.name }}</a>
-        {% endfor %}
-        {% if not profile.signature_path and not profile.aadhaar_path and not profile.transfer_certificate_path and not profile.community_certificate_path and not profile.get_other_certificates() %}
-        <span style="color:var(--text-secondary); font-size:0.85rem;">No documents uploaded.</span>
+<div style="max-width:860px; margin:0 auto;">
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('bio_data_list') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0;">{{ student.username }} &bull; Bio Data Record</h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">Official verified dossier and identity records</p>
+            </div>
+        </div>
+        {% if profile %}
+        <a href="{{ url_for('bio_data_pdf', student_id=student.id) }}" class="btn btn-primary" style="font-size:0.82rem; padding:8px 16px;">
+            <i class="material-icons" style="font-size:1rem;">download</i> Download Full PDF
+        </a>
         {% endif %}
     </div>
+
+    {% if not profile %}
+    <div class="card text-center" style="padding:50px;">
+        <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">assignment_late</i>
+        <p style="color:var(--text-dim); font-size:0.9rem;">This scholar has not submitted their official bio data dossier yet.</p>
+    </div>
+    {% else %}
+    <div class="card mb-16" style="padding:22px; display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        {% if profile.photo_path %}
+        <img src="{{ url_for('static', filename=profile.photo_path) }}" alt="Photo" style="width:84px; height:84px; object-fit:cover; border-radius:14px; border:2px solid var(--border); box-shadow:var(--shadow);">
+        {% else %}
+        <div style="width:84px; height:84px; border-radius:14px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; color:#fff;">
+            {{ student.username[:2].upper() }}
+        </div>
+        {% endif %}
+        <div>
+            <h2 class="font-display" style="margin:0; font-size:1.4rem; color:var(--text);">{{ profile.student_name or student.username }}</h2>
+            <div style="color:var(--text-dim); font-size:0.85rem; margin-top:4px;">
+                Department: <strong style="color:var(--text);">{{ profile.department or '—' }}</strong> &bull; {{ profile.year or '' }} {{ profile.section or '' }}
+            </div>
+        </div>
+    </div>
+
+    {% macro field_row(label, value) %}
+    <div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem;">
+        <span style="color:var(--text-dim); font-weight:600;">{{ label }}</span>
+        <span style="color:var(--text); font-weight:700;">{{ value or '—' }}</span>
+    </div>
+    {% endmacro %}
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
+                <i class="material-icons" style="color:var(--accent);">badge</i> Personal Details
+            </div>
+            {{ field_row('Student ID', profile.student_id_number) }}
+            {{ field_row('Roll / Registration No.', profile.roll_number) }}
+            {{ field_row('Date of Birth', profile.date_of_birth.strftime('%d %B %Y') if profile.date_of_birth else None) }}
+            {{ field_row('Gender', profile.gender) }}
+            {{ field_row('Blood Group', profile.blood_group) }}
+            {{ field_row('Phone Number', profile.phone_number) }}
+            {{ field_row('Email Address', profile.email) }}
+            {{ field_row('Nationality', profile.nationality) }}
+            {{ field_row('Religion / Community', profile.religion) }}
+            {{ field_row('Category', profile.category) }}
+        </div>
+
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
+                <i class="material-icons" style="color:var(--gold);">family_restroom</i> Family &amp; Guardian Info
+            </div>
+            {{ field_row('Father Name', profile.father_name) }}
+            {{ field_row('Father Contact', profile.father_phone) }}
+            {{ field_row('Mother Name', profile.mother_name) }}
+            {{ field_row('Mother Contact', profile.mother_phone) }}
+            {{ field_row('Father Email', profile.father_email) }}
+            {{ field_row('Mother Email', profile.mother_email) }}
+            {{ field_row('Guardian Name', profile.guardian_name) }}
+            {{ field_row('Guardian Phone', profile.guardian_phone) }}
+        </div>
+
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
+                <i class="material-icons" style="color:var(--primary-light);">home</i> Address &amp; Residences
+            </div>
+            <div style="margin-bottom:12px;">
+                <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Communication Address</div>
+                <div style="font-size:0.85rem; color:var(--text); line-height:1.4;">{{ profile.communication_address or '—' }}</div>
+            </div>
+            <div class="divider" style="margin:10px 0;"></div>
+            <div>
+                <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Permanent Address</div>
+                <div style="font-size:0.85rem; color:var(--text); line-height:1.4;">{{ profile.permanent_address or '—' }}</div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
+                <i class="material-icons" style="color:#f43f5e;">emergency</i> Emergency Dispatch
+            </div>
+            {{ field_row('Emergency Contact', profile.emergency_contact) }}
+            {{ field_row('Emergency Phone', profile.emergency_phone) }}
+
+            <div class="divider" style="margin:14px 0 10px;"></div>
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:10px;">
+                <i class="material-icons" style="color:var(--accent);">upload_file</i> Certified Documents
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                {% if profile.signature_path %}<a href="{{ url_for('static', filename=profile.signature_path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">draw</i> Signature</a>{% endif %}
+                {% if profile.aadhaar_path %}<a href="{{ url_for('static', filename=profile.aadhaar_path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">credit_card</i> Aadhaar</a>{% endif %}
+                {% if profile.transfer_certificate_path %}<a href="{{ url_for('static', filename=profile.transfer_certificate_path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">description</i> TC</a>{% endif %}
+                {% if profile.community_certificate_path %}<a href="{{ url_for('static', filename=profile.community_certificate_path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">verified</i> Community</a>{% endif %}
+                {% for c in profile.get_other_certificates() %}
+                <a href="{{ url_for('static', filename=c.path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">attachment</i> {{ c.name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
 {% endblock %}

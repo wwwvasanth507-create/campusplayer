@@ -1,53 +1,83 @@
 {% extends "layout.html" %}
+{% block title %}Attendance Session Reports — CampusPlayer{% endblock %}
+
 {% block content %}
-<div class="flex-between" style="margin-bottom:8px;">
-    <div class="page-title" style="margin:0;">Attendance Session Reports</div>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('teacher_dashboard') if current_user.role == 'teacher' else url_for('admin_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Attendance Session Reports</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">
+                Percentage-based session metrics &amp; student qualification reports
+                {% if settings %}&bull; Minimum required attendance: <b style="color:var(--gold);">{{ settings.min_attendance_percentage or 75 }}%</b>{% endif %}
+            </p>
+        </div>
+    </div>
 </div>
-<p class="page-sub">View &amp; download percentage-based attendance reports by session
-    {% if settings %}· Minimum required: <strong>{{ settings.min_attendance_percentage or 75 }}%</strong>{% endif %}
-</p>
 
 {% if classes_data %}
 {% for entry in classes_data %}
-<div class="card" style="margin-bottom:18px;">
-    <div class="card-title">
-        <i class="material-icons">school</i> {{ entry.classroom.name }}
-        <span class="text-dim fs-small" style="margin-left:8px;">{{ entry.classroom.students.count() }} students</span>
+<div class="card mb-16" style="padding:18px;">
+    <div class="flex-between mb-12">
+        <div class="card-title font-display" style="margin:0; font-size:1.05rem;">
+            <i class="material-icons" style="color:var(--accent);">school</i> {{ entry.classroom.name }}
+            <span style="font-size:0.75rem; color:var(--text-dim); margin-left:8px; font-family:'JetBrains Mono',monospace;">
+                ({{ entry.classroom.students.count() }} enrolled)
+            </span>
+        </div>
     </div>
     {% if entry.sessions %}
-    <div class="table-wrap">
+    <div class="table-container">
         <table>
-            <tr><th>Session</th><th>Start Date</th><th>End Date</th><th>Sub-sessions</th><th></th></tr>
-            {% for s in entry.sessions %}
-            <tr>
-                <td><b>{{ s.name }}</b></td>
-                <td>{{ s.start_date.strftime('%d %b %Y') }}</td>
-                <td>{{ s.end_date.strftime('%d %b %Y') }}</td>
-                <td>{{ s.sub_sessions|length }}</td>
-                <td style="white-space:nowrap;">
-                    <a href="{{ url_for('attendance_session_report', session_id=s.id) }}" class="btn btn-outline"
-                        style="width:auto;padding:6px 12px;font-size:0.75rem;" target="_blank">
-                        <i class="material-icons" style="font-size:0.9rem;">bar_chart</i> View
-                    </a>
-                    <a href="{{ url_for('attendance_session_report', session_id=s.id, download=1) }}" class="btn btn-outline"
-                        style="width:auto;padding:6px 12px;font-size:0.75rem;" target="_blank">
-                        <i class="material-icons" style="font-size:0.9rem;">download</i> Download
-                    </a>
-                </td>
-            </tr>
-            {% endfor %}
+            <thead>
+                <tr>
+                    <th>Session Track</th>
+                    <th>Fixed Start Date</th>
+                    <th>Ending Date</th>
+                    <th>Sub-Sessions</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in entry.sessions %}
+                <tr>
+                    <td><strong style="color:var(--text);">{{ s.name }}</strong></td>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ s.start_date.strftime('%d %b %Y') }}</td>
+                    <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ s.end_date.strftime('%d %b %Y') }}</td>
+                    <td>
+                        <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-family:'JetBrains Mono',monospace;">
+                            {{ s.sub_sessions|length }} track(s)
+                        </span>
+                    </td>
+                    <td style="text-align:right; white-space:nowrap;">
+                        <a href="{{ url_for('attendance_session_report', session_id=s.id) }}" class="btn btn-outline"
+                            style="padding:5px 10px; font-size:0.72rem; min-height:30px; margin-right:4px;" target="_blank">
+                            <i class="material-icons" style="font-size:0.9rem; color:var(--gold);">bar_chart</i> View Report
+                        </a>
+                        <a href="{{ url_for('attendance_session_report', session_id=s.id, download=1) }}" class="btn btn-primary"
+                            style="padding:5px 10px; font-size:0.72rem; min-height:30px;" target="_blank">
+                            <i class="material-icons" style="font-size:0.9rem;">download</i> PDF
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
     {% else %}
-    <p class="text-dim fs-small">No attendance sessions created yet for this class.
-        <a href="{{ url_for('teacher_attendance_page', class_id=entry.classroom.id) }}">Create one →</a>
-    </p>
+    <div style="font-size:0.8rem; color:var(--text-dim); padding:10px 0;">
+        No attendance sessions created yet for this classroom.
+        <a href="{{ url_for('teacher_attendance_page', class_id=entry.classroom.id) }}" style="color:var(--primary-light); font-weight:600; text-decoration:none; margin-left:4px;">Create Session &rarr;</a>
+    </div>
     {% endif %}
 </div>
 {% endfor %}
 {% else %}
-<div class="card text-center" style="padding:40px;">
-    <p class="text-dim fs-small">No classes found.</p>
+<div class="card text-center" style="padding:50px;">
+    <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">event_note</i>
+    <p style="color:var(--text-dim); font-size:0.9rem;">No classes registered for reporting.</p>
 </div>
 {% endif %}
 {% endblock %}

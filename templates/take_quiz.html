@@ -1,52 +1,59 @@
 {% extends "layout.html" %}
+{% block title %}Taking Quiz: {{ quiz.title }} — CampusPlayer{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-        <h1 style="margin-top: 0;">{{ quiz.title }}</h1>
-        {% if remaining_seconds is not none %}
-        <div id="quizTimer" style="font-size:1.2rem; font-weight:700; padding:8px 16px; border-radius:8px; background: rgba(212,168,83,0.12); color: var(--accent);">
-            ⏱️ <span id="quizTimerText">--:--</span>
-        </div>
-        {% endif %}
-    </div>
-    <p style="color: var(--text-secondary); margin-bottom: 30px;">
-        Answer all questions to complete the quiz.
-        {% if remaining_seconds is not none %}The quiz will close automatically when the time runs out.{% endif %}
-    </p>
-
-    <form method="POST" id="quizForm">
-        {% for q in questions %}
-        <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
-            <h3 style="font-size: 1.1rem; margin-bottom: 16px;">{{ loop.index }}. {{ q.text }}</h3>
-
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <label
-                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                    <input type="radio" name="q_{{ q.id }}" value="A" required>
-                    <span>{{ q.option_a }}</span>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                    <input type="radio" name="q_{{ q.id }}" value="B">
-                    <span>{{ q.option_b }}</span>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                    <input type="radio" name="q_{{ q.id }}" value="C">
-                    <span>{{ q.option_c }}</span>
-                </label>
-                <label
-                    style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                    <input type="radio" name="q_{{ q.id }}" value="D">
-                    <span>{{ q.option_d }}</span>
-                </label>
+<div style="max-width:760px; margin:0 auto;">
+    <div class="card" style="padding:28px;">
+        <div class="flex-between mb-16" style="align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+                <h1 class="page-title font-display" style="margin:0; font-size:1.5rem;">{{ quiz.title }}</h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">
+                    Complete all questions below.
+                    {% if remaining_seconds is not none %}Quiz auto-submits when time expires.{% endif %}
+                </p>
             </div>
+            {% if remaining_seconds is not none %}
+            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-family:'JetBrains Mono',monospace;">
+                ⏱️ <span id="quizTimerText">--:--</span>
+            </div>
+            {% endif %}
         </div>
-        {% endfor %}
 
-        <button type="submit" class="btn" style="width: 100%;">Submit Quiz</button>
-    </form>
+        <form method="POST" id="quizForm" style="margin:0;">
+            {% for q in questions %}
+            <div style="margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--border);">
+                <h3 class="font-display" style="font-size:1rem; margin:0 0 14px 0; color:var(--text); line-height:1.4;">
+                    {{ loop.index }}. {{ q.text }}
+                </h3>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
+                        <input type="radio" name="q_{{ q.id }}" value="A" required style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
+                        <span style="font-size:0.88rem; color:var(--text);"><strong>A.</strong> {{ q.option_a }}</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
+                        <input type="radio" name="q_{{ q.id }}" value="B" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
+                        <span style="font-size:0.88rem; color:var(--text);"><strong>B.</strong> {{ q.option_b }}</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
+                        <input type="radio" name="q_{{ q.id }}" value="C" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
+                        <span style="font-size:0.88rem; color:var(--text);"><strong>C.</strong> {{ q.option_c }}</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
+                        <input type="radio" name="q_{{ q.id }}" value="D" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
+                        <span style="font-size:0.88rem; color:var(--text);"><strong>D.</strong> {{ q.option_d }}</span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding:12px 32px; font-size:0.9rem;">
+                    <i class="material-icons" style="font-size:1rem;">task_alt</i> Complete &amp; Submit Quiz
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {% if remaining_seconds is not none %}
@@ -62,7 +69,11 @@
         var m = Math.floor(remaining / 60);
         var s = remaining % 60;
         textEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-        if (remaining <= 60) { timerBox.style.color = '#dc2626'; timerBox.style.background = 'rgba(220,38,38,0.12)'; }
+        if (remaining <= 60) {
+            timerBox.style.color = '#f43f5e';
+            timerBox.style.background = 'rgba(244,63,94,0.15)';
+            timerBox.style.borderColor = 'rgba(244,63,94,0.3)';
+        }
     }
     render();
 

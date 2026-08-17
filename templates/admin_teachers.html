@@ -1,276 +1,150 @@
 {% extends "layout.html" %}
+{% block title %}Teacher Management — CampusPlayer{% endblock %}
 
 {% block content %}
-<style>
-    .page-header {
-        margin-bottom: 36px;
-    }
-
-    .search-bar {
-        position: relative;
-        margin-bottom: 28px;
-    }
-
-    .search-bar input {
-        padding-left: 50px;
-        font-size: 1rem;
-    }
-
-    .search-bar .search-icon {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-    }
-
-    .teacher-grid {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 32px;
-        align-items: flex-start;
-    }
-
-    @media(max-width:900px) {
-        .teacher-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .teacher-card {
-        background: var(--surface-color);
-        border-radius: 18px;
-        padding: 20px 24px;
-        border: 1px solid var(--glass-border);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 16px;
-        transition: all 0.3s ease;
-    }
-
-    .teacher-card:hover {
-        border-color: var(--primary-color);
-        transform: translateX(4px);
-    }
-
-    .teacher-avatar {
-        width: 52px;
-        height: 52px;
-        border-radius: 16px;
-        background: linear-gradient(135deg, #7c4dff, #00e5ff);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: #fff;
-        flex-shrink: 0;
-    }
-
-    .teacher-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .teacher-name {
-        font-weight: 700;
-        font-size: 1.05rem;
-    }
-
-    .teacher-meta {
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        margin-top: 3px;
-        display: flex;
-        gap: 14px;
-        flex-wrap: wrap;
-    }
-
-    .badge-active {
-        background: rgba(0, 230, 118, 0.15);
-        color: #00e676;
-        padding: 2px 10px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .teacher-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-shrink: 0;
-    }
-
-    .tid-badge {
-        background: rgba(124, 77, 255, 0.15);
-        color: #bb86fc;
-        padding: 3px 10px;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        font-family: monospace;
-        font-weight: 700;
-        letter-spacing: 1px;
-    }
-</style>
-
-<div class="page-header">
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
-        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;">
-            <i class="material-icons">arrow_back</i>
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
         </a>
-        <h1
-            style="margin:0; font-weight:800; font-size:2rem; background:linear-gradient(90deg,#fff,var(--primary-color)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            Teacher Management
-        </h1>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Faculty & Teacher Directory</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Provision instructor credentials, IDs, contact channels & authorization</p>
+        </div>
     </div>
-    <p style="color:var(--text-secondary); margin:0 0 0 62px;">Search, view IDs and manage all teacher accounts.</p>
 </div>
 
-<div class="teacher-grid">
-    <!-- Left: Add Teacher Form -->
+<div style="display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:flex-start;">
+    <!-- Left: Add Teacher & Metrics -->
     <div>
-        <div class="card" style="padding:28px;">
-            <h3 style="margin-top:0; color:var(--primary-color); display:flex; align-items:center; gap:8px;">
-                <i class="material-icons">person_add</i> Add New Teacher
-            </h3>
-            <form method="POST" action="{{ url_for('add_teacher') }}" style="display:flex; flex-direction:column; gap:14px;">
+        <div class="card mb-16" style="padding:18px;">
+            <div class="card-title font-display" style="margin-bottom:12px; font-size:1rem;">
+                <i class="material-icons">person_add</i> Provision Faculty
+            </div>
+            <form method="POST" action="{{ url_for('add_teacher') }}" style="display:flex; flex-direction:column; gap:10px; margin:0;">
                 <div>
-                    <label style="display:block; margin-bottom:6px; color:var(--text-secondary); font-size:0.85rem;">Username</label>
-                    <input type="text" name="username" placeholder="e.g. teacher_john" required
-                        style="width:100%; background:var(--bg-color); padding:12px 14px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                    <label>Teacher Username *</label>
+                    <input type="text" name="username" placeholder="e.g. dr_smith" required style="margin-bottom:0; height:38px;">
                 </div>
                 <div>
-                    <label style="display:block; margin-bottom:6px; color:var(--text-secondary); font-size:0.85rem;">Initial Password</label>
-                    <input type="text" name="password" placeholder="Temporary password" required
-                        style="width:100%; background:var(--bg-color); padding:12px 14px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                    <label>Initial Password *</label>
+                    <input type="text" name="password" placeholder="Temporary password" required style="margin-bottom:0; height:38px;">
                 </div>
-                <button type="submit" class="btn" style="width:100%; margin-top:4px; padding:12px; border-radius:10px; min-height:48px; font-weight:700;">
-                    <i class="material-icons">add_circle</i> Create Teacher Account
+                <button type="submit" class="btn btn-primary" style="margin-top:6px; height:40px; min-height:40px; font-size:0.82rem;">
+                    <i class="material-icons" style="font-size:0.95rem;">add_circle</i> Create Account
                 </button>
             </form>
         </div>
 
-        <div class="card" style="padding:24px; margin-top:0;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-                <div
-                    style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#ff9800,#f57c00); display:flex; align-items:center; justify-content:center;">
-                    <i class="material-icons" style="color:var(--text); font-size:1.2rem;">people</i>
-                </div>
+        <div class="stat-card stat-gold" style="padding:16px;">
+            <div class="flex-between">
                 <div>
-                    <div style="font-size:1.8rem; font-weight:800; color:#ff9800;">{{ teachers|length }}</div>
-                    <div style="color:var(--text-secondary); font-size:0.8rem;">Total Teachers</div>
+                    <div class="stat-val font-display">{{ teachers|length }}</div>
+                    <div class="stat-lbl">Active Faculty Members</div>
                 </div>
-            </div>
-            <div style="height:4px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden;">
-                <div
-                    style="height:100%; width:100%; background:linear-gradient(90deg,#ff9800,#ffcc02); border-radius:4px;">
-                </div>
+                <i class="material-icons" style="font-size:2rem; color:var(--gold); opacity:0.6;">groups</i>
             </div>
         </div>
     </div>
 
     <!-- Right: Teacher List -->
     <div>
-        <div class="search-bar">
-            <form method="GET" action="{{ url_for('admin_teachers_page') }}">
-                <i class="material-icons search-icon">search</i>
+        <div class="mb-16" style="position:relative;">
+            <form method="GET" action="{{ url_for('admin_teachers_page') }}" style="margin:0; position:relative;">
+                <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>
                 <input type="text" name="q" placeholder="Search teachers by name..." value="{{ search_query or '' }}"
-                    style="background:var(--surface-color);" oninput="this.form.submit()">
+                    style="padding-left:42px; margin-bottom:0; height:44px; border-radius:var(--radius-pill);"
+                    oninput="this.form.submit()">
             </form>
+            {% if search_query %}
+            <div class="flex-between" style="margin-top:8px; font-size:0.75rem; color:var(--text-dim);">
+                <span>Showing <b>{{ teachers|length }}</b> result(s) for "<em>{{ search_query }}</em>"</span>
+                <a href="{{ url_for('admin_teachers_page') }}" style="color:var(--primary-light); font-weight:600; text-decoration:none;">✕ Clear Search</a>
+            </div>
+            {% endif %}
         </div>
-
-        {% if search_query %}
-        <p style="color:var(--text-secondary); margin-bottom:16px;">
-            Showing <strong style="color:var(--text);">{{ teachers|length }}</strong> result(s) for "<em
-                style="color:var(--primary-color);">{{ search_query }}</em>"
-        </p>
-        {% endif %}
 
         {% if teachers %}
-        {% for teacher in teachers %}
-        <div class="teacher-card">
-            <div class="teacher-avatar">{{ teacher.username[0].upper() }}</div>
-            <div class="teacher-info">
-                <div class="teacher-name">{{ teacher.username }}</div>
-                <div class="teacher-meta">
-                    <span class="tid-badge">ID #{{ teacher.id }}</span>
-                    <span class="badge-active">🟢 Active</span>
-                    <span>Joined {{ teacher.created_at.strftime('%b %d, %Y') }}</span>
-                    <span>{{ teacher.xp }} XP</span>
-                    {% if teacher.phone %}
-                    <span style="color:#00e5ff; font-size:0.78rem;">📲 {{ teacher.phone }}</span>
-                    {% else %}
-                    <span style="color:rgba(255,255,255,0.3); font-size:0.78rem;">📵 No phone</span>
-                    {% endif %}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            {% for teacher in teachers %}
+            <div class="card" style="margin-bottom:0; padding:16px;">
+                <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
+                        <div style="width:42px; height:42px; border-radius:10px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.05rem; color:#fff; flex-shrink:0;">
+                            {{ teacher.username[0].upper() }}
+                        </div>
+                        <div>
+                            <div class="flex-between" style="gap:8px; justify-content:flex-start;">
+                                <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ teacher.username }}</span>
+                                <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-family:'JetBrains Mono',monospace; font-size:0.68rem; padding:2px 6px;">
+                                    ID #{{ teacher.id }}
+                                </span>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px; display:flex; gap:8px; flex-wrap:wrap;">
+                                <span style="color:#10b981; font-weight:600;">🟢 Active</span>
+                                <span>Joined {{ teacher.created_at.strftime('%b %d, %Y') }}</span>
+                                <span style="color:var(--gold); font-weight:600;">⚡ {{ teacher.xp }} XP</span>
+                                {% if teacher.phone %}
+                                <span style="color:var(--accent);">📲 {{ teacher.phone }}</span>
+                                {% else %}
+                                <span style="color:var(--text-dim); opacity:0.6;">📵 No phone</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                        {% if teacher.phone %}
+                        <button onclick="copyLevelsLink('{{ teacher.username }}', '{{ url_for('levels_pdf', type='teachers', _external=True) }}')"
+                            class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--accent);" title="Copy Report Link">
+                            <i class="material-icons" style="font-size:0.95rem;">share</i>
+                        </button>
+                        {% endif %}
+                        <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px;"
+                            onclick="toggleResetForm('phone-{{ teacher.id }}')" title="Update Phone Number">
+                            <i class="material-icons" style="font-size:0.95rem;">phone</i>
+                        </button>
+                        <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px;"
+                            onclick="toggleResetForm('reset-{{ teacher.id }}')" title="Reset Password">
+                            <i class="material-icons" style="font-size:0.95rem;">vpn_key</i>
+                        </button>
+                        <form action="{{ url_for('delete_teacher', user_id=teacher.id) }}" method="POST"
+                            onsubmit="return confirm('Delete teacher {{ teacher.username }} and ALL associated content?');" style="margin:0;">
+                            <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" title="Delete Teacher">
+                                <i class="material-icons" style="font-size:0.95rem;">delete</i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Inline Phone Update Form -->
+                <div id="phone-{{ teacher.id }}" style="display:none; margin-top:10px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                    <form action="{{ url_for('admin_update_teacher_phone', teacher_id=teacher.id) }}" method="POST"
+                        style="display:flex; gap:8px; align-items:center; margin:0;">
+                        <span style="font-size:0.85rem;">📲</span>
+                        <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ teacher.phone or '' }}"
+                            required style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Save Phone</button>
+                    </form>
+                </div>
+
+                <!-- Inline Password Reset Form -->
+                <div id="reset-{{ teacher.id }}" style="display:none; margin-top:10px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
+                    <form action="{{ url_for('change_teacher_password') }}" method="POST"
+                        style="display:flex; gap:8px; align-items:center; margin:0;">
+                        <input type="hidden" name="user_id" value="{{ teacher.id }}">
+                        <input type="password" name="new_password" placeholder="New password for {{ teacher.username }}" required
+                            style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
+                        <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Set Password</button>
+                    </form>
                 </div>
             </div>
-            <div class="teacher-actions">
-                <!-- SMS levels report -->
-                {% if teacher.phone %}
-                <button
-                    onclick="copyLevelsLink('{{ teacher.username }}', '{{ url_for('levels_pdf', type='teachers', _external=True) }}')"
-                    class="btn btn-secondary" style="padding:8px 12px; font-size:0.8rem; color:#00e5ff;"
-                    title="Copy Report Link">
-                    <i class="material-icons" style="font-size:1rem;">share</i>
-                </button>
-                {% endif %}
-                <!-- Phone update -->
-                <button class="btn btn-secondary" style="padding:8px 12px; font-size:0.8rem;"
-                    onclick="toggleResetForm('phone-{{ teacher.id }}')">
-                    <i class="material-icons" style="font-size:1rem;">phone</i>
-                </button>
-                <!-- Password Reset (inline collapse) -->
-                <button class="btn btn-secondary" style="padding:8px 12px; font-size:0.8rem;"
-                    onclick="toggleResetForm('reset-{{ teacher.id }}')">
-                    <i class="material-icons" style="font-size:1rem;">vpn_key</i>
-                </button>
-                <form action="{{ url_for('delete_teacher', user_id=teacher.id) }}" method="POST"
-                    onsubmit="return confirm('Delete teacher {{ teacher.username }} and ALL their content?');">
-                    <button type="submit" class="btn"
-                        style="background:rgba(255,82,82,0.1); color:#ff5252; padding:8px 12px;">
-                        <i class="material-icons" style="font-size:1rem;">delete_forever</i>
-                    </button>
-                </form>
-            </div>
+            {% endfor %}
         </div>
-        <!-- Inline Phone Update Form -->
-        <div id="phone-{{ teacher.id }}"
-            style="display:none; margin:-8px 0 16px 0; padding:18px; background:rgba(0,229,118,0.04); border:1px solid rgba(0,229,118,0.2); border-radius:14px;">
-            <form action="{{ url_for('admin_update_teacher_phone', teacher_id=teacher.id) }}" method="POST"
-                style="display:flex; flex-direction:column; gap:10px;">
-                <span style="font-size:0.85rem; color:var(--text-secondary);">📲 Update Phone Number</span>
-                <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ teacher.phone or '' }}"
-                    required style="width:100%; margin:0; background:var(--bg-color); padding:12px 14px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
-                <button type="submit" class="btn btn-secondary"
-                    style="width:100%; padding:12px; white-space:nowrap; border-radius:10px; min-height:44px; font-weight:700;">Save Phone</button>
-            </form>
-        </div>
-        <!-- Inline Reset Form -->
-        <div id="reset-{{ teacher.id }}"
-            style="display:none; margin:-8px 0 16px 0; padding:18px; background:rgba(124,77,255,0.05); border:1px solid rgba(124,77,255,0.2); border-radius:14px;">
-            <form action="{{ url_for('change_teacher_password') }}" method="POST"
-                style="display:flex; flex-direction:column; gap:10px;">
-                <input type="hidden" name="user_id" value="{{ teacher.id }}">
-                <span style="font-size:0.85rem; color:var(--text-secondary);">🔒 New Password for {{ teacher.username }}</span>
-                <input type="password" name="new_password" placeholder="Enter new password"
-                    required style="width:100%; margin:0; background:var(--bg-color); padding:12px 14px; border-radius:10px; border:1px var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
-                <button type="submit" class="btn btn-secondary"
-                    style="width:100%; padding:12px; white-space:nowrap; border-radius:10px; min-height:44px; font-weight:700;">Update Password</button>
-            </form>
-        </div>
-        {% endfor %}
         {% else %}
-        <div class="card" style="padding:60px; text-align:center; color:var(--text-secondary);">
-            <i class="material-icons"
-                style="font-size:4rem; opacity:0.2; display:block; margin-bottom:16px;">people_outline</i>
-            {% if search_query %}
-            <p>No teachers found matching "<strong>{{ search_query }}</strong>"</p>
-            <a href="{{ url_for('admin_teachers_page') }}" style="color:var(--primary-color);">Clear search</a>
-            {% else %}
-            <p>No teacher accounts created yet.</p>
-            {% endif %}
+        <div class="card text-center" style="padding:50px;">
+            <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">people_outline</i>
+            <p style="color:var(--text-dim); font-size:0.9rem;">{% if search_query %}No teachers found matching "{{ search_query }}"{% else %}No teacher accounts created yet.{% endif %}</p>
         </div>
         {% endif %}
     </div>

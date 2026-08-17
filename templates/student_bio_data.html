@@ -1,102 +1,192 @@
 {% extends "layout.html" %}
+{% block title %}Student Bio Data Profile — CampusPlayer{% endblock %}
+
 {% block content %}
-<div class="page-title">My Bio Data</div>
-<p class="page-sub">Keep your student profile complete and up to date.</p>
+<div style="max-width:800px; margin:0 auto;">
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0;">📝 Student Bio Data Record</h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">Maintain your comprehensive student dossier, addresses & official certificates</p>
+            </div>
+        </div>
+    </div>
 
-<div class="card">
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="card" style="padding:26px;">
+        <form method="POST" enctype="multipart/form-data" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-        <div class="card-title"><i class="material-icons">badge</i> Personal Details</div>
-        <label>Student Name</label>
-        <input type="text" name="student_name" value="{{ profile.student_name or '' }}">
-        <label>Student ID</label>
-        <input type="text" name="student_id_number" value="{{ profile.student_id_number or '' }}">
-        <label>Roll Number</label>
-        <input type="text" name="roll_number" value="{{ profile.roll_number or '' }}">
-        <label>Department</label>
-        <input type="text" name="department" value="{{ profile.department or '' }}">
-        <label>Year</label>
-        <input type="text" name="year" value="{{ profile.year or '' }}">
-        <label>Section</label>
-        <input type="text" name="section" value="{{ profile.section or '' }}">
-        <label>Date of Birth</label>
-        <input type="date" name="date_of_birth" value="{{ profile.date_of_birth.strftime('%Y-%m-%d') if profile.date_of_birth else '' }}">
-        <label>Gender</label>
-        <select name="gender">
-            <option value="">-- Select --</option>
-            {% for g in ['Male','Female','Other'] %}
-            <option value="{{ g }}" {% if profile.gender == g %}selected{% endif %}>{{ g }}</option>
-            {% endfor %}
-        </select>
-        <label>Blood Group</label>
-        <input type="text" name="blood_group" value="{{ profile.blood_group or '' }}" placeholder="e.g. O+">
-        <label>Phone Number</label>
-        <input type="tel" name="phone_number" value="{{ profile.phone_number or '' }}">
-        <label>Email</label>
-        <input type="email" name="email" value="{{ profile.email or '' }}">
-        <label>Nationality</label>
-        <input type="text" name="nationality" value="{{ profile.nationality or '' }}">
-        <label>Religion (Optional)</label>
-        <input type="text" name="religion" value="{{ profile.religion or '' }}">
-        <label>Category (Optional)</label>
-        <input type="text" name="category" value="{{ profile.category or '' }}">
+            <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
+                <i class="material-icons" style="color:var(--accent);">badge</i> Personal & Academic Details
+            </div>
+            
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div>
+                    <label>Full Legal Name</label>
+                    <input type="text" name="student_name" value="{{ profile.student_name or '' }}" placeholder="Full name as per certificate">
+                </div>
+                <div>
+                    <label>Student ID Number</label>
+                    <input type="text" name="student_id_number" value="{{ profile.student_id_number or '' }}" placeholder="e.g. STU-2026-081">
+                </div>
+                <div>
+                    <label>University / Roll Number</label>
+                    <input type="text" name="roll_number" value="{{ profile.roll_number or '' }}" placeholder="e.g. 714021104001">
+                </div>
+                <div>
+                    <label>Academic Department</label>
+                    <input type="text" name="department" value="{{ profile.department or '' }}" placeholder="e.g. Computer Science">
+                </div>
+                <div>
+                    <label>Year of Study</label>
+                    <input type="text" name="year" value="{{ profile.year or '' }}" placeholder="e.g. 3rd Year">
+                </div>
+                <div>
+                    <label>Class Section / Batch</label>
+                    <input type="text" name="section" value="{{ profile.section or '' }}" placeholder="e.g. Section A">
+                </div>
+                <div>
+                    <label>Date of Birth</label>
+                    <input type="date" name="date_of_birth" value="{{ profile.date_of_birth.strftime('%Y-%m-%d') if profile.date_of_birth else '' }}">
+                </div>
+                <div>
+                    <label>Gender Identity</label>
+                    <select name="gender">
+                        <option value="">-- Select Gender --</option>
+                        {% for g in ['Male','Female','Other'] %}
+                        <option value="{{ g }}" {% if profile.gender == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Blood Group</label>
+                    <input type="text" name="blood_group" value="{{ profile.blood_group or '' }}" placeholder="e.g. O+, B+, A-">
+                </div>
+                <div>
+                    <label>Primary Phone Number</label>
+                    <input type="tel" name="phone_number" value="{{ profile.phone_number or '' }}" placeholder="+91 9876543210">
+                </div>
+                <div>
+                    <label>Primary Email Address</label>
+                    <input type="email" name="email" value="{{ profile.email or '' }}" placeholder="student@campus.edu">
+                </div>
+                <div>
+                    <label>Nationality</label>
+                    <input type="text" name="nationality" value="{{ profile.nationality or 'Indian' }}">
+                </div>
+            </div>
 
-        <div class="divider"></div>
-        <div class="card-title"><i class="material-icons">family_restroom</i> Family Details</div>
-        <label>Father Name</label>
-        <input type="text" name="father_name" value="{{ profile.father_name or '' }}">
-        <label>Mother Name</label>
-        <input type="text" name="mother_name" value="{{ profile.mother_name or '' }}">
-        <label>Father Phone</label>
-        <input type="tel" name="father_phone" value="{{ profile.father_phone or '' }}">
-        <label>Mother Phone</label>
-        <input type="tel" name="mother_phone" value="{{ profile.mother_phone or '' }}">
-        <label>Father Email</label>
-        <input type="email" name="father_email" value="{{ profile.father_email or '' }}">
-        <label>Mother Email</label>
-        <input type="email" name="mother_email" value="{{ profile.mother_email or '' }}">
-        <label>Guardian Name</label>
-        <input type="text" name="guardian_name" value="{{ profile.guardian_name or '' }}">
-        <label>Guardian Phone</label>
-        <input type="tel" name="guardian_phone" value="{{ profile.guardian_phone or '' }}">
+            <div class="divider"></div>
 
-        <div class="divider"></div>
-        <div class="card-title"><i class="material-icons">home</i> Address</div>
-        <label>Communication Address (max 5000 characters)</label>
-        <textarea name="communication_address" maxlength="5000" rows="4">{{ profile.communication_address or '' }}</textarea>
-        <label>Permanent Address (max 5000 characters)</label>
-        <textarea name="permanent_address" maxlength="5000" rows="4">{{ profile.permanent_address or '' }}</textarea>
+            <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
+                <i class="material-icons" style="color:var(--gold);">family_restroom</i> Family & Guardian Information
+            </div>
 
-        <div class="divider"></div>
-        <div class="card-title"><i class="material-icons">emergency</i> Emergency Contact</div>
-        <label>Emergency Contact Name</label>
-        <input type="text" name="emergency_contact" value="{{ profile.emergency_contact or '' }}">
-        <label>Emergency Phone</label>
-        <input type="tel" name="emergency_phone" value="{{ profile.emergency_phone or '' }}">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div>
+                    <label>Father's Name</label>
+                    <input type="text" name="father_name" value="{{ profile.father_name or '' }}">
+                </div>
+                <div>
+                    <label>Father's Contact Phone</label>
+                    <input type="tel" name="father_phone" value="{{ profile.father_phone or '' }}">
+                </div>
+                <div>
+                    <label>Mother's Name</label>
+                    <input type="text" name="mother_name" value="{{ profile.mother_name or '' }}">
+                </div>
+                <div>
+                    <label>Mother's Contact Phone</label>
+                    <input type="tel" name="mother_phone" value="{{ profile.mother_phone or '' }}">
+                </div>
+                <div>
+                    <label>Guardian / Alternate Name</label>
+                    <input type="text" name="guardian_name" value="{{ profile.guardian_name or '' }}">
+                </div>
+                <div>
+                    <label>Guardian Phone</label>
+                    <input type="tel" name="guardian_phone" value="{{ profile.guardian_phone or '' }}">
+                </div>
+            </div>
 
-        <div class="divider"></div>
-        <div class="card-title"><i class="material-icons">upload_file</i> Documents</div>
-        <label>Photo {% if profile.photo_path %}(uploaded — choose a file to replace){% endif %}</label>
-        <input type="file" name="photo" accept="image/*">
-        <label>Signature {% if profile.signature_path %}(uploaded — choose a file to replace){% endif %}</label>
-        <input type="file" name="signature" accept="image/*">
-        <label>Aadhaar (Optional) {% if profile.aadhaar_path %}(uploaded){% endif %}</label>
-        <input type="file" name="aadhaar">
-        <label>Transfer Certificate {% if profile.transfer_certificate_path %}(uploaded){% endif %}</label>
-        <input type="file" name="transfer_certificate">
-        <label>Community Certificate {% if profile.community_certificate_path %}(uploaded){% endif %}</label>
-        <input type="file" name="community_certificate">
-        <label>Other Certificate (add one at a time — submit again to add more)</label>
-        <input type="file" name="other_certificate">
-        {% if profile and profile.get_other_certificates() %}
-        <p style="font-size:12px; color:var(--text-secondary); margin-top:6px;">
-            Already uploaded: {% for c in profile.get_other_certificates() %}{{ c.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-        </p>
-        {% endif %}
+            <div class="divider"></div>
 
-        <div class="divider"></div>
-        <button type="submit" class="btn btn-primary">Save Bio Data</button>
-    </form>
+            <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
+                <i class="material-icons" style="color:var(--primary-light);">home</i> Residential Addresses
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+                <div>
+                    <label>Communication / Current Address</label>
+                    <textarea name="communication_address" rows="3" placeholder="Current residential address...">{{ profile.communication_address or '' }}</textarea>
+                </div>
+                <div>
+                    <label>Permanent Home Address</label>
+                    <textarea name="permanent_address" rows="3" placeholder="Permanent family address...">{{ profile.permanent_address or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
+                <i class="material-icons" style="color:#f43f5e;">emergency</i> Emergency Contact Dispatch
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div>
+                    <label>Emergency Contact Person</label>
+                    <input type="text" name="emergency_contact" value="{{ profile.emergency_contact or '' }}" placeholder="Name & relation">
+                </div>
+                <div>
+                    <label>Emergency Hotline Phone</label>
+                    <input type="tel" name="emergency_phone" value="{{ profile.emergency_phone or '' }}" placeholder="24/7 Phone number">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
+                <i class="material-icons" style="color:var(--accent);">upload_file</i> Digital Identity Documents
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+                <div>
+                    <label>Student Photo {% if profile.photo_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <input type="file" name="photo" accept="image/*">
+                </div>
+                <div>
+                    <label>Digital Signature {% if profile.signature_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <input type="file" name="signature" accept="image/*">
+                </div>
+                <div>
+                    <label>Transfer Certificate {% if profile.transfer_certificate_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <input type="file" name="transfer_certificate">
+                </div>
+                <div>
+                    <label>Community Certificate {% if profile.community_certificate_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <input type="file" name="community_certificate">
+                </div>
+                <div style="grid-column:1/-1;">
+                    <label>Supplemental Certificate / Award</label>
+                    <input type="file" name="other_certificate">
+                    {% if profile and profile.get_other_certificates() %}
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
+                        Uploaded archives: {% for c in profile.get_other_certificates() %}<b>{{ c.name }}</b>{% if not loop.last %}, {% endif %}{% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary" style="padding:10px 24px; font-size:0.85rem;">
+                    <i class="material-icons" style="font-size:1rem;">save</i> Save Bio Data Profile
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
