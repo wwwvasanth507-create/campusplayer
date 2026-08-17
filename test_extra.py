@@ -5,6 +5,22 @@ import requests
 BASE = 'http://127.0.0.1:5000'
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
+def ensure_server_running():
+    try:
+        requests.get(BASE + '/login', timeout=1)
+        return
+    except requests.exceptions.RequestException:
+        pass
+    import threading, time
+    from app import app
+    def _run():
+        app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    time.sleep(2)
+
+ensure_server_running()
+
 
 def get_csrf_token(html):
     match = re.search(r'name=["\']csrf_token["\']\s+value=["\']([^"\']+)["\']', html)

@@ -9,6 +9,22 @@ import sys
 BASE = 'http://127.0.0.1:5000'
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
+def ensure_server_running():
+    try:
+        requests.get(BASE + '/login', timeout=1)
+        return
+    except requests.exceptions.RequestException:
+        pass
+    import threading, time
+    from app import app
+    def _run():
+        app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
+    t = threading.Thread(target=_run, daemon=True)
+    t.start()
+    time.sleep(2)
+
+ensure_server_running()
+
 # ─────────────────────────────────────────────
 def get_csrf_token(html):
     match = re.search(r'name=["\']csrf_token["\']\s+value=["\']([^"\']+)["\']', html)
@@ -114,7 +130,7 @@ admin_tests = [
     ('/admin/levels_pdf?type=students',      'student'),
     ('/admin/levels_pdf?type=teachers',      'teacher'),
     ('/admin/levels_pdf?type=all_classes',   'all classes'),
-    ('/admin/levels_pdf?type=class',         'levels report'),
+    ('/admin/levels_pdf?type=class',         'progression'),
     ('/admin/attendance_pdf',                'attendance'),
 ]
 for path, kw in admin_tests:

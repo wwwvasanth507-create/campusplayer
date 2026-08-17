@@ -2225,7 +2225,7 @@ def teacher_attendance_page():
 @teacher_required
 def teacher_enrolled_students_page():
     q = request.args.get('q', '').strip()
-    classes = Classroom.query.options(db.joinedload(Classroom.students)).all()
+    classes = Classroom.query.all()
     class_ids = [cls.id for cls in classes]
     all_remarks = StudentRemark.query.filter(StudentRemark.classroom_id.in_(class_ids)).all() if class_ids else []
     remarks_map = {(r.student_id, r.classroom_id): r.remark for r in all_remarks}
@@ -2243,6 +2243,12 @@ def teacher_enrolled_students_page():
                 'teacher_id': cls.teacher_id,
                 'remark': remark_text
             })
+
+    students_all = User.query.filter_by(role='student').all()
+    for s in students_all:
+        if s.id not in enrolled_set:
+            enrolled_set[s.id] = {'student': s, 'classes': [], 'class_details': []}
+
     enrolled_list = list(enrolled_set.values())
     if q:
         query_lower = q.lower().strip()

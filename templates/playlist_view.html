@@ -5,7 +5,7 @@
 <div style="max-width:1100px; margin:0 auto;">
     <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
         <div style="display:flex; align-items:center; gap:14px;">
-            <a href="{{ url_for('student_dashboard') if current_user.role == 'student' else url_for('teacher_playlists') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <a href="{{ url_for('student_dashboard') if current_user.role == 'student' else url_for('teacher_playlists_page') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
                 <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
             </a>
             <div>
