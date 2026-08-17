@@ -2,49 +2,49 @@
 {% block title %}Discover — Campus Player{% endblock %}
 
 {% block content %}
-<div class="cp-feed-container">
+<div class="cp-feed-container" style="max-width:1400px; margin:0 auto; padding:0 4px;">
 
-    <!-- ── 1. Student Identity & Academic Pulse Banner ── -->
-    <div class="cp-pulse-banner">
+    <!-- ── 1. STUDENT IDENTITY & ACADEMIC PULSE BANNER ── -->
+    <div class="cp-pulse-banner" style="background:linear-gradient(135deg, rgba(19,23,34,0.9) 0%, rgba(14,17,26,0.95) 100%); border:1px solid var(--glass-border); border-radius:20px; padding:20px 24px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; box-shadow:0 8px 32px rgba(0,0,0,0.3); backdrop-filter:blur(16px);">
         <!-- Student Identity & Level Progress -->
-        <div class="cp-student-meta">
-            <div class="cp-avatar-ring">
-                <div class="cp-avatar-inner">
+        <div class="cp-student-meta" style="display:flex; align-items:center; gap:16px; min-width:280px;">
+            <div class="cp-avatar-ring" style="width:54px; height:54px; border-radius:50%; padding:2px; background:var(--brand-gradient); flex-shrink:0; box-shadow:0 0 16px rgba(99,102,241,0.4);">
+                <div class="cp-avatar-inner" style="width:100%; height:100%; border-radius:50%; background:var(--surface); display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:800; font-size:1.3rem; color:var(--text);">
                     {% if current_user.avatar_path %}
-                    <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}">
+                    <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                     {{ current_user.username[:1].upper() }}
                     {% endif %}
                 </div>
             </div>
-            <div>
-                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.15rem; color:var(--text); display:flex; align-items:center; gap:8px;">
+            <div style="flex:1;">
+                <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.2rem; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     ✨ Welcome back, {{ current_user.username }}
-                    <span class="badge" style="background:linear-gradient(135deg, rgba(99,102,241,0.3), rgba(0,229,255,0.3)); color:#00e5ff; border:1px solid rgba(0,229,255,0.4); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:12px;">
+                    <span class="badge" style="background:linear-gradient(135deg, rgba(99,102,241,0.3), rgba(0,229,255,0.3)); color:#00e5ff; border:1px solid rgba(0,229,255,0.4); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:12px; white-space:nowrap;">
                         ⚡ LEVEL {{ (current_user.xp // 500) + 1 }}
                     </span>
                 </div>
-                <div style="font-size:0.78rem; color:var(--text-dim); margin-top:3px;">
+                <div style="font-size:0.78rem; color:var(--text-dim); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                     🏆 <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP Total</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
                 </div>
             </div>
         </div>
 
         <!-- Academic Telemetry Badges & Quick Actions -->
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <!-- Attendance Standing Box -->
-            <div class="cp-badge-stat" style="background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); padding:8px 16px; border-radius:14px;">
-                <span style="font-size:1.1rem; margin-right:4px;">{{ '🟢' if attendance_pct >= 75 else '🔴' }}</span>
+            <div class="cp-badge-stat" style="background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); padding:8px 16px; border-radius:14px; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.1rem;">{{ '🟢' if attendance_pct >= 75 else '🔴' }}</span>
                 <div>
-                    <span style="color:var(--text-dim); font-size:0.75rem;">Attendance Standing:</span>
-                    <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace; font-size:0.9rem;"> {{ attendance_pct }}%</strong>
+                    <div style="color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Attendance Standing</div>
+                    <strong style="color:{{ '#10b981' if attendance_pct >= 75 else '#f43f5e' }}; font-family:'JetBrains Mono',monospace; font-size:0.92rem;"> {{ attendance_pct }}%</strong>
                 </div>
             </div>
 
             <!-- Daily Quests Action Box -->
             {% if daily_quests %}
             {% set unclaimed_count = daily_quests.values() | selectattr('claimed', 'equalto', false) | selectattr('progress', 'ge', 1) | list | length %}
-            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:8px 16px; font-size:0.8rem; border-radius:14px; min-height:40px; position:relative; gap:6px;">
+            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:8px 16px; font-size:0.8rem; border-radius:14px; min-height:42px; position:relative; gap:6px; background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3); color:var(--gold);">
                 <span style="font-size:1.05rem;">🎯</span>
                 <span style="font-weight:700;">Daily Quests</span>
                 {% if unclaimed_count > 0 %}
@@ -55,15 +55,15 @@
             </button>
             {% endif %}
 
-            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:8px 18px; font-size:0.8rem; border-radius:14px; min-height:40px; gap:6px; box-shadow:0 4px 16px rgba(99,102,241,0.4);">
+            <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:8px 18px; font-size:0.82rem; border-radius:14px; min-height:42px; gap:6px; box-shadow:0 4px 16px rgba(99,102,241,0.4);">
                 <span style="font-size:1.05rem;">📌</span> <span style="font-weight:700;">Submit Homework</span>
             </a>
         </div>
     </div>
 
-    <!-- 🎯 Daily Quests Collapsible Drawer -->
+    <!-- 🎯 DAILY QUESTS COLLAPSIBLE DRAWER -->
     {% if daily_quests %}
-    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.4); background:linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(99,102,241,0.06) 100%); border-radius:20px;">
+    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(245,158,11,0.4); background:linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(99,102,241,0.06) 100%); border-radius:20px; margin-bottom:24px;">
         <div class="flex-between mb-12">
             <div class="card-title font-display" style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
                 <span>🏆</span> Daily Quests &amp; Milestone Challenges
@@ -125,80 +125,80 @@
     {% endif %}
 
     <!-- ── 2. ACADEMIC QUICK OPTIONS & DETAILS MATRIX (FIRST) ── -->
-    <div class="mb-32">
-        <div class="flex-between mb-14" style="align-items:center;">
+    <div style="margin-bottom:28px;">
+        <div class="flex-between" style="align-items:center; margin-bottom:14px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.4rem;">✨</span>
+                <span style="font-size:1.3rem;">🚀</span>
                 <div>
-                    <h2 class="font-display" style="font-size:1.2rem; font-weight:800; color:var(--text); margin:0;">
-                        Academic Learning &amp; Hub Options
+                    <h2 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
+                        Academic Hub &amp; Quick Options
                     </h2>
-                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Direct access to coursework, quizzes, rankings, and AI tutoring</p>
+                    <p style="font-size:0.74rem; color:var(--text-dim); margin:0;">Instant direct access to assignments, tests, leaderboards, and AI assistant</p>
                 </div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px;">
             <!-- Assignments Option Box -->
-            <a href="{{ url_for('student_assignments') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
-               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(99,102,241,0.45)';"
-               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+            <a href="{{ url_for('student_assignments') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; transition:transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(99,102,241,0.5)'; this.style.boxShadow='0 10px 25px rgba(99,102,241,0.15)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)'; this.style.boxShadow='none';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                         📝
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Assignments</div>
+                    <div style="font-weight:800; font-size:0.96rem; color:var(--text);">Assignments</div>
                     <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Submit homework &amp; view grades</div>
                 </div>
             </a>
 
             <!-- Quizzes Option Box -->
-            <a href="{{ url_for('student_quizzes') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
-               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.45)';"
-               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+            <a href="{{ url_for('student_quizzes') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; transition:transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.5)'; this.style.boxShadow='0 10px 25px rgba(245,158,11,0.15)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)'; this.style.boxShadow='none';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                         ❓
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Active Quizzes</div>
-                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Earn +100 XP per test</div>
+                    <div style="font-weight:800; font-size:0.96rem; color:var(--text);">Active Quizzes</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Earn +100 XP per completed test</div>
                 </div>
             </a>
 
             <!-- Leaderboard Option Box -->
-            <a href="{{ url_for('leaderboard') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
-               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.45)';"
-               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+            <a href="{{ url_for('leaderboard') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; transition:transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(245,158,11,0.5)'; this.style.boxShadow='0 10px 25px rgba(245,158,11,0.15)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)'; this.style.boxShadow='none';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(245,158,11,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                         🏆
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">Leaderboards</div>
-                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Class &amp; institute rankings</div>
+                    <div style="font-weight:800; font-size:0.96rem; color:var(--text);">Leaderboards</div>
+                    <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">Class &amp; institute scholar rankings</div>
                 </div>
             </a>
 
             <!-- AI Tutor Option Box -->
-            <a href="{{ url_for('ai_assistant') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:10px; transition:transform 0.22s ease, border-color 0.22s ease;"
-               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(16,185,129,0.45)';"
-               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)';">
+            <a href="{{ url_for('ai_assistant') }}" style="text-decoration:none; background:var(--surface); border:1px solid var(--glass-border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:12px; transition:transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;"
+               onmouseover="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(0,229,255,0.5)'; this.style.boxShadow='0 10px 25px rgba(0,229,255,0.15)';"
+               onmouseout="this.style.transform='none'; this.style.borderColor='var(--glass-border)'; this.style.boxShadow='none';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(16,185,129,0.15); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:rgba(0,229,255,0.15); border:1px solid rgba(0,229,255,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                         🤖
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
                 <div>
-                    <div style="font-weight:800; font-size:0.98rem; color:var(--text);">AI Tutor Assistant</div>
+                    <div style="font-weight:800; font-size:0.96rem; color:var(--text);">AI Tutor Assistant</div>
                     <div style="font-size:0.74rem; color:var(--text-dim); margin-top:2px;">24/7 instant academic Q&amp;A</div>
                 </div>
             </a>
@@ -207,16 +207,16 @@
 
     <!-- ── 3. LIVE CLASSROOM DISCUSSION CHATROOM BOX (SECOND) ── -->
     {% if enrolled_classes %}
-    <div class="cp-pulse-banner mb-32" style="background:linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(0,229,255,0.08) 100%); border:1px solid rgba(0,229,255,0.3); padding:18px 22px;">
+    <div style="background:linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(0,229,255,0.06) 100%); border:1px solid rgba(0,229,255,0.25); border-radius:20px; padding:18px 22px; margin-bottom:28px;">
         <div style="width:100%;">
-            <div class="flex-between mb-12" style="align-items:center;">
+            <div class="flex-between" style="align-items:center; margin-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1.6rem;">💬</span>
+                    <span style="font-size:1.5rem;">💬</span>
                     <div>
-                        <h3 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
-                            Live Classroom Discussion Hubs
+                        <h3 class="font-display" style="font-size:1.1rem; font-weight:800; color:var(--text); margin:0;">
+                            Live Classroom Chat Hubs
                         </h3>
-                        <p style="font-size:0.76rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
+                        <p style="font-size:0.74rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
                     </div>
                 </div>
                 <span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:20px;">
@@ -249,17 +249,17 @@
 
     <!-- ── 4. CURATED PLAYLISTS / LEARNING TRACKS SECTION ── -->
     {% if playlists %}
-    <div id="cpPlaylistsSection" class="mb-32">
-        <div class="flex-between mb-16" style="align-items:center;">
+    <div id="cpPlaylistsSection" style="margin-bottom:28px;">
+        <div class="flex-between" style="align-items:center; margin-bottom:14px;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <div style="width:34px; height:34px; border-radius:10px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; color:var(--gold);">
                     <i class="material-icons" style="font-size:1.2rem;">auto_stories</i>
                 </div>
                 <div>
-                    <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
+                    <h2 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
                         Structured Learning Tracks
                     </h2>
-                    <p style="font-size:0.75rem; color:var(--text-dim); margin:0;">Step-by-step modular curriculum playlists</p>
+                    <p style="font-size:0.74rem; color:var(--text-dim); margin:0;">Step-by-step modular curriculum playlists</p>
                 </div>
             </div>
             <span style="font-size:0.78rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
@@ -267,7 +267,7 @@
             </span>
         </div>
 
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;">
             {% for playlist in playlists %}
             <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="cp-track-card">
                 <div class="cp-track-thumb">
@@ -303,12 +303,12 @@
     </div>
     {% endif %}
 
-    <!-- ── 5. FEATURED ACADEMIC LECTURES (SHOWN AFTER DETAILS & OPTIONS) ── -->
-    <div id="cpLecturesSection" class="mb-32">
-        <div class="flex-between mb-16" style="align-items:center;">
+    <!-- ── 5. FEATURED ACADEMIC LECTURES (SHOWN AFTER ALL OPTIONS & DETAILS) ── -->
+    <div id="cpLecturesSection" style="margin-bottom:36px;">
+        <div class="flex-between" style="align-items:center; margin-bottom:16px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:34px; height:34px; border-radius:10px; background:rgba(0,229,255,0.12); display:flex; align-items:center; justify-content:center; color:var(--accent);">
-                    <i class="material-icons" style="font-size:1.2rem;">play_lesson</i>
+                <div style="width:36px; height:36px; border-radius:10px; background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.25); display:flex; align-items:center; justify-content:center; color:var(--accent);">
+                    <i class="material-icons" style="font-size:1.25rem;">play_lesson</i>
                 </div>
                 <div>
                     <h2 class="font-display" style="font-size:1.25rem; font-weight:800; color:var(--text); margin:0;">
@@ -323,7 +323,7 @@
         </div>
 
         {% if videos %}
-        <!-- 3 VIDEOS PER ROW ON DESKTOP, ADAPTIVE TO MOBILE SCREENS -->
+        <!-- 3 VIDEOS PER ROW ON DESKTOP (MEDIUM YOUTUBE SIZE), ADAPTIVE TO MOBILE -->
         <div class="cp-video-grid">
             {% for video in videos %}
             <a href="{{ url_for('watch_video', video_id=video.id) }}" class="cp-card" title="{{ video.title }}">
@@ -359,11 +359,11 @@
                     </div>
                 </div>
 
-                <!-- Reference Image Card Content Body -->
+                <!-- YouTube-style Card Content Body -->
                 <div class="cp-card-body" style="padding:14px 16px; display:flex; gap:12px; align-items:flex-start;">
                     <!-- Circular Faculty Avatar -->
                     <div class="cp-faculty-avatar" style="width:38px; height:38px; border-radius:50%; background:var(--brand-gradient); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#fff; overflow:hidden; border:1px solid rgba(255,255,255,0.12);">
-                        {% if video.uploader.avatar_path %}
+                        {% if video.uploader and video.uploader.avatar_path %}
                         <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.username }}" style="width:100%; height:100%; object-fit:cover;">
                         {% else %}
                         {{ video.uploader.username[:1].upper() if video.uploader else 'T' }}
@@ -372,7 +372,7 @@
 
                     <!-- Video Text Details Block -->
                     <div style="flex:1; min-width:0;">
-                        <!-- Title & Three Dots Menu -->
+                        <!-- Title & Options Menu -->
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
                             <h3 class="cp-card-title" style="font-size:0.98rem; font-weight:700; color:var(--text); line-height:1.35; max-height:2.7em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0 0 4px 0; word-break:break-word;">
                                 {{ video.title }}

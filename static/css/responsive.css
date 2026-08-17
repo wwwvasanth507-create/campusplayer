@@ -503,9 +503,13 @@ body.auth-guest .bottom-nav {
         width: calc(100% - var(--sidebar-width)) !important;
     }
 
-    .grid-container,
-    .video-grid {
+    .grid-container {
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+        gap: 24px !important;
+    }
+
+    .cp-video-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
         gap: 24px !important;
     }
 }
@@ -521,9 +525,13 @@ body.auth-guest .bottom-nav {
         padding-right: calc(64px + var(--safe-right)) !important;
     }
 
-    .grid-container,
-    .video-grid {
+    .grid-container {
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+        gap: 28px !important;
+    }
+
+    .cp-video-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
         gap: 28px !important;
     }
 

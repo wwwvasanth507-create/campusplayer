@@ -1474,20 +1474,21 @@ body.campus-body-fullscreen .vp-hero::after {
     font-size: 0.78rem;
 }
 
-/* ── Campus Player Video Card Grid ── */
+/* ── Campus Player Video Card Grid (3 Videos Per Row on Desktop) ── */
 .cp-video-grid,
 .video-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 20px !important;
+    gap: 22px !important;
     width: 100% !important;
     margin-bottom: 36px !important;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 991px) {
     .cp-video-grid,
     .video-grid {
         grid-template-columns: repeat(2, 1fr) !important;
+        gap: 18px !important;
     }
 }
 
