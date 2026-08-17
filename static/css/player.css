@@ -1478,8 +1478,8 @@ body.campus-body-fullscreen .vp-hero::after {
 .cp-video-grid,
 .video-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
-    gap: 22px !important;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+    gap: 24px 20px !important;
     width: 100% !important;
     margin-bottom: 36px !important;
 }
