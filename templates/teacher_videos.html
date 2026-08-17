@@ -141,95 +141,133 @@
 </style>
 
 <div class="page-header">
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px;"><i
-            class="material-icons">arrow_back</i></a>
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary" style="padding:10px 16px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center;"><i class="material-icons">arrow_back</i></a>
     <div>
-        <h1
-            style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg,#fff,#ffeb3b); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
-            All Campus Videos</h1>
-        <p style="margin:4px 0 0; color:var(--text-secondary);">{{ videos|length }} total video(s)</p>
+        <h1 style="margin:0; font-weight:800; font-size:1.9rem; background:linear-gradient(90deg, #ffffff, #00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">
+            Campus Video Studio
+        </h1>
+        <p style="margin:4px 0 0; color:var(--text-secondary); font-size:0.9rem;">High-Speed Multi-Stream Ingestion & 4K HLS Transcoding Engine • {{ videos|length }} video(s)</p>
     </div>
 </div>
 
-<!-- Upload Card -->
-<div class="upload-card">
-    <h3 style="margin-top:0; color:#ffeb3b; display:flex; align-items:center; gap:8px;"><i
-            class="material-icons">cloud_upload</i> Upload New Video (Supports up to 20 GB)</h3>
+<!-- Modern High-Speed Upload Card -->
+<div class="upload-card" style="background:linear-gradient(145deg, rgba(30,30,30,0.9), rgba(20,20,20,0.95)); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:26px; box-shadow:0 12px 32px rgba(0,0,0,0.4); margin-bottom:32px; backdrop-filter:blur(10px);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #7c4dff, #00e5ff); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 4px 14px rgba(124,77,255,0.4);">
+                <i class="material-icons" style="font-size:20px;">cloud_upload</i>
+            </div>
+            <div>
+                <h3 style="margin:0; font-size:1.2rem; font-weight:700; color:#fff;">High-Speed Video Uploader</h3>
+                <span style="font-size:0.75rem; color:#00e5ff; font-weight:600;">⚡ Parallel Multi-Stream (Up to 20 GB Supported)</span>
+            </div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <span style="font-size:0.72rem; padding:4px 10px; border-radius:20px; background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.2); font-weight:600;">
+                ✓ Auto 1080p/720p/480p HLS
+            </span>
+        </div>
+    </div>
+
     <form id="upload-form" enctype="multipart/form-data">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:16px; margin-bottom:16px;">
+        <!-- Drag and drop zone -->
+        <div id="drop-zone" style="border:2px dashed rgba(187,134,252,0.3); border-radius:14px; padding:24px 20px; text-align:center; background:rgba(187,134,252,0.02); transition:all 0.3s ease; cursor:pointer; margin-bottom:20px;"
+             onclick="document.getElementById('video-file').click()"
+             ondragover="event.preventDefault(); this.style.borderColor='#00e5ff'; this.style.background='rgba(0,229,255,0.06)';"
+             ondragleave="this.style.borderColor='rgba(187,134,252,0.3)'; this.style.background='rgba(187,134,252,0.02)';"
+             ondrop="handleFileDrop(event)">
+            <input type="file" name="video_file" id="video-file" required accept="video/*" style="display:none;" onchange="handleFileSelected(this.files[0])">
+            <div id="drop-zone-content">
+                <i class="material-icons" style="font-size:2.8rem; color:#bb86fc; margin-bottom:8px; opacity:0.85;">video_file</i>
+                <div style="font-weight:700; font-size:1rem; color:#fff; margin-bottom:4px;">Drag & Drop Video Here or <span style="color:#00e5ff; text-decoration:underline;">Browse Files</span></div>
+                <div style="font-size:0.78rem; color:var(--text-secondary);">MP4, MKV, MOV, AVI, WebM supported • Fast parallel chunking enabled</div>
+            </div>
+            <div id="file-selected-badge" style="display:none; align-items:center; justify-content:center; gap:10px; background:rgba(0,229,255,0.08); padding:10px 16px; border-radius:10px; border:1px solid rgba(0,229,255,0.2);">
+                <i class="material-icons" style="color:#00e5ff;">check_circle</i>
+                <span id="selected-file-name" style="font-weight:700; color:#fff; font-size:0.9rem;"></span>
+                <span id="selected-file-size" style="font-size:0.75rem; color:#00e5ff; font-weight:600; background:rgba(0,229,255,0.15); padding:2px 8px; border-radius:12px;"></span>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:16px;">
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Video Title *</label>
-                <input type="text" name="title" id="video-title" placeholder="Video Title" required
-                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                <input type="text" name="title" id="video-title" placeholder="e.g. Chapter 4: Calculus & Derivatives" required
+                    style="background:rgba(255,255,255,0.04); margin:0; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:0.92rem; min-height:44px; box-sizing:border-box;">
             </div>
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Classroom Association</label>
                 <select name="classroom_id" id="video-classroom"
-                    style="background:var(--bg-color); margin:0; padding:12px 16px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text); font-size:0.95rem; min-height:44px; box-sizing:border-box;">
-                    <option value="-1">None (Global Video)</option>
+                    style="background:rgba(30,30,30,0.9); margin:0; padding:12px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:0.92rem; min-height:44px; box-sizing:border-box;">
+                    <option value="-1">🌐 Global Video (All Students)</option>
                     {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    <option value="{{ c.id }}">🏫 {{ c.name }}</option>
                     {% endfor %}
                 </select>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Select Video File *</label>
-                <div style="position:relative; display:flex; gap:8px;">
-                    <input type="file" name="video_file" id="video-file" required accept="video/*"
-                        style="opacity:0; position:absolute; z-index:-1;" onchange="document.getElementById('file-chosen-label').innerText = this.files[0] ? this.files[0].name : 'No file chosen'">
-                    <button type="button" class="btn btn-secondary" style="margin:0; padding:12px 16px; border-radius:10px; min-height:44px; flex:1;"
-                        onclick="document.getElementById('video-file').click()">
-                        <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">attach_file</i> Choose Video
-                    </button>
-                    <span id="file-chosen-label" style="font-size:0.75rem; color:var(--text-secondary); align-self:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px;">No file chosen</span>
-                </div>
             </div>
         </div>
 
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:16px;">
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Description</label>
-                <textarea id="video-desc" placeholder="Provide a brief description of the video content..." 
-                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:80px; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
+                <textarea id="video-desc" placeholder="Provide overview, lecture notes, or key topic points..." 
+                    style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; padding:12px 16px; font-size:0.92rem; min-height:80px; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>
             </div>
             <div style="display:flex; flex-direction:column; gap:6px;">
                 <label style="font-size:0.8rem; font-weight:700; color:var(--text-secondary);">Tags (Comma separated)</label>
-                <input type="text" id="video-tags" placeholder="e.g. python, tutorial, basics"
-                    style="background:var(--bg-color); border:1px solid var(--glass-border); border-radius:10px; color:var(--text); padding:12px 16px; font-size:0.95rem; min-height:44px; box-sizing:border-box;">
+                <input type="text" id="video-tags" placeholder="maths, calculus, sem1"
+                    style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#fff; padding:12px 16px; font-size:0.92rem; min-height:44px; box-sizing:border-box;">
                 
-                <button type="submit" id="upload-btn" class="btn" style="margin-top:auto; white-space:nowrap; padding:12px 22px; border-radius:10px; min-height:44px; font-weight:700; background:linear-gradient(135deg, #7c4dff, #00e5ff); color:#fff; border:none; cursor:pointer;">
-                    <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">upload</i> Upload Video
+                <button type="submit" id="upload-btn" class="btn" style="margin-top:auto; white-space:nowrap; padding:12px 22px; border-radius:10px; min-height:44px; font-weight:700; background:linear-gradient(135deg, #7c4dff, #00e5ff); color:#fff; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(0,229,255,0.3); transition:all 0.2s;">
+                    <i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">bolt</i> Start Parallel Upload
                 </button>
             </div>
         </div>
 
+        <!-- High-Performance Progress & Telemetry Panel -->
         <div id="upload-progress-container"
-            style="display:none; margin-top:16px; background:rgba(255,255,255,0.03); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-            <div style="margin-bottom:10px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span
-                        style="font-size:0.8rem; color:#bb86fc; font-weight:600;">1. Server Upload</span><span
-                        id="upload-percentage" style="font-size:0.8rem; font-weight:700; color:#bb86fc;">0%</span></div>
-                <div
-                    style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+            style="display:none; margin-top:20px; background:rgba(0,0,0,0.4); padding:20px; border-radius:14px; border:1px solid rgba(0,229,255,0.2); box-shadow:inset 0 2px 8px rgba(0,0,0,0.5);">
+            
+            <!-- Live Telemetry Badges -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <span id="telemetry-speed" style="font-size:0.75rem; background:rgba(0,229,255,0.15); color:#00e5ff; padding:4px 10px; border-radius:8px; font-weight:700; border:1px solid rgba(0,229,255,0.3);">⚡ 0.0 MB/s</span>
+                    <span id="telemetry-eta" style="font-size:0.75rem; background:rgba(187,134,252,0.15); color:#bb86fc; padding:4px 10px; border-radius:8px; font-weight:700; border:1px solid rgba(187,134,252,0.3);">⏳ ETA: --</span>
+                    <span id="telemetry-chunks" style="font-size:0.75rem; background:rgba(255,255,255,0.06); color:#fff; padding:4px 10px; border-radius:8px; font-weight:600;">Chunks: 0/0</span>
+                    <span id="telemetry-streams" style="font-size:0.75rem; background:rgba(0,230,118,0.15); color:#00e676; padding:4px 10px; border-radius:8px; font-weight:700;">4 Streams Active</span>
+                </div>
+                <div id="upload-percentage" style="font-size:1.1rem; font-weight:800; color:#00e5ff;">0%</div>
+            </div>
+
+            <!-- Upload Bar -->
+            <div style="margin-bottom:14px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:0.78rem; color:#bb86fc; font-weight:700;">Stage 1: Multi-Stream Chunk Transfer</span>
+                    <span id="uploaded-bytes-text" style="font-size:0.75rem; color:var(--text-secondary);">0 MB / 0 MB</span>
+                </div>
+                <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; position:relative;">
                     <div id="upload-progress-bar"
-                        style="width:0%; height:100%; background:linear-gradient(90deg,#bb86fc,#00e5ff); transition:width 0.3s;">
+                        style="width:0%; height:100%; background:linear-gradient(90deg, #7c4dff, #00e5ff); box-shadow:0 0 12px rgba(0,229,255,0.6); transition:width 0.25s ease;">
                     </div>
                 </div>
             </div>
-            <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span
-                        style="font-size:0.8rem; color:#00e5ff; font-weight:600;">2. HLS Processing</span><span
-                        id="processing-percentage" style="font-size:0.8rem; font-weight:700; color:#00e5ff;">0%</span>
+
+            <!-- Processing Bar -->
+            <div id="processing-stage-container" style="opacity:0.6; transition:opacity 0.3s;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:0.78rem; color:#00e5ff; font-weight:700;">Stage 2: Checkpointed HLS Adaptive Transcoder</span>
+                    <span id="processing-percentage" style="font-size:0.75rem; font-weight:700; color:#00e5ff;">Waiting...</span>
                 </div>
-                <div
-                    style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;">
+                <div style="width:100%; height:8px; background:rgba(255,255,255,0.08); border-radius:10px; overflow:hidden;">
                     <div id="processing-progress-bar"
-                        style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#00b8d4); transition:width 0.3s;">
+                        style="width:0%; height:100%; background:linear-gradient(90deg, #00e5ff, #00e676); transition:width 0.4s ease;">
                     </div>
                 </div>
             </div>
+
             <p id="system-status"
-                style="font-size:0.75rem; color:var(--text-secondary); margin:10px 0 0; text-align:center;">Preparing...
+                style="font-size:0.78rem; color:var(--text-secondary); margin:12px 0 0; text-align:center; font-weight:600;">
+                Initializing streaming upload...
             </p>
         </div>
     </form>
@@ -317,10 +355,46 @@
 
     <script>
         const processingTasks = new Set();
+
+        function handleFileDrop(e) {
+            e.preventDefault();
+            const dropZone = document.getElementById('drop-zone');
+            dropZone.style.borderColor = 'rgba(187,134,252,0.3)';
+            dropZone.style.background = 'rgba(187,134,252,0.02)';
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                const fileInput = document.getElementById('video-file');
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelected(e.dataTransfer.files[0]);
+            }
+        }
+
+        function handleFileSelected(file) {
+            if (!file) return;
+            document.getElementById('drop-zone-content').style.display = 'none';
+            const badge = document.getElementById('file-selected-badge');
+            badge.style.display = 'inline-flex';
+            document.getElementById('selected-file-name').textContent = file.name;
+            
+            // Format bytes
+            let sizeStr = '';
+            if (file.size < 1024 * 1024) sizeStr = (file.size / 1024).toFixed(1) + ' KB';
+            else if (file.size < 1024 * 1024 * 1024) sizeStr = (file.size / (1024 * 1024)).toFixed(1) + ' MB';
+            else sizeStr = (file.size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+            document.getElementById('selected-file-size').textContent = sizeStr;
+
+            // Auto-fill title if empty
+            const titleInput = document.getElementById('video-title');
+            if (!titleInput.value) {
+                const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+                titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             checkProcessingVideos();
             setInterval(checkProcessingVideos, 3000);
         });
+
         async function checkProcessingVideos() {
             try {
                 const resp = await fetch('/api/teacher/processing_videos');
@@ -333,14 +407,28 @@
                 videos.forEach(video => {
                     let el = document.getElementById(`task-${video.id}`);
                     if (!el) { el = document.createElement('div'); el.id = `task-${video.id}`; el.className = 'vcard'; list.appendChild(el); }
-                    el.innerHTML = `<div style="padding:20px; border-left:3px solid #00e5ff;"><strong>${video.title}</strong><div style="margin:10px 0 4px; display:flex; justify-content:space-between;"><span style="font-size:0.75rem;color:var(--text-secondary);">HLS Conversion</span><span style="font-size:0.75rem;color:#00e5ff;font-weight:700;">${video.progress}%</span></div><div style="height:4px;background:rgba(255,255,255,0.05);border-radius:10px;overflow:hidden;"><div style="width:${video.progress}%;height:100%;background:#00e5ff;transition:width 0.5s;"></div></div></div>`;
+                    el.innerHTML = `
+                        <div style="padding:18px 20px; border-left:4px solid #00e5ff; background:linear-gradient(145deg, rgba(0,229,255,0.03), transparent);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <strong style="font-size:0.95rem; color:#fff;">${video.title}</strong>
+                                <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; background:rgba(0,229,255,0.15); color:#00e5ff; font-weight:700;">⚡ Converting</span>
+                            </div>
+                            <div style="margin:8px 0 4px; display:flex; justify-content:space-between;">
+                                <span style="font-size:0.75rem; color:var(--text-secondary);">4K Adaptive HLS Stream</span>
+                                <span style="font-size:0.75rem; color:#00e5ff; font-weight:700;">${video.progress}%</span>
+                            </div>
+                            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden;">
+                                <div style="width:${video.progress}%; height:100%; background:linear-gradient(90deg, #00e5ff, #00e676); transition:width 0.4s ease;"></div>
+                            </div>
+                        </div>`;
                 });
                 Array.from(list.children).forEach(child => {
                     const id = parseInt(child.id.split('-')[1]);
-                    if (!serverIds.has(id)) { child.innerHTML = '<p style="text-align:center;padding:20px;">✓ Complete! Refreshing...</p>'; setTimeout(() => { child.remove(); if (!list.children.length) window.location.reload(); }, 2000); }
+                    if (!serverIds.has(id)) { child.innerHTML = '<div style="text-align:center; padding:20px; color:#00e676; font-weight:700;">✓ Conversion Complete! Refreshing...</div>'; setTimeout(() => { child.remove(); if (!list.children.length) window.location.reload(); }, 2000); }
                 });
             } catch (e) { }
         }
+
         document.getElementById('upload-form').addEventListener('submit', function (e) {
             e.preventDefault();
             const fi = document.getElementById('video-file');
@@ -350,6 +438,13 @@
             const ub = document.getElementById('upload-progress-bar');
             const up = document.getElementById('upload-percentage');
             const status = document.getElementById('system-status');
+            const procStage = document.getElementById('processing-stage-container');
+            const procBar = document.getElementById('processing-progress-bar');
+            const procPercent = document.getElementById('processing-percentage');
+            const uploadedBytesText = document.getElementById('uploaded-bytes-text');
+            const speedBadge = document.getElementById('telemetry-speed');
+            const etaBadge = document.getElementById('telemetry-eta');
+            const chunksBadge = document.getElementById('telemetry-chunks');
             
             const file = fi.files[0];
             if (!file) { alert('Please select a video file.'); return; }
@@ -377,9 +472,10 @@
             
             pc.style.display = 'block';
             btn.disabled = true;
-            btn.innerText = 'Uploading...';
-            status.innerText = `Initializing high-speed parallel upload (${CONCURRENCY} streams)...`;
-            status.style.color = '#bb86fc';
+            btn.innerHTML = '<i class="material-icons" style="font-size:1.1rem; vertical-align:middle; animation:spin 1s linear infinite;">sync</i> Uploading...';
+            status.innerText = `Connecting ${CONCURRENCY} parallel chunk streams...`;
+            status.style.color = '#00e5ff';
+            chunksBadge.innerText = `Chunks: 0/${totalChunks}`;
 
             let chunkQueue = Array.from({ length: totalChunks }, (_, i) => i);
             let activeWorkers = 0;
@@ -414,6 +510,7 @@
                 
                 ub.style.width = overallProgress + '%';
                 up.innerText = overallProgress + '%';
+                uploadedBytesText.innerText = `${formatBytes(totalUploadedBytes)} / ${formatBytes(file.size)}`;
 
                 const now = Date.now();
                 const deltaMs = now - lastUpdate;
@@ -430,29 +527,41 @@
                 const speedText = currentSpeedBytesPerSec > 0 ? `${formatBytes(currentSpeedBytesPerSec)}/s` : 'Calculating...';
                 const etaText = currentSpeedBytesPerSec > 0 ? formatETA(etaSeconds) : '--';
 
-                status.innerText = `Uploading in parallel (${CONCURRENCY} streams): ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
+                speedBadge.innerText = `⚡ ${speedText}`;
+                etaBadge.innerText = `⏳ ETA: ${etaText}`;
+                chunksBadge.innerText = `Chunks: ${completedChunks}/${totalChunks}`;
+                status.innerText = `Uploading via ${CONCURRENCY} parallel streams (${overallProgress}% • ${speedText} • ${completedChunks}/${totalChunks} chunks assembled)`;
             }
 
             function handleUploadSuccess(resp) {
                 ub.style.width = '100%';
                 up.innerText = '100%';
+                uploadedBytesText.innerText = `${formatBytes(file.size)} / ${formatBytes(file.size)}`;
+                chunksBadge.innerText = `Chunks: ${totalChunks}/${totalChunks} ✓`;
+                
+                procStage.style.opacity = '1';
+                procPercent.innerText = 'Transcoding Active';
+                procBar.style.width = '35%';
                 
                 ti.value = '';
                 fi.value = '';
                 document.getElementById('video-desc').value = '';
                 document.getElementById('video-tags').value = '';
-                document.getElementById('file-chosen-label').innerText = 'No file chosen';
+                document.getElementById('file-selected-badge').style.display = 'none';
+                document.getElementById('drop-zone-content').style.display = 'block';
                 
-                status.innerText = 'Upload complete! Starting HLS processing...';
-                status.style.color = '#4caf50';
+                status.innerText = '✓ Multi-stream upload assembled! Background HLS conversion started with 5 workers.';
+                status.style.color = '#00e676';
                 checkProcessingVideos();
                 setTimeout(() => {
                     pc.style.display = 'none';
                     btn.disabled = false;
-                    btn.innerText = 'Upload Video';
+                    btn.innerHTML = '<i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">bolt</i> Start Parallel Upload';
                     ub.style.width = '0%';
                     up.innerText = '0%';
-                }, 3000);
+                    procStage.style.opacity = '0.6';
+                    procBar.style.width = '0%';
+                }, 4000);
             }
 
             function handleUploadError(errMsg) {
@@ -460,17 +569,14 @@
                 isAborted = true;
                 alert('Upload failed: ' + errMsg);
                 btn.disabled = false;
-                btn.innerText = 'Upload Video';
+                btn.innerHTML = '<i class="material-icons" style="font-size:1.1rem; vertical-align:middle;">bolt</i> Start Parallel Upload';
                 status.innerText = 'Upload failed: ' + errMsg;
                 status.style.color = '#ff5252';
             }
 
             function processNextQueueItem() {
                 if (isAborted) return;
-
-                if (chunkQueue.length === 0) {
-                    return;
-                }
+                if (chunkQueue.length === 0) return;
 
                 const chunkIndex = chunkQueue.shift();
                 activeWorkers++;
@@ -486,7 +592,6 @@
                 fd.append('uuid', uploadUuid);
                 fd.append('filename', file.name);
 
-                // Always send metadata with every chunk so any finishing parallel worker has full video details
                 fd.append('title', title);
                 fd.append('classroom_id', classroomId);
                 fd.append('description', description);
