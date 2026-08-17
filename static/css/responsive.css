@@ -499,26 +499,37 @@ body.auth-guest .bottom-nav {
     body:not(.auth-guest) .main {
         padding-left: calc(48px + var(--safe-left)) !important;
         padding-right: calc(48px + var(--safe-right)) !important;
-        max-width: var(--content-max-width);
+        max-width: none !important;
+        width: calc(100% - var(--sidebar-width)) !important;
     }
 
-    .grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    .grid-container,
+    .video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+        gap: 24px !important;
     }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ULTRA-WIDE (1920px+)
+   ULTRA-WIDE (1920px+) & 4K (2560px+)
    ═══════════════════════════════════════════════════════════════ */
 @media (min-width: 1920px) {
     body:not(.auth-guest) .main {
-        max-width: 1600px;
-        padding-left: calc(60px + var(--safe-left)) !important;
-        padding-right: calc(60px + var(--safe-right)) !important;
+        max-width: none !important;
+        width: calc(100% - var(--sidebar-width)) !important;
+        padding-left: calc(64px + var(--safe-left)) !important;
+        padding-right: calc(64px + var(--safe-right)) !important;
     }
 
-    .grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    .grid-container,
+    .video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+        gap: 28px !important;
+    }
+
+    .stats-grid,
+    .stat-row {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
     }
 }
 
@@ -1611,6 +1622,126 @@ pre, code {
         padding: 4px 8px !important;
         font-size: 0.68rem !important;
         min-height: 28px !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ULTRA-COMPREHENSIVE ALL-SCREEN FIT RULES (320px to 4K+)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Global container & card safety */
+*, *::before, *::after {
+    box-sizing: border-box !important;
+}
+
+html, body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+
+.main, .page-container, .card, .container {
+    max-width: 100% !important;
+}
+
+/* Universal fluid image / media scaling */
+img, video, canvas, svg, iframe, embed, object {
+    max-width: 100% !important;
+    height: auto;
+}
+
+/* Fluid Form Elements & Grid Columns */
+input, select, textarea, button {
+    max-width: 100% !important;
+}
+
+.stats-grid,
+.stat-row {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(clamp(130px, 16vw, 220px), 1fr)) !important;
+    gap: clamp(8px, 1.5vw, 16px) !important;
+    width: 100% !important;
+}
+
+.grid-container,
+.video-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(clamp(250px, 20vw, 320px), 1fr)) !important;
+    gap: clamp(12px, 2vw, 22px) !important;
+    width: 100% !important;
+}
+
+/* Universal Table Wrapper Fluid Scroller */
+.table-responsive,
+.table-wrap,
+.conv-table-wrap,
+.data-table-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    position: relative !important;
+}
+
+/* Modals & Dialogs screen fitting */
+.modal,
+.modal-content,
+.dialog,
+.drawer {
+    max-width: min(92vw, 700px) !important;
+    max-height: 90dvh !important;
+    overflow-y: auto !important;
+    margin: auto !important;
+    box-sizing: border-box !important;
+}
+
+/* Micro-screen / Foldable screen fit (<= 360px) */
+@media (max-width: 360px) {
+    .page-title {
+        font-size: 1.15rem !important;
+    }
+    .page-sub {
+        font-size: 0.7rem !important;
+    }
+    .card {
+        padding: 10px 8px !important;
+        border-radius: 10px !important;
+    }
+    .btn {
+        padding: 8px 10px !important;
+        font-size: 0.72rem !important;
+        min-height: 36px !important;
+    }
+    .stats-grid,
+    .stat-row {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .stat-card {
+        padding: 8px 6px !important;
+    }
+    .stat-val {
+        font-size: 1.1rem !important;
+    }
+    .stat-lbl {
+        font-size: 0.58rem !important;
+    }
+    .nav-item {
+        flex: 1 0 48px !important;
+        max-width: 58px !important;
+    }
+    .nav-item span {
+        font-size: 0.5rem !important;
+    }
+}
+
+/* Fullscreen video player safe fitting across orientations */
+@media (orientation: landscape) and (max-height: 500px) {
+    .vp-wrap {
+        padding: 0 !important;
+    }
+    .main {
+        padding-top: calc(50px + var(--safe-top)) !important;
+        padding-bottom: calc(50px + var(--safe-bottom)) !important;
     }
 }
 
