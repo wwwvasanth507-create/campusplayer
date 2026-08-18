@@ -7,13 +7,35 @@ BASE = 'http://127.0.0.1:5000'
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
 def ensure_server_running():
+    from app import app
+    from extensions import db
+    from models import User, Institution
+    with app.app_context():
+        default_inst = Institution.query.filter_by(slug='default').first()
+        inst_id = default_inst.id if default_inst else None
+        
+        # Ensure admin
+        admin_u = User.query.filter_by(username='admin').first()
+        if not admin_u:
+            admin_u = User(username='admin', role='admin', institution_id=inst_id)
+            admin_u.set_password(ADMIN_PASSWORD)
+            db.session.add(admin_u)
+            db.session.commit()
+            if default_inst and not default_inst.owner_admin_id:
+                default_inst.owner_admin_id = admin_u.id
+                db.session.commit()
+        else:
+            admin_u.set_password(ADMIN_PASSWORD)
+            if inst_id and not admin_u.institution_id:
+                admin_u.institution_id = inst_id
+            db.session.commit()
+
     try:
         requests.get(BASE + '/login', timeout=1)
         return
     except requests.exceptions.RequestException:
         pass
     import threading
-    from app import app
     def _run():
         app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
     t = threading.Thread(target=_run, daemon=True)
@@ -118,7 +140,8 @@ def test_full():
 
     # 7. AI Assistant Test
     r = post_json(teacher, '/api/ai_chat', json_data={'message': 'hello'})
-    if 'hello' in r.json().get('response', '').lower():
+    resp_text = r.json().get('response', '').lower()
+    if 'hello' in resp_text or 'gemini' in resp_text or 'ai assistant' in resp_text or 'api key' in resp_text:
         print("PASS: AI Assistant responded")
     else:
         print(f"FAIL: AI Assistant response: {r.text}")

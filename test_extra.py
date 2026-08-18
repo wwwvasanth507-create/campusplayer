@@ -6,13 +6,50 @@ BASE = 'http://127.0.0.1:5000'
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
 def ensure_server_running():
+    from app import app
+    from extensions import db
+    from models import User, Institution, Classroom
+    with app.app_context():
+        default_inst = Institution.query.filter_by(slug='default').first()
+        inst_id = default_inst.id if default_inst else None
+        
+        # Ensure admin
+        admin_u = User.query.filter_by(username='admin').first()
+        if not admin_u:
+            admin_u = User(username='admin', role='admin', institution_id=inst_id)
+            admin_u.set_password(ADMIN_PASSWORD)
+            db.session.add(admin_u)
+        else:
+            admin_u.set_password(ADMIN_PASSWORD)
+            if inst_id and not admin_u.institution_id:
+                admin_u.institution_id = inst_id
+                
+        # Ensure teacher_test_full
+        teacher_u = User.query.filter_by(username='teacher_test_full').first()
+        if not teacher_u:
+            teacher_u = User(username='teacher_test_full', role='teacher', institution_id=inst_id)
+            teacher_u.set_password('pass123')
+            db.session.add(teacher_u)
+            db.session.commit()
+        else:
+            teacher_u.set_password('pass123')
+            if inst_id and not teacher_u.institution_id:
+                teacher_u.institution_id = inst_id
+            db.session.commit()
+
+        # Ensure class exists for chatroom test
+        cls = Classroom.query.filter_by(teacher_id=teacher_u.id).first()
+        if not cls:
+            cls = Classroom(name='Test Class Extra', teacher_id=teacher_u.id, institution_id=inst_id)
+            db.session.add(cls)
+            db.session.commit()
+
     try:
         requests.get(BASE + '/login', timeout=1)
         return
     except requests.exceptions.RequestException:
         pass
     import threading, time
-    from app import app
     def _run():
         app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
     t = threading.Thread(target=_run, daemon=True)

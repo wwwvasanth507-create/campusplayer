@@ -10,13 +10,33 @@ BASE = 'http://127.0.0.1:5000'
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
 def ensure_server_running():
+    from app import app
+    from extensions import db
+    from models import User, Institution
+    with app.app_context():
+        default_inst = Institution.query.filter_by(slug='default').first()
+        inst_id = default_inst.id if default_inst else None
+        admin_u = User.query.filter_by(username='admin').first()
+        if not admin_u:
+            admin_u = User(username='admin', role='admin', institution_id=inst_id)
+            admin_u.set_password(ADMIN_PASSWORD)
+            db.session.add(admin_u)
+            db.session.commit()
+            if default_inst and not default_inst.owner_admin_id:
+                default_inst.owner_admin_id = admin_u.id
+                db.session.commit()
+        else:
+            admin_u.set_password(ADMIN_PASSWORD)
+            if inst_id and not admin_u.institution_id:
+                admin_u.institution_id = inst_id
+            db.session.commit()
+
     try:
         requests.get(BASE + '/login', timeout=1)
         return
     except requests.exceptions.RequestException:
         pass
     import threading, time
-    from app import app
     def _run():
         app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
     t = threading.Thread(target=_run, daemon=True)
@@ -75,7 +95,7 @@ def make_session(username, password, role='Admin'):
     return s, r
 
 # ─────────────────────────────────────────────
-def test_page(s, path, must_contain=None, must_not_contain='Internal Server Error'):
+def check_page(s, path, must_contain=None, must_not_contain='Internal Server Error'):
     r = s.get(BASE + path, allow_redirects=True)
     if r.status_code != 200:
         return False, f'HTTP {r.status_code}'
@@ -143,7 +163,7 @@ for path, kw in admin_tests:
          m_cid = re.search(r'class_id=(\d+)', r_list.text)
          if m_cid: final_path = f'/admin/levels_pdf?type=class&class_id={m_cid.group(1)}'
 
-    ok, msg = test_page(admin, final_path, kw)
+    ok, msg = check_page(admin, final_path, kw)
     run(final_path, ok, msg)
 
 # ─────────────────────────────────────────────
@@ -173,7 +193,7 @@ teacher_tests = [
     ('/teacher/enrolled_students', 'student'),
 ]
 for path, kw in teacher_tests:
-    ok, msg = test_page(teacher, path, kw)
+    ok, msg = check_page(teacher, path, kw)
     run(path, ok, msg)
 
 # ─────────────────────────────────────────────
@@ -262,7 +282,7 @@ r_cls = admin.get(BASE + '/admin/levels_pdf?type=all_classes')
 mc = re.search(r'/admin/class_pdf/(\d+)', r_cls.text)
 if mc:
     cid = mc.group(1)
-    ok, msg = test_page(admin, '/admin/class_pdf/' + cid, 'class report')
+    ok, msg = check_page(admin, '/admin/class_pdf/' + cid, 'class report')
     run('class_pdf page', ok, msg)
 else:
     # Try class panel from teacher
@@ -276,7 +296,7 @@ print('\n[10] STUDENT PAGES')
 student, r = make_session('teststudent99', 'pass123', 'Student')
 s_logged = '/login' not in r.url and r.status_code == 200
 run('student login', s_logged, r.url)
-ok, msg = test_page(student, '/student', 'campus')
+ok, msg = check_page(student, '/student', 'campus')
 run('/student dashboard', ok, msg)
 
 # ─────────────────────────────────────────────
@@ -292,3 +312,7 @@ if fail_count > 0:
                 print(f'  [FAIL] {label}: {msg}')
             except UnicodeEncodeError:
                 print(f'  [FAIL] {label}: {str(msg).encode("ascii", "ignore").decode()}')
+
+def test_full_app_suite():
+    assert fail_count == 0, f"{fail_count} tests failed in test_app.py"
+

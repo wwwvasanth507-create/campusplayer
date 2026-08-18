@@ -84,14 +84,20 @@ def ensure_schema_up_to_date(app):
         print("[schema] Database schema is up to date.")
 
 
+from models import (
+    User, Institution, Classroom, Video, Playlist, Comment, ViewAnalytics,
+    Notification, SiteSettings, Quiz, Question, QuizResult, ChatMessage,
+    Attendance, AttendanceSession, AttendanceSubSession, ActivityLog,
+    SystemMetric, Assignment, AssignmentSubmission, StudentProfile,
+    VideoNote, VideoBookmark, VideoProgress, VideoLike, LeaderboardEntry,
+    EmailQueue, StudentRemark, EmailDeliveryLog, ConversionJob,
+    playlist_videos, student_classes
+)
+
+
 def reset_system_admin(app, username, password, wipe_existing):
     with app.app_context():
-        if wipe_existing:
-            removed = User.query.filter_by(role='system_admin').delete()
-            db.session.commit()
-            if removed:
-                print(f"[system_admin] Removed {removed} existing system_admin account(s).")
-
+        # First ensure target system admin exists / is updated
         existing = User.query.filter_by(username=username).first()
         if existing:
             if existing.role != 'system_admin':
@@ -101,22 +107,128 @@ def reset_system_admin(app, username, password, wipe_existing):
             existing.set_password(password)
             db.session.commit()
             print(f"[system_admin] Reset password for existing system admin '{username}'.")
+            target_user = existing
         else:
             sysadmin = User(username=username, role='system_admin')
             sysadmin.set_password(password)
             db.session.add(sysadmin)
             db.session.commit()
             print(f"[system_admin] Created new system admin '{username}'.")
+            target_user = sysadmin
+
+        if wipe_existing:
+            # Safely remove any OTHER system_admin accounts without foreign key violations
+            other_sysadmins = User.query.filter(User.role == 'system_admin', User.id != target_user.id).all()
+            if other_sysadmins:
+                other_ids = [u.id for u in other_sysadmins]
+                # Clean up dependent records referencing these sysadmin users
+                ActivityLog.query.filter(ActivityLog.user_id.in_(other_ids)).delete(synchronize_session=False)
+                LeaderboardEntry.query.filter(LeaderboardEntry.user_id.in_(other_ids)).delete(synchronize_session=False)
+                Notification.query.filter(Notification.user_id.in_(other_ids)).delete(synchronize_session=False)
+                ChatMessage.query.filter(ChatMessage.user_id.in_(other_ids)).delete(synchronize_session=False)
+                Comment.query.filter(Comment.user_id.in_(other_ids)).delete(synchronize_session=False)
+                VideoNote.query.filter(VideoNote.user_id.in_(other_ids)).delete(synchronize_session=False)
+                VideoBookmark.query.filter(VideoBookmark.user_id.in_(other_ids)).delete(synchronize_session=False)
+                VideoProgress.query.filter(VideoProgress.user_id.in_(other_ids)).delete(synchronize_session=False)
+                VideoLike.query.filter(VideoLike.user_id.in_(other_ids)).delete(synchronize_session=False)
+                Institution.query.filter(Institution.owner_admin_id.in_(other_ids)).update({Institution.owner_admin_id: None}, synchronize_session=False)
+                for u in other_sysadmins:
+                    db.session.delete(u)
+                db.session.commit()
+                print(f"[system_admin] Removed {len(other_sysadmins)} other existing system_admin account(s).")
 
 
 def wipe_all_institutions(app):
     """DANGEROUS: deletes every Institution, Admin, Teacher, and Student. The
     System Admin account itself is preserved."""
     with app.app_context():
-        deleted_users = User.query.filter(User.role.in_(['admin', 'teacher', 'student'])).delete(synchronize_session=False)
+        users = User.query.filter(User.role.in_(['admin', 'teacher', 'student'])).all()
+        user_ids = [u.id for u in users]
+        classrooms = Classroom.query.all()
+        classroom_ids = [c.id for c in classrooms]
+
+        if user_ids:
+            ActivityLog.query.filter(ActivityLog.user_id.in_(user_ids)).delete(synchronize_session=False)
+            StudentProfile.query.filter(StudentProfile.user_id.in_(user_ids)).delete(synchronize_session=False)
+            EmailDeliveryLog.query.filter(
+                (EmailDeliveryLog.teacher_id.in_(user_ids)) | 
+                (EmailDeliveryLog.student_id.in_(user_ids))
+            ).delete(synchronize_session=False)
+            StudentRemark.query.filter(StudentRemark.student_id.in_(user_ids)).delete(synchronize_session=False)
+            LeaderboardEntry.query.filter(LeaderboardEntry.user_id.in_(user_ids)).delete(synchronize_session=False)
+            ChatMessage.query.filter(ChatMessage.user_id.in_(user_ids)).delete(synchronize_session=False)
+            Attendance.query.filter(Attendance.student_id.in_(user_ids)).delete(synchronize_session=False)
+            QuizResult.query.filter(QuizResult.student_id.in_(user_ids)).delete(synchronize_session=False)
+            AssignmentSubmission.query.filter(AssignmentSubmission.student_id.in_(user_ids)).delete(synchronize_session=False)
+            Comment.query.filter(Comment.user_id.in_(user_ids)).delete(synchronize_session=False)
+            Notification.query.filter(Notification.user_id.in_(user_ids)).delete(synchronize_session=False)
+            VideoNote.query.filter(VideoNote.user_id.in_(user_ids)).delete(synchronize_session=False)
+            VideoBookmark.query.filter(VideoBookmark.user_id.in_(user_ids)).delete(synchronize_session=False)
+            VideoProgress.query.filter(VideoProgress.user_id.in_(user_ids)).delete(synchronize_session=False)
+            VideoLike.query.filter(VideoLike.user_id.in_(user_ids)).delete(synchronize_session=False)
+
+        if classroom_ids:
+            StudentRemark.query.filter(StudentRemark.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
+            ChatMessage.query.filter(ChatMessage.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
+            Attendance.query.filter(Attendance.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
+            sessions = AttendanceSession.query.filter(AttendanceSession.classroom_id.in_(classroom_ids)).all()
+            session_ids = [s.id for s in sessions]
+            if session_ids:
+                AttendanceSubSession.query.filter(AttendanceSubSession.attendance_session_id.in_(session_ids)).delete(synchronize_session=False)
+                AttendanceSession.query.filter(AttendanceSession.id.in_(session_ids)).delete(synchronize_session=False)
+
+        quizzes = Quiz.query.all()
+        quiz_ids = [q.id for q in quizzes]
+        if quiz_ids:
+            QuizResult.query.filter(QuizResult.quiz_id.in_(quiz_ids)).delete(synchronize_session=False)
+            Question.query.filter(Question.quiz_id.in_(quiz_ids)).delete(synchronize_session=False)
+            Quiz.query.filter(Quiz.id.in_(quiz_ids)).delete(synchronize_session=False)
+
+        assignments = Assignment.query.all()
+        assignment_ids = [a.id for a in assignments]
+        if assignment_ids:
+            AssignmentSubmission.query.filter(AssignmentSubmission.assignment_id.in_(assignment_ids)).delete(synchronize_session=False)
+            Assignment.query.filter(Assignment.id.in_(assignment_ids)).delete(synchronize_session=False)
+
+        videos = Video.query.all()
+        video_ids = [v.id for v in videos]
+        if video_ids:
+            Comment.query.filter(Comment.video_id.in_(video_ids)).delete(synchronize_session=False)
+            VideoNote.query.filter(VideoNote.video_id.in_(video_ids)).delete(synchronize_session=False)
+            VideoBookmark.query.filter(VideoBookmark.video_id.in_(video_ids)).delete(synchronize_session=False)
+            VideoProgress.query.filter(VideoProgress.video_id.in_(video_ids)).delete(synchronize_session=False)
+            VideoLike.query.filter(VideoLike.video_id.in_(video_ids)).delete(synchronize_session=False)
+            Notification.query.filter(Notification.video_id.in_(video_ids)).delete(synchronize_session=False)
+            db.session.execute(playlist_videos.delete().where(playlist_videos.c.video_id.in_(video_ids)))
+            for v in videos:
+                try:
+                    from services.video_cleanup import permanently_delete_video_assets
+                    permanently_delete_video_assets(v)
+                except Exception:
+                    pass
+            Video.query.filter(Video.id.in_(video_ids)).delete(synchronize_session=False)
+
+        playlists = Playlist.query.all()
+        playlist_ids = [p.id for p in playlists]
+        if playlist_ids:
+            db.session.execute(playlist_videos.delete().where(playlist_videos.c.playlist_id.in_(playlist_ids)))
+            Playlist.query.filter(Playlist.id.in_(playlist_ids)).delete(synchronize_session=False)
+
+        if classroom_ids:
+            db.session.execute(student_classes.delete().where(student_classes.c.classroom_id.in_(classroom_ids)))
+            Classroom.query.filter(Classroom.id.in_(classroom_ids)).delete(synchronize_session=False)
+        if user_ids:
+            db.session.execute(student_classes.delete().where(student_classes.c.student_id.in_(user_ids)))
+
+        SiteSettings.query.delete()
+        Institution.query.update({Institution.owner_admin_id: None})
+        db.session.commit()
+
+        for u in users:
+            db.session.delete(u)
         deleted_institutions = Institution.query.delete()
         db.session.commit()
-        print(f"[wipe] Deleted {deleted_users} admin/teacher/student account(s) "
+        print(f"[wipe] Deleted {len(users)} admin/teacher/student account(s) "
               f"and {deleted_institutions} institution(s).")
 
 
