@@ -1156,6 +1156,25 @@
         transform: none;
         box-shadow: none;
     }
+
+    /* Disable heavy fixed ambient animation & backdrop-filters on mobile GPUs for 60fps scrolling */
+    .vp-wrap::before {
+        display: none !important;
+        animation: none !important;
+    }
+
+    .vp-ai-summarizer-card,
+    .vp-desc-box,
+    .vp-comments-section {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+
+    /* Hide Autoplay button on mobile UI player bar as requested */
+    .campus-autoplay-btn {
+        display: none !important;
+    }
 }
 
 @media (max-width: 420px) {

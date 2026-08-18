@@ -341,6 +341,7 @@ def migrate():
                     ('academic_year_rollover_processed', 'BOOLEAN DEFAULT 0'),
                     ('allow_student_chat', 'BOOLEAN DEFAULT 1'),
                     ('allow_public_registration', 'BOOLEAN DEFAULT 0'),
+                    ('quests_version', 'INTEGER DEFAULT 1'),
                 ],
                 'indexes': [
                     ('ix_site_settings_institution_id', 'institution_id'),
@@ -534,6 +535,25 @@ def migrate():
             print("[OK] Achievements seeded successfully")
         except Exception as e:
             print(f"[!] Could not seed achievements: {e}")
+
+        # Seed default daily quest templates
+        print("\n[Quests] Seeding default daily quest templates...")
+        try:
+            default_quests = [
+                {'quest_key': 'daily_login', 'title': 'Daily Check-in', 'desc': 'Log in & remain active today', 'xp': 25, 'icon': 'event_available', 'target': 1},
+                {'quest_key': 'watch_video', 'title': 'Course Explorer', 'desc': 'Watch or review an educational lecture', 'xp': 50, 'icon': 'play_circle_filled', 'target': 1},
+                {'quest_key': 'take_quiz', 'title': 'Quiz Challenger', 'desc': 'Complete an online assessment', 'xp': 75, 'icon': 'quiz', 'target': 1},
+                {'quest_key': 'submit_assignment', 'title': 'Assignment Scholar', 'desc': 'Submit coursework or homework', 'xp': 100, 'icon': 'assignment_turned_in', 'target': 1}
+            ]
+            for q_def in default_quests:
+                q_obj = DailyQuestTemplate.query.filter_by(quest_key=q_def['quest_key']).first()
+                if not q_obj:
+                    q_obj = DailyQuestTemplate(**q_def)
+                    db.session.add(q_obj)
+            db.session.commit()
+            print("[OK] Daily quest templates seeded successfully")
+        except Exception as e:
+            print(f"[!] Could not seed daily quest templates: {e}")
         
         db.session.commit()
         

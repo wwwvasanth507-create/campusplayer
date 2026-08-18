@@ -61,6 +61,195 @@
     </form>
 </div>
 
+<!-- ═══ SYSADMIN DAILY QUEST MANAGEMENT CARD ═══ -->
+<div class="card" style="border: 1px solid rgba(162, 155, 254, 0.25); background: var(--card-bg);">
+    <div class="flex-between" style="margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <div class="card-title font-display" style="margin: 0; color: #a29bfe;">
+                <i class="material-icons" style="color: #fdcb6e;">event_available</i>
+                Global Daily Quests Manager
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 2px;">
+                Manage global daily quest templates. Changes instantly sync to all logged-in students across all institutions.
+            </div>
+        </div>
+        <button onclick="document.getElementById('addQuestModal').style.display='flex'" class="btn btn-primary" style="width: auto; padding: 6px 14px; font-size: 0.8rem; height: 36px;">
+            <i class="material-icons" style="font-size: 1rem;">add_circle</i> Add New Quest
+        </button>
+    </div>
+
+    <!-- Quests Table -->
+    {% if quest_templates %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border); text-align: left; color: var(--text-dim);">
+                    <th style="padding: 10px;">Key</th>
+                    <th style="padding: 10px;">Title & Description</th>
+                    <th style="padding: 10px;">XP Reward</th>
+                    <th style="padding: 10px;">Icon</th>
+                    <th style="padding: 10px;">Target</th>
+                    <th style="padding: 10px;">Status</th>
+                    <th style="padding: 10px; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in quest_templates %}
+                <tr style="border-bottom: 1px solid var(--table-row-border);">
+                    <td style="padding: 10px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--accent);">
+                        {{ q.quest_key }}
+                    </td>
+                    <td style="padding: 10px;">
+                        <strong style="color: var(--text);">{{ q.title }}</strong>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">{{ q.desc }}</div>
+                    </td>
+                    <td style="padding: 10px; font-family: 'JetBrains Mono', monospace; color: #fdcb6e; font-weight: 700;">
+                        +{{ q.xp }} XP
+                    </td>
+                    <td style="padding: 10px; vertical-align: middle;">
+                        <i class="material-icons" style="font-size: 1.1rem; color: var(--primary-light);">{{ q.icon }}</i>
+                        <span style="font-size: 0.72rem; color: var(--text-dim); font-family: monospace;">{{ q.icon }}</span>
+                    </td>
+                    <td style="padding: 10px; font-family: 'JetBrains Mono', monospace;">
+                        {{ q.target }}
+                    </td>
+                    <td style="padding: 10px;">
+                        <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+                            background: {{ 'rgba(16,185,129,0.15)' if q.is_active else 'rgba(244,63,94,0.15)' }};
+                            color: {{ '#10b981' if q.is_active else '#f43f5e' }};">
+                            {{ 'ACTIVE' if q.is_active else 'DISABLED' }}
+                        </span>
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        <div style="display: inline-flex; gap: 6px;">
+                            <button onclick="editQuestModal('{{ q.id }}', '{{ q.quest_key }}', '{{ q.title|e }}', '{{ q.desc|e }}', '{{ q.xp }}', '{{ q.icon }}', '{{ q.target }}', {{ 'true' if q.is_active else 'false' }})"
+                                class="btn btn-outline" style="padding: 4px 8px; font-size: 0.72rem; height: 30px;">
+                                Edit
+                            </button>
+                            <form method="POST" action="{{ url_for('sysadmin_delete_quest', quest_id=q.id) }}" style="display: inline;" onsubmit="return confirm('Delete this daily quest template globally?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button type="submit" class="btn btn-danger" style="padding: 4px 8px; font-size: 0.72rem; height: 30px;">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-dim); font-size: 0.85rem;">No quest templates configured.</p>
+    {% endif %}
+</div>
+
+<!-- Modal: Add New Quest -->
+<div id="addQuestModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div class="flex-between" style="margin-bottom: 16px;">
+            <h3 class="font-display" style="margin: 0; color: var(--text);">🎯 Create New Daily Quest</h3>
+            <button onclick="document.getElementById('addQuestModal').style.display='none'" style="background: none; border: none; color: var(--text-dim); font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <form method="POST" action="{{ url_for('sysadmin_add_quest') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Quest Unique Key (e.g. read_article)</label>
+                <input type="text" name="quest_key" required placeholder="e.g. read_article" style="margin-bottom: 0;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Title</label>
+                <input type="text" name="title" required placeholder="e.g. Knowledge Hunter" style="margin-bottom: 0;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
+                <textarea name="desc" required placeholder="e.g. Read an educational article or resource" style="width: 100%; border-radius: 8px; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text);"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">XP Reward</label>
+                    <input type="number" name="xp" value="50" min="5" max="1000" required style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">Icon Name</label>
+                    <input type="text" name="icon" value="auto_awesome" required style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">Target Count</label>
+                    <input type="number" name="target" value="1" min="1" required style="margin-bottom: 0;">
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="document.getElementById('addQuestModal').style.display='none'" class="btn btn-outline" style="width: auto;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="width: auto;">Create Quest</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Edit Quest -->
+<div id="editQuestModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+        <div class="flex-between" style="margin-bottom: 16px;">
+            <h3 class="font-display" style="margin: 0; color: var(--text);">✏️ Edit Daily Quest</h3>
+            <button onclick="document.getElementById('editQuestModal').style.display='none'" style="background: none; border: none; color: var(--text-dim); font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        <form id="editQuestForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Quest Key (Read-Only)</label>
+                <input type="text" id="eq_key" disabled style="margin-bottom: 0; opacity: 0.7;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Title</label>
+                <input type="text" name="title" id="eq_title" required style="margin-bottom: 0;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 0.8rem; color: var(--text-dim);">Description</label>
+                <textarea name="desc" id="eq_desc" required style="width: 100%; border-radius: 8px; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text);"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">XP Reward</label>
+                    <input type="number" name="xp" id="eq_xp" required style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">Icon Name</label>
+                    <input type="text" name="icon" id="eq_icon" required style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem; color: var(--text-dim);">Target Count</label>
+                    <input type="number" name="target" id="eq_target" required style="margin-bottom: 0;">
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text);">
+                    <input type="checkbox" name="is_active" id="eq_active" value="true">
+                    <span>Quest Active Status</span>
+                </label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" onclick="document.getElementById('editQuestModal').style.display='none'" class="btn btn-outline" style="width: auto;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="width: auto;">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editQuestModal(id, key, title, desc, xp, icon, target, active) {
+    document.getElementById('editQuestForm').action = '/sysadmin/quests/edit/' + id;
+    document.getElementById('eq_key').value = key;
+    document.getElementById('eq_title').value = title;
+    document.getElementById('eq_desc').value = desc;
+    document.getElementById('eq_xp').value = xp;
+    document.getElementById('eq_icon').value = icon;
+    document.getElementById('eq_target').value = target;
+    document.getElementById('eq_active').checked = active;
+    document.getElementById('editQuestModal').style.display = 'flex';
+}
+</script>
+
 <div class="card">
     <div class="card-title font-display"><i class="material-icons">apartment</i> Institutions ({{ institutions|length }})</div>
     {% if institutions %}
