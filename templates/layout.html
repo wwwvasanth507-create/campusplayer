@@ -348,31 +348,41 @@
             padding: 10px 16px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
+            transition: all 0.25s ease;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .top-bar-brand {
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-shrink: 0;
+            flex-shrink: 1;
+            min-width: 0;
             text-decoration: none;
+            overflow: hidden;
         }
 
         .top-bar-brand i {
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             color: var(--primary);
+            flex-shrink: 0;
         }
 
-        .top-bar-brand span {
+        .top-bar-brand span,
+        .top-bar-title {
             font-family: 'Outfit', sans-serif;
             font-weight: 800;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--primary);
             letter-spacing: -0.02em;
             display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .top-bar-right {
@@ -382,26 +392,38 @@
             flex-shrink: 0;
         }
 
-        .theme-toggle-btn {
+        .top-bar-icon-btn,
+        .theme-toggle-btn,
+        .menu-btn {
             background: var(--surface2);
             border: 1px solid var(--border);
-            border-radius: var(--radius-pill);
+            border-radius: var(--radius-sm, 8px);
             color: var(--text-muted);
             font-size: 1.2rem;
             cursor: pointer;
-            padding: 6px;
-            display: flex;
+            padding: 0;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            width: 38px;
+            height: 38px;
             min-width: 38px;
             min-height: 38px;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
         }
 
-        .theme-toggle-btn:hover {
+        .top-bar-icon-btn:hover,
+        .theme-toggle-btn:hover,
+        .menu-btn:hover,
+        .top-bar-icon-btn:focus-visible,
+        .theme-toggle-btn:focus-visible,
+        .menu-btn:focus-visible {
             color: var(--primary);
             background: var(--surface2);
             border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(229, 169, 60, 0.25);
         }
 
         .inst-badge {
@@ -424,49 +446,6 @@
         .inst-badge i {
             font-size: 0.85rem;
             color: var(--primary);
-        }
-
-        .menu-btn {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-muted);
-            font-size: 1.3rem;
-            cursor: pointer;
-            padding: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 38px;
-            min-height: 38px;
-            transition: all 0.2s ease;
-        }
-
-        .menu-btn:hover {
-            color: var(--text);
-            background: var(--surface2);
-            border-color: var(--primary);
-        }
-
-        .top-bar-icon-btn {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            color: var(--text-muted);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 6px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 38px;
-            min-height: 38px;
-            transition: all 0.2s ease;
-        }
-
-        .top-bar-icon-btn:hover {
-            color: var(--primary);
-            border-color: var(--primary);
         }
 
         .mobile-search-trigger {
@@ -1418,7 +1397,7 @@
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <i class="material-icons" id="themeToggleIcon">{% if session.get('theme') == 'light' %}dark_mode{% else %}light_mode{% endif %}</i>
             </button>
-            <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding:6px 14px; font-size:0.8rem; min-height:36px; gap:4px;" title="Login">
+            <a href="{{ url_for('login') }}" class="btn btn-primary top-bar-login-btn" title="Login" aria-label="Login">
                 <i class="material-icons" style="font-size:0.95rem;">login</i> <span>Login</span>
             </a>
             {% endif %}
