@@ -774,6 +774,17 @@ class CampusPlayer {
             ).join('')}
                             </div>
                         </div>
+                        <div class="campus-settings-section">
+                            <div class="campus-settings-header">Playback Options</div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="campus-fit-opt-btn campus-mute-opt-btn" type="button">
+                                    ${this.state.isMuted ? 'Unmute Audio' : 'Mute Audio'}
+                                </button>
+                                <button class="campus-fit-opt-btn campus-pip-opt-btn" type="button">
+                                    Picture-in-Picture (PiP)
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1009,10 +1020,20 @@ class CampusPlayer {
         els.fitBtn?.addEventListener('click', () => this.toggleFitMode());
 
         els.settingsMenu?.addEventListener('click', (e) => {
-            const fitOptBtn = e.target.closest('.campus-fit-opt-btn');
+            const fitOptBtn = e.target.closest('.campus-fit-opt-btn:not(.campus-mute-opt-btn):not(.campus-pip-opt-btn)');
             if (fitOptBtn) {
                 const fit = fitOptBtn.dataset.fit;
                 this.toggleFitMode(fit);
+            }
+            const muteOptBtn = e.target.closest('.campus-mute-opt-btn');
+            if (muteOptBtn) {
+                this.toggleMute();
+                muteOptBtn.textContent = this.video.muted ? 'Unmute Audio' : 'Mute Audio';
+                muteOptBtn.classList.toggle('campus-active', this.video.muted);
+            }
+            const pipOptBtn = e.target.closest('.campus-pip-opt-btn');
+            if (pipOptBtn) {
+                this.togglePiP();
             }
         });
 
@@ -1490,9 +1511,13 @@ class CampusPlayer {
     }
 
     onTimeUpdate() {
-        this.updateProgressDisplay();
-        this.updateBufferDisplay();
-        this.updateChapterInfo();
+        const now = Date.now();
+        if (this.state.isSeeking || !this._lastTimeUpdate || (now - this._lastTimeUpdate) > 200) {
+            this._lastTimeUpdate = now;
+            this.updateProgressDisplay();
+            this.updateBufferDisplay();
+            this.updateChapterInfo();
+        }
         if (this.video.currentTime > this.state.maxWatchedTime) {
             this.state.maxWatchedTime = this.video.currentTime;
         }

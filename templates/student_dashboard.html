@@ -422,5 +422,26 @@ function toggleQuestsDrawer() {
         }
     }
 }
+
+// ── Lightweight Real-Time Daily Quests Sync (30s Polling) ──
+let currentQuestsVersion = null;
+
+function checkQuestsVersion() {
+    fetch('/api/student/quests/check_version')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (currentQuestsVersion !== null && data.quests_version !== currentQuestsVersion) {
+                    // Refetch student quests & update UI smoothly
+                    window.location.reload();
+                }
+                currentQuestsVersion = data.quests_version;
+            }
+        })
+        .catch(err => console.debug('Quest sync check error:', err));
+}
+
+setInterval(checkQuestsVersion, 30000);
+setTimeout(checkQuestsVersion, 2000);
 </script>
 {% endblock %}

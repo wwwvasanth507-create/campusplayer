@@ -113,57 +113,110 @@ class User(UserMixin, db.Model):
         return False
 
     def get_daily_quests(self):
-        """Return dict of 4 active daily quests for today's UTC date."""
+        """Return dict of active daily quests for today's UTC date based on DailyQuestTemplate definitions."""
         today_str = datetime.utcnow().strftime('%Y-%m-%d')
         raw = json.loads(self.quests_json or '{}')
+
+        try:
+            templates = DailyQuestTemplate.query.filter_by(is_active=True).all()
+        except Exception:
+            templates = []
+
+        template_dict = {}
+        if templates:
+            for t in templates:
+                template_dict[t.quest_key] = {
+                    'id': t.quest_key,
+                    'title': t.title,
+                    'desc': t.desc,
+                    'xp': t.xp,
+                    'icon': t.icon,
+                    'progress': 0,
+                    'target': t.target,
+                    'claimed': False
+                }
+        else:
+            template_dict = {
+                'daily_login': {
+                    'id': 'daily_login',
+                    'title': 'Daily Check-in',
+                    'desc': 'Log in & remain active today',
+                    'xp': 25,
+                    'icon': 'event_available',
+                    'progress': 1,
+                    'target': 1,
+                    'claimed': False
+                },
+                'watch_video': {
+                    'id': 'watch_video',
+                    'title': 'Course Explorer',
+                    'desc': 'Watch or review an educational lecture',
+                    'xp': 50,
+                    'icon': 'play_circle_filled',
+                    'progress': 0,
+                    'target': 1,
+                    'claimed': False
+                },
+                'take_quiz': {
+                    'id': 'take_quiz',
+                    'title': 'Quiz Challenger',
+                    'desc': 'Complete an online assessment',
+                    'xp': 75,
+                    'icon': 'quiz',
+                    'progress': 0,
+                    'target': 1,
+                    'claimed': False
+                },
+                'submit_assignment': {
+                    'id': 'submit_assignment',
+                    'title': 'Assignment Scholar',
+                    'desc': 'Submit coursework or homework',
+                    'xp': 100,
+                    'icon': 'assignment_turned_in',
+                    'progress': 0,
+                    'target': 1,
+                    'claimed': False
+                }
+            }
+
         if raw.get('date') != today_str:
             raw = {
                 'date': today_str,
-                'quests': {
-                    'daily_login': {
-                        'id': 'daily_login',
-                        'title': 'Daily Check-in',
-                        'desc': 'Log in & remain active today',
-                        'xp': 25,
-                        'icon': 'event_available',
-                        'progress': 1,
-                        'target': 1,
-                        'claimed': False
-                    },
-                    'watch_video': {
-                        'id': 'watch_video',
-                        'title': 'Course Explorer',
-                        'desc': 'Watch or review an educational lecture',
-                        'xp': 50,
-                        'icon': 'play_circle_filled',
-                        'progress': 0,
-                        'target': 1,
-                        'claimed': False
-                    },
-                    'take_quiz': {
-                        'id': 'take_quiz',
-                        'title': 'Quiz Challenger',
-                        'desc': 'Complete an online assessment',
-                        'xp': 75,
-                        'icon': 'quiz',
-                        'progress': 0,
-                        'target': 1,
-                        'claimed': False
-                    },
-                    'submit_assignment': {
-                        'id': 'submit_assignment',
-                        'title': 'Assignment Scholar',
-                        'desc': 'Submit coursework or homework',
-                        'xp': 100,
-                        'icon': 'assignment_turned_in',
-                        'progress': 0,
-                        'target': 1,
-                        'claimed': False
-                    }
-                }
+                'quests': {}
             }
-            self.quests_json = json.dumps(raw)
-        return raw.get('quests', {})
+
+        user_quests = raw.get('quests', {})
+        merged_quests = {}
+
+        for key, t_data in template_dict.items():
+            if key in user_quests:
+                q = user_quests[key]
+                merged_quests[key] = {
+                    'id': key,
+                    'title': t_data['title'],
+                    'desc': t_data['desc'],
+                    'xp': t_data['xp'],
+                    'icon': t_data['icon'],
+                    'progress': q.get('progress', 1 if key == 'daily_login' else 0),
+                    'target': t_data['target'],
+                    'claimed': q.get('claimed', False)
+                }
+            else:
+                q_progress = 1 if key == 'daily_login' else 0
+                merged_quests[key] = {
+                    'id': key,
+                    'title': t_data['title'],
+                    'desc': t_data['desc'],
+                    'xp': t_data['xp'],
+                    'icon': t_data['icon'],
+                    'progress': q_progress,
+                    'target': t_data['target'],
+                    'claimed': False
+                }
+
+        raw['quests'] = merged_quests
+        self.quests_json = json.dumps(raw)
+        return merged_quests
 
     def update_quest_progress(self, quest_id, amount=1):
         """Increment progress for a specific daily quest."""
@@ -503,6 +556,22 @@ class SiteSettings(db.Model):
     # === ACADEMIC YEAR ROLLOVER & ARCHIVING SETTINGS ===
     scheduled_academic_year_end_date = db.Column(db.DateTime, nullable=True)
     academic_year_rollover_processed = db.Column(db.Boolean, default=False)
+    # Global quest version for client polling & real-time sync
+    quests_version = db.Column(db.Integer, default=1)
+
+
+class DailyQuestTemplate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    quest_key = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    title = db.Column(db.String(150), nullable=False)
+    desc = db.Column(db.Text, nullable=False)
+    xp = db.Column(db.Integer, default=50)
+    icon = db.Column(db.String(50), default='event_available')
+    target = db.Column(db.Integer, default=1)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
 
 class Quiz(db.Model):

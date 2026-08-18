@@ -1044,6 +1044,19 @@
             left: 0;
         }
 
+        .sidebar.sidebar-hidden {
+            left: -320px !important;
+            display: none !important;
+        }
+
+        .main.main-expanded,
+        .vp-wrap.main-expanded {
+            max-width: 100% !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+            transition: all 0.3s ease;
+        }
+
         .sidebar-header {
             display: flex;
             align-items: center;
@@ -1583,8 +1596,17 @@
 
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('sidebarOverlay').classList.toggle('active');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainEl = document.querySelector('.main') || document.querySelector('.vp-wrap');
+
+            if (window.innerWidth >= 992) {
+                if (sidebar) sidebar.classList.toggle('sidebar-hidden');
+                if (mainEl) mainEl.classList.toggle('main-expanded');
+            } else {
+                if (sidebar) sidebar.classList.toggle('active');
+                if (overlay) overlay.classList.toggle('active');
+            }
         }
 
         // ── Theme System ──
