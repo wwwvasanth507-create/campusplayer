@@ -15,6 +15,8 @@ from datetime import datetime
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'instance', 'app.db')
+if not os.path.exists(DB_PATH):
+    DB_PATH = os.path.join(BASE_DIR, 'app.db')
 
 def run_migration():
     """Run database migration to add adaptive streaming columns."""
