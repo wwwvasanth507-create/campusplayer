@@ -1311,6 +1311,15 @@
         {% endif %}
         <div class="top-bar-right">
             {% if current_user.is_authenticated %}
+            <a href="{{ url_for('profile') }}" title="My Profile" style="display:inline-flex; align-items:center; text-decoration:none; margin-right:4px;">
+                {% if current_user.avatar_url %}
+                <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1.5px solid var(--primary);">
+                {% else %}
+                <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary-color)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; font-family:'JetBrains Mono',monospace;">
+                    {{ current_user.username[0].upper() }}
+                </div>
+                {% endif %}
+            </a>
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <i class="material-icons" id="themeToggleIcon">{% if session.get('theme') == 'light' %}dark_mode{% else %}light_mode{% endif %}</i>
             </button>
@@ -1493,8 +1502,13 @@
                 </div>
                 <div class="toggle-switch"></div>
             </div>
-            <a href="{{ url_for('profile') }}" class="s-nav-link">
-                <i class="material-icons">settings</i> My Profile
+            <a href="{{ url_for('profile') }}" class="s-nav-link" style="display:flex; align-items:center; gap:8px;">
+                {% if current_user.avatar_url %}
+                <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;">
+                {% else %}
+                <i class="material-icons">settings</i>
+                {% endif %}
+                <span>My Profile</span>
             </a>
             <a href="{{ url_for('logout') }}" class="s-nav-link logout-link">
                 <i class="material-icons">power_settings_new</i> Logout

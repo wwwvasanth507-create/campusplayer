@@ -33,6 +33,7 @@ main() {
     echo "[2/5] Verifying storage directories..."
     mkdir -p "$APP_DIR/instance"
     mkdir -p "$APP_DIR/static/uploads/chunks"
+    mkdir -p "$APP_DIR/static/uploads/avatars"
     mkdir -p "$APP_DIR/static/hls"
     mkdir -p "$APP_DIR/static/subtitles"
     mkdir -p "$APP_DIR/generated_pdfs"

@@ -87,6 +87,11 @@ class User(UserMixin, db.Model):
     theme_preference = db.Column(db.String(10), default='dark')
     bio = db.Column(db.Text, nullable=True)
 
+    def get_avatar_url(self):
+        if self.avatar_url:
+            return self.avatar_url
+        return None
+
     # Session Tracking
     last_login = db.Column(db.DateTime, nullable=True)
     last_active = db.Column(db.DateTime, nullable=True, index=True)

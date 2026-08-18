@@ -39,8 +39,41 @@
 
     <!-- Account Details Form -->
     <div class="card" style="padding:24px;">
-        <form method="POST" style="margin:0;">
+        <form method="POST" enctype="multipart/form-data" style="margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="card-title font-display" style="font-size:1rem; margin-bottom:16px;">
+                <i class="material-icons" style="color:var(--primary);">account_circle</i> Profile Photo &amp; Visual Avatar
+            </div>
+
+            <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:20px; padding:16px; background:var(--surface2); border:1px solid var(--border); border-radius:12px;">
+                <div style="position:relative; width:80px; height:80px; flex-shrink:0;">
+                    {% if current_user.avatar_url %}
+                    <img id="avatarPreview" src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" 
+                         style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--primary); box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+                    {% else %}
+                    <div id="avatarFallback" style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary-color)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; font-family:'JetBrains Mono',monospace; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+                        {{ current_user.username[0].upper() }}
+                    </div>
+                    <img id="avatarPreview" src="" alt="" style="display:none; width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
+                    {% endif %}
+                </div>
+
+                <div style="flex:1; min-width:240px;">
+                    <label style="font-size:0.8rem; font-weight:700; color:var(--text); margin-bottom:4px; display:block;">Upload Custom Profile Photo</label>
+                    <input type="file" name="avatar_file" accept="image/png, image/jpeg, image/jpg, image/gif, image/webp" 
+                           onchange="previewAvatar(this)" style="font-size:0.8rem; margin-bottom:8px;">
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <span style="font-size:0.72rem; color:var(--text-dim);">Supported: PNG, JPG, JPEG, GIF, WEBP (Max 5MB)</span>
+                        {% if current_user.avatar_url %}
+                        <button type="submit" name="remove_avatar" value="true" class="btn btn-outline" 
+                                style="padding:4px 10px; font-size:0.72rem; min-height:28px; color:var(--danger-color); border-color:rgba(217,130,43,0.3); margin-left:auto;">
+                            <i class="material-icons" style="font-size:0.85rem;">delete</i> Remove Photo
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
 
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:14px;">
                 <i class="material-icons" style="color:var(--secondary-color);">person</i> Account Identity
@@ -101,4 +134,20 @@
         </form>
     </div>
 </div>
+
+<script>
+function previewAvatar(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = document.getElementById('avatarPreview');
+            var fallback = document.getElementById('avatarFallback');
+            img.src = e.target.result;
+            img.style.display = 'block';
+            if (fallback) fallback.style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
 {% endblock %}

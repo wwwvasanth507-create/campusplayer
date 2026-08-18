@@ -850,12 +850,12 @@ def logout():
 @login_required
 def profile():
     if request.method == 'POST':
-        display_name = sanitize_input(request.form.get('display_name'), 100)
+        raw_dn = request.form.get('display_name')
+        if raw_dn is not None:
+            current_user.display_name = sanitize_input(raw_dn, 100)
         email = request.form.get('email')
         phone = request.form.get('phone')
         theme = request.form.get('theme_preference')
-
-        current_user.display_name = display_name
         email_changed = False
         old_email = current_user.email
 
@@ -887,6 +887,34 @@ def profile():
         if theme in ['dark', 'light']:
             current_user.theme_preference = theme
             session['theme'] = theme
+
+        # Profile Photo Upload / Presets / Removal
+        remove_avatar = request.form.get('remove_avatar')
+        avatar_preset = request.form.get('avatar_preset')
+        avatar_file = request.files.get('avatar_file')
+
+        if remove_avatar == 'true':
+            current_user.avatar_url = None
+            db.session.add(current_user)
+            flash('Profile picture removed.', 'info')
+        elif avatar_file and avatar_file.filename:
+            filename = secure_filename(avatar_file.filename)
+            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+                avatar_dir = os.path.join(app.static_folder, 'uploads', 'avatars')
+                os.makedirs(avatar_dir, exist_ok=True)
+                new_filename = f"avatar_{current_user.id}_{int(datetime.utcnow().timestamp())}.{ext}"
+                filepath = os.path.join(avatar_dir, new_filename)
+                avatar_file.save(filepath)
+                current_user.avatar_url = f"/static/uploads/avatars/{new_filename}"
+                db.session.add(current_user)
+                flash('Profile picture updated successfully!', 'success')
+            else:
+                flash('Invalid image format. Allowed formats: PNG, JPG, JPEG, GIF, WEBP.', 'error')
+        elif avatar_preset:
+            current_user.avatar_url = avatar_preset
+            db.session.add(current_user)
+            flash('Avatar preset applied.', 'success')
 
         current_pw = request.form.get('current_password')
         new_pw = request.form.get('new_password')
@@ -3458,13 +3486,14 @@ def send_chat_message(class_id):
     socketio.emit('new_message', {
         'id': msg.id, 'username': current_user.username, 'role': current_user.role,
         'content': msg.content, 'timestamp': msg.timestamp.strftime('%I:%M %p'),
-        'classroom_id': class_id
+        'classroom_id': class_id, 'avatar_url': current_user.avatar_url
     }, room=f'class_{class_id}')
     
     return jsonify({
         'success': True, 'id': msg.id, 'username': current_user.username,
         'role': current_user.role, 'content': msg.content,
-        'timestamp': msg.timestamp.strftime('%I:%M %p')
+        'timestamp': msg.timestamp.strftime('%I:%M %p'),
+        'avatar_url': current_user.avatar_url
     })
 
 @app.route('/api/chatroom/<int:class_id>/messages')
@@ -3477,7 +3506,8 @@ def get_chat_messages(class_id):
     return jsonify({
         'messages': [{
             'id': m.id, 'username': m.user.username, 'role': m.user.role,
-            'content': m.content, 'timestamp': m.timestamp.strftime('%I:%M %p'), 'user_id': m.user_id
+            'content': m.content, 'timestamp': m.timestamp.strftime('%I:%M %p'), 'user_id': m.user_id,
+            'avatar_url': m.user.avatar_url
         } for m in messages]
     })
 
@@ -4899,7 +4929,7 @@ def handle_message(data):
     emit('new_message', {
         'id': msg.id, 'username': current_user.username, 'role': current_user.role,
         'content': msg.content, 'timestamp': msg.timestamp.strftime('%I:%M %p'),
-        'classroom_id': class_id
+        'classroom_id': class_id, 'avatar_url': current_user.avatar_url
     }, room=f'class_{class_id}')
 
 # ═══════════════════════════════════════════════════════════════

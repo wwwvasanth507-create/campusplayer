@@ -70,8 +70,12 @@
             <div class="card" style="margin-bottom:0; padding:16px;">
                 <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
                     <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
-                        <div style="width:42px; height:42px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.05rem; color:#ffffff; flex-shrink:0;">
+                        <div style="width:42px; height:42px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.05rem; color:#ffffff; flex-shrink:0; overflow:hidden;">
+                            {% if teacher.avatar_url %}
+                            <img src="{{ teacher.avatar_url }}" alt="{{ teacher.username }}" style="width:100%; height:100%; object-fit:cover;">
+                            {% else %}
                             {{ teacher.username[0].upper() }}
+                            {% endif %}
                         </div>
                         <div>
                             <div class="flex-between" style="gap:8px; justify-content:flex-start;">
@@ -95,7 +99,7 @@
 
                     <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                         {% if teacher.phone %}
-                        <button onclick="copyLevelsLink('{{ teacher.username }}', '{{ url_for(&quot;levels_pdf&quot;, type=&quot;teachers&quot;, _external=True) }}')"
+                        <button onclick="copyLevelsLink({{ teacher.username|tojson }}, {{ url_for('levels_pdf', type='teachers', _external=True)|tojson }})"
                             class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--secondary-color);" title="Copy Report Link">
                             <i class="material-icons" style="font-size:0.95rem;">share</i>
                         </button>

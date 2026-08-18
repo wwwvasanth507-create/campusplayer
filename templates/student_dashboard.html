@@ -10,7 +10,9 @@
         <div class="cp-student-meta" style="display:flex; align-items:center; gap:16px; min-width:280px;">
             <div class="cp-avatar-ring" style="width:48px; height:48px; border-radius:8px; padding:2px; background:var(--primary); flex-shrink:0;">
                 <div class="cp-avatar-inner" style="width:100%; height:100%; border-radius:6px; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:800; font-size:1.2rem; color:var(--text);">
-                    {% if current_user.avatar_path %}
+                    {% if current_user.avatar_url %}
+                    <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
+                    {% elif current_user.avatar_path %}
                     <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
                     {{ current_user.username[:1].upper() }}

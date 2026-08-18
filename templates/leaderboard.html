@@ -47,8 +47,12 @@
                 <i class="material-icons" style="font-size:1.7rem; color:#6b7484;">looks_3</i>
                 {% endif %}
             </div>
-            <div style="width:{{ '64px' if isFirst else '52px' }}; height:{{ '64px' if isFirst else '52px' }}; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:{{ '1.4rem' if isFirst else '1.1rem' }}; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid {{ 'var(--primary)' if i == 0 else ('#8a94a6' if i == 1 else '#6b7484') }};">
+            <div style="width:{{ '64px' if isFirst else '52px' }}; height:{{ '64px' if isFirst else '52px' }}; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:{{ '1.4rem' if isFirst else '1.1rem' }}; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid {{ 'var(--primary)' if i == 0 else ('#8a94a6' if i == 1 else '#6b7484') }}; overflow:hidden;">
+                {% if entry.user.avatar_url %}
+                <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.username }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
                 {{ entry.user.username[:2].upper() }}
+                {% endif %}
             </div>
             <div style="font-weight:700; font-size:0.95rem; color:var(--text);" class="font-display">{{ entry.user.username }}</div>
             <div style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:2px; font-family:'JetBrains Mono',monospace;">
@@ -77,8 +81,12 @@
                 {{ loop.index }}
                 {% endif %}
             </div>
-            <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:#fff; flex-shrink:0;">
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:#fff; flex-shrink:0; overflow:hidden;">
+                {% if entry.user.avatar_url %}
+                <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.username }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
                 {{ entry.user.username[:2].upper() }}
+                {% endif %}
             </div>
             <div style="flex:1; min-width:0;">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">

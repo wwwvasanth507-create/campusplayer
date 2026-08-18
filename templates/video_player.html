@@ -1515,7 +1515,13 @@
                 <div id="comments-list" class="vp-comments-list">
                     {% for comment in comments recursive %}
                     <div class="vp-comment" style="--ml: {{ '48px' if comment.parent_id else '0' }};">
-                        <div class="vp-comment-avatar">{{ comment.author.username[0].upper() }}</div>
+                        <div class="vp-comment-avatar">
+                            {% if comment.author.avatar_url %}
+                            <img src="{{ comment.author.avatar_url }}" alt="{{ comment.author.username }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                            {% else %}
+                            {{ comment.author.username[0].upper() }}
+                            {% endif %}
+                        </div>
                         <div class="vp-comment-body">
                             <div class="vp-comment-header">
                                 <span class="vp-comment-author">{{ comment.author.username }}</span>
