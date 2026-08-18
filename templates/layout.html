@@ -448,6 +448,94 @@
             border-color: var(--primary);
         }
 
+        .top-bar-icon-btn {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            min-height: 38px;
+            transition: all 0.2s ease;
+        }
+
+        .top-bar-icon-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .mobile-search-trigger {
+            display: none;
+        }
+
+        .mobile-search-overlay {
+            display: none;
+            position: fixed;
+            top: 64px;
+            left: 0;
+            right: 0;
+            background: var(--topbar-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 10px 14px;
+            z-index: 99;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: slideDown 0.2s ease;
+        }
+
+        .mobile-search-overlay.active {
+            display: block;
+        }
+
+        .mobile-search-inner {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            padding: 4px 12px;
+            gap: 8px;
+        }
+
+        .mobile-search-inner input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 0.95rem;
+            height: 38px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .mobile-search-inner .ms-icon {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+        }
+
+        .mobile-search-inner .ms-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* ── Main Content (base) ── */
         .main {
             padding: 82px 16px 24px;
@@ -1294,16 +1382,16 @@
 <body
     class="{% if current_user.is_authenticated %}auth-user auth-{{ current_user.role }}{% else %}auth-guest{% endif %}">
     <header class="top-bar">
-        <div class="top-bar-brand">
+        <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'student' %}{{ url_for('student_dashboard') }}{% elif current_user.role == 'teacher' %}{{ url_for('teacher_dashboard') }}{% elif current_user.role == 'admin' %}{{ url_for('admin_dashboard') }}{% else %}{{ url_for('system_admin_dashboard') }}{% endif %}{% else %}{{ url_for('login') }}{% endif %}" class="top-bar-brand">
             <i class="material-icons">videocam</i>
-            <span>Campus Player</span>
-        </div>
+            <span class="top-bar-title">CampusPlayer</span>
+        </a>
         {% if current_user.is_authenticated %}
         <div class="search-bar-wrap" id="searchBarWrap">
             <input type="text" id="globalSearchInput" placeholder="Search..." autocomplete="off"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();doGlobalSearch();}"
                 oninput="handleSearchInput(this.value)">
-            <button class="sb-icon" onclick="doGlobalSearch()">
+            <button class="sb-icon" onclick="doGlobalSearch()" title="Search">
                 <i class="material-icons">search</i>
             </button>
             <div class="ac-dropdown" id="acDropdown"></div>
@@ -1311,15 +1399,9 @@
         {% endif %}
         <div class="top-bar-right">
             {% if current_user.is_authenticated %}
-            <a href="{{ url_for('profile') }}" title="My Profile" style="display:inline-flex; align-items:center; text-decoration:none; margin-right:4px;">
-                {% if current_user.avatar_url %}
-                <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1.5px solid var(--primary);">
-                {% else %}
-                <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary-color)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:700; font-family:'JetBrains Mono',monospace;">
-                    {{ current_user.username[0].upper() }}
-                </div>
-                {% endif %}
-            </a>
+            <button class="top-bar-icon-btn mobile-search-trigger" onclick="toggleMobileSearch()" title="Search" aria-label="Open Search">
+                <i class="material-icons">search</i>
+            </button>
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <i class="material-icons" id="themeToggleIcon">{% if session.get('theme') == 'light' %}dark_mode{% else %}light_mode{% endif %}</i>
             </button>
@@ -1331,12 +1413,28 @@
             </span>
             {% endif %}
             {% if current_user.is_authenticated %}
-            <button class="menu-btn" onclick="toggleSidebar()">
+            <button class="menu-btn" onclick="toggleSidebar()" title="Menu" aria-label="Toggle Navigation Menu">
                 <i class="material-icons">menu</i>
             </button>
             {% endif %}
         </div>
     </header>
+
+    {% if current_user.is_authenticated %}
+    <!-- Mobile Search Overlay -->
+    <div class="mobile-search-overlay" id="mobileSearchOverlay">
+        <div class="mobile-search-inner">
+            <i class="material-icons ms-icon">search</i>
+            <input type="text" id="mobileSearchInput" placeholder="Search videos, classes, quizzes..." autocomplete="off"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();doMobileSearch();}"
+                oninput="handleMobileSearchInput(this.value)">
+            <button class="ms-close-btn" onclick="toggleMobileSearch()" title="Close search">
+                <i class="material-icons">close</i>
+            </button>
+        </div>
+        <div class="ac-dropdown" id="mobileAcDropdown"></div>
+    </div>
+    {% endif %}
 
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
@@ -1735,15 +1833,92 @@
 
         function closeAutocomplete() {
             const dd = document.getElementById('acDropdown');
-            dd.classList.remove('show');
+            if (dd) dd.classList.remove('show');
             acItems = [];
             acSelectedIndex = -1;
+        }
+
+        // ── Mobile Search Overlay Functions ──
+        function toggleMobileSearch() {
+            const overlay = document.getElementById('mobileSearchOverlay');
+            if (!overlay) return;
+            const isOpen = overlay.classList.contains('active');
+            if (isOpen) {
+                overlay.classList.remove('active');
+                closeMobileAutocomplete();
+            } else {
+                overlay.classList.add('active');
+                const input = document.getElementById('mobileSearchInput');
+                if (input) input.focus();
+            }
+        }
+
+        function doMobileSearch() {
+            const input = document.getElementById('mobileSearchInput');
+            if (input) {
+                const q = input.value.trim();
+                if (q) {
+                    window.location.href = '/search?q=' + encodeURIComponent(q);
+                }
+            }
+            toggleMobileSearch();
+        }
+
+        let mobileAcTimeout = null;
+        function handleMobileSearchInput(value) {
+            clearTimeout(mobileAcTimeout);
+            closeMobileAutocomplete();
+            const q = value.trim();
+            if (q.length < 1) return;
+
+            mobileAcTimeout = setTimeout(() => {
+                fetch('/api/search/suggest?q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(data => {
+                        const dd = document.getElementById('mobileAcDropdown');
+                        if (!dd) return;
+                        if (!data.suggestions || data.suggestions.length === 0) {
+                            dd.classList.remove('show');
+                            return;
+                        }
+                        dd.innerHTML = '';
+                        data.suggestions.forEach((s, idx) => {
+                            const div = document.createElement('a');
+                            div.className = 'ac-item';
+                            div.href = s.url || '#';
+                            div.innerHTML = '<i class="material-icons">' + (s.icon || 'search') + '</i>' +
+                                '<span>' + s.text + '</span>' +
+                                '<span class="ac-type">' + (s.type || '') + '</span>';
+                            div.addEventListener('click', function (e) {
+                                if (!s.url || s.url === '#') e.preventDefault();
+                                closeMobileAutocomplete();
+                                toggleMobileSearch();
+                            });
+                            dd.appendChild(div);
+                        });
+                        dd.classList.add('show');
+                    })
+                    .catch(() => { });
+            }, 200);
+        }
+
+        function closeMobileAutocomplete() {
+            const dd = document.getElementById('mobileAcDropdown');
+            if (dd) dd.classList.remove('show');
         }
 
         document.addEventListener('click', function (e) {
             const wrap = document.getElementById('searchBarWrap');
             if (wrap && !wrap.contains(e.target)) {
                 closeAutocomplete();
+            }
+            const mobOverlay = document.getElementById('mobileSearchOverlay');
+            if (mobOverlay && mobOverlay.classList.contains('active')) {
+                const mobInner = mobOverlay.querySelector('.mobile-search-inner');
+                const mobBtn = document.querySelector('.mobile-search-trigger');
+                if (mobInner && !mobInner.contains(e.target) && mobBtn && !mobBtn.contains(e.target)) {
+                    toggleMobileSearch();
+                }
             }
         });
 

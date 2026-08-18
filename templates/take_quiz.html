@@ -2,61 +2,307 @@
 {% block title %}Taking Quiz: {{ quiz.title }} — Campus Player{% endblock %}
 
 {% block content %}
-<div style="max-width:760px; margin:0 auto;">
-    <div class="card" style="padding:28px;">
-        <div class="flex-between mb-16" style="align-items:flex-start; flex-wrap:wrap; gap:12px;">
-            <div>
-                <h1 class="page-title font-display" style="margin:0; font-size:1.5rem;">{{ quiz.title }}</h1>
-                <p class="page-sub" style="margin:2px 0 0 0;">
-                    Complete all questions below.
-                    {% if remaining_seconds is not none %}Quiz auto-submits when time expires.{% endif %}
-                </p>
-            </div>
+<style>
+    .quiz-wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding-bottom: max(90px, calc(70px + env(safe-area-inset-bottom)));
+    }
+
+    .quiz-header-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .quiz-top-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .quiz-back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .quiz-back-btn:hover {
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .quiz-timer-box {
+        font-size: 1.05rem;
+        font-weight: 800;
+        padding: 8px 16px;
+        border-radius: 24px;
+        background: rgba(138, 106, 58, 0.12);
+        color: var(--primary);
+        border: 1px solid rgba(138, 106, 58, 0.35);
+        font-family: 'JetBrains Mono', monospace;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .quiz-timer-box.warning {
+        background: rgba(217, 130, 43, 0.2) !important;
+        color: var(--danger-color) !important;
+        border-color: rgba(217, 130, 43, 0.5) !important;
+        animation: pulseTimer 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulseTimer {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+        100% { transform: scale(1); }
+    }
+
+    .quiz-title {
+        font-size: 1.4rem;
+        margin: 0 0 6px 0;
+        color: var(--text);
+    }
+
+    .quiz-sub {
+        font-size: 0.84rem;
+        color: var(--text-dim);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .question-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .question-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0 0 16px 0;
+        line-height: 1.5;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .quiz-option-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        background: var(--surface2);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        user-select: none;
+        position: relative;
+        min-height: 52px;
+    }
+
+    .quiz-option-card:hover {
+        border-color: rgba(138, 106, 58, 0.4);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .quiz-option-card.selected {
+        border-color: var(--primary);
+        background: rgba(138, 106, 58, 0.12);
+        box-shadow: 0 0 16px rgba(138, 106, 58, 0.15);
+    }
+
+    .quiz-radio-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
+    .quiz-radio-dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--text-dim);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+
+    .quiz-option-card.selected .quiz-radio-dot {
+        border-color: var(--primary);
+        background: var(--primary);
+    }
+
+    .quiz-radio-dot::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ffffff;
+        transform: scale(0);
+        transition: transform 0.2s ease;
+    }
+
+    .quiz-option-card.selected .quiz-radio-dot::after {
+        transform: scale(1);
+    }
+
+    .quiz-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: var(--secondary-color);
+        background: rgba(37, 65, 178, 0.15);
+        border: 1px solid rgba(37, 65, 178, 0.3);
+        border-radius: 6px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
+    .quiz-option-card.selected .quiz-badge {
+        color: #ffffff;
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .quiz-option-text {
+        font-size: 0.92rem;
+        color: var(--text);
+        line-height: 1.45;
+        flex: 1;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .quiz-submit-btn {
+        width: 100%;
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-weight: 700;
+        border-radius: 12px;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    @media (max-width: 600px) {
+        .quiz-header-card {
+            padding: 16px;
+            border-radius: 12px;
+        }
+        .question-card {
+            padding: 14px;
+            border-radius: 12px;
+        }
+        .quiz-option-card {
+            padding: 12px 14px;
+            gap: 10px;
+            min-height: 48px;
+        }
+        .quiz-title {
+            font-size: 1.2rem;
+        }
+        .quiz-option-text {
+            font-size: 0.88rem;
+        }
+    }
+</style>
+
+<div class="quiz-wrap">
+    <div class="quiz-header-card">
+        <div class="quiz-top-row">
+            <a href="{{ url_for('student_quizzes') }}" class="quiz-back-btn">
+                <i class="material-icons" style="font-size:1rem;">arrow_back</i> Back to Quizzes
+            </a>
             {% if remaining_seconds is not none %}
-            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:8px; background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-family:'JetBrains Mono',monospace; display:inline-flex; align-items:center; gap:6px;">
-                <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">timer</i> <span id="quizTimerText">--:--</span>
+            <div id="quizTimer" class="quiz-timer-box">
+                <i class="material-icons" style="font-size:1.15rem;">timer</i>
+                <span id="quizTimerText">--:--</span>
             </div>
             {% endif %}
         </div>
-
-        <form method="POST" id="quizForm" style="margin:0;">
-            {% for q in questions %}
-            <div style="margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--border);">
-                <h3 class="font-display" style="font-size:1rem; margin:0 0 14px 0; color:var(--text); line-height:1.4;">
-                    {{ loop.index }}. {{ q.text }}
-                </h3>
-
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
-                        <input type="radio" name="q_{{ q.id }}" value="A" required style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
-                        <span style="font-size:0.88rem; color:var(--text);"><strong>A.</strong> {{ q.option_a }}</span>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
-                        <input type="radio" name="q_{{ q.id }}" value="B" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
-                        <span style="font-size:0.88rem; color:var(--text);"><strong>B.</strong> {{ q.option_b }}</span>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
-                        <input type="radio" name="q_{{ q.id }}" value="C" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
-                        <span style="font-size:0.88rem; color:var(--text);"><strong>C.</strong> {{ q.option_c }}</span>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; padding:12px 16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); margin:0; transition:all 0.2s ease;">
-                        <input type="radio" name="q_{{ q.id }}" value="D" style="width:18px; height:18px; accent-color:var(--primary); margin:0;">
-                        <span style="font-size:0.88rem; color:var(--text);"><strong>D.</strong> {{ q.option_d }}</span>
-                    </label>
-                </div>
-            </div>
-            {% endfor %}
-
-            <div style="display:flex; justify-content:flex-end;">
-                <button type="submit" class="btn btn-primary" style="padding:12px 32px; font-size:0.9rem;">
-                    <i class="material-icons" style="font-size:1rem;">task_alt</i> Complete &amp; Submit Quiz
-                </button>
-            </div>
-        </form>
+        <h1 class="quiz-title font-display">{{ quiz.title }}</h1>
+        <p class="quiz-sub">
+            Complete all questions below.
+            {% if remaining_seconds is not none %}Quiz auto-submits when time expires.{% endif %}
+        </p>
     </div>
+
+    <form method="POST" id="quizForm" style="margin:0;">
+        {% for q in questions %}
+        <div class="question-card">
+            <h3 class="question-title font-display">
+                {{ loop.index }}. {{ q.text }}
+            </h3>
+
+            <div class="options-list">
+                {% for opt, opt_text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+                <label class="quiz-option-card" onclick="selectQuizOption(this)">
+                    <input type="radio" name="q_{{ q.id }}" value="{{ opt }}" class="quiz-radio-input" {% if loop.first %}required{% endif %}>
+                    <div class="quiz-radio-dot"></div>
+                    <div class="quiz-badge">{{ opt }}</div>
+                    <span class="quiz-option-text">{{ opt_text }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <div style="margin-top:24px;">
+            <button type="submit" class="btn btn-primary quiz-submit-btn">
+                <i class="material-icons" style="font-size:1.15rem;">task_alt</i> Complete &amp; Submit Quiz
+            </button>
+        </div>
+    </form>
 </div>
 
 <script>
+function selectQuizOption(cardEl) {
+    const optionsGroup = cardEl.parentElement.querySelectorAll('.quiz-option-card');
+    optionsGroup.forEach(c => c.classList.remove('selected'));
+    cardEl.classList.add('selected');
+    const radio = cardEl.querySelector('.quiz-radio-input');
+    if (radio) radio.checked = true;
+}
+
 (function() {
     var formSubmitted = false;
     var quizForm = document.getElementById('quizForm');
@@ -102,11 +348,9 @@
     function render() {
         var m = Math.floor(remaining / 60);
         var s = remaining % 60;
-        textEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
-        if (remaining <= 60) {
-            timerBox.style.color = 'var(--danger-color)';
-            timerBox.style.background = 'rgba(217,130,43,0.15)';
-            timerBox.style.borderColor = 'rgba(217,130,43,0.3)';
+        if (textEl) textEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        if (remaining <= 60 && timerBox) {
+            timerBox.classList.add('warning');
         }
     }
     render();
