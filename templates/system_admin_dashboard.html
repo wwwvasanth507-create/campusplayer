@@ -7,7 +7,7 @@
     </div>
     <div style="display:flex; gap:8px;">
         <a href="{{ url_for('institutions_export_excel') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.78rem;">
-            <i class="material-icons" style="font-size:1.05rem;color:#10b981;">file_download</i> Export Excel
+            <i class="material-icons" style="font-size:1.05rem;color:var(--success-color);">file_download</i> Export Excel
         </a>
     </div>
 </div>
@@ -18,19 +18,19 @@
         <div class="stat-lbl">Institutions</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:var(--primary-light);">{{ stats.total_admins }}</div>
+        <div class="stat-val font-display" style="color:var(--secondary-color);">{{ stats.total_admins }}</div>
         <div class="stat-lbl">Admins</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#00e5ff;">{{ stats.total_teachers }}</div>
+        <div class="stat-val font-display" style="color:var(--secondary-color);">{{ stats.total_teachers }}</div>
         <div class="stat-lbl">Teachers</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#10b981;">{{ stats.total_students }}</div>
+        <div class="stat-val font-display" style="color:var(--success-color);">{{ stats.total_students }}</div>
         <div class="stat-lbl">Students</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#ff9800;">{{ stats.total_videos }}</div>
+        <div class="stat-val font-display" style="color:var(--danger-color);">{{ stats.total_videos }}</div>
         <div class="stat-lbl">Videos</div>
     </div>
     <div class="stat-card stat-purple">
@@ -65,14 +65,14 @@
     <div class="card-title font-display"><i class="material-icons">apartment</i> Institutions ({{ institutions|length }})</div>
     {% if institutions %}
     {% for inst in institutions %}
-    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; transition:all 0.3s ease;">
+    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; transition:all 0.2s ease;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
                 <span class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text);">{{ inst.name }}</span>
-                <span style="font-size:0.68rem; font-family:'JetBrains Mono', monospace; font-weight:700; padding:3px 8px; border-radius:10px; margin-left:8px;
-                    background:{{ 'rgba(16,185,129,0.15)' if inst.status=='active' else 'rgba(244,63,94,0.15)' }};
-                    color:{{ '#10b981' if inst.status=='active' else '#f43f5e' }};
-                    border:1px solid {{ 'rgba(16,185,129,0.3)' if inst.status=='active' else 'rgba(244,63,94,0.3)' }};">{{ inst.status|upper }}</span>
+                <span style="font-size:0.68rem; font-family:'JetBrains Mono', monospace; font-weight:700; padding:3px 8px; border-radius:8px; margin-left:8px;
+                    background:{{ 'rgba(61,143,163,0.15)' if inst.status=='active' else 'rgba(217,130,43,0.15)' }};
+                    color:{{ '#3d8fa3' if inst.status=='active' else '#d9822b' }};
+                    border:1px solid {{ 'rgba(61,143,163,0.3)' if inst.status=='active' else 'rgba(217,130,43,0.3)' }};">{{ inst.status|upper }}</span>
                 <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                     Admin: <b style="color:var(--text);">{{ inst.owner_admin.username if inst.owner_admin else '—' }}</b> &bull; Slug: <span style="font-family:'JetBrains Mono',monospace;">{{ inst.slug }}</span>
                 </div>
@@ -84,12 +84,12 @@
                 {% if inst.status == 'active' %}
                 <form method="POST" action="{{ url_for('suspend_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">Suspend</button>
+                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.3);">Suspend</button>
                 </form>
                 {% else %}
                 <form method="POST" action="{{ url_for('activate_institution', institution_id=inst.id) }}" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">Activate</button>
+                    <button type="submit" class="btn" style="padding:6px 10px; font-size:0.72rem; min-height:34px; background:rgba(61,143,163,0.15); color:#3d8fa3; border:1px solid rgba(61,143,163,0.3);">Activate</button>
                 </form>
                 {% endif %}
                 <form method="POST" action="{{ url_for('force_logout_institution', institution_id=inst.id) }}" style="margin:0;">
@@ -121,7 +121,7 @@
     <div class="flex-between" style="margin-bottom:12px; flex-wrap:wrap; gap:10px;">
         <div>
             <div class="card-title font-display" style="margin:0;">
-                <i class="material-icons" style="color:var(--gold);">history_edu</i>
+                <i class="material-icons" style="color:var(--primary);">history_edu</i>
                 Archived Items & Academic Rollover Recovery
             </div>
             <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
@@ -129,7 +129,7 @@
             </div>
         </div>
         <div>
-            <span class="badge" style="background:rgba(245,158,11,0.15); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-weight:700; font-family:'JetBrains Mono',monospace;">
+            <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-weight:700; font-family:'JetBrains Mono',monospace; padding:4px 8px; border-radius:8px;">
                 {{ stats.total_archived_records or 0 }} Total System Archives
             </span>
         </div>
@@ -141,23 +141,23 @@
         <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px;">
             <div class="flex-between" style="margin-bottom:8px;">
                 <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ item.institution.name }}</span>
-                <span class="badge" style="font-size:0.68rem; font-weight:700;
-                    background:{{ 'rgba(16,185,129,0.15)' if item.rollover_processed else 'rgba(99,102,241,0.15)' }};
-                    color:{{ '#10b981' if item.rollover_processed else 'var(--primary-light)' }};">
+                <span class="badge" style="font-size:0.68rem; font-weight:700; padding:3px 6px; border-radius:6px;
+                    background:{{ 'rgba(61,143,163,0.15)' if item.rollover_processed else 'rgba(37,65,178,0.15)' }};
+                    color:{{ '#3d8fa3' if item.rollover_processed else 'var(--secondary-color)' }};">
                     {{ 'Rollover Done' if item.rollover_processed else 'Active Term' }}
                 </span>
             </div>
             <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; text-align:center; margin-bottom:10px; font-family:'JetBrains Mono',monospace;">
                 <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-size:1.1rem; font-weight:800; color:#ff9800;">{{ item.archived_videos }}</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--danger-color);">{{ item.archived_videos }}</div>
                     <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Videos</div>
                 </div>
                 <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-size:1.1rem; font-weight:800; color:#00e5ff;">{{ item.archived_attendance }}</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--secondary-color);">{{ item.archived_attendance }}</div>
                     <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Attendance</div>
                 </div>
                 <div style="background:var(--surface); padding:8px 6px; border-radius:8px; border:1px solid var(--border);">
-                    <div style="font-size:1.1rem; font-weight:800; color:#10b981;">{{ item.archived_quizzes }}</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--success-color);">{{ item.archived_quizzes }}</div>
                     <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Quizzes</div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                 {% if item.total_archived > 0 %}
                 <form method="POST" action="{{ url_for('restore_archive', institution_id=item.institution.id) }}" style="margin:0;" onsubmit="return confirm('Restore all {{ item.total_archived }} archived items for {{ item.institution.name }} back to active status?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn" style="padding:6px 12px; font-size:0.72rem; min-height:30px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-weight:700;">
+                    <button type="submit" class="btn" style="padding:6px 12px; font-size:0.72rem; min-height:30px; background:rgba(61,143,163,0.15); color:#3d8fa3; border:1px solid rgba(61,143,163,0.3); font-weight:700;">
                         <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">restore</i> Restore All ({{ item.total_archived }})
                     </button>
                 </form>
@@ -192,34 +192,34 @@
             <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">Real-time transcode status and worker fleet monitoring across all institutions and admins</div>
         </div>
         <div class="conv-header-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:6px 10px; font-size:0.75rem; border-radius:8px; background:var(--surface-color); color:var(--text-primary); border:1px solid var(--glass-border);">
+            <select id="sysAdminInstFilter" onchange="updateSysAdminConversionQueue()" style="padding:6px 10px; font-size:0.75rem; border-radius:8px; background:var(--surface); color:var(--text); border:1px solid var(--border);">
                 <option value="">All Institutions</option>
                 {% for inst in institutions %}
                 <option value="{{ inst.id }}">{{ inst.name }}</option>
                 {% endfor %}
             </select>
-            <button onclick="sysAdminRetryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
+            <button onclick="sysAdminRetryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.4); font-weight:700;">
                 <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">autorenew</i> Retry All Failed
             </button>
         </div>
     </div>
     
     <div id="sysAdminConversionSummaryBadges" style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem; margin-bottom:14px;">
-        <span class="badge" style="background:rgba(0,229,255,0.15);color:#00e5ff;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeActiveWorkers">0/5 Active</span>
-        <span class="badge" style="background:rgba(255,152,0,0.15);color:#ff9800;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeQueued">0 Queued</span>
-        <span class="badge" style="background:rgba(76,175,80,0.15);color:#4caf50;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeCompleted">0 Done</span>
-        <span class="badge" style="background:rgba(255,82,82,0.15);color:#ff5252;padding:5px 12px;border-radius:12px;font-weight:700;" id="sysAdminBadgeFailed">0 Failed</span>
+        <span class="badge" style="background:rgba(37,65,178,0.15);color:var(--secondary-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="sysAdminBadgeActiveWorkers">0/5 Active</span>
+        <span class="badge" style="background:rgba(217,130,43,0.15);color:var(--danger-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="sysAdminBadgeQueued">0 Queued</span>
+        <span class="badge" style="background:rgba(61,143,163,0.15);color:var(--success-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="sysAdminBadgeCompleted">0 Done</span>
+        <span class="badge" style="background:rgba(217,130,43,0.15);color:var(--danger-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="sysAdminBadgeFailed">0 Failed</span>
     </div>
 
     <!-- 5-Worker Fleet Visual Tiles -->
     <div class="conv-worker-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:18px;" id="sysAdminWorkerFleetGrid">
         {% for w in range(1, 6) %}
-        <div id="sys-worker-tile-{{ w }}" class="conv-worker-tile" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 12px; transition:all 0.3s ease;">
+        <div id="sys-worker-tile-{{ w }}" class="conv-worker-tile" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; transition:all 0.2s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#00e5ff;">memory</i> Worker {{ w }}</span>
-                <span id="sys-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">Idle</span>
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--secondary-color);">memory</i> Worker {{ w }}</span>
+                <span id="sys-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:6px; background:var(--surface); color:var(--text-dim);">Idle</span>
             </div>
-            <div id="sys-worker-desc-{{ w }}" style="font-size:0.72rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting for jobs</div>
+            <div id="sys-worker-desc-{{ w }}" style="font-size:0.72rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting for jobs</div>
         </div>
         {% endfor %}
     </div>
@@ -273,26 +273,26 @@
 
                     const jobForWorker = activeJobs.find(j => j.worker_id === `worker-${w}` || j.worker_id === `Worker-${w}` || j.worker_id === String(w));
                     if (jobForWorker) {
-                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
-                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        tile.style.background = 'rgba(37, 65, 178, 0.08)';
+                        tile.style.borderColor = 'rgba(37, 65, 178, 0.4)';
                         statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
-                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
-                        statusEl.style.color = '#00e5ff';
-                        descEl.innerHTML = `<b style="color:#fff;">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
+                        statusEl.style.background = 'rgba(37, 65, 178, 0.2)';
+                        statusEl.style.color = '#2541b2';
+                        descEl.innerHTML = `<b style="color:var(--text);">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
                     } else if (w <= data.active_workers && activeJobs[w - 1]) {
                         const fallbackJob = activeJobs[w - 1];
-                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
-                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        tile.style.background = 'rgba(37, 65, 178, 0.08)';
+                        tile.style.borderColor = 'rgba(37, 65, 178, 0.4)';
                         statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
-                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
-                        statusEl.style.color = '#00e5ff';
-                        descEl.innerHTML = `<b style="color:#fff;">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
+                        statusEl.style.background = 'rgba(37, 65, 178, 0.2)';
+                        statusEl.style.color = '#2541b2';
+                        descEl.innerHTML = `<b style="color:var(--text);">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
                     } else {
-                        tile.style.background = 'rgba(255, 255, 255, 0.03)';
-                        tile.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                        tile.style.background = 'var(--surface2)';
+                        tile.style.borderColor = 'var(--border)';
                         statusEl.textContent = 'Idle';
-                        statusEl.style.background = 'rgba(255, 255, 255, 0.06)';
-                        statusEl.style.color = 'var(--text-secondary)';
+                        statusEl.style.background = 'var(--surface)';
+                        statusEl.style.color = 'var(--text-dim)';
                         descEl.textContent = 'Ready for conversions';
                     }
                 }
@@ -307,15 +307,15 @@
                 data.jobs.forEach(j => {
                     let statusBadge = '';
                     if (j.status === 'completed') {
-                        statusBadge = '<span style="color:#4caf50;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
+                        statusBadge = '<span style="color:#3d8fa3;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
                     } else if (j.status === 'processing') {
-                        statusBadge = '<span style="color:#00e5ff;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
+                        statusBadge = '<span style="color:#2541b2;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
                     } else if (j.status === 'queued') {
-                        statusBadge = '<span style="color:#ff9800;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
+                        statusBadge = '<span style="color:#d9822b;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
                     } else if (j.status === 'interrupted') {
-                        statusBadge = '<span style="color:#bb86fc;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
+                        statusBadge = '<span style="color:#d9822b;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
                     } else {
-                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
+                        statusBadge = `<span style="color:#d9822b;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
                     }
 
                     const progressPercent = j.progress || 0;
@@ -323,28 +323,28 @@
                         <div style="min-width:100px;">
                             <div style="font-size:0.7rem;margin-bottom:2px;font-weight:700;">${progressPercent}%</div>
                             <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
-                                <div style="width:${progressPercent}%;height:100%;background:${j.status === 'completed' ? '#4caf50' : (j.status === 'failed' ? '#ff5252' : '#00e5ff')};transition:width 0.4s;"></div>
+                                <div style="width:${progressPercent}%;height:100%;background:${j.status === 'completed' ? '#3d8fa3' : (j.status === 'failed' ? '#d9822b' : '#2541b2')};transition:width 0.4s;"></div>
                             </div>
                         </div>
                     `;
 
                     let actionBtn = '—';
                     if (j.status === 'failed' || j.status === 'interrupted') {
-                        actionBtn = `<button onclick="sysAdminRetryJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;color:#ff9800;border-color:rgba(255,152,0,0.4);">Retry</button>`;
+                        actionBtn = `<button onclick="sysAdminRetryJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;color:#d9822b;border-color:rgba(217,130,43,0.4);">Retry</button>`;
                     } else if (j.status === 'processing' || j.status === 'queued') {
-                        actionBtn = `<button onclick="sysAdminCancelJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;color:#ff5252;border-color:rgba(255,82,82,0.4);">Cancel</button>`;
+                        actionBtn = `<button onclick="sysAdminCancelJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;color:#d9822b;border-color:rgba(217,130,43,0.4);">Cancel</button>`;
                     }
 
                     html += `
                         <tr>
                             <td><b>${j.video_title}</b></td>
-                            <td><span style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:6px;font-size:0.72rem;">${j.institution_name || 'Global'}</span></td>
-                            <td style="font-size:0.75rem;">${j.uploader_name || '—'} <span style="color:var(--text-secondary);font-size:0.68rem;">(${j.uploader_role || 'user'})</span></td>
+                            <td><span style="background:var(--surface2);padding:2px 6px;border-radius:6px;font-size:0.72rem;">${j.institution_name || 'Global'}</span></td>
+                            <td style="font-size:0.75rem;">${j.uploader_name || '—'} <span style="color:var(--text-dim);font-size:0.68rem;">(${j.uploader_role || 'user'})</span></td>
                             <td>${statusBadge}</td>
                             <td>${progressBar}</td>
                             <td style="font-size:0.75rem;font-family:monospace;">${j.current_segment || 0}/${j.total_segments || '?'}</td>
                             <td style="font-size:0.75rem;">${j.worker_id || '—'}</td>
-                            <td style="font-size:0.65rem;color:var(--text-secondary);">${j.updated_at || '—'}</td>
+                            <td style="font-size:0.65rem;color:var(--text-dim);">${j.updated_at || '—'}</td>
                             <td>${actionBtn}</td>
                         </tr>
                     `;

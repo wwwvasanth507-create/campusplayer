@@ -7,11 +7,11 @@
     <div class="flex-between mb-12" style="flex-wrap:wrap; gap:10px;">
         <div>
             <h1 class="page-title font-display" style="margin:0; font-size:1.5rem;">
-                <i class="material-icons" style="color:var(--gold); font-size:1.8rem; vertical-align:middle;">smart_toy</i> CampusBot AI
+                <i class="material-icons" style="color:var(--primary); font-size:1.8rem; vertical-align:middle;">smart_toy</i> CampusBot AI
             </h1>
             <p class="page-sub" style="margin:2px 0 0 0; font-size:0.78rem;">Powered by Gemini &bull; Ask questions, solve homework, study concepts & clarify lecture topics</p>
         </div>
-        <button onclick="clearChat()" class="btn btn-outline" style="padding:6px 12px; font-size:0.75rem; min-height:34px; color:#f43f5e;" title="Clear conversation history">
+        <button onclick="clearChat()" class="btn btn-outline" style="padding:6px 12px; font-size:0.75rem; min-height:34px; color:var(--danger-color);" title="Clear conversation history">
             <i class="material-icons" style="font-size:0.95rem;">delete_sweep</i> Clear Chat
         </button>
     </div>
@@ -23,18 +23,18 @@
             <!-- Welcome Message -->
             <div class="ai-bubble" style="align-self:flex-start; max-width:85%;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <div style="width:28px; height:28px; border-radius:50%; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <i class="material-icons" style="font-size:1rem; color:var(--gold);">smart_toy</i>
+                    <div style="width:28px; height:28px; border-radius:50%; background:rgba(138,106,58,0.15); border:1px solid rgba(138,106,58,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="material-icons" style="font-size:1rem; color:var(--primary);">smart_toy</i>
                     </div>
-                    <span class="font-display" style="font-size:0.75rem; font-weight:700; color:var(--gold);">CampusBot AI</span>
+                    <span class="font-display" style="font-size:0.75rem; font-weight:700; color:var(--primary);">CampusBot AI</span>
                 </div>
-                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:14px 18px; color:var(--text); line-height:1.6; font-size:0.88rem; box-shadow:var(--shadow);">
+                <div style="background:var(--surface2); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:14px 18px; color:var(--text); line-height:1.6; font-size:0.88rem;">
                     Hello <strong>{{ current_user.username }}</strong>! I'm your AI Academic Companion on <strong>Campus Player</strong>.<br><br>
                     I can assist you with:<br>
-                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--gold);">psychology</i> <strong>Concept Clarification</strong> — explanations, summaries & derivations<br>
-                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--gold);">quiz</i> <strong>Exam Prep</strong> — practice problems, review guides & quizzes<br>
-                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--gold);">ondemand_video</i> <strong>Lecture Material</strong> — deep dives into course videos<br>
-                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--gold);">school</i> <strong>Campus Help</strong> — study tips, XP milestones & navigation<br><br>
+                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--primary);">psychology</i> <strong>Concept Clarification</strong> — explanations, summaries & derivations<br>
+                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--primary);">quiz</i> <strong>Exam Prep</strong> — practice problems, review guides & quizzes<br>
+                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--primary);">ondemand_video</i> <strong>Lecture Material</strong> — deep dives into course videos<br>
+                    • <i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--primary);">school</i> <strong>Campus Help</strong> — study tips, XP milestones & navigation<br><br>
                     What would you like to explore today?
                 </div>
             </div>
@@ -43,26 +43,26 @@
         <!-- Suggested Questions -->
         <div id="suggestions" style="padding:0 18px 10px; display:flex; gap:6px; flex-wrap:wrap;">
             <button class="suggest-btn" onclick="askSuggestion('Explain Newton\u0027s laws of motion')">
-                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">bolt</i> Newton's Laws
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary);">bolt</i> Newton's Laws
             </button>
             <button class="suggest-btn" onclick="askSuggestion('How do I earn XP and level up on Campus Player?')">
-                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">emoji_events</i> XP & Levels
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary);">emoji_events</i> XP & Levels
             </button>
             <button class="suggest-btn" onclick="askSuggestion('Give me 5 proven study tips for exams')">
-                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">menu_book</i> Exam Study Tips
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary);">menu_book</i> Exam Study Tips
             </button>
             <button class="suggest-btn" onclick="askSuggestion('How does the attendance monitoring system work?')">
-                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">fact_check</i> Attendance Guide
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary);">fact_check</i> Attendance Guide
             </button>
         </div>
 
         <!-- Input Area -->
         <div style="padding:14px 18px; background:var(--surface2); border-top:1px solid var(--border); display:flex; gap:10px; align-items:flex-end;">
             <textarea id="chat-input" placeholder="Ask CampusBot AI anything..." rows="1"
-                style="margin:0; background:var(--surface); border:1px solid var(--border); flex:1; border-radius:12px; resize:none; overflow:hidden; min-height:42px; max-height:120px; padding:10px 14px; font-family:inherit; font-size:0.88rem; color:var(--text); line-height:1.4;"
+                style="margin:0; background:var(--surface); border:1px solid var(--border); flex:1; border-radius:8px; resize:none; overflow:hidden; min-height:42px; max-height:120px; padding:10px 14px; font-family:inherit; font-size:0.88rem; color:var(--text); line-height:1.4;"
                 oninput="autoResize(this)"></textarea>
             <button onclick="sendMessage()" id="send-btn" class="btn btn-primary"
-                style="width:44px; height:44px; min-height:44px; padding:0; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                style="width:44px; height:44px; min-height:44px; padding:0; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <i class="material-icons" style="font-size:1.15rem;">send</i>
             </button>
         </div>
@@ -83,7 +83,7 @@
         background: var(--surface2);
         border: 1px solid var(--border);
         color: var(--text-dim);
-        border-radius: var(--radius-pill);
+        border-radius: 8px;
         padding: 5px 12px;
         font-size: 0.75rem;
         cursor: pointer;
@@ -95,9 +95,9 @@
     }
 
     .suggest-btn:hover {
-        background: rgba(245,158,11,0.12);
-        border-color: rgba(245,158,11,0.35);
-        color: var(--gold);
+        background: rgba(138,106,58,0.12);
+        border-color: rgba(138,106,58,0.35);
+        color: var(--primary);
     }
 
     .ai-response strong { color: var(--text); font-weight: 700; }
@@ -107,12 +107,12 @@
         border-radius: 4px;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.85em;
-        color: var(--accent);
+        color: var(--secondary-color);
     }
     .ai-response ul, .ai-response ol { padding-left: 20px; margin: 8px 0; }
     .ai-response li { margin: 4px 0; }
     .ai-response h1, .ai-response h2, .ai-response h3 {
-        color: var(--primary-light);
+        color: var(--secondary-color);
         margin: 10px 0 4px;
         font-family: 'Outfit', sans-serif;
     }
@@ -125,7 +125,7 @@
         border: 1px solid var(--border);
     }
     .ai-response blockquote {
-        border-left: 3px solid var(--gold);
+        border-left: 3px solid var(--primary);
         padding-left: 12px;
         color: var(--text-dim);
         margin: 8px 0;
@@ -136,7 +136,7 @@
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: var(--gold);
+        background: var(--primary);
         animation: typingBounce 1.2s infinite;
         margin: 0 2px;
     }
@@ -154,6 +154,11 @@
     const chatInput = document.getElementById('chat-input');
     let conversationHistory = [];
 
+    // Parse URL query parameters for video context
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoId = urlParams.get('video_id');
+    const videoTime = urlParams.get('t') || 0;
+
     chatInput.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -168,7 +173,8 @@
 
     function askSuggestion(text) {
         chatInput.value = text;
-        document.getElementById('suggestions').style.display = 'none';
+        const sugg = document.getElementById('suggestions');
+        if (sugg) sugg.style.display = 'none';
         sendMessage();
     }
 
@@ -192,7 +198,9 @@
     }
 
     function appendMessage(text, isUser) {
-        document.getElementById('suggestions').style.display = 'none';
+        const sugg = document.getElementById('suggestions');
+        if (sugg) sugg.style.display = 'none';
+
         const wrapper = document.createElement('div');
         wrapper.className = 'ai-bubble';
         wrapper.style.alignSelf = isUser ? 'flex-end' : 'flex-start';
@@ -201,21 +209,21 @@
         if (isUser) {
             wrapper.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; justify-content:flex-end;">
-                    <span style="font-size:0.72rem; font-weight:700; color:var(--accent);">You</span>
-                    <div style="width:26px; height:26px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0; color:#fff;">
+                    <span style="font-size:0.72rem; font-weight:700; color:var(--secondary-color);">You</span>
+                    <div style="width:26px; height:26px; border-radius:50%; background:var(--secondary-color); display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0; color:#fff;">
                         <i class="material-icons" style="font-size:0.95rem;">person</i>
                     </div>
                 </div>
-                <div style="background:rgba(0,229,255,0.12); border:1px solid rgba(0,229,255,0.25); border-radius:12px 0 12px 12px; padding:12px 16px; color:var(--text); line-height:1.5; font-size:0.88rem; word-break:break-word;">
+                <div style="background:rgba(37,65,178,0.12); border:1px solid rgba(37,65,178,0.25); border-radius:12px 0 12px 12px; padding:12px 16px; color:var(--text); line-height:1.5; font-size:0.88rem; word-break:break-word;">
                     ${text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}
                 </div>`;
         } else {
             wrapper.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <div style="width:26px; height:26px; border-radius:50%; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                        <i class="material-icons" style="font-size:0.95rem; color:var(--gold);">smart_toy</i>
+                    <div style="width:26px; height:26px; border-radius:50%; background:rgba(138,106,58,0.15); border:1px solid rgba(138,106,58,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="material-icons" style="font-size:0.95rem; color:var(--primary);">smart_toy</i>
                     </div>
-                    <span class="font-display" style="font-size:0.72rem; font-weight:700; color:var(--gold);">CampusBot AI</span>
+                    <span class="font-display" style="font-size:0.72rem; font-weight:700; color:var(--primary);">CampusBot AI</span>
                 </div>
                 <div class="ai-response" style="background:var(--surface2); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:14px 18px; color:var(--text); line-height:1.65; font-size:0.88rem; word-break:break-word;">
                     ${markdownToHtml(text)}
@@ -234,10 +242,10 @@
         wrapper.style.alignSelf = 'flex-start';
         wrapper.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <div style="width:26px; height:26px; border-radius:50%; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                    <i class="material-icons" style="font-size:0.95rem; color:var(--gold);">smart_toy</i>
+                <div style="width:26px; height:26px; border-radius:50%; background:rgba(138,106,58,0.15); border:1px solid rgba(138,106,58,0.3); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    <i class="material-icons" style="font-size:0.95rem; color:var(--primary);">smart_toy</i>
                 </div>
-                <span class="font-display" style="font-size:0.72rem; font-weight:700; color:var(--gold);">CampusBot AI</span>
+                <span class="font-display" style="font-size:0.72rem; font-weight:700; color:var(--primary);">CampusBot AI</span>
             </div>
             <div style="background:var(--surface2); border:1px solid var(--border); border-radius:0 12px 12px 12px; padding:12px 18px;">
                 <span class="typing-dot"></span>
@@ -261,13 +269,24 @@
         sendBtn.disabled = true;
         showTyping();
 
-        fetch('/api/ai_chat', {
+        const endpoint = videoId ? '/api/ai_video_chat' : '/api/ai_chat';
+        const payload = videoId ? {
+            message: text,
+            video_id: parseInt(videoId),
+            current_time: parseInt(videoTime) || 0,
+            history: conversationHistory.slice(0, -1)
+        } : {
+            message: text,
+            history: conversationHistory.slice(0, -1)
+        };
+
+        fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: text,
-                history: conversationHistory.slice(0, -1)
-            })
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token|e }}'
+            },
+            body: JSON.stringify(payload)
         })
             .then(res => res.json())
             .then(data => {
@@ -288,8 +307,54 @@
     function clearChat() {
         conversationHistory = [];
         chatHistoryEl.innerHTML = '';
-        document.getElementById('suggestions').style.display = 'flex';
+        const sugg = document.getElementById('suggestions');
+        if (sugg) sugg.style.display = 'flex';
         appendMessage('Chat reset! What topic or homework problem can I help you explore?', false);
     }
+
+    // Auto-trigger video summary on load when navigated from video player
+    document.addEventListener('DOMContentLoaded', function () {
+        if (videoId) {
+            const sugg = document.getElementById('suggestions');
+            if (sugg) sugg.style.display = 'none';
+
+            showTyping();
+
+            fetch(`/api/video/${videoId}/summarize`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token|e }}'
+                },
+                body: JSON.stringify({ force: false })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const typingEl = document.getElementById('typing-indicator');
+                if (typingEl) typingEl.remove();
+
+                if (data.success && data.summary) {
+                    let summaryMarkdown = `### 🎬 Video Summary & Key Takeaways\n\n${data.summary}\n\n`;
+                    if (data.takeaways && data.takeaways.length > 0) {
+                        summaryMarkdown += `**Key Learning Concepts:**\n`;
+                        data.takeaways.forEach(function(item) {
+                            summaryMarkdown += `* ${item}\n`;
+                        });
+                    }
+                    summaryMarkdown += `\n---\n*Ask me any question about this lecture, problem solving steps, or related topics!*`;
+
+                    appendMessage(summaryMarkdown, false);
+                    conversationHistory.push({ role: 'model', text: summaryMarkdown });
+                } else {
+                    appendMessage('I was unable to load the video summary at this moment. You can still ask me any questions about your coursework!', false);
+                }
+            })
+            .catch(err => {
+                const typingEl = document.getElementById('typing-indicator');
+                if (typingEl) typingEl.remove();
+                appendMessage('I encountered a connection issue fetching the video summary, but I am ready to help! What would you like to explore?', false);
+            });
+        }
+    });
 </script>
 {% endblock %}

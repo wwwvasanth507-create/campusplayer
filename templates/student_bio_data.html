@@ -23,7 +23,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
             <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:var(--accent);">badge</i> Personal & Academic Details
+                <i class="material-icons" style="color:var(--secondary-color);">badge</i> Personal & Academic Details
             </div>
             
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
@@ -85,7 +85,7 @@
             <div class="divider"></div>
 
             <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:var(--gold);">family_restroom</i> Family & Guardian Information
+                <i class="material-icons" style="color:var(--primary);">family_restroom</i> Family & Guardian Information
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
@@ -118,7 +118,7 @@
             <div class="divider"></div>
 
             <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:var(--primary-light);">home</i> Residential Addresses
+                <i class="material-icons" style="color:var(--secondary-color);">home</i> Residential Addresses
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
@@ -135,7 +135,7 @@
             <div class="divider"></div>
 
             <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:#f43f5e;">emergency</i> Emergency Contact Dispatch
+                <i class="material-icons" style="color:var(--danger-color);">emergency</i> Emergency Contact Dispatch
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
@@ -152,24 +152,24 @@
             <div class="divider"></div>
 
             <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:var(--accent);">upload_file</i> Digital Identity Documents
+                <i class="material-icons" style="color:var(--secondary-color);">upload_file</i> Digital Identity Documents
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
                 <div>
-                    <label>Student Photo {% if profile.photo_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <label>Student Photo {% if profile.photo_path %}<span style="color:var(--success-color);">(Uploaded)</span>{% endif %}</label>
                     <input type="file" name="photo" accept="image/*">
                 </div>
                 <div>
-                    <label>Digital Signature {% if profile.signature_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <label>Digital Signature {% if profile.signature_path %}<span style="color:var(--success-color);">(Uploaded)</span>{% endif %}</label>
                     <input type="file" name="signature" accept="image/*">
                 </div>
                 <div>
-                    <label>Transfer Certificate {% if profile.transfer_certificate_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <label>Transfer Certificate {% if profile.transfer_certificate_path %}<span style="color:var(--success-color);">(Uploaded)</span>{% endif %}</label>
                     <input type="file" name="transfer_certificate">
                 </div>
                 <div>
-                    <label>Community Certificate {% if profile.community_certificate_path %}<span style="color:#10b981;">(Uploaded)</span>{% endif %}</label>
+                    <label>Community Certificate {% if profile.community_certificate_path %}<span style="color:var(--success-color);">(Uploaded)</span>{% endif %}</label>
                     <input type="file" name="community_certificate">
                 </div>
                 <div style="grid-column:1/-1;">

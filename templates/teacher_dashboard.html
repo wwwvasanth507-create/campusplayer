@@ -18,18 +18,18 @@
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; align-items:center;">
         <div>
             <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Educator Academic XP</div>
-            <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--gold); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">XP</span></div>
+            <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--primary); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">XP</span></div>
         </div>
         <div style="text-align:right;">
             <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <span style="font-size:0.75rem; font-weight:700; color:var(--primary-light); background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); padding:3px 10px; border-radius:var(--radius-pill); font-family:'JetBrains Mono',monospace;">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--secondary-color); background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); padding:3px 10px; border-radius:6px; font-family:'JetBrains Mono',monospace;">
                     LEVEL {{ (current_user.xp // 500) + 1 }}
                 </span>
                 <span style="font-size:0.75rem; color:var(--text-dim);">Scholar Rank</span>
             </div>
             {% set xp_progress = ((current_user.xp % 500) / 500 * 100)|int %}
-            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; width:100%; max-width:180px; margin-left:auto;">
-                <div style="width:{{ xp_progress }}%; height:100%; background:var(--brand-gradient); border-radius:10px;"></div>
+            <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; width:100%; max-width:180px; margin-left:auto;">
+                <div style="width:{{ xp_progress }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
             </div>
             <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px; font-family:'JetBrains Mono',monospace;">{{ current_user.xp % 500 }}/500 XP to next level</div>
         </div>
@@ -39,58 +39,58 @@
 <!-- Primary Action Bar -->
 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:20px;">
     <a href="{{ url_for('analytics') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
-        <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">insights</i> Analytics
+        <i class="material-icons" style="font-size:1.1rem; color:var(--secondary-color);">insights</i> Analytics
     </a>
     <a href="{{ url_for('struggling_topics_report') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
-        <i class="material-icons" style="font-size:1.1rem; color:#f43f5e;">trending_down</i> Struggling
+        <i class="material-icons" style="font-size:1.1rem; color:var(--danger-color);">trending_down</i> Struggling
     </a>
     <a href="{{ url_for('teacher_assignments') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
-        <i class="material-icons" style="font-size:1.1rem; color:#10b981;">assignment</i> Assignments
+        <i class="material-icons" style="font-size:1.1rem; color:var(--success-color);">assignment</i> Assignments
     </a>
     <a href="{{ url_for('teacher_report_logs') }}" class="btn btn-outline" style="padding:10px 12px; font-size:0.78rem;">
-        <i class="material-icons" style="font-size:1.1rem; color:var(--gold);">history</i> Report Logs
+        <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">history</i> Report Logs
     </a>
 </div>
 
 <!-- 8-Card Quick Metric Grid -->
 <div class="quick-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:20px;">
     <a href="{{ url_for('teacher_videos_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#ff9800;">videocam</i>
+        <i class="material-icons" style="color:var(--secondary-color);">videocam</i>
         <span class="font-display">{{ teacher_stats.videos }}</span>
         <small>Videos</small>
     </a>
     <a href="{{ url_for('teacher_playlists_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#00e5ff;">playlist_play</i>
+        <i class="material-icons" style="color:var(--primary);">playlist_play</i>
         <span class="font-display">{{ teacher_stats.playlists }}</span>
         <small>Playlists</small>
     </a>
     <a href="{{ url_for('teacher_classes_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#10b981;">school</i>
+        <i class="material-icons" style="color:var(--success-color);">school</i>
         <span class="font-display">{{ teacher_stats.classes }}</span>
         <small>Classes</small>
     </a>
     <a href="{{ url_for('teacher_assignments') }}" class="quick-item">
-        <i class="material-icons" style="color:#6366f1;">assignment</i>
+        <i class="material-icons" style="color:var(--secondary-color);">assignment</i>
         <span class="font-display">{{ teacher_stats.assignments }}</span>
         <small>Assignments</small>
     </a>
     <a href="{{ url_for('teacher_quizzes_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#a855f7;">quiz</i>
+        <i class="material-icons" style="color:var(--danger-color);">quiz</i>
         <span class="font-display">{{ teacher_stats.quizzes }}</span>
         <small>Quizzes</small>
     </a>
     <a href="{{ url_for('teacher_enrolled_students_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#f43f5e;">group</i>
+        <i class="material-icons" style="color:var(--success-color);">group</i>
         <span class="font-display">{{ teacher_stats.students_added }}</span>
         <small>Students</small>
     </a>
     <a href="{{ url_for('teacher_attendance_page') }}" class="quick-item">
-        <i class="material-icons" style="color:#0ea5e9;">fact_check</i>
+        <i class="material-icons" style="color:var(--secondary-color);">fact_check</i>
         <span class="font-display">Live</span>
         <small>Attendance</small>
     </a>
     <a href="{{ url_for('attendance_reports_hub') }}" class="quick-item">
-        <i class="material-icons" style="color:var(--gold);">event_note</i>
+        <i class="material-icons" style="color:var(--primary);">event_note</i>
         <span class="font-display">Export</span>
         <small>Session Reports</small>
     </a>
@@ -107,7 +107,7 @@
     {% for cls in classes %}
     <a href="{{ url_for('chatroom', class_id=cls.id) }}"
         style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface2); border-radius:var(--radius-sm); text-decoration:none; color:var(--text); border:1px solid var(--border); transition:all 0.25s ease;">
-        <i class="material-icons" style="color:var(--accent);">chat</i>
+        <i class="material-icons" style="color:var(--secondary-color);">chat</i>
         <div style="flex:1;">
             <div class="font-display" style="font-weight:700; font-size:0.92rem;">{{ cls.name }}</div>
             <div style="font-size:0.72rem; color:var(--text-dim);">{{ cls.students.count() }} enrolled students</div>

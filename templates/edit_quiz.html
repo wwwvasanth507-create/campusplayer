@@ -14,7 +14,7 @@
     </div>
     <div style="display:flex; gap:8px;">
         <a href="{{ url_for('quiz_report', quiz_id=quiz.id) }}" class="btn btn-outline" style="font-size:0.8rem; padding:8px 14px;">
-            <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">bar_chart</i> Student Reports
+            <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">bar_chart</i> Student Reports
         </a>
     </div>
 </div>
@@ -24,9 +24,9 @@
     <div>
         <div class="flex-between mb-12">
             <h2 class="font-display" style="margin:0; font-size:1.1rem; color:var(--text); display:flex; align-items:center; gap:8px;">
-                <i class="material-icons" style="color:var(--primary-light);">list_alt</i> Configured Questions
+                <i class="material-icons" style="color:var(--secondary-color);">list_alt</i> Configured Questions
             </h2>
-            <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25);">
+            <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); border-radius:6px; padding:2px 6px;">
                 {{ quiz.questions|length }} Total
             </span>
         </div>
@@ -36,13 +36,13 @@
             {% for q in quiz.questions %}
             <div class="card" style="padding:18px; margin-bottom:0; position:relative;">
                 <div class="flex-between mb-8">
-                    <span class="badge" style="background:var(--brand-gradient); color:#fff; font-weight:800; font-family:'JetBrains Mono',monospace;">
+                    <span class="badge" style="background:var(--primary); color:#ffffff; font-weight:800; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                         Q{{ loop.index }}
                     </span>
                     <form action="{{ url_for('delete_question', question_id=q.id) }}" method="POST"
                         onsubmit="return confirm('Delete this question?');" style="margin:0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-outline" style="min-height:28px; width:28px; height:28px; padding:0; border-radius:6px; color:#f43f5e; border-color:rgba(244,63,94,0.3);" title="Delete question">
+                        <button type="submit" class="btn btn-outline" style="min-height:28px; width:28px; height:28px; padding:0; border-radius:6px; color:var(--danger-color); border-color:rgba(217,130,43,0.3);" title="Delete question">
                             <i class="material-icons" style="font-size:0.9rem;">close</i>
                         </button>
                     </form>
@@ -51,16 +51,16 @@
                     {{ q.text }}
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; background:{{ 'rgba(16,185,129,0.12)' if q.correct_option == 'A' else 'var(--surface2)' }}; border-color:{{ 'rgba(16,185,129,0.3)' if q.correct_option == 'A' else 'var(--border)' }}; color:{{ '#10b981' if q.correct_option == 'A' else 'var(--text)' }};">
+                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.correct_option == 'A' else 'var(--surface2)' }}; border-color:{{ 'rgba(61,143,163,0.35)' if q.correct_option == 'A' else 'var(--border)' }}; color:{{ 'var(--success-color)' if q.correct_option == 'A' else 'var(--text)' }};">
                         <b>A.</b> {{ q.option_a }}
                     </div>
-                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; background:{{ 'rgba(16,185,129,0.12)' if q.correct_option == 'B' else 'var(--surface2)' }}; border-color:{{ 'rgba(16,185,129,0.3)' if q.correct_option == 'B' else 'var(--border)' }}; color:{{ '#10b981' if q.correct_option == 'B' else 'var(--text)' }};">
+                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.correct_option == 'B' else 'var(--surface2)' }}; border-color:{{ 'rgba(61,143,163,0.35)' if q.correct_option == 'B' else 'var(--border)' }}; color:{{ 'var(--success-color)' if q.correct_option == 'B' else 'var(--text)' }};">
                         <b>B.</b> {{ q.option_b }}
                     </div>
-                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; background:{{ 'rgba(16,185,129,0.12)' if q.correct_option == 'C' else 'var(--surface2)' }}; border-color:{{ 'rgba(16,185,129,0.3)' if q.correct_option == 'C' else 'var(--border)' }}; color:{{ '#10b981' if q.correct_option == 'C' else 'var(--text)' }};">
+                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.correct_option == 'C' else 'var(--surface2)' }}; border-color:{{ 'rgba(61,143,163,0.35)' if q.correct_option == 'C' else 'var(--border)' }}; color:{{ 'var(--success-color)' if q.correct_option == 'C' else 'var(--text)' }};">
                         <b>C.</b> {{ q.option_c }}
                     </div>
-                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; background:{{ 'rgba(16,185,129,0.12)' if q.correct_option == 'D' else 'var(--surface2)' }}; border-color:{{ 'rgba(16,185,129,0.3)' if q.correct_option == 'D' else 'var(--border)' }}; color:{{ '#10b981' if q.correct_option == 'D' else 'var(--text)' }};">
+                    <div class="card" style="padding:8px 12px; margin-bottom:0; font-size:0.78rem; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.correct_option == 'D' else 'var(--surface2)' }}; border-color:{{ 'rgba(61,143,163,0.35)' if q.correct_option == 'D' else 'var(--border)' }}; color:{{ 'var(--success-color)' if q.correct_option == 'D' else 'var(--text)' }};">
                         <b>D.</b> {{ q.option_d }}
                     </div>
                 </div>
@@ -78,7 +78,7 @@
     <!-- Right: Add Form -->
     <div class="card" style="padding:24px;">
         <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px;">
-            <i class="material-icons" style="color:var(--primary-light);">add_circle</i> Add New Question
+            <i class="material-icons" style="color:var(--primary);">add_circle</i> Add New Question
         </div>
         <form method="POST" style="margin:0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -90,19 +90,19 @@
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
                 <div>
-                    <label style="color:#10b981;">Option A</label>
+                    <label>Option A</label>
                     <input type="text" name="option_a" required placeholder="Choice A">
                 </div>
                 <div>
-                    <label style="color:var(--accent);">Option B</label>
+                    <label>Option B</label>
                     <input type="text" name="option_b" required placeholder="Choice B">
                 </div>
                 <div>
-                    <label style="color:var(--gold);">Option C</label>
+                    <label>Option C</label>
                     <input type="text" name="option_c" required placeholder="Choice C">
                 </div>
                 <div>
-                    <label style="color:#f43f5e;">Option D</label>
+                    <label>Option D</label>
                     <input type="text" name="option_d" required placeholder="Choice D">
                 </div>
             </div>
@@ -143,7 +143,7 @@
             o.style.background = 'var(--surface2)';
         });
         el.style.borderColor = 'var(--primary)';
-        el.style.background = 'rgba(99,102,241,0.12)';
+        el.style.background = 'rgba(37,65,178,0.12)';
         el.querySelector('input').checked = true;
     }
 </script>

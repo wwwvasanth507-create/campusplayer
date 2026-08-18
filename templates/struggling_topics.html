@@ -39,17 +39,17 @@
                         {{ row.uploader_name }}
                     </td>
                     <td style="padding:14px 18px; text-align:center;">
-                        <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25); font-family:'JetBrains Mono',monospace;">
+                        <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                             {{ row.view_count }} views
                         </span>
                     </td>
                     <td style="padding:14px 18px; text-align:center;">
                         {% if row.view_count > 10 %}
-                        <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">
+                        <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); border-radius:6px; padding:2px 6px;">
                             <i class="material-icons" style="font-size:0.8rem;">warning</i> High Friction / Review Needed
                         </span>
                         {% else %}
-                        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">
+                        <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px;">
                             <i class="material-icons" style="font-size:0.8rem;">check_circle</i> Normal Engagement
                         </span>
                         {% endif %}

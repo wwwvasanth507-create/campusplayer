@@ -34,14 +34,14 @@
     <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
         <div>
             <div class="flex-between mb-12">
-                <div style="width:40px; height:40px; border-radius:10px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary-light);">
+                <div style="width:40px; height:40px; border-radius:8px; background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); display:flex; align-items:center; justify-content:center; color:var(--secondary-color);">
                     <i class="material-icons" style="font-size:1.3rem;">quiz</i>
                 </div>
                 <div style="display:flex; gap:6px;">
                     {% if quiz.classroom_id %}
-                    <span class="badge" style="background:rgba(0,229,255,0.12); color:var(--accent); border:1px solid rgba(0,229,255,0.25);">Class-Linked</span>
+                    <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); border-radius:6px; padding:2px 6px;">Class-Linked</span>
                     {% endif %}
-                    <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25); font-family:'JetBrains Mono',monospace;">
+                    <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                         {{ quiz.questions|length }} Qs
                     </span>
                 </div>
@@ -59,7 +59,7 @@
             <a href="{{ url_for('edit_quiz', quiz_id=quiz.id) }}" class="btn btn-outline" style="flex:1; font-size:0.78rem; padding:8px; min-height:36px;">
                 <i class="material-icons" style="font-size:0.95rem;">edit</i> Edit
             </a>
-            <a href="{{ url_for('quiz_report', quiz_id=quiz.id) }}" class="btn btn-outline" style="flex:1; font-size:0.78rem; padding:8px; min-height:36px; color:var(--gold);">
+            <a href="{{ url_for('quiz_report', quiz_id=quiz.id) }}" class="btn btn-outline" style="flex:1; font-size:0.78rem; padding:8px; min-height:36px; color:var(--primary);">
                 <i class="material-icons" style="font-size:0.95rem;">bar_chart</i> Scores
             </a>
             <form action="{{ url_for('delete_quiz', quiz_id=quiz.id) }}" method="POST"

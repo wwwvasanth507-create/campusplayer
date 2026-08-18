@@ -11,7 +11,7 @@
             <h1 class="page-title font-display" style="margin:0;">Attendance Session Reports</h1>
             <p class="page-sub" style="margin:2px 0 0 0;">
                 Percentage-based session metrics &amp; student qualification reports
-                {% if settings %}&bull; Minimum required attendance: <b style="color:var(--gold);">{{ settings.min_attendance_percentage or 75 }}%</b>{% endif %}
+                {% if settings %}&bull; Minimum required attendance: <b style="color:var(--primary);">{{ settings.min_attendance_percentage or 75 }}%</b>{% endif %}
             </p>
         </div>
     </div>
@@ -22,7 +22,7 @@
 <div class="card mb-16" style="padding:18px;">
     <div class="flex-between mb-12">
         <div class="card-title font-display" style="margin:0; font-size:1.05rem;">
-            <i class="material-icons" style="color:var(--accent);">school</i> {{ entry.classroom.name }}
+            <i class="material-icons" style="color:var(--secondary-color);">school</i> {{ entry.classroom.name }}
             <span style="font-size:0.75rem; color:var(--text-dim); margin-left:8px; font-family:'JetBrains Mono',monospace;">
                 ({{ entry.classroom.students.count() }} enrolled)
             </span>
@@ -47,14 +47,14 @@
                     <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ s.start_date.strftime('%d %b %Y') }}</td>
                     <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ s.end_date.strftime('%d %b %Y') }}</td>
                     <td>
-                        <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-family:'JetBrains Mono',monospace;">
+                        <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                             {{ s.sub_sessions|length }} track(s)
                         </span>
                     </td>
                     <td style="text-align:right; white-space:nowrap;">
                         <a href="{{ url_for('attendance_session_report', session_id=s.id) }}" class="btn btn-outline"
                             style="padding:5px 10px; font-size:0.72rem; min-height:30px; margin-right:4px;" target="_blank">
-                            <i class="material-icons" style="font-size:0.9rem; color:var(--gold);">bar_chart</i> View Report
+                            <i class="material-icons" style="font-size:0.9rem; color:var(--primary);">bar_chart</i> View Report
                         </a>
                         <a href="{{ url_for('attendance_session_report', session_id=s.id, download=1) }}" class="btn btn-primary"
                             style="padding:5px 10px; font-size:0.72rem; min-height:30px;" target="_blank">
@@ -69,7 +69,7 @@
     {% else %}
     <div style="font-size:0.8rem; color:var(--text-dim); padding:10px 0;">
         No attendance sessions created yet for this classroom.
-        <a href="{{ url_for('teacher_attendance_page', class_id=entry.classroom.id) }}" style="color:var(--primary-light); font-weight:600; text-decoration:none; margin-left:4px;">Create Session &rarr;</a>
+        <a href="{{ url_for('teacher_attendance_page', class_id=entry.classroom.id) }}" style="color:var(--secondary-color); font-weight:600; text-decoration:none; margin-left:4px;">Create Session &rarr;</a>
     </div>
     {% endif %}
 </div>

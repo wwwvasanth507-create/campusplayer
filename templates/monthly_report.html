@@ -12,14 +12,14 @@
             <p style="margin: 5px 0; color: #666;">Academic Session: {{ now_date.strftime('%B %Y') }}</p>
         </div>
         <div style="text-align: right;">
-            <h2 style="margin: 0; font-size: 1.2rem; color: #7c4dff;">Campus Interaction Platform</h2>
+            <h2 style="margin: 0; font-size: 1.2rem; color: #2541b2;">Campus Player</h2>
             <p style="margin: 5px 0; color: #666;">Official Student Record</p>
         </div>
     </div>
 
     <!-- Student Detail -->
     <div
-        style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; background: #f9f9f9; padding: 20px; border: 1px solid #eee;">
+        style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; background: #f9f9f9; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
         <div>
             <div style="font-size: 0.8rem; color: #888; text-transform: uppercase;">Student Name</div>
             <div style="font-size: 1.2rem; font-weight: 700;">{{ student.username }}</div>
@@ -33,20 +33,20 @@
     <!-- Stats Grid -->
     <div
         style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px; text-align: center;">
-        <div style="padding: 15px; border: 1px solid #ddd;">
+        <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
             <div style="font-size: 1.8rem; font-weight: 800; color: #1a1a1a;">{{ attendance_pct|round(1) }}%</div>
             <div style="font-size: 0.7rem; color: #666; text-transform: uppercase;">Attendance</div>
         </div>
-        <div style="padding: 15px; border: 1px solid #ddd;">
-            <div style="font-size: 1.8rem; font-weight: 800; color: #4caf50;">{{ present }}</div>
+        <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #3d8fa3;">{{ present }}</div>
             <div style="font-size: 0.7rem; color: #666; text-transform: uppercase;">Days Present</div>
         </div>
-        <div style="padding: 15px; border: 1px solid #ddd;">
-            <div style="font-size: 1.8rem; font-weight: 800; color: #ff9800;">{{ late }}</div>
+        <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #8a6a3a;">{{ late }}</div>
             <div style="font-size: 0.7rem; color: #666; text-transform: uppercase;">Days Late</div>
         </div>
-        <div style="padding: 15px; border: 1px solid #ddd;">
-            <div style="font-size: 1.8rem; font-weight: 800; color: #ff5252;">{{ absent }}</div>
+        <div style="padding: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <div style="font-size: 1.8rem; font-weight: 800; color: #d9822b;">{{ absent }}</div>
             <div style="font-size: 0.7rem; color: #666; text-transform: uppercase;">Days Absent</div>
         </div>
     </div>
@@ -66,15 +66,15 @@
             </li>
             <li style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee;">
                 <span>Learning Experience Points (XP):</span>
-                <span style="font-weight: 700; color: #7c4dff;">{{ student.xp }} XP</span>
+                <span style="font-weight: 700; color: #8a6a3a;">{{ student.xp }} XP</span>
             </li>
         </ul>
     </div>
 
     <!-- Critical Notes -->
     {% if attendance_pct < 75 %} <div
-        style="background: #fff5f5; border: 2px solid #ff5252; color: #d50000; padding: 25px; margin-top: 50px;">
-        <h3 style="margin-top: 0; color: #d50000; display: flex; align-items: center; gap: 8px;">
+        style="background: #fff8f0; border: 2px solid #d9822b; color: #d9822b; padding: 25px; margin-top: 50px; border-radius: 8px;">
+        <h3 style="margin-top: 0; color: #d9822b; display: flex; align-items: center; gap: 8px;">
             <i class="material-icons">warning</i> OFFICIAL NOTICE: LOW ATTENDANCE
         </h3>
         <p style="font-size: 1.1rem; line-height: 1.5; font-weight: 600;">
@@ -87,7 +87,7 @@
         </p>
 </div>
 {% else %}
-<div style="background: #f0f9f1; border: 1px solid #4caf50; color: #2e7d32; padding: 20px; text-align: center;">
+<div style="background: #f0f7f9; border: 1px solid #3d8fa3; color: #3d8fa3; padding: 20px; text-align: center; border-radius: 8px;">
     <p style="margin: 0; font-weight: 700;">Performance Status: Your ward is maintaining satisfactory attendance. Keep
         up the good work!</p>
 </div>
@@ -97,15 +97,15 @@
 <div
     style="margin-top: 80px; text-align: center; color: #aaa; font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 20px;">
     This is a computer-generated document. No signature required.
-    <br>&copy; 2026 Campus Interaction Platform - Attendance Monitoring Division
+    <br>&copy; 2026 Campus Player - Attendance Monitoring Division
 </div>
 </div>
 
 <div style="margin-top: 30px; text-align: center; gap: 20px; display: flex; justify-content: center;">
-    <button onclick="window.print()" class="btn" style="background: #333;">
+    <button onclick="window.print()" class="btn btn-primary">
         <i class="material-icons">print</i> Print to PDF
     </button>
-    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline">Back to Dashboard</a>
 </div>
 
 <style>

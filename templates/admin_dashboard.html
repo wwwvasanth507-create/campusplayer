@@ -7,13 +7,13 @@
     </div>
     <div class="admin-header-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
         <a href="{{ url_for('admin_teachers_page') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.78rem;">
-            <i class="material-icons" style="font-size:1.05rem;color:var(--accent);">manage_accounts</i> Teachers
+            <i class="material-icons" style="font-size:1.05rem;color:var(--secondary-color);">manage_accounts</i> Teachers
         </a>
         <a href="{{ url_for('levels_pdf') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.78rem;">
-            <i class="material-icons" style="font-size:1.05rem;color:var(--gold);">military_tech</i> XP Reports
+            <i class="material-icons" style="font-size:1.05rem;color:var(--primary);">military_tech</i> XP Reports
         </a>
         <a href="{{ url_for('attendance_reports_hub') }}" class="btn btn-outline" style="width:auto;padding:8px 14px;font-size:0.78rem;">
-            <i class="material-icons" style="font-size:1.05rem;color:#10b981;">event_note</i> Attendance
+            <i class="material-icons" style="font-size:1.05rem;color:var(--success-color);">event_note</i> Attendance
         </a>
     </div>
 </div>
@@ -25,19 +25,19 @@
         <div class="stat-lbl">Teachers</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:var(--primary-light);">{{ student_count }}</div>
+        <div class="stat-val font-display" style="color:var(--secondary-color);">{{ student_count }}</div>
         <div class="stat-lbl">Students</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#10b981;">{{ video_count }}</div>
+        <div class="stat-val font-display" style="color:var(--success-color);">{{ video_count }}</div>
         <div class="stat-lbl">Videos</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#ff9800;">{{ quiz_count }}</div>
+        <div class="stat-val font-display" style="color:var(--danger-color);">{{ quiz_count }}</div>
         <div class="stat-lbl">Quizzes</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#00e5ff;">{{ total_views }}</div>
+        <div class="stat-val font-display" style="color:var(--secondary-color);">{{ total_views }}</div>
         <div class="stat-lbl">Total Views</div>
     </div>
     <div class="stat-card stat-purple">
@@ -85,7 +85,7 @@
         <label>Global Playlist Thumbnail</label>
         <input type="file" name="global_thumbnail" accept="image/*">
         {% if settings.global_playlist_thumbnail %}
-        <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" style="width:80px;height:80px;object-fit:cover;border-radius:12px;margin-bottom:12px;display:block;border:1px solid var(--border);">
+        <img src="{{ url_for('static', filename=settings.global_playlist_thumbnail) }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;margin-bottom:12px;display:block;border:1px solid var(--border);">
         {% endif %}
         <button type="submit" class="btn btn-primary" style="width:auto;padding:10px 24px;">Save Settings</button>
     </form>
@@ -130,9 +130,9 @@
 <div class="card" id="liveStats">
     <div class="card-title"><i class="material-icons">insights</i> Today's Stats</div>
     <div class="stat-row">
-        <div class="stat-card"><div class="stat-val" id="viewsToday" style="color:#03a9f4;">—</div><div class="stat-lbl">Views Today</div></div>
-        <div class="stat-card"><div class="stat-val" id="usersToday" style="color:#4caf50;">—</div><div class="stat-lbl">New Users</div></div>
-        <div class="stat-card"><div class="stat-val" id="attToday" style="color:#ff9800;">—</div><div class="stat-lbl">Attendance</div></div>
+        <div class="stat-card"><div class="stat-val" id="viewsToday" style="color:var(--secondary-color);">—</div><div class="stat-lbl">Views Today</div></div>
+        <div class="stat-card"><div class="stat-val" id="usersToday" style="color:var(--success-color);">—</div><div class="stat-lbl">New Users</div></div>
+        <div class="stat-card"><div class="stat-val" id="attToday" style="color:var(--danger-color);">—</div><div class="stat-lbl">Attendance</div></div>
     </div>
     <p class="text-dim fs-small text-center">Avg Quiz Score: <span id="avgQuizScore">—</span>%</p>
 </div>
@@ -149,13 +149,13 @@
                 <td>{{ c.name }}</td>
                 <td>{{ c.teacher.username if c.teacher else '—' }}</td>
                 <td>{{ c.students.count() }}</td>
-                <td style="font-family:monospace;color:var(--gold);">{{ c.class_code or '—' }}</td>
+                <td style="font-family:monospace;color:var(--primary);">{{ c.class_code or '—' }}</td>
                 <td style="white-space:nowrap;">
                     <a href="{{ url_for('levels_pdf', type='class', class_id=c.id) }}" title="XP Report" style="margin-right:8px;">
-                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:var(--gold);">military_tech</i>
+                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:var(--primary);">military_tech</i>
                     </a>
                     <a href="{{ url_for('attendance_pdf', class_id=c.id) }}" title="Attendance Report">
-                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:#03a9f4;">fact_check</i>
+                        <i class="material-icons" style="font-size:1.05rem;vertical-align:middle;color:var(--secondary-color);">fact_check</i>
                     </a>
                 </td>
             </tr>
@@ -197,28 +197,28 @@
             <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">5 parallel hardware workers per institution with crash-safe checkpointing</div>
         </div>
         <div class="conv-header-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button onclick="retryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(255,152,0,0.2); color:#ff9800; border:1px solid rgba(255,152,0,0.4); font-weight:700;">
-                ↻ Retry All Failed
+            <button onclick="retryAllFailed()" class="btn conv-retry-btn" style="padding:6px 12px; font-size:0.75rem; background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.4); font-weight:700;">
+                <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">autorenew</i> Retry All Failed
             </button>
         </div>
     </div>
 
     <div id="conversionSummaryBadges" style="display:flex; gap:6px; flex-wrap:wrap; font-size:0.75rem; margin-bottom:14px;">
-        <span class="badge" style="background:rgba(0,229,255,0.15);color:#00e5ff;padding:5px 12px;border-radius:12px;font-weight:700;" id="badgeActiveWorkers">0/5 Active</span>
-        <span class="badge" style="background:rgba(255,152,0,0.15);color:#ff9800;padding:5px 12px;border-radius:12px;font-weight:700;" id="badgeQueued">0 Queued</span>
-        <span class="badge" style="background:rgba(76,175,80,0.15);color:#4caf50;padding:5px 12px;border-radius:12px;font-weight:700;" id="badgeCompleted">0 Done</span>
-        <span class="badge" style="background:rgba(255,82,82,0.15);color:#ff5252;padding:5px 12px;border-radius:12px;font-weight:700;" id="badgeFailed">0 Failed</span>
+        <span class="badge" style="background:rgba(37,65,178,0.15);color:var(--secondary-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="badgeActiveWorkers">0/5 Active</span>
+        <span class="badge" style="background:rgba(217,130,43,0.15);color:var(--danger-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="badgeQueued">0 Queued</span>
+        <span class="badge" style="background:rgba(61,143,163,0.15);color:var(--success-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="badgeCompleted">0 Done</span>
+        <span class="badge" style="background:rgba(217,130,43,0.15);color:var(--danger-color);padding:5px 12px;border-radius:8px;font-weight:700;" id="badgeFailed">0 Failed</span>
     </div>
 
     <!-- 5-Worker Fleet Visual Tiles -->
     <div class="conv-worker-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin-bottom:16px;" id="adminWorkerFleetGrid">
         {% for w in range(1, 6) %}
-        <div id="adm-worker-tile-{{ w }}" class="conv-worker-tile" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 12px; transition:all 0.3s ease;">
+        <div id="adm-worker-tile-{{ w }}" class="conv-worker-tile" style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px; transition:all 0.2s ease;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#00e5ff;">memory</i> Worker {{ w }}</span>
-                <span id="adm-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">Idle</span>
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text);"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--secondary-color);">memory</i> Worker {{ w }}</span>
+                <span id="adm-worker-status-{{ w }}" style="font-size:0.68rem; padding:2px 6px; border-radius:6px; background:var(--surface); color:var(--text-dim);">Idle</span>
             </div>
-            <div id="adm-worker-desc-{{ w }}" style="font-size:0.7rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting for jobs</div>
+            <div id="adm-worker-desc-{{ w }}" style="font-size:0.7rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Waiting for jobs</div>
         </div>
         {% endfor %}
     </div>
@@ -276,26 +276,26 @@
 
                     const jobForWorker = activeJobs.find(j => j.worker_id === `worker-${w}` || j.worker_id === `Worker-${w}` || j.worker_id === String(w));
                     if (jobForWorker) {
-                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
-                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        tile.style.background = 'rgba(37, 65, 178, 0.08)';
+                        tile.style.borderColor = 'rgba(37, 65, 178, 0.4)';
                         statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
-                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
-                        statusEl.style.color = '#00e5ff';
-                        descEl.innerHTML = `<b style="color:#fff;">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
+                        statusEl.style.background = 'rgba(37, 65, 178, 0.2)';
+                        statusEl.style.color = '#2541b2';
+                        descEl.innerHTML = `<b style="color:var(--text);">${jobForWorker.video_title}</b> (${jobForWorker.progress || 0}%)`;
                     } else if (w <= data.active_workers && activeJobs[w - 1]) {
                         const fallbackJob = activeJobs[w - 1];
-                        tile.style.background = 'rgba(0, 229, 255, 0.08)';
-                        tile.style.borderColor = 'rgba(0, 229, 255, 0.4)';
+                        tile.style.background = 'rgba(37, 65, 178, 0.08)';
+                        tile.style.borderColor = 'rgba(37, 65, 178, 0.4)';
                         statusEl.innerHTML = '<i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">bolt</i> Transcoding';
-                        statusEl.style.background = 'rgba(0, 229, 255, 0.2)';
-                        statusEl.style.color = '#00e5ff';
-                        descEl.innerHTML = `<b style="color:#fff;">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
+                        statusEl.style.background = 'rgba(37, 65, 178, 0.2)';
+                        statusEl.style.color = '#2541b2';
+                        descEl.innerHTML = `<b style="color:var(--text);">${fallbackJob.video_title}</b> (${fallbackJob.progress || 0}%)`;
                     } else {
-                        tile.style.background = 'rgba(255, 255, 255, 0.03)';
-                        tile.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                        tile.style.background = 'var(--surface2)';
+                        tile.style.borderColor = 'var(--border)';
                         statusEl.textContent = 'Idle';
-                        statusEl.style.background = 'rgba(255, 255, 255, 0.06)';
-                        statusEl.style.color = 'var(--text-secondary)';
+                        statusEl.style.background = 'var(--surface)';
+                        statusEl.style.color = 'var(--text-dim)';
                         descEl.textContent = 'Ready for conversions';
                     }
                 }
@@ -310,15 +310,15 @@
                 data.jobs.forEach(j => {
                     let statusBadge = '';
                     if (j.status === 'completed') {
-                        statusBadge = '<span style="color:#4caf50;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
+                        statusBadge = '<span style="color:#3d8fa3;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">check_circle</i> Completed</span>';
                     } else if (j.status === 'processing') {
-                        statusBadge = '<span style="color:#00e5ff;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
+                        statusBadge = '<span style="color:#2541b2;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">bolt</i> Processing</span>';
                     } else if (j.status === 'queued') {
-                        statusBadge = '<span style="color:#ff9800;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
+                        statusBadge = '<span style="color:#d9822b;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">hourglass_empty</i> Queued</span>';
                     } else if (j.status === 'interrupted') {
-                        statusBadge = '<span style="color:#bb86fc;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
+                        statusBadge = '<span style="color:#d9822b;font-weight:700;"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">pause_circle</i> Interrupted</span>';
                     } else {
-                        statusBadge = `<span style="color:#ff5252;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
+                        statusBadge = `<span style="color:#d9822b;font-weight:700;" title="${j.error_message || ''}"><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">error</i> Failed</span>`;
                     }
 
                     const progressPercent = j.progress || 0;
@@ -326,14 +326,14 @@
                         <div style="min-width:100px;">
                             <div style="font-size:0.7rem;margin-bottom:2px;font-weight:700;">${progressPercent}%</div>
                             <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
-                                <div style="width:${progressPercent}%;height:100%;background:${j.status === 'completed' ? '#4caf50' : (j.status === 'failed' ? '#ff5252' : '#00e5ff')};transition:width 0.4s;"></div>
+                                <div style="width:${progressPercent}%;height:100%;background:${j.status === 'completed' ? '#3d8fa3' : (j.status === 'failed' ? '#d9822b' : '#2541b2')};transition:width 0.4s;"></div>
                             </div>
                         </div>
                     `;
 
                     let actionBtn = '—';
                     if (j.status === 'failed') {
-                        actionBtn = `<button onclick="retryJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;">Retry</button>`;
+                        actionBtn = `<button onclick="retryJob(${j.id})" class="btn btn-outline" style="padding:3px 8px;font-size:0.7rem;width:auto;color:#d9822b;border-color:rgba(217,130,43,0.4);">Retry</button>`;
                     }
 
                     html += `

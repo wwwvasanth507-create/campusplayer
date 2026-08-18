@@ -52,15 +52,15 @@
             <div class="stat-lbl">Total Records</div>
         </div>
         <div class="stat-card">
-            <div class="stat-val font-display" style="color:#10b981;">{{ present_count }}</div>
+            <div class="stat-val font-display" style="color:var(--success-color);">{{ present_count }}</div>
             <div class="stat-lbl">Present</div>
         </div>
         <div class="stat-card">
-            <div class="stat-val font-display" style="color:#f59e0b;">{{ late_count }}</div>
+            <div class="stat-val font-display" style="color:var(--primary);">{{ late_count }}</div>
             <div class="stat-lbl">Late</div>
         </div>
         <div class="stat-card">
-            <div class="stat-val font-display" style="color:#f43f5e;">{{ absent_count }}</div>
+            <div class="stat-val font-display" style="color:var(--danger-color);">{{ absent_count }}</div>
             <div class="stat-lbl">Absent</div>
         </div>
         {% if att_records %}
@@ -78,17 +78,17 @@
         <div style="padding:12px 18px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
             <div style="font-weight:700; font-size:0.95rem; color:var(--text); display:flex; align-items:center; gap:6px;">
                 {% if status_type == 'Present' %}
-                <i class="material-icons" style="font-size:1.1rem; color:#10b981;">check_circle</i>
+                <i class="material-icons" style="font-size:1.1rem; color:var(--success-color);">check_circle</i>
                 {% elif status_type == 'Late' %}
-                <i class="material-icons" style="font-size:1.1rem; color:#f59e0b;">schedule</i>
+                <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">schedule</i>
                 {% else %}
-                <i class="material-icons" style="font-size:1.1rem; color:#f43f5e;">cancel</i>
+                <i class="material-icons" style="font-size:1.1rem; color:var(--danger-color);">cancel</i>
                 {% endif %}
                 {{ title }}
             </div>
-            <span class="badge" style="font-weight:700;
-                background:{{ 'rgba(16,185,129,0.15)' if status_type=='Present' else ('rgba(245,158,11,0.15)' if status_type=='Late' else 'rgba(244,63,94,0.15)') }};
-                color:{{ '#10b981' if status_type=='Present' else ('#f59e0b' if status_type=='Late' else '#f43f5e') }};">
+            <span class="badge" style="font-weight:700; padding:3px 8px; border-radius:6px;
+                background:{{ 'rgba(61,143,163,0.15)' if status_type=='Present' else ('rgba(138,106,58,0.15)' if status_type=='Late' else 'rgba(217,130,43,0.15)') }};
+                color:{{ 'var(--success-color)' if status_type=='Present' else ('var(--primary)' if status_type=='Late' else 'var(--danger-color)') }};">
                 {{ records|length }} Records
             </span>
         </div>
@@ -110,16 +110,16 @@
                         <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.75rem;">{{ loop.index }}</td>
                         <td>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:28px; height:28px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#fff;">
+                                <div style="width:28px; height:28px; border-radius:6px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#ffffff;">
                                     {{ r.student.username[0].upper() }}
                                 </div>
                                 <strong style="color:var(--text); font-size:0.88rem;">{{ r.student.username }}</strong>
                             </div>
                         </td>
                         <td>
-                            <span class="badge" style="font-weight:700; font-size:0.7rem;
-                                background:{{ 'rgba(16,185,129,0.15)' if r.status=='Present' else ('rgba(245,158,11,0.15)' if r.status=='Late' else 'rgba(244,63,94,0.15)') }};
-                                color:{{ '#10b981' if r.status=='Present' else ('#f59e0b' if r.status=='Late' else '#f43f5e') }};">
+                            <span class="badge" style="font-weight:700; font-size:0.7rem; padding:3px 6px; border-radius:6px;
+                                background:{{ 'rgba(61,143,163,0.15)' if r.status=='Present' else ('rgba(138,106,58,0.15)' if r.status=='Late' else 'rgba(217,130,43,0.15)') }};
+                                color:{{ 'var(--success-color)' if r.status=='Present' else ('var(--primary)' if r.status=='Late' else 'var(--danger-color)') }};">
                                 {{ r.status }}
                             </span>
                         </td>
@@ -131,7 +131,7 @@
                         </td>
                         <td class="no-print">
                             <button onclick="openSmsModal({{ r.student_id }}, '{{ r.student.username }}')"
-                                style="background:none; border:none; color:var(--primary-light); cursor:pointer; padding:4px;"
+                                style="background:none; border:none; color:var(--secondary-color); cursor:pointer; padding:4px;"
                                 title="Send SMS Attendance Report">
                                 <i class="material-icons" style="font-size:1.1rem;">chat</i>
                             </button>

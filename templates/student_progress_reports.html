@@ -59,18 +59,18 @@
                     <td style="font-size:0.82rem; color:var(--text);">{{ log.subject or 'Academic Progress Report' }}</td>
                     <td>
                         {% if log.status == 'sent' %}
-                        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">✓ Delivered</span>
+                        <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px;">✓ Delivered</span>
                         {% elif log.status == 'stored' %}
-                        <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">📄 Stored</span>
+                        <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); border-radius:6px; padding:2px 6px;">📄 Stored</span>
                         {% else %}
-                        <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Failed</span>
+                        <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); border-radius:6px; padding:2px 6px;">Failed</span>
                         {% endif %}
                     </td>
                     <td style="text-align:right; white-space:nowrap;">
                         {% if log.report_html %}
                         <a href="{{ url_for('student_view_progress_report', log_id=log.id) }}" class="btn btn-outline"
                             style="padding:4px 10px; font-size:0.72rem; min-height:30px; margin-right:4px;">
-                            <i class="material-icons" style="font-size:0.9rem; color:var(--accent);">visibility</i> View
+                            <i class="material-icons" style="font-size:0.9rem; color:var(--secondary-color);">visibility</i> View
                         </a>
                         <a href="{{ url_for('download_report_pdf', log_id=log.id) }}" class="btn btn-primary"
                             style="padding:4px 10px; font-size:0.72rem; min-height:30px;">

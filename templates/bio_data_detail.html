@@ -28,9 +28,9 @@
     {% else %}
     <div class="card mb-16" style="padding:22px; display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
         {% if profile.photo_path %}
-        <img src="{{ url_for('static', filename=profile.photo_path) }}" alt="Photo" style="width:84px; height:84px; object-fit:cover; border-radius:14px; border:2px solid var(--border); box-shadow:var(--shadow);">
+        <img src="{{ url_for('static', filename=profile.photo_path) }}" alt="Photo" style="width:84px; height:84px; object-fit:cover; border-radius:12px; border:2px solid var(--border);">
         {% else %}
-        <div style="width:84px; height:84px; border-radius:14px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; color:#fff;">
+        <div style="width:84px; height:84px; border-radius:12px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; color:#fff;">
             {{ student.username[:2].upper() }}
         </div>
         {% endif %}
@@ -52,7 +52,7 @@
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
         <div class="card" style="padding:20px; margin-bottom:0;">
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
-                <i class="material-icons" style="color:var(--accent);">badge</i> Personal Details
+                <i class="material-icons" style="color:var(--secondary-color);">badge</i> Personal Details
             </div>
             {{ field_row('Student ID', profile.student_id_number) }}
             {{ field_row('Roll / Registration No.', profile.roll_number) }}
@@ -68,7 +68,7 @@
 
         <div class="card" style="padding:20px; margin-bottom:0;">
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
-                <i class="material-icons" style="color:var(--gold);">family_restroom</i> Family &amp; Guardian Info
+                <i class="material-icons" style="color:var(--primary);">family_restroom</i> Family &amp; Guardian Info
             </div>
             {{ field_row('Father Name', profile.father_name) }}
             {{ field_row('Father Contact', profile.father_phone) }}
@@ -82,7 +82,7 @@
 
         <div class="card" style="padding:20px; margin-bottom:0;">
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
-                <i class="material-icons" style="color:var(--primary-light);">home</i> Address &amp; Residences
+                <i class="material-icons" style="color:var(--secondary-color);">home</i> Address &amp; Residences
             </div>
             <div style="margin-bottom:12px;">
                 <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-bottom:4px;">Communication Address</div>
@@ -97,14 +97,14 @@
 
         <div class="card" style="padding:20px; margin-bottom:0;">
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
-                <i class="material-icons" style="color:#f43f5e;">emergency</i> Emergency Dispatch
+                <i class="material-icons" style="color:var(--danger-color);">emergency</i> Emergency Dispatch
             </div>
             {{ field_row('Emergency Contact', profile.emergency_contact) }}
             {{ field_row('Emergency Phone', profile.emergency_phone) }}
 
             <div class="divider" style="margin:14px 0 10px;"></div>
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:10px;">
-                <i class="material-icons" style="color:var(--accent);">upload_file</i> Certified Documents
+                <i class="material-icons" style="color:var(--secondary-color);">upload_file</i> Certified Documents
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
                 {% if profile.signature_path %}<a href="{{ url_for('static', filename=profile.signature_path) }}" target="_blank" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:28px;"><i class="material-icons" style="font-size:0.85rem;">draw</i> Signature</a>{% endif %}

@@ -35,7 +35,7 @@
         <div style="border-bottom:1px solid var(--border); padding-bottom:18px; margin-bottom:20px;">
             <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
                 <div>
-                    <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); font-size:0.72rem; font-weight:700; text-transform:uppercase;">
+                    <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); font-size:0.72rem; font-weight:700; text-transform:uppercase; border-radius:6px; padding:2px 6px;">
                         Class Performance Report
                     </span>
                     <h2 class="font-display" style="font-size:1.6rem; font-weight:800; color:var(--text); margin:6px 0 2px 0;">{{ classroom.name }}</h2>
@@ -44,17 +44,17 @@
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
                         <div style="font-size:1.3rem; font-weight:800; color:var(--text);" class="font-display">{{ students|length }}</div>
                         <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Scholars</div>
                     </div>
                     {% if students %}
-                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
-                        <div style="font-size:1.3rem; font-weight:800; color:var(--primary-light);" class="font-display">{{ (students|sum(attribute='xp') / students|length)|int }}</div>
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--secondary-color);" class="font-display">{{ (students|sum(attribute='xp') / students|length)|int }}</div>
                         <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Avg XP</div>
                     </div>
-                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
-                        <div style="font-size:1.3rem; font-weight:800; color:var(--gold);" class="font-display">{{ students[0].xp }}</div>
+                    <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--primary);" class="font-display">{{ students[0].xp }}</div>
                         <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Top XP</div>
                     </div>
                     {% endif %}
@@ -83,35 +83,35 @@
                     <tr>
                         <td>
                             {% if rank == 1 %}
-                            <i class="material-icons" style="font-size:1.3rem; color:var(--gold);">looks_one</i>
+                            <i class="material-icons" style="font-size:1.3rem; color:var(--primary);">looks_one</i>
                             {% elif rank == 2 %}
-                            <i class="material-icons" style="font-size:1.3rem; color:#94a3b8;">looks_two</i>
+                            <i class="material-icons" style="font-size:1.3rem; color:var(--text-muted);">looks_two</i>
                             {% elif rank == 3 %}
-                            <i class="material-icons" style="font-size:1.3rem; color:#d97706;">looks_3</i>
+                            <i class="material-icons" style="font-size:1.3rem; color:var(--danger-color);">looks_3</i>
                             {% else %}
                             <span style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.8rem; font-weight:700;">#{{ rank }}</span>
                             {% endif %}
                         </td>
                         <td>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="width:30px; height:30px; border-radius:50%; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#fff;">
+                                <div style="width:30px; height:30px; border-radius:6px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#ffffff;">
                                     {{ student.username[0].upper() }}
                                 </div>
                                 <strong style="color:var(--text); font-size:0.9rem;">{{ student.username }}</strong>
                             </div>
                         </td>
                         <td>
-                            <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); border:1px solid rgba(99,102,241,0.3); font-size:0.7rem; font-weight:700;">
+                            <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.7rem; font-weight:700; border-radius:6px; padding:2px 6px;">
                                 Level {{ (student.xp // 500) + 1 }}
                             </span>
                         </td>
-                        <td style="font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--gold);">
+                        <td style="font-family:'JetBrains Mono',monospace; font-weight:800; color:var(--primary);">
                             {{ student.xp }} <span style="font-size:0.72rem; color:var(--text-dim); font-weight:400;">XP</span>
                         </td>
                         <td>
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <div style="flex:1; height:6px; background:var(--surface2); border-radius:10px; overflow:hidden;">
-                                    <div style="width:{{ [(student.xp / max_xp * 100), 100]|min }}%; height:100%; background:var(--brand-gradient); border-radius:10px;"></div>
+                                <div style="flex:1; height:6px; background:var(--surface2); border-radius:4px; overflow:hidden;">
+                                    <div style="width:{{ [(student.xp / max_xp * 100), 100]|min }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
                                 </div>
                                 <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; width:35px; text-align:right;">
                                     {{ [(student.xp / max_xp * 100)|int, 100]|min }}%

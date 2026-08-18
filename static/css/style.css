@@ -41,8 +41,7 @@
 .video-card:hover,
 .vcard:hover {
     transform: translateY(-4px);
-    border-color: rgba(99, 102, 241, 0.35);
-    box-shadow: 0 20px 40px -10px rgba(0, 229, 255, 0.15), 0 0 0 1px rgba(99, 102, 241, 0.4);
+    border-color: rgba(37, 65, 178, 0.35);
 }
 
 .video-thumbnail-wrap {
@@ -85,7 +84,7 @@
     position: absolute;
     top: 8px;
     left: 8px;
-    background: var(--brand-gradient);
+    background: var(--primary);
     color: #fff;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
@@ -138,27 +137,27 @@
 }
 
 .badge-gold {
-    background: rgba(245, 158, 11, 0.15);
-    color: var(--gold);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: rgba(138, 106, 58, 0.15);
+    color: var(--primary);
+    border: 1px solid rgba(138, 106, 58, 0.3);
 }
 
 .badge-cyan {
-    background: rgba(0, 229, 255, 0.15);
-    color: #00e5ff;
-    border: 1px solid rgba(0, 229, 255, 0.3);
+    background: rgba(37, 65, 178, 0.15);
+    color: var(--secondary-color);
+    border: 1px solid rgba(37, 65, 178, 0.3);
 }
 
 .badge-green {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background: rgba(61, 143, 163, 0.15);
+    color: var(--success-color);
+    border: 1px solid rgba(61, 143, 163, 0.3);
 }
 
 .badge-red {
-    background: rgba(244, 63, 94, 0.15);
-    color: #f43f5e;
-    border: 1px solid rgba(244, 63, 94, 0.3);
+    background: rgba(217, 130, 43, 0.15);
+    color: var(--danger-color);
+    border: 1px solid rgba(217, 130, 43, 0.3);
 }
 
 /* ── Flash Messages & Alerts ── */
@@ -177,27 +176,27 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--border);
     backdrop-filter: blur(16px);
 }
 
 .alert-success {
-    background: rgba(16, 185, 129, 0.12);
-    color: #10b981;
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(61, 143, 163, 0.12);
+    color: var(--success-color);
+    border-color: rgba(61, 143, 163, 0.3);
 }
 
 .alert-error,
 .alert-danger {
-    background: rgba(244, 63, 94, 0.12);
-    color: #f43f5e;
-    border-color: rgba(244, 63, 94, 0.3);
+    background: rgba(217, 130, 43, 0.12);
+    color: var(--danger-color);
+    border-color: rgba(217, 130, 43, 0.3);
 }
 
 .alert-info {
-    background: rgba(99, 102, 241, 0.12);
-    color: var(--primary-light);
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(37, 65, 178, 0.12);
+    color: var(--secondary-color);
+    border-color: rgba(37, 65, 178, 0.3);
 }
 
 /* ── Section Headers ── */

@@ -13,7 +13,7 @@
         </div>
     </div>
     <div class="stat-card" style="padding:8px 16px; margin:0; display:flex; align-items:center; gap:10px;">
-        <span class="font-display" style="font-size:1.3rem; font-weight:800; color:var(--primary-light);">{{ enrolled_list|length }}</span>
+        <span class="font-display" style="font-size:1.3rem; font-weight:800; color:var(--secondary-color);">{{ enrolled_list|length }}</span>
         <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;">Students</span>
     </div>
 </div>
@@ -50,7 +50,7 @@
     {% if search_query %}
     <div class="flex-between" style="margin-top:8px; font-size:0.75rem; color:var(--text-dim);">
         <span>Showing results for "<strong>{{ search_query }}</strong>" ({{ enrolled_list|length }} found)</span>
-        <a href="{{ url_for('teacher_enrolled_students_page') }}" style="color:var(--primary-light); font-weight:600; text-decoration:none;">✕ Clear Filter</a>
+        <a href="{{ url_for('teacher_enrolled_students_page') }}" style="color:var(--secondary-color); font-weight:600; text-decoration:none;">✕ Clear Filter</a>
     </div>
     {% endif %}
 </div>
@@ -63,24 +63,24 @@
     <div class="card" style="margin-bottom:0; padding:16px;">
         <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
-                <div style="width:42px; height:42px; border-radius:10px; background:var(--brand-gradient); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#fff; flex-shrink:0;">
+                <div style="width:42px; height:42px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#ffffff; flex-shrink:0;">
                     {{ student.username[0].upper() }}
                 </div>
                 <div style="min-width:0;">
                     <div style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.username }}</div>
                     <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
-                        <span style="color:var(--gold); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--gold);">bolt</i> {{ student.xp }} XP</span> &bull;
+                        <span style="color:var(--primary); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--primary);">bolt</i> {{ student.xp }} XP</span> &bull;
                         Level {{ (student.xp // 500) + 1 }} &bull;
                         Joined {{ student.created_at.strftime('%b %d, %Y') }}
                     </div>
                     <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;">
                         {% for cls_name in classes %}
-                        <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); font-size:0.68rem; padding:2px 8px;">
+                        <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-size:0.68rem; padding:2px 8px; border-radius:6px;">
                             {{ cls_name }}
                         </span>
                         {% endfor %}
                         {% if student.phone %}
-                        <span class="badge" style="background:rgba(0,229,255,0.12); color:var(--accent); border:1px solid rgba(0,229,255,0.25); font-size:0.68rem; padding:2px 8px;">
+                        <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-size:0.68rem; padding:2px 8px; border-radius:6px;">
                             <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">phone_iphone</i> {{ student.phone }}
                         </span>
                         {% endif %}
@@ -92,7 +92,7 @@
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                 {% if student.phone %}
                 <button onclick="openSmsModal({{ student.id }}, '{{ student.username }}')" class="btn btn-outline"
-                    style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--accent);" title="SMS Report">
+                    style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--secondary-color);" title="SMS Report">
                     <i class="material-icons" style="font-size:0.95rem;">message</i>
                 </button>
                 {% endif %}
@@ -102,7 +102,7 @@
                 <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" onclick="toggleReset('sr-{{ student.id }}')" title="Reset Password">
                     <i class="material-icons" style="font-size:0.95rem;">vpn_key</i>
                 </button>
-                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--gold);" onclick="toggleReset('srm-{{ student.id }}')" title="Teacher Remarks">
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--primary);" onclick="toggleReset('srm-{{ student.id }}')" title="Teacher Remarks">
                     <i class="material-icons" style="font-size:0.95rem;">rate_review</i>
                 </button>
                 <a href="{{ url_for('monthly_report', student_id=student.id) }}" class="btn btn-outline"
@@ -120,7 +120,7 @@
 
         <!-- Inline Remarks Form -->
         <div id="srm-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
-            <h4 class="font-display" style="margin:0 0 8px 0; font-size:0.82rem; color:var(--gold);">Teacher Remarks for {{ student.username }}</h4>
+            <h4 class="font-display" style="margin:0 0 8px 0; font-size:0.82rem; color:var(--primary);">Teacher Remarks for {{ student.username }}</h4>
             {% set ns = namespace(my_classes=0) %}
             {% for cls in item.class_details %}
                 {% if current_user.role == 'admin' or cls.teacher_id == current_user.id %}
@@ -143,7 +143,7 @@
         <div id="sp-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
             <form action="{{ url_for('teacher_update_student_phone', student_id=student.id) }}" method="POST"
                 style="display:flex; gap:8px; align-items:center; margin:0;">
-                <i class="material-icons" style="font-size:1.1rem; color:var(--accent);">phone_iphone</i>
+                <i class="material-icons" style="font-size:1.1rem; color:var(--secondary-color);">phone_iphone</i>
                 <input type="tel" name="phone" placeholder="e.g. +919876543210" value="{{ student.phone or '' }}"
                     style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
                 <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Save Phone</button>
@@ -174,7 +174,7 @@
 <div id="smsModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(6px);">
     <div class="card" style="width:100%; max-width:420px; padding:24px; border-radius:var(--radius-lg); margin:0;">
         <div class="flex-between mb-12">
-            <div class="card-title font-display" style="margin:0; font-size:1rem;"><i class="material-icons" style="color:var(--accent);">message</i> SMS Progress Report</div>
+            <div class="card-title font-display" style="margin:0; font-size:1rem;"><i class="material-icons" style="color:var(--secondary-color);">message</i> SMS Progress Report</div>
             <button onclick="closeSmsModal()" class="btn btn-outline" style="min-height:30px; padding:2px 6px; border-radius:50%;">&times;</button>
         </div>
         <p style="font-size:0.78rem; color:var(--text-dim); margin-bottom:14px;">Parent summary dispatch for <b id="smsStudentName" style="color:var(--text);">Student</b></p>

@@ -13,8 +13,8 @@
                 </p>
             </div>
             {% if remaining_seconds is not none %}
-            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:var(--radius-pill); background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-family:'JetBrains Mono',monospace; display:inline-flex; align-items:center; gap:6px;">
-                <i class="material-icons" style="font-size:1.1rem; color:var(--gold);">timer</i> <span id="quizTimerText">--:--</span>
+            <div id="quizTimer" style="font-size:1.1rem; font-weight:800; padding:6px 14px; border-radius:8px; background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-family:'JetBrains Mono',monospace; display:inline-flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">timer</i> <span id="quizTimerText">--:--</span>
             </div>
             {% endif %}
         </div>
@@ -70,9 +70,9 @@
         var s = remaining % 60;
         textEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
         if (remaining <= 60) {
-            timerBox.style.color = '#f43f5e';
-            timerBox.style.background = 'rgba(244,63,94,0.15)';
-            timerBox.style.borderColor = 'rgba(244,63,94,0.3)';
+            timerBox.style.color = 'var(--danger-color)';
+            timerBox.style.background = 'rgba(217,130,43,0.15)';
+            timerBox.style.borderColor = 'rgba(217,130,43,0.3)';
         }
     }
     render();

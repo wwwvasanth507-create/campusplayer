@@ -35,16 +35,16 @@
                 </div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
                     <div style="font-size:1.3rem; font-weight:800; color:var(--text);" class="font-display">{{ report.rows|length }}</div>
                     <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Students</div>
                 </div>
-                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
-                    <div style="font-size:1.3rem; font-weight:800; color:var(--gold);" class="font-display">{{ report.min_attendance_percentage }}%</div>
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
+                    <div style="font-size:1.3rem; font-weight:800; color:var(--primary);" class="font-display">{{ report.min_attendance_percentage }}%</div>
                     <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Min Required</div>
                 </div>
-                <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 16px; text-align:center;">
-                    <div style="font-size:1.3rem; font-weight:800; color:#f43f5e;" class="font-display">{{ report.rows|selectattr('below_minimum')|list|length }}</div>
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center;">
+                    <div style="font-size:1.3rem; font-weight:800; color:var(--danger-color);" class="font-display">{{ report.rows|selectattr('below_minimum')|list|length }}</div>
                     <div style="font-size:0.65rem; text-transform:uppercase; color:var(--text-dim); margin-top:2px;">Below Threshold</div>
                 </div>
             </div>
@@ -54,16 +54,16 @@
     <!-- Attendance Legend -->
     <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; font-size:0.75rem; color:var(--text-dim);">
         <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
-            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#10b981;">check_circle</i> Present = 100%
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--success-color);">check_circle</i> Present = 100%
         </span>
         <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
-            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#f59e0b;">schedule</i> Late / Half Day = 50%
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--danger-color);">schedule</i> Late / Half Day = 50%
         </span>
         <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
-            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#f43f5e;">cancel</i> Absent = 0%
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--danger-color);">cancel</i> Absent = 0%
         </span>
         <span style="background:var(--surface); border:1px solid var(--border); padding:5px 10px; border-radius:8px;">
-            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary-light);">event_busy</i> Holiday / Med. / OD = Excluded
+            <i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--secondary-color);">event_busy</i> Holiday / Med. / OD = Excluded
         </span>
     </div>
 
@@ -88,32 +88,32 @@
                     <tr>
                         <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim); font-size:0.75rem;">{{ loop.index }}</td>
                         <td><strong style="color:var(--text);">{{ row.student.username }}</strong></td>
-                        <td style="font-family:'JetBrains Mono',monospace; color:#10b981; font-weight:700;">{{ row.full.counts['Present'] }}</td>
-                        <td style="font-family:'JetBrains Mono',monospace; color:#f43f5e; font-weight:700;">{{ row.full.counts['Absent'] }}</td>
-                        <td style="font-family:'JetBrains Mono',monospace; color:#f59e0b;">{{ row.full.counts['Late'] + row.full.counts['Half Day'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--success-color); font-weight:700;">{{ row.full.counts['Present'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--danger-color); font-weight:700;">{{ row.full.counts['Absent'] }}</td>
+                        <td style="font-family:'JetBrains Mono',monospace; color:var(--danger-color);">{{ row.full.counts['Late'] + row.full.counts['Half Day'] }}</td>
                         <td style="font-family:'JetBrains Mono',monospace; color:var(--text-dim);">{{ row.full.neutral_days }}</td>
                         <td>
                             {% if row.percentage is not none %}
-                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700;
-                                background:{{ 'rgba(16,185,129,0.15)' if row.percentage >= report.min_attendance_percentage else 'rgba(244,63,94,0.15)' }};
-                                color:{{ '#10b981' if row.percentage >= report.min_attendance_percentage else '#f43f5e' }};
-                                border:1px solid {{ 'rgba(16,185,129,0.3)' if row.percentage >= report.min_attendance_percentage else 'rgba(244,63,94,0.3)' }};">
+                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700; border-radius:6px; padding:2px 6px;
+                                background:{{ 'rgba(61,143,163,0.15)' if row.percentage >= report.min_attendance_percentage else 'rgba(217,130,43,0.15)' }};
+                                color:{{ 'var(--success-color)' if row.percentage >= report.min_attendance_percentage else 'var(--danger-color)' }};
+                                border:1px solid {{ 'rgba(61,143,163,0.3)' if row.percentage >= report.min_attendance_percentage else 'rgba(217,130,43,0.3)' }};">
                                 {{ row.percentage }}%
                             </span>
                             {% else %}
-                            <span class="badge" style="background:var(--surface2); color:var(--text-dim);">N/A</span>
+                            <span class="badge" style="background:var(--surface2); color:var(--text-dim); border-radius:6px; padding:2px 6px;">N/A</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if row.current_percentage is not none %}
-                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700;
-                                background:{{ 'rgba(16,185,129,0.15)' if not row.below_minimum else 'rgba(244,63,94,0.15)' }};
-                                color:{{ '#10b981' if not row.below_minimum else '#f43f5e' }};
-                                border:1px solid {{ 'rgba(16,185,129,0.3)' if not row.below_minimum else 'rgba(244,63,94,0.3)' }};">
+                            <span class="badge" style="font-family:'JetBrains Mono',monospace; font-weight:700; border-radius:6px; padding:2px 6px;
+                                background:{{ 'rgba(61,143,163,0.15)' if not row.below_minimum else 'rgba(217,130,43,0.15)' }};
+                                color:{{ 'var(--success-color)' if not row.below_minimum else 'var(--danger-color)' }};
+                                border:1px solid {{ 'rgba(61,143,163,0.3)' if not row.below_minimum else 'rgba(217,130,43,0.3)' }};">
                                 {{ row.current_percentage }}%
                             </span>
                             {% else %}
-                            <span class="badge" style="background:var(--surface2); color:var(--text-dim);">N/A</span>
+                            <span class="badge" style="background:var(--surface2); color:var(--text-dim); border-radius:6px; padding:2px 6px;">N/A</span>
                             {% endif %}
                         </td>
                     </tr>

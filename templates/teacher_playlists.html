@@ -55,8 +55,8 @@
                 </div>
             </div>
             {% else %}
-            <div style="height:140px; background:linear-gradient(135deg, rgba(99,102,241,0.15), rgba(0,229,255,0.15)); display:flex; align-items:center; justify-content:center; position:relative;">
-                <i class="material-icons" style="font-size:3rem; color:var(--primary-light); opacity:0.6;">collections_bookmark</i>
+            <div style="height:140px; background:var(--surface2); display:flex; align-items:center; justify-content:center; position:relative;">
+                <i class="material-icons" style="font-size:3rem; color:var(--primary); opacity:0.6;">collections_bookmark</i>
                 <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.75); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">
                     {{ playlist.videos|length }} videos
                 </div>
@@ -74,7 +74,7 @@
 
         <div style="padding:12px 16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:8px; background:var(--surface2);">
             <a href="{{ url_for('view_playlist', playlist_id=playlist.id) }}" class="btn btn-outline" style="font-size:0.75rem; padding:6px 12px; min-height:34px; flex:1;">
-                <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">play_arrow</i> Open Track
+                <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">play_arrow</i> Open Track
             </a>
             {% if playlist.creator_id == current_user.id %}
             <form action="{{ url_for('delete_playlist', playlist_id=playlist.id) }}" method="POST"

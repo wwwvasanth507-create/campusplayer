@@ -19,7 +19,7 @@
     }
 
     .cls-card:hover {
-        border-color: rgba(99, 102, 241, 0.35);
+        border-color: rgba(37, 65, 178, 0.35);
         box-shadow: var(--shadow-hover);
     }
 
@@ -139,7 +139,7 @@
 
     .student-check-item:hover {
         background: var(--surface2);
-        border-color: var(--primary-light);
+        border-color: var(--secondary-color);
     }
 
     .student-check-item input[type="checkbox"] {
@@ -197,7 +197,7 @@
 
 <!-- Create Form -->
 <div class="card card-royal mb-16" style="padding:22px;">
-    <div class="card-title font-display" style="color:var(--gold);"><i class="material-icons">add_circle</i> Create New Classroom</div>
+    <div class="card-title font-display" style="color:var(--primary);"><i class="material-icons">add_circle</i> Create New Classroom</div>
     <form method="POST" action="{{ url_for('create_class') }}" style="display:flex; gap:12px; align-items:center; width:100%; flex-wrap:wrap;">
         <input type="text" name="name" placeholder="Classroom title (e.g. Grade 10 - Physics)" required
             style="flex:1; min-width:200px; margin:0; height:46px;">
@@ -224,7 +224,7 @@
             <div>
                 <div class="cls-name">{{ cls.name }}</div>
                 <div class="cls-meta">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b> &bull; {{ cls.students.count() }} students</div>
-                <div class="cls-meta" style="font-family:'JetBrains Mono',monospace; color:var(--gold);">Code: {{ cls.class_code or '—' }}</div>
+                <div class="cls-meta" style="font-family:'JetBrains Mono',monospace; color:var(--primary);">Code: {{ cls.class_code or '—' }}</div>
             </div>
             <form action="{{ url_for('delete_class', class_id=cls.id) }}" method="POST"
                 onsubmit="return confirm('Delete class \'{{ cls.name }}\' and all its data?');" style="margin:0;">
@@ -276,7 +276,7 @@
                     <input type="hidden" name="class_id" value="{{ cls.id }}">
                     <input type="hidden" name="student_id" value="{{ student.id }}">
                     <button type="submit"
-                        style="background:none; border:none; color:#f43f5e; cursor:pointer; font-size:1.1rem; padding:0; line-height:1;">&times;</button>
+                        style="background:none; border:none; color:var(--danger-color); cursor:pointer; font-size:1.1rem; padding:0; line-height:1;">&times;</button>
                 </form>
             </li>
             {% else %}
@@ -287,11 +287,11 @@
         <div class="action-row">
             <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-outline"
                 style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
-                <i class="material-icons" style="font-size:1rem; color:var(--accent);">chat</i> Chatroom
+                <i class="material-icons" style="font-size:1rem; color:var(--secondary-color);">chat</i> Chatroom
             </a>
             <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}" class="btn btn-outline"
                 style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
-                <i class="material-icons" style="font-size:1rem; color:#10b981;">fact_check</i> Attendance
+                <i class="material-icons" style="font-size:1rem; color:var(--success-color);">fact_check</i> Attendance
             </a>
         </div>
     </div>

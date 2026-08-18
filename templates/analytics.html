@@ -33,7 +33,7 @@
                         {{ item.video_title }}
                     </td>
                     <td style="padding:14px 18px;">
-                        <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25);">
+                        <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); border-radius:6px; padding:2px 6px;">
                             <i class="material-icons" style="font-size:0.8rem;">person</i> {{ item.student_name }}
                         </span>
                     </td>
@@ -41,7 +41,7 @@
                         {{ item.start_time.strftime('%b %d, %Y &bull; %I:%M %p') }}
                     </td>
                     <td style="padding:14px 18px; text-align:right;">
-                        <span class="badge" style="background:rgba(0,229,255,0.12); color:var(--accent); border:1px solid rgba(0,229,255,0.25); font-family:'JetBrains Mono',monospace;">
+                        <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                             <i class="material-icons" style="font-size:0.8rem;">timer</i>
                             {% if item.duration and item.duration >= 60 %}
                             {{ (item.duration / 60)|round(1) }} mins

@@ -29,7 +29,7 @@
         <div class="stat-lbl">Active Deadlines</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#10b981;">{{ assignments|map(attribute='submissions')|map('length')|sum }}</div>
+        <div class="stat-val font-display" style="color:var(--success-color);">{{ assignments|map(attribute='submissions')|map('length')|sum }}</div>
         <div class="stat-lbl">Submissions</div>
     </div>
 </div>
@@ -41,19 +41,19 @@
         <div>
             <div class="flex-between mb-8">
                 <h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0;">{{ a.title }}</h3>
-                <span class="badge" style="background:rgba(99,102,241,0.15); color:var(--primary-light); border:1px solid rgba(99,102,241,0.3); font-family:'JetBrains Mono',monospace;">
+                <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                     {{ a.total_points }} pts
                 </span>
             </div>
             <div style="font-size:0.78rem; color:var(--text-dim); margin-bottom:10px; display:flex; flex-direction:column; gap:4px;">
-                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary-light);">class</i> <b>{{ a.classroom.name if a.classroom else 'Global / No Class' }}</b></span>
-                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--gold);">schedule</i> Due: <b style="color:var(--text);">{{ a.due_date.strftime('%b %d, %Y %H:%M') if a.due_date else 'No deadline' }}</b></span>
-                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:#10b981;">assignment_turned_in</i> {{ a.submissions|length }} submission(s) {% if a.allow_late_submission %}&bull; <span style="color:#10b981;">Late OK ({{ a.late_penalty_percent }}% pen)</span>{% endif %}</span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--secondary-color);">class</i> <b>{{ a.classroom.name if a.classroom else 'Global / No Class' }}</b></span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--primary);">schedule</i> Due: <b style="color:var(--text);">{{ a.due_date.strftime('%b %d, %Y %H:%M') if a.due_date else 'No deadline' }}</b></span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle; color:var(--success-color);">assignment_turned_in</i> {{ a.submissions|length }} submission(s) {% if a.allow_late_submission %}&bull; <span style="color:var(--success-color);">Late OK ({{ a.late_penalty_percent }}% pen)</span>{% endif %}</span>
             </div>
         </div>
         <div style="display:flex; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
             <a href="{{ url_for('view_assignment', assignment_id=a.id) }}" class="btn btn-outline" style="flex:1; font-size:0.8rem; padding:8px; min-height:36px;">
-                <i class="material-icons" style="font-size:1rem; color:var(--accent);">visibility</i> Review
+                <i class="material-icons" style="font-size:1rem; color:var(--secondary-color);">visibility</i> Review
             </a>
             <form method="POST" action="{{ url_for('delete_assignment', assignment_id=a.id) }}" style="margin:0;" onsubmit="return confirm('Delete assignment \'{{ a.title }}\'?');">
                 <button type="submit" class="btn btn-danger" style="padding:8px 12px; font-size:0.8rem; min-height:36px;">

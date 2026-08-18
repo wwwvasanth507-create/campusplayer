@@ -47,7 +47,7 @@
                     <td>{{ s.profile.section if s.profile else '—' }}</td>
                     <td style="text-align:right; white-space:nowrap;">
                         <a href="{{ url_for('bio_data_detail', student_id=s.id) }}" class="btn btn-outline" style="padding:4px 10px; font-size:0.72rem; min-height:30px; margin-right:4px;">
-                            <i class="material-icons" style="font-size:0.9rem; color:var(--accent);">visibility</i> View
+                            <i class="material-icons" style="font-size:0.9rem; color:var(--secondary-color);">visibility</i> View
                         </a>
                         <a href="{{ url_for('bio_data_pdf', student_id=s.id) }}" class="btn btn-primary" style="padding:4px 10px; font-size:0.72rem; min-height:30px;">
                             <i class="material-icons" style="font-size:0.9rem;">download</i> PDF

@@ -47,10 +47,10 @@
     }
 
     .cls-item.active {
-        background: rgba(99, 102, 241, 0.15);
-        color: var(--primary-light);
+        background: rgba(37, 65, 178, 0.15);
+        color: var(--secondary-color);
         font-weight: 700;
-        border-left: 3px solid var(--primary);
+        border-left: 3px solid var(--secondary-color);
     }
 
     .cls-item-count {
@@ -73,20 +73,20 @@
     }
 
     .att-student:hover {
-        border-color: rgba(99, 102, 241, 0.3);
+        border-color: rgba(37, 65, 178, 0.3);
     }
 
     .s-avatar {
         width: 40px;
         height: 40px;
-        border-radius: 10px;
-        background: var(--brand-gradient);
+        border-radius: 8px;
+        background: var(--primary);
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 800;
         font-size: 0.95rem;
-        color: #fff;
+        color: #ffffff;
         flex-shrink: 0;
     }
 
@@ -107,39 +107,39 @@
     .today-status {
         font-size: 0.75rem;
         padding: 4px 12px;
-        border-radius: var(--radius-pill);
+        border-radius: 6px;
         font-weight: 700;
         font-family: 'JetBrains Mono', monospace;
     }
 
     .st-present {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(61, 143, 163, 0.15);
+        color: var(--success-color);
+        border: 1px solid rgba(61, 143, 163, 0.3);
     }
 
     .st-late {
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+        background: rgba(138, 106, 58, 0.15);
+        color: var(--primary);
+        border: 1px solid rgba(138, 106, 58, 0.3);
     }
 
     .st-absent {
-        background: rgba(244, 63, 94, 0.15);
-        color: #f43f5e;
-        border: 1px solid rgba(244, 63, 94, 0.3);
+        background: rgba(217, 130, 43, 0.15);
+        color: var(--danger-color);
+        border: 1px solid rgba(217, 130, 43, 0.3);
     }
 
     .att-lock-banner {
-        background: rgba(244, 63, 94, 0.12);
-        border: 1px solid rgba(244, 63, 94, 0.3);
+        background: rgba(217, 130, 43, 0.12);
+        border: 1px solid rgba(217, 130, 43, 0.3);
         padding: 14px 20px;
         border-radius: var(--radius-sm);
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 12px;
-        color: #f43f5e;
+        color: var(--danger-color);
         font-weight: 600;
         font-size: 0.88rem;
     }
@@ -184,7 +184,7 @@
             {% for cls in classes %}
             <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}"
                 class="cls-item {{ 'active' if selected_class and cls.id == selected_class.id }}">
-                <div style="font-weight:600;"><i class="material-icons" style="font-size:0.95rem; vertical-align:middle; color:var(--accent);">school</i> {{ cls.name }}</div>
+                <div style="font-weight:600;"><i class="material-icons" style="font-size:0.95rem; vertical-align:middle; color:var(--secondary-color);">school</i> {{ cls.name }}</div>
                 <div class="cls-item-count">{{ cls.students.count() }} students enrolled</div>
             </a>
             {% else %}
@@ -202,7 +202,7 @@
                 <a href="{{ url_for('download_class_sms_report', class_id=selected_class.id) }}"
                     class="btn btn-outline" style="padding:6px 12px; font-size:0.75rem; min-height:34px;"
                     title="Download all SMS texts for this class as a .txt file">
-                    <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">file_download</i>
+                    <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">file_download</i>
                     SMS Report
                 </a>
                 <button type="button" onclick="sendClassSms({{ selected_class.id }})" class="btn btn-primary"
@@ -214,9 +214,9 @@
             </div>
             <div>
                 {% if attendance_open %}
-                <span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:5px 12px; border-radius:var(--radius-pill); font-size:0.75rem; font-weight:700;">🟢 Attendance Open</span>
+                <span style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700;">🟢 Attendance Open</span>
                 {% else %}
-                <span style="background:rgba(244,63,94,0.15); color:#f43f5e; border:1px solid rgba(244,63,94,0.3); padding:5px 12px; border-radius:var(--radius-pill); font-size:0.75rem; font-weight:700;">🔴 Locked</span>
+                <span style="background:rgba(217,130,43,0.15); color:var(--danger-color); border:1px solid rgba(217,130,43,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700;">🔴 Locked</span>
                 {% endif %}
             </div>
         </div>
@@ -274,7 +274,7 @@
                         </div>
                         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                             <a href="{{ url_for('attendance_session_report', session_id=s.id) }}"
-                                class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem; min-height:32px; color:var(--gold);">
+                                class="btn btn-outline" style="padding:5px 10px; font-size:0.72rem; min-height:32px; color:var(--primary);">
                                 <i class="material-icons" style="font-size:0.9rem;">bar_chart</i> Report
                             </a>
                             {% if s.can_edit_end_date(current_user) %}
@@ -292,7 +292,7 @@
                     {% if s.sub_sessions %}
                     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
                         {% for sub in s.sub_sessions %}
-                        <span style="font-size:0.68rem; background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25); padding:2px 8px; border-radius:var(--radius-pill);">{{ sub.name }}</span>
+                        <span style="font-size:0.68rem; background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); padding:2px 8px; border-radius:6px;">{{ sub.name }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -366,8 +366,8 @@
 <!-- SMS Progress Modal -->
 <div id="smsProgressModal"
     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(5px);">
-    <div style="background:var(--card-bg); width:100%; max-width:450px; padding:30px; border-radius:24px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-        <h3 style="margin:0 0 10px 0; display:flex; align-items:center; gap:10px; color:#00e5ff;">
+    <div style="background:var(--surface); width:100%; max-width:450px; padding:24px; border-radius:12px; border:1px solid var(--border); box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="margin:0 0 10px 0; display:flex; align-items:center; gap:10px; color:var(--secondary-color);">
             <i class="material-icons">message</i>
             Sending Class SMS Reports
         </h3>
@@ -376,12 +376,12 @@
         </p>
 
         <!-- Progress Bar -->
-        <div style="width:100%; height:8px; background:rgba(255,255,255,0.05); border-radius:10px; overflow:hidden; margin-bottom:20px;">
-            <div id="sms-modal-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg,#00e5ff,#7c4dff); transition:width 0.4s;"></div>
+        <div style="width:100%; height:6px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; margin-bottom:20px;">
+            <div id="sms-modal-progress-bar" style="width:0%; height:100%; background:var(--secondary-color); transition:width 0.4s;"></div>
         </div>
 
         <div style="display:flex; justify-content:flex-end;">
-            <button id="sms-modal-close-btn" onclick="closeSmsProgressModal()" class="btn btn-secondary" style="display:none; border-radius:12px;">Close</button>
+            <button id="sms-modal-close-btn" onclick="closeSmsProgressModal()" class="btn btn-secondary" style="display:none;">Close</button>
         </div>
     </div>
 </div>
@@ -423,8 +423,8 @@
         })
         .catch(err => {
             statusText.innerText = 'Error: ' + err.message;
-            statusText.style.color = '#ff5252';
-            progressBar.style.background = '#ff5252';
+            statusText.style.color = '#d9822b';
+            progressBar.style.background = '#d9822b';
             progressBar.style.width = '100%';
             closeBtn.style.display = 'block';
         });
@@ -465,13 +465,13 @@
                     } else if (status === 'done') {
                         label = `✅ SMS reports sent successfully! (${current}/${total})`;
                         progressBar.style.width = '100%';
-                        progressBar.style.background = 'linear-gradient(90deg,#00e676,#00b0ff)';
+                        progressBar.style.background = '#3d8fa3';
                         clearInterval(smsPollInterval);
                         closeBtn.style.display = 'block';
                     } else if (status === 'error') {
                         label = `❌ Error: ${msg}`;
                         progressBar.style.width = '100%';
-                        progressBar.style.background = '#ff5252';
+                        progressBar.style.background = '#d9822b';
                         clearInterval(smsPollInterval);
                         closeBtn.style.display = 'block';
                     } else {

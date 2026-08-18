@@ -12,56 +12,56 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 :root {
-    /* ══ Core Palette ══ */
-    --vp-primary: #ff6b6b;
-    --vp-primary-dark: #ee5a24;
-    --vp-secondary: #a29bfe;
-    --vp-secondary-light: #b8b0ff;
-    --vp-accent: #fd79a8;
-    --vp-gold: #fdcb6e;
-    --vp-gold-light: #ffeaa7;
-    --vp-cyan: #00cec9;
-    --vp-cyan-light: #55efc4;
-    --vp-green: #55efc4;
-    --vp-rose: #ff6b81;
-    --vp-violet: #9b59b6;
+    /* ══ Core Locked Palette ══ */
+    --vp-primary: #8a6a3a;
+    --vp-primary-dark: #74572e;
+    --vp-secondary: #2541b2;
+    --vp-secondary-light: #3a56cf;
+    --vp-accent: #2541b2;
+    --vp-gold: #8a6a3a;
+    --vp-gold-light: #9f7c46;
+    --vp-cyan: #3d8fa3;
+    --vp-cyan-light: #3d8fa3;
+    --vp-green: #3d8fa3;
+    --vp-rose: #d9822b;
+    --vp-violet: #2541b2;
 
-    /* ══ Gradients ══ */
-    --vp-gradient-1: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 50%, #ff8a5c 100%);
-    --vp-gradient-2: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 50%, #8b7cf7 100%);
-    --vp-gradient-3: linear-gradient(135deg, #fd79a8 0%, #e84393 50%, #ff8aae 100%);
-    --vp-gradient-4: linear-gradient(135deg, #00cec9 0%, #0984e3 50%, #00e5ff 100%);
-    --vp-gradient-5: linear-gradient(135deg, #fdcb6e 0%, #e17055 50%, #ffb347 100%);
-    --vp-gradient-6: linear-gradient(135deg, #55efc4 0%, #00b894 50%, #81ecec 100%);
-    --vp-gradient-title: linear-gradient(135deg, #f0eef7 0%, #c0bed4 50%, #a29bfe 100%);
-    --vp-gradient-neon: linear-gradient(45deg, #ff6b6b, #a29bfe, #00cec9, #fdcb6e);
-    --vp-gradient-bg: linear-gradient(135deg, #0a0a0f 0%, #13131e 40%, #1a1a2e 100%);
+    /* ══ Gradients & Fills (Solid Flat) ══ */
+    --vp-gradient-1: #8a6a3a;
+    --vp-gradient-2: #2541b2;
+    --vp-gradient-3: #2541b2;
+    --vp-gradient-4: #3d8fa3;
+    --vp-gradient-5: #8a6a3a;
+    --vp-gradient-6: #3d8fa3;
+    --vp-gradient-title: #f0f2f5;
+    --vp-gradient-neon: #8a6a3a;
+    --vp-gradient-bg: #0d0d10;
 
     /* ══ Surfaces ══ */
-    --vp-surface: #0a0a0f;
-    --vp-surface2: #12121c;
-    --vp-surface3: #1a1a2e;
-    --vp-card: #13131e;
-    --vp-card-hover: #1c1c32;
-    --vp-card-glow: rgba(162,155,254,0.05);
+    --vp-surface: #0d0d10;
+    --vp-surface2: #17171c;
+    --vp-surface3: #202026;
+    --vp-card: #17171c;
+    --vp-card-hover: #202026;
+    --vp-card-glow: transparent;
 
     /* ══ Text ══ */
-    --vp-text: #f0eef7;
-    --vp-text-secondary: #c0bed4;
-    --vp-text-dim: #8884a8;
-    --vp-text-glow: 0 0 20px rgba(162,155,254,0.3);
+    --vp-text: #f0f2f5;
+    --vp-text-secondary: #8a94a6;
+    --vp-text-dim: #6b7484;
+    --vp-text-glow: none;
 
     /* ══ Borders & Glows ══ */
-    --vp-border: rgba(162,155,254,0.08);
-    --vp-border-hover: rgba(162,155,254,0.2);
-    --vp-border-glow: rgba(162,155,254,0.15);
-    --vp-glow-primary: 0 0 30px rgba(255,107,107,0.2), 0 0 60px rgba(255,107,107,0.05);
-    --vp-glow-secondary: 0 0 30px rgba(162,155,254,0.2), 0 0 60px rgba(162,155,254,0.05);
-    --vp-glow-accent: 0 0 30px rgba(253,121,168,0.2), 0 0 60px rgba(253,121,168,0.05);
-    --vp-glow-gold: 0 0 30px rgba(253,203,110,0.2), 0 0 60px rgba(253,203,110,0.05);
-    --vp-glow-cyan: 0 0 30px rgba(0,206,201,0.2), 0 0 60px rgba(0,206,201,0.05);
-    --vp-shadow: 0 8px 40px rgba(0,0,0,0.4);
-    --vp-shadow-hover: 0 12px 60px rgba(0,0,0,0.6);
+    --vp-border: rgba(255,255,255,0.08);
+    --vp-border-hover: rgba(255,255,255,0.16);
+    --vp-border-glow: transparent;
+    --vp-glow-primary: none;
+    --vp-glow-secondary: none;
+    --vp-glow-accent: none;
+    --vp-glow-gold: none;
+    --vp-glow-cyan: none;
+    --vp-shadow: none;
+    --vp-shadow-hover: none;
 
     /* ══ Typography ══ */
     --vp-font: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
@@ -71,23 +71,23 @@
 }
 
 [data-theme="light"] {
-    --vp-surface: #ffffff;
-    --vp-surface2: #f8fafc;
-    --vp-surface3: #f1f5f9;
+    --vp-surface: #f5f6f8;
+    --vp-surface2: #ffffff;
+    --vp-surface3: #ebeef2;
     --vp-card: #ffffff;
-    --vp-card-hover: #f8fafc;
-    --vp-card-glow: rgba(99,102,241,0.06);
-    --vp-text: #0f172a;
-    --vp-text-secondary: #334155;
-    --vp-text-dim: #64748b;
+    --vp-card-hover: #ebeef2;
+    --vp-card-glow: transparent;
+    --vp-text: #11141a;
+    --vp-text-secondary: #4b5565;
+    --vp-text-dim: #6b7484;
     --vp-text-glow: none;
-    --vp-border: rgba(0, 0, 0, 0.08);
-    --vp-border-hover: rgba(99, 102, 241, 0.3);
-    --vp-border-glow: rgba(99, 102, 241, 0.15);
-    --vp-gradient-title: linear-gradient(135deg, #0f172a 0%, #334155 50%, #6366f1 100%);
-    --vp-gradient-bg: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
-    --vp-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-    --vp-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.1);
+    --vp-border: #e2e5ea;
+    --vp-border-hover: rgba(37, 65, 178, 0.3);
+    --vp-border-glow: transparent;
+    --vp-gradient-title: #11141a;
+    --vp-gradient-bg: #f5f6f8;
+    --vp-shadow: none;
+    --vp-shadow-hover: none;
 }
 
 /* ── Animated Background ── */
@@ -1334,14 +1334,20 @@
             <!-- Title -->
             <h1 class="vp-title">{{ video.title }}</h1>
 
-            <!-- Uploader -->
-            <div class="vp-uploader-row">
+            <!-- Uploader & Actions -->
+            <div class="vp-uploader-row" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
                 <div class="vp-uploader">
                     <div class="vp-uploader-avatar">{{ video.uploader.username[0].upper() }}</div>
                     <div class="vp-uploader-info">
                         <div class="vp-uploader-name">{{ video.uploader.username }}</div>
                         <div class="vp-uploader-subs">{% if video.uploader.subscriber_count %}{{ video.uploader.subscriber_count }} subscribers{% endif %}</div>
                     </div>
+                </div>
+                <div class="vp-action-buttons" style="display:flex; align-items:center; gap:10px;">
+                    <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-primary" id="vp-ai-summarize-btn" style="background:var(--primary); color:#ffffff !important; padding:9px 18px; border-radius:8px; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:8px; text-decoration:none; border:none;">
+                        <i class="material-icons" style="font-size:1.1rem;">smart_toy</i>
+                        <span>AI Summarize</span>
+                    </a>
                 </div>
             </div>
 
@@ -1368,36 +1374,42 @@
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <!-- AI VIDEO SUMMARIZER SECTION (At the bottom of video player)     -->
             <!-- ═══════════════════════════════════════════════════════════════ -->
-            <div class="vp-ai-summarizer-card" style="margin-top: 30px; margin-bottom: 30px; background: rgba(19, 19, 30, 0.8); border: 1px solid rgba(162, 155, 254, 0.2); border-radius: 16px; padding: 24px; backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div class="vp-ai-summarizer-card" style="margin-top: 24px; margin-bottom: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
     
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid rgba(162, 155, 254, 0.15); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); display: flex; align-items: center; justify-content: center; color: #fff;">
-                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 3.5 6.5 9.5 0 12l6.5 2.5L9 20.5l2.5-6L18 12l-6.5-2.5zm7.5 5.5l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(138, 106, 58, 0.15); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                            <i class="material-icons" style="font-size:1.25rem;">smart_toy</i>
                         </div>
                         <div>
-                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #f0eef7;">✨ AI Video Summarizer</h3>
-                            <span style="font-size: 0.8rem; color: #a29bfe;">Instant AI breakdown & key learning takeaways</span>
+                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">✨ AI Video Summarizer</h3>
+                            <span style="font-size: 0.78rem; color: var(--text-dim);">Instant AI breakdown &amp; key learning takeaways</span>
                         </div>
                     </div>
-                    <button id="generate-ai-summary-btn" onclick="fetchAISummary(true)" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.2s;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                        <span>Regenerate Summary</span>
-                    </button>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-outline" style="padding: 7px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--secondary-color);">
+                            <i class="material-icons" style="font-size: 0.95rem;">chat</i>
+                            <span>Open in AI Chat</span>
+                        </a>
+                        <button id="generate-ai-summary-btn" onclick="fetchAISummary(true)" class="btn btn-primary" style="background: var(--primary); color: #ffffff; border: none; padding: 7px 14px; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <i class="material-icons" style="font-size: 0.95rem;">refresh</i>
+                            <span>Regenerate</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- AI Output Container -->
                 <div id="ai-summary-content">
                     {% if video.ai_summary %}
                         <div style="margin-bottom: 16px;">
-                            <h4 style="color: #a29bfe; font-size: 0.95rem; margin-bottom: 8px;">Executive Overview</h4>
-                            <p style="color: #c0bed4; line-height: 1.6; font-size: 0.95rem; margin: 0;">{{ video.ai_summary }}</p>
+                            <h4 style="color: var(--primary); font-size: 0.92rem; margin-bottom: 6px; font-weight:700;">Executive Overview</h4>
+                            <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem; margin: 0;">{{ video.ai_summary }}</p>
                         </div>
                         {% set takeaways = video.get_ai_takeaways() %}
                         {% if takeaways %}
                         <div>
-                            <h4 style="color: #55efc4; font-size: 0.95rem; margin-bottom: 8px;">Key Takeaways & Concepts</h4>
-                            <ul style="margin: 0; padding-left: 20px; color: #c0bed4; font-size: 0.9rem; line-height: 1.7;">
+                            <h4 style="color: var(--success-color); font-size: 0.92rem; margin-bottom: 6px; font-weight:700;">Key Takeaways &amp; Concepts</h4>
+                            <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.65;">
                                 {% for item in takeaways %}
                                 <li>{{ item }}</li>
                                 {% endfor %}
@@ -1406,8 +1418,8 @@
                         {% endif %}
                     {% else %}
                         <div style="text-align: center; padding: 20px 0;">
-                            <p style="color: #8884a8; margin-bottom: 12px;">Click below to generate an AI summary for this video lesson.</p>
-                            <button onclick="fetchAISummary(false)" style="background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            <p style="color: var(--text-dim); font-size:0.85rem; margin-bottom: 12px;">Click below to generate an AI summary for this video lesson.</p>
+                            <button onclick="fetchAISummary(false)" class="btn btn-primary" style="background: var(--primary); color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size:0.85rem; cursor: pointer;">
                                 🚀 Generate AI Summary Now
                             </button>
                         </div>
@@ -1606,15 +1618,18 @@ function fetchAISummary(force = false) {
     const container = document.getElementById('ai-summary-content');
 
     container.innerHTML = `
-        <div style="text-align:center; padding: 30px 0; color: #a29bfe;">
-            <div class="spinner-border" role="status" style="width: 2rem; height: 2rem; border-width: 3px;"></div>
-            <p style="margin-top: 10px; font-size: 0.9rem;">Analyzing video content & generating AI summary...</p>
+        <div style="text-align:center; padding: 24px 0; color: var(--primary);">
+            <div class="spinner-border" role="status" style="width: 2rem; height: 2rem; border-width: 3px; display:inline-block; border-radius:50%; border:3px solid var(--border); border-top-color:var(--primary); animation:spin 0.8s linear infinite;"></div>
+            <p style="margin-top: 10px; font-size: 0.85rem; color:var(--text-dim);">Analyzing video content &amp; generating AI summary...</p>
         </div>
     `;
 
     fetch(`/api/video/${currentVideoId}/summarize`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '{{ csrf_token|e }}'
+        },
         body: JSON.stringify({ force: force })
     })
     .then(r => r.json())
@@ -1624,8 +1639,8 @@ function fetchAISummary(force = false) {
             if (data.takeaways && data.takeaways.length > 0) {
                 takeawaysHtml = `
                     <div>
-                        <h4 style="color: #55efc4; font-size: 0.95rem; margin-bottom: 8px;">Key Takeaways & Concepts</h4>
-                        <ul style="margin: 0; padding-left: 20px; color: #c0bed4; font-size: 0.9rem; line-height: 1.7;">
+                        <h4 style="color: var(--success-color); font-size: 0.92rem; margin-bottom: 6px; font-weight:700;">Key Takeaways &amp; Concepts</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.65;">
                             ${data.takeaways.map(item => `<li>${item}</li>`).join('')}
                         </ul>
                     </div>
@@ -1634,17 +1649,17 @@ function fetchAISummary(force = false) {
 
             container.innerHTML = `
                 <div style="margin-bottom: 16px;">
-                    <h4 style="color: #a29bfe; font-size: 0.95rem; margin-bottom: 8px;">Executive Overview</h4>
-                    <p style="color: #c0bed4; line-height: 1.6; font-size: 0.95rem; margin: 0;">${data.summary}</p>
+                    <h4 style="color: var(--primary); font-size: 0.92rem; margin-bottom: 6px; font-weight:700;">Executive Overview</h4>
+                    <p style="color: var(--text-secondary); line-height: 1.6; font-size: 0.9rem; margin: 0;">${data.summary}</p>
                 </div>
                 ${takeawaysHtml}
             `;
         } else {
-            container.innerHTML = `<p style="color: #ff6b6b;">Failed to generate AI summary. Please try again later.</p>`;
+            container.innerHTML = `<p style="color: var(--danger-color); font-size:0.85rem;">Failed to generate AI summary. Please try again later.</p>`;
         }
     })
     .catch(err => {
-        container.innerHTML = `<p style="color: #ff6b6b;">An error occurred while connecting to the AI summarizer.</p>`;
+        container.innerHTML = `<p style="color: var(--danger-color); font-size:0.85rem;">An error occurred while connecting to the AI summarizer.</p>`;
     });
 }
 

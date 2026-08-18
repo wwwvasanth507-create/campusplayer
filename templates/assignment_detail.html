@@ -22,13 +22,13 @@
     <div class="card mb-16" style="padding:22px;">
         <div class="flex-between mb-12" style="flex-wrap:wrap; gap:8px;">
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <span class="badge" style="background:rgba(99,102,241,0.12); color:var(--primary-light); border:1px solid rgba(99,102,241,0.25);">
+                <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); border-radius:6px; padding:2px 6px;">
                     <i class="material-icons" style="font-size:0.8rem;">school</i> {{ assignment.classroom.name if assignment.classroom else 'All Classes' }}
                 </span>
-                <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">
+                <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); border-radius:6px; padding:2px 6px;">
                     <i class="material-icons" style="font-size:0.8rem;">stars</i> {{ assignment.total_points }} Points Max
                 </span>
-                <span class="badge" style="background:rgba(0,229,255,0.12); color:var(--accent); border:1px solid rgba(0,229,255,0.25);">
+                <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); border-radius:6px; padding:2px 6px;">
                     <i class="material-icons" style="font-size:0.8rem;">category</i> {{ assignment.assignment_type|title }}
                 </span>
             </div>
@@ -44,7 +44,7 @@
         {% if assignment.question_file_path %}
         <div style="margin-bottom:14px;">
             <a href="{{ url_for('static', filename=assignment.question_file_path) }}" target="_blank" class="btn btn-outline" style="font-size:0.78rem; padding:6px 14px;">
-                <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">picture_as_pdf</i> Question Paper: {{ assignment.question_file_name or 'View Attachment' }}
+                <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">picture_as_pdf</i> Question Paper: {{ assignment.question_file_name or 'View Attachment' }}
             </a>
         </div>
         {% endif %}
@@ -59,12 +59,12 @@
     <!-- Pending Students -->
     {% if not_submitted %}
     <div class="card mb-16" style="padding:18px;">
-        <div class="card-title font-display" style="font-size:0.95rem; margin-bottom:10px; color:var(--gold);">
+        <div class="card-title font-display" style="font-size:0.95rem; margin-bottom:10px; color:var(--primary);">
             <i class="material-icons" style="font-size:1rem;">hourglass_empty</i> Pending Submissions ({{ not_submitted|length }})
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:8px;">
             {% for s in not_submitted %}
-            <span class="badge" style="background:var(--surface2); color:var(--text-dim); border:1px solid var(--border); font-size:0.78rem; padding:6px 12px;">
+            <span class="badge" style="background:var(--surface2); color:var(--text-dim); border:1px solid var(--border); font-size:0.78rem; padding:6px 12px; border-radius:6px;">
                 {{ s.username }}
             </span>
             {% endfor %}
@@ -75,7 +75,7 @@
     <!-- Submissions & Grading -->
     {% if submissions %}
     <div class="card" style="padding:22px;">
-        <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px; color:#10b981;">
+        <div class="card-title font-display" style="font-size:1.05rem; margin-bottom:14px; color:var(--success-color);">
             <i class="material-icons" style="font-size:1.1rem;">task_alt</i> Received Submissions ({{ submissions|length }})
         </div>
 
@@ -87,16 +87,16 @@
                         <strong style="color:var(--text); font-size:0.95rem;">{{ sub.student.username }}</strong>
                         <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px; font-family:'JetBrains Mono',monospace;">
                             {{ sub.submitted_at.strftime('%b %d, %Y &bull; %I:%M %p') }}
-                            {% if sub.is_late %}<span style="color:#f43f5e; font-weight:700;">(Late)</span>{% endif %}
+                            {% if sub.is_late %}<span style="color:var(--danger-color); font-weight:700;">(Late)</span>{% endif %}
                         </div>
                     </div>
                     <div>
                         {% if sub.status == 'graded' %}
-                        <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25); font-size:0.85rem; font-family:'JetBrains Mono',monospace;">
+                        <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); font-size:0.85rem; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                             {{ sub.grade }} / {{ assignment.total_points }}
                         </span>
                         {% else %}
-                        <span class="badge" style="background:rgba(245,158,11,0.12); color:var(--gold); border:1px solid rgba(245,158,11,0.25);">
+                        <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); border-radius:6px; padding:2px 6px;">
                             Needs Evaluation
                         </span>
                         {% endif %}
@@ -107,15 +107,15 @@
                 <div class="card mb-10" style="padding:12px; margin-bottom:10px; background:var(--surface); border-color:var(--border);">
                     {% if sub.content %}
                     <div style="margin-bottom:{{ '10px' if sub.file_path else '0' }};">
-                        <span style="font-size:0.72rem; color:var(--primary-light); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Typed Response:</span>
+                        <span style="font-size:0.72rem; color:var(--secondary-color); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Typed Response:</span>
                         <div style="white-space:pre-wrap; font-size:0.85rem; color:var(--text); line-height:1.45;">{{ sub.content }}</div>
                     </div>
                     {% endif %}
                     {% if sub.file_path %}
                     <div>
-                        <span style="font-size:0.72rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Uploaded Attachment:</span>
+                        <span style="font-size:0.72rem; color:var(--secondary-color); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:4px;">Uploaded Attachment:</span>
                         <a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" class="btn btn-outline" style="font-size:0.75rem; padding:4px 10px; min-height:28px;">
-                            <i class="material-icons" style="font-size:0.85rem;">download</i> {{ sub.file_name or 'Download Document' }}
+                            <i class="material-icons" style="font-size:0.85rem; color:var(--secondary-color);">download</i> {{ sub.file_name or 'Download Document' }}
                         </a>
                     </div>
                     {% endif %}

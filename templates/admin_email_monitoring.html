@@ -24,7 +24,7 @@
             </button>
         </form>
         <a href="{{ url_for('admin_export_report_pdfs', start_date=start_date, end_date=end_date) }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.78rem; min-height:36px;">
-            <i class="material-icons" style="font-size:0.95rem; color:var(--accent);">download</i> PDF Backups
+            <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">download</i> PDF Backups
         </a>
     </div>
 </div>
@@ -60,11 +60,11 @@
 <!-- Metrics Row -->
 <div class="stat-row" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px;">
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#10b981;">{{ total_sent }}</div>
+        <div class="stat-val font-display" style="color:var(--success-color);">{{ total_sent }}</div>
         <div class="stat-lbl">Dispatched Successfully</div>
     </div>
     <div class="stat-card">
-        <div class="stat-val font-display" style="color:#f43f5e;">{{ total_failed }}</div>
+        <div class="stat-val font-display" style="color:var(--danger-color);">{{ total_failed }}</div>
         <div class="stat-lbl">Delivery Failures</div>
     </div>
     <div class="stat-card stat-purple">
@@ -98,8 +98,8 @@
                         <td style="font-weight:600; color:var(--text);">{{ c.name }}</td>
                         <td>{{ c.teacher_name }}</td>
                         <td>{{ c.students_count }} student(s)</td>
-                        <td style="color:#10b981; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.sent_count }}</td>
-                        <td style="color:#f43f5e; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.failed_count }}</td>
+                        <td style="color:var(--success-color); font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.sent_count }}</td>
+                        <td style="color:var(--danger-color); font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.failed_count }}</td>
                     </tr>
                     {% endfor %}
                 {% else %}
@@ -137,16 +137,16 @@
                         <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">{{ t.email_sender_address or '—' }}</td>
                         <td>
                             {% if t.email_enabled %}
-                                <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">Enabled</span>
+                                <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px;">Enabled</span>
                             {% else %}
-                                <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Disabled</span>
+                                <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); border-radius:6px; padding:2px 6px;">Disabled</span>
                             {% endif %}
                         </td>
                         <td style="font-family:'JetBrains Mono',monospace; font-size:0.75rem;">
                             {% if t.last_report_sent %}{{ t.last_report_sent.strftime('%Y-%m-%d %H:%M') }}{% else %}Never{% endif %}
                         </td>
-                        <td style="color:#10b981; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.sent_count }}</td>
-                        <td style="color:#f43f5e; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.failed_count }}</td>
+                        <td style="color:var(--success-color); font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.sent_count }}</td>
+                        <td style="color:var(--danger-color); font-weight:700; font-family:'JetBrains Mono',monospace;">{{ t.failed_count }}</td>
                     </tr>
                     {% endfor %}
                 {% else %}
@@ -190,16 +190,16 @@
                         <td>{{ log.teacher.username }}</td>
                         <td>
                             {% if log.status == 'sent' %}
-                                <span class="badge" style="background:rgba(16,185,129,0.12); color:#10b981; border:1px solid rgba(16,185,129,0.25);">Sent</span>
+                                <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px;">Sent</span>
                             {% else %}
-                                <span class="badge" style="background:rgba(244,63,94,0.12); color:#f43f5e; border:1px solid rgba(244,63,94,0.25);">Failed</span>
+                                <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); border-radius:6px; padding:2px 6px;">Failed</span>
                             {% endif %}
                         </td>
                         <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ log.error_message or '' }}">
                             {% if log.status == 'sent' %}
-                                <span style="color:#10b981; font-size:0.75rem;">✓ Delivered</span>
+                                <span style="color:var(--success-color); font-size:0.75rem;">✓ Delivered</span>
                             {% else %}
-                                <span style="color:#f43f5e; font-size:0.75rem;">{{ log.error_message or 'Delivery Timeout' }}</span>
+                                <span style="color:var(--danger-color); font-size:0.75rem;">{{ log.error_message or 'Delivery Timeout' }}</span>
                             {% endif %}
                         </td>
                         <td style="text-align:right;">
@@ -234,12 +234,12 @@
             const spans = document.querySelectorAll('.student-email[data-student-id="' + data.student_id + '"]');
             spans.forEach(span => {
                 span.textContent = data.new_email;
-                span.style.backgroundColor = 'rgba(245, 158, 11, 0.3)';
-                span.style.color = '#f59e0b';
+                span.style.backgroundColor = 'rgba(138, 106, 58, 0.2)';
+                span.style.color = '#8a6a3a';
                 span.style.borderRadius = '4px';
                 span.style.padding = '2px 4px';
                 setTimeout(() => {
-                    span.style.transition = 'all 2s ease-out';
+                    span.style.transition = 'all 1.5s ease-out';
                     span.style.backgroundColor = 'transparent';
                     span.style.color = 'var(--text-dim)';
                     span.style.padding = '0';

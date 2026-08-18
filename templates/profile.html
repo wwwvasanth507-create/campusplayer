@@ -13,19 +13,19 @@
     <!-- Stats summary card -->
     <div class="card mb-16" style="padding:20px;">
         <div class="card-title font-display" style="font-size:1rem; margin-bottom:12px;">
-            <i class="material-icons" style="color:var(--gold);">stars</i> Scholar Milestones &amp; Progression
+            <i class="material-icons" style="color:var(--primary);">stars</i> Scholar Milestones &amp; Progression
         </div>
         <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); margin-bottom:12px;">
             <div class="stat-card">
-                <div class="stat-val font-display" style="color:var(--gold);">{{ current_user.xp }}</div>
+                <div class="stat-val font-display" style="color:var(--primary);">{{ current_user.xp }}</div>
                 <div class="stat-lbl">Earned XP</div>
             </div>
             <div class="stat-card">
-                <div class="stat-val font-display" style="color:var(--primary-light);">Level {{ (current_user.xp // 500) + 1 }}</div>
+                <div class="stat-val font-display" style="color:var(--secondary-color);">Level {{ (current_user.xp // 500) + 1 }}</div>
                 <div class="stat-lbl">Scholar Rank</div>
             </div>
             <div class="stat-card">
-                <div class="stat-val font-display" style="color:var(--accent);">{{ current_user.login_count or 0 }}</div>
+                <div class="stat-val font-display" style="color:var(--secondary-color);">{{ current_user.login_count or 0 }}</div>
                 <div class="stat-lbl">Portal Logins</div>
             </div>
         </div>
@@ -43,7 +43,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:var(--primary-light);">person</i> Account Identity
+                <i class="material-icons" style="color:var(--secondary-color);">person</i> Account Identity
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
@@ -79,7 +79,7 @@
             <div class="divider"></div>
 
             <div class="card-title font-display" style="font-size:1rem; margin-bottom:14px;">
-                <i class="material-icons" style="color:#f43f5e;">lock</i> Security &amp; Password
+                <i class="material-icons" style="color:var(--danger-color);">lock</i> Security &amp; Password
             </div>
 
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
