@@ -334,7 +334,7 @@
                 if (typingEl) typingEl.remove();
 
                 if (data.success && data.summary) {
-                    let summaryMarkdown = `### 🎬 Video Summary & Key Takeaways\n\n${data.summary}\n\n`;
+                    let summaryMarkdown = `### Video Summary & Key Takeaways\n\n${data.summary}\n\n`;
                     if (data.takeaways && data.takeaways.length > 0) {
                         summaryMarkdown += `**Key Learning Concepts:**\n`;
                         data.takeaways.forEach(function(item) {

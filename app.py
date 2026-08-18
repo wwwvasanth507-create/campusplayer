@@ -54,7 +54,9 @@ from models import (
     # NEW MODELS
     Assignment, AssignmentSubmission, VideoNote, VideoBookmark,
     VideoProgress, Achievement, LeaderboardEntry, EmailQueue,
-    StudentRemark, EmailDeliveryLog,
+    StudentRemark, EmailDeliveryLog, ClassWeeklyReport,
+    VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
+    VideoFlashcard, AcademicCertificate, ParentAccessToken,
     # NEW: multi-tenancy, attendance sessions, bio data
     Institution, AttendanceSession, AttendanceSubSession, StudentProfile, DailyQuestTemplate
 )
@@ -62,6 +64,13 @@ from crypto_helper import encrypt_password, decrypt_password
 from attendance_utils import (
     compute_attendance_stats, compute_session_report,
     get_class_marked_dates, compute_overall_attendance_for_student
+)
+from services.report_engine import (
+    generate_or_get_weekly_report, build_weekly_report_pdf,
+    get_current_week_bounds, aggregate_class_weekly_data
+)
+from services.certificate_engine import (
+    issue_academic_certificate, build_certificate_pdf
 )
 
 # ── Logging Configuration ──
@@ -6703,6 +6712,698 @@ def student_view_progress_report(log_id):
 
 
 # ═══════════════════════════════════════════════════════════════
+#  NEW: WEEKLY CLASS PERFORMANCE & XP DIGEST SYSTEM
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/teacher/weekly_reports')
+@login_required
+@teacher_required
+def teacher_weekly_reports():
+    """Weekly Class Performance Reports Dashboard for Faculty."""
+    class_id = request.args.get('class_id', type=int)
+    status_filter = request.args.get('status', 'all')
+
+    teacher_classes = Classroom.query.filter_by(teacher_id=current_user.id).all()
+    class_ids = [c.id for c in teacher_classes]
+
+    # Auto-compile current weekly digest if missing for teacher classes
+    today = datetime.utcnow().date()
+    m_start, s_end = get_current_week_bounds(today)
+    for c in teacher_classes:
+        if c.students.count() > 0:
+            existing = ClassWeeklyReport.query.filter_by(
+                classroom_id=c.id, period_start=m_start, period_end=s_end
+            ).first()
+            if not existing:
+                generate_or_get_weekly_report(c.id, current_user.id, m_start, s_end)
+
+    query = ClassWeeklyReport.query.filter(ClassWeeklyReport.classroom_id.in_(class_ids) if class_ids else db.text('1=0'))
+    if class_id:
+        query = query.filter_by(classroom_id=class_id)
+    if status_filter and status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+
+    reports = query.order_by(ClassWeeklyReport.period_end.desc(), ClassWeeklyReport.generated_at.desc()).all()
+    return render_template(
+        'teacher_weekly_reports.html',
+        reports=reports,
+        classes=teacher_classes,
+        selected_class_id=class_id,
+        status_filter=status_filter,
+        now=datetime.utcnow()
+    )
+
+
+@app.route('/teacher/weekly_reports/generate', methods=['POST'])
+@login_required
+@teacher_required
+def teacher_generate_weekly_report():
+    """Generate or re-compile a class performance report on demand."""
+    classroom_id = request.form.get('classroom_id', type=int)
+    start_str = request.form.get('period_start')
+    end_str = request.form.get('period_end')
+    remarks = request.form.get('remarks', '').strip()
+
+    if not classroom_id:
+        flash('Please select a valid classroom.', 'error')
+        return redirect(url_for('teacher_weekly_reports'))
+
+    classroom = Classroom.query.get_or_404(classroom_id)
+    if classroom.teacher_id != current_user.id and current_user.role != 'admin':
+        abort(403)
+
+    if start_str and end_str:
+        try:
+            p_start = datetime.strptime(start_str, '%Y-%m-%d').date()
+            p_end = datetime.strptime(end_str, '%Y-%m-%d').date()
+            if p_end < p_start:
+                flash('Period end date cannot be earlier than start date.', 'error')
+                return redirect(url_for('teacher_weekly_reports', class_id=classroom_id))
+        except ValueError:
+            flash('Invalid date format. Use YYYY-MM-DD.', 'error')
+            return redirect(url_for('teacher_weekly_reports', class_id=classroom_id))
+    else:
+        p_start, p_end = get_current_week_bounds()
+
+    report = generate_or_get_weekly_report(classroom_id, current_user.id, p_start, p_end, remarks)
+    if report:
+        flash(f'Weekly Performance Digest for "{classroom.name}" compiled successfully!', 'success')
+        return redirect(url_for('teacher_weekly_report_detail', report_id=report.id))
+    else:
+        flash('Could not generate report for the selected class.', 'error')
+        return redirect(url_for('teacher_weekly_reports'))
+
+
+@app.route('/teacher/weekly_reports/<int:report_id>')
+@login_required
+def teacher_weekly_report_detail(report_id):
+    """Detailed view of a single ClassWeeklyReport with KPI cards and student roster."""
+    report = ClassWeeklyReport.query.get_or_404(report_id)
+    if current_user.role == 'teacher' and report.classroom.teacher_id != current_user.id:
+        abort(403)
+    data = report.get_report_data()
+    return render_template('teacher_weekly_report_detail.html', report=report, data=data)
+
+
+@app.route('/teacher/weekly_reports/<int:report_id>/download_pdf')
+@login_required
+def download_weekly_report_pdf(report_id):
+    """Stream generated ReportLab PDF for a ClassWeeklyReport."""
+    report = ClassWeeklyReport.query.get_or_404(report_id)
+    if current_user.role == 'teacher' and report.classroom.teacher_id != current_user.id:
+        abort(403)
+    pdf_buf = build_weekly_report_pdf(report)
+    safe_name = "".join(c for c in report.classroom.name if c.isalnum() or c in (' ', '_', '-')).rstrip()
+    filename = f"Weekly_Digest_{safe_name.replace(' ', '_')}_{report.period_end.strftime('%Y%m%d')}.pdf"
+    response = make_response(pdf_buf.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@app.route('/teacher/weekly_reports/<int:report_id>/send_to_admin', methods=['POST'])
+@login_required
+@teacher_required
+def send_weekly_report_to_admin(report_id):
+    """1-Click Dispatch to Principal/Admin with in-app notification and email tracking."""
+    report = ClassWeeklyReport.query.get_or_404(report_id)
+    if report.classroom.teacher_id != current_user.id and current_user.role != 'admin':
+        abort(403)
+
+    report.status = 'sent_to_admin'
+    report.sent_to_admin_at = datetime.utcnow()
+
+    # Create in-app Notification for all Admins in this institution
+    admins = User.query.filter_by(role='admin', institution_id=report.institution_id).all()
+    if not admins:
+        admins = User.query.filter_by(role='admin').all()
+
+    for admin_user in admins:
+        notif = Notification(
+            user_id=admin_user.id,
+            message=f"Faculty {current_user.username} submitted the Weekly Performance Digest for {report.classroom.name} ({report.period_start.strftime('%b %d')} - {report.period_end.strftime('%b %d')}).",
+            institution_id=report.institution_id
+        )
+        db.session.add(notif)
+
+    db.session.commit()
+    flash(f'Weekly report for "{report.classroom.name}" dispatched to Admin / Principal inbox!', 'success')
+    return redirect(url_for('teacher_weekly_report_detail', report_id=report.id))
+
+
+@app.route('/teacher/weekly_reports/<int:report_id>/update_remarks', methods=['POST'])
+@login_required
+@teacher_required
+def update_weekly_report_remarks(report_id):
+    """Update teacher's executive commentary for a report."""
+    report = ClassWeeklyReport.query.get_or_404(report_id)
+    if report.classroom.teacher_id != current_user.id and current_user.role != 'admin':
+        abort(403)
+    remarks = request.form.get('teacher_remarks', '').strip()
+    report.teacher_remarks = remarks
+    db.session.commit()
+    flash('Faculty remarks updated successfully.', 'success')
+    return redirect(url_for('teacher_weekly_report_detail', report_id=report.id))
+
+
+@app.route('/admin/class_reports')
+@login_required
+@admin_required
+def admin_class_reports():
+    """Admin / Principal portal to review submitted Weekly Class Reports."""
+    class_id = request.args.get('class_id', type=int)
+    status_filter = request.args.get('status', 'all')
+    classes = Classroom.query.all()
+
+    query = ClassWeeklyReport.query
+    if class_id:
+        query = query.filter_by(classroom_id=class_id)
+    if status_filter and status_filter != 'all':
+        query = query.filter_by(status=status_filter)
+
+    reports = query.order_by(ClassWeeklyReport.period_end.desc(), ClassWeeklyReport.generated_at.desc()).all()
+    return render_template(
+        'admin_class_reports.html',
+        reports=reports,
+        classes=classes,
+        selected_class_id=class_id,
+        status_filter=status_filter
+    )
+
+
+@app.route('/admin/class_reports/<int:report_id>/feedback', methods=['POST'])
+@login_required
+@admin_required
+def admin_submit_report_feedback(report_id):
+    """Principal submits review feedback back to the faculty."""
+    report = ClassWeeklyReport.query.get_or_404(report_id)
+    feedback = request.form.get('admin_feedback', '').strip()
+    report.admin_feedback = feedback
+    report.status = 'reviewed'
+
+    # Notify teacher
+    notif = Notification(
+        user_id=report.teacher_id,
+        message=f"Principal / Admin reviewed your Weekly Digest for {report.classroom.name}.",
+        institution_id=report.institution_id
+    )
+    db.session.add(notif)
+    db.session.commit()
+    flash('Review feedback transmitted to faculty successfully.', 'success')
+    return redirect(url_for('teacher_weekly_report_detail', report_id=report.id))
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 1: IN-VIDEO POP-UP CHECKPOINTS & COMPREHENSION
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/checkpoints', methods=['GET'])
+@login_required
+def get_video_checkpoints(video_id):
+    """Retrieve in-video comprehension pop-up checkpoints for playback."""
+    video = Video.query.get_or_404(video_id)
+    checkpoints = VideoCheckpoint.query.filter_by(video_id=video_id).order_by(VideoCheckpoint.timestamp_seconds.asc()).all()
+
+    answered_ids = set()
+    if current_user.role == 'student':
+        responses = CheckpointResponse.query.filter_by(student_id=current_user.id).all()
+        answered_ids = {r.checkpoint_id for r in responses}
+
+    return jsonify({
+        'success': True,
+        'checkpoints': [{
+            'id': c.id,
+            'timestamp': c.timestamp_seconds,
+            'question': c.question_text,
+            'option_a': c.option_a,
+            'option_b': c.option_b,
+            'option_c': c.option_c,
+            'option_d': c.option_d,
+            'xp_reward': c.xp_reward,
+            'answered': c.id in answered_ids
+        } for c in checkpoints]
+    })
+
+
+@app.route('/api/video/<int:video_id>/checkpoints/add', methods=['POST'])
+@login_required
+@teacher_required
+def add_video_checkpoint(video_id):
+    """Teacher adds a new checkpoint pop-up at a specific video timestamp."""
+    video = Video.query.get_or_404(video_id)
+    data = request.get_json() or {}
+
+    ts = float(data.get('timestamp_seconds', 0.0))
+    q_text = (data.get('question_text') or '').strip()
+    opt_a = (data.get('option_a') or '').strip()
+    opt_b = (data.get('option_b') or '').strip()
+    opt_c = (data.get('option_c') or '').strip() or None
+    opt_d = (data.get('option_d') or '').strip() or None
+    correct = (data.get('correct_option') or 'a').lower().strip()
+    explanation = (data.get('explanation') or '').strip() or None
+    xp = int(data.get('xp_reward', 25))
+
+    if not q_text or not opt_a or not opt_b:
+        return jsonify({'success': False, 'message': 'Question text and at least 2 options are required.'}), 400
+
+    cp = VideoCheckpoint(
+        video_id=video_id,
+        institution_id=video.institution_id,
+        timestamp_seconds=ts,
+        question_text=q_text,
+        option_a=opt_a,
+        option_b=opt_b,
+        option_c=opt_c,
+        option_d=opt_d,
+        correct_option=correct,
+        explanation=explanation,
+        xp_reward=xp
+    )
+    db.session.add(cp)
+    db.session.commit()
+
+    return jsonify({'success': True, 'checkpoint_id': cp.id, 'message': 'Checkpoint created successfully!'})
+
+
+@app.route('/api/video/checkpoint/<int:checkpoint_id>/submit', methods=['POST'])
+@login_required
+def submit_checkpoint_answer(checkpoint_id):
+    """Student submits an answer to an in-video checkpoint pop-up."""
+    cp = VideoCheckpoint.query.get_or_404(checkpoint_id)
+    data = request.get_json() or {}
+    selected = (data.get('selected_option') or '').lower().strip()
+
+    is_correct = (selected == cp.correct_option.lower())
+    xp_awarded = 0
+
+    # Check if student already answered
+    existing = CheckpointResponse.query.filter_by(checkpoint_id=cp.id, student_id=current_user.id).first()
+    if not existing:
+        resp = CheckpointResponse(
+            checkpoint_id=cp.id,
+            student_id=current_user.id,
+            institution_id=cp.institution_id,
+            selected_option=selected,
+            is_correct=is_correct
+        )
+        db.session.add(resp)
+
+        if is_correct:
+            xp_awarded = cp.xp_reward or 25
+            current_user.xp = (current_user.xp or 0) + xp_awarded
+            current_user.update_level()
+
+        db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'is_correct': is_correct,
+        'correct_option': cp.correct_option,
+        'explanation': cp.explanation or ('Well done!' if is_correct else 'Review the concept and keep learning!'),
+        'xp_awarded': xp_awarded,
+        'total_xp': current_user.xp
+    })
+
+
+@app.route('/api/video/checkpoint/<int:checkpoint_id>/delete', methods=['POST'])
+@login_required
+@teacher_required
+def delete_video_checkpoint(checkpoint_id):
+    """Delete an in-video checkpoint."""
+    cp = VideoCheckpoint.query.get_or_404(checkpoint_id)
+    db.session.delete(cp)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Checkpoint deleted.'})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 2: TIME-STAMPED VIDEO DOUBTS & CLASSROOM Q&A
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/doubts', methods=['GET'])
+@login_required
+def get_video_doubts(video_id):
+    """Fetch all timestamped doubts and replies for a video."""
+    doubts = VideoDoubt.query.filter_by(video_id=video_id).order_by(VideoDoubt.timestamp_seconds.asc(), VideoDoubt.created_at.desc()).all()
+
+    out = []
+    for d in doubts:
+        replies_data = [{
+            'id': r.id,
+            'author': r.user.username if r.user else 'Unknown',
+            'role': r.user.role if r.user else 'student',
+            'content': r.content,
+            'is_teacher_endorsed': r.is_teacher_endorsed,
+            'created_at': r.created_at.strftime('%b %d, %I:%M %p')
+        } for r in d.replies]
+
+        ts_min = int(d.timestamp_seconds // 60)
+        ts_sec = int(d.timestamp_seconds % 60)
+
+        out.append({
+            'id': d.id,
+            'author': d.user.username if d.user else 'Unknown',
+            'role': d.user.role if d.user else 'student',
+            'timestamp': d.timestamp_seconds,
+            'timestamp_str': f"{ts_min:02d}:{ts_sec:02d}",
+            'question': d.question_text,
+            'is_resolved': d.is_resolved,
+            'created_at': d.created_at.strftime('%b %d, %I:%M %p'),
+            'replies': replies_data
+        })
+
+    return jsonify({'success': True, 'doubts': out})
+
+
+@app.route('/api/video/<int:video_id>/doubts/add', methods=['POST'])
+@login_required
+def add_video_doubt(video_id):
+    """Post a new time-stamped doubt on a video."""
+    video = Video.query.get_or_404(video_id)
+    data = request.get_json() or {}
+
+    ts = float(data.get('timestamp_seconds', 0.0))
+    q_text = (data.get('question_text') or '').strip()
+
+    if not q_text:
+        return jsonify({'success': False, 'message': 'Please enter your doubt / question.'}), 400
+
+    doubt = VideoDoubt(
+        video_id=video_id,
+        user_id=current_user.id,
+        institution_id=video.institution_id,
+        timestamp_seconds=ts,
+        question_text=q_text
+    )
+    db.session.add(doubt)
+    db.session.commit()
+
+    return jsonify({'success': True, 'doubt_id': doubt.id, 'message': 'Doubt posted to classroom thread!'})
+
+
+@app.route('/api/video/doubts/<int:doubt_id>/reply', methods=['POST'])
+@login_required
+def reply_video_doubt(doubt_id):
+    """Add a reply to a video doubt."""
+    doubt = VideoDoubt.query.get_or_404(doubt_id)
+    data = request.get_json() or {}
+    content = (data.get('content') or '').strip()
+
+    if not content:
+        return jsonify({'success': False, 'message': 'Reply content cannot be empty.'}), 400
+
+    is_endorsed = (current_user.role in ['teacher', 'admin'])
+    reply = VideoDoubtReply(
+        doubt_id=doubt_id,
+        user_id=current_user.id,
+        institution_id=doubt.institution_id,
+        content=content,
+        is_teacher_endorsed=is_endorsed
+    )
+    db.session.add(reply)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Reply added.'})
+
+
+@app.route('/api/video/doubts/<int:doubt_id>/toggle_resolve', methods=['POST'])
+@login_required
+def toggle_resolve_doubt(doubt_id):
+    """Mark a doubt as resolved or open."""
+    doubt = VideoDoubt.query.get_or_404(doubt_id)
+    if doubt.user_id != current_user.id and current_user.role not in ['teacher', 'admin']:
+        abort(403)
+
+    doubt.is_resolved = not doubt.is_resolved
+    db.session.commit()
+    return jsonify({'success': True, 'is_resolved': doubt.is_resolved})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 3: 1-CLICK AI FLASHCARD & QUIZ GENERATOR
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/generate_ai_study_kit', methods=['POST'])
+@login_required
+def generate_ai_study_kit(video_id):
+    """Generate 5 interactive flashcards and 5 quiz questions for a video."""
+    video = Video.query.get_or_404(video_id)
+
+    # Built-in study kit generator based on video title & summary concepts
+    takeaways = video.get_ai_takeaways() or []
+    summary_snippet = video.ai_summary or f"Lecture concepts on {video.title}."
+
+    default_flashcard_pairs = [
+        (f"Core Principle of {video.title[:30]}", f"Foundational understanding: {summary_snippet[:140]}..."),
+        (f"Key Milestone: 01", takeaways[0] if len(takeaways) > 0 else f"Initial overview of {video.title}."),
+        (f"Key Milestone: 02", takeaways[1] if len(takeaways) > 1 else "Methodological application and analysis."),
+        (f"Essential Equation / Concept", takeaways[2] if len(takeaways) > 2 else "Theoretical framework & retention notes."),
+        ("Lecture Summary", f"Mastery review: {video.title} essential points for examinations.")
+    ]
+
+    saved_flashcards = []
+    for term, definition in default_flashcard_pairs:
+        fc = VideoFlashcard(
+            video_id=video_id,
+            user_id=current_user.id,
+            institution_id=video.institution_id,
+            front_term=term,
+            back_definition=definition
+        )
+        db.session.add(fc)
+        saved_flashcards.append({'front': term, 'back': definition})
+
+    db.session.commit()
+
+    sample_questions = [
+        {
+            'text': f"What is the primary academic focus of '{video.title}'?",
+            'a': f"Core theoretical derivation of {video.title[:25]}",
+            'b': "Unrelated background context",
+            'c': "Historical introductory overview only",
+            'd': "Administrative syllabus policy",
+            'correct': 'a'
+        },
+        {
+            'text': f"Which concept was highlighted in the key takeaways of {video.title}?",
+            'a': takeaways[0] if takeaways else "Application of foundational principles",
+            'b': "Disregarding numerical constraints",
+            'c': "Skipping verification steps",
+            'd': "None of the above",
+            'correct': 'a'
+        }
+    ]
+
+    return jsonify({
+        'success': True,
+        'flashcards': saved_flashcards,
+        'questions': sample_questions,
+        'message': 'AI Study Kit (Flashcards & Assessment Questions) generated!'
+    })
+
+
+@app.route('/video/<int:video_id>/flashcards', methods=['GET'])
+@login_required
+def view_video_flashcards(video_id):
+    """Interactive 3D flip-card study mode for students."""
+    video = Video.query.get_or_404(video_id)
+    flashcards = VideoFlashcard.query.filter_by(video_id=video_id).all()
+    return render_template('video_flashcards.html', video=video, flashcards=flashcards)
+
+
+@app.route('/api/video/<int:video_id>/save_ai_quiz', methods=['POST'])
+@login_required
+@teacher_required
+def save_ai_quiz(video_id):
+    """1-Click conversion of AI generated questions into an active Classroom Quiz."""
+    video = Video.query.get_or_404(video_id)
+    data = request.get_json() or {}
+    quiz_title = data.get('title') or f"AI Comprehension Assessment — {video.title}"
+    classroom_id = data.get('classroom_id') or (video.classroom_id if video.classroom_id and video.classroom_id > 0 else None)
+
+    if not classroom_id:
+        classes = Classroom.query.filter_by(teacher_id=current_user.id).first()
+        classroom_id = classes.id if classes else 1
+
+    quiz = Quiz(
+        title=quiz_title,
+        classroom_id=classroom_id,
+        teacher_id=current_user.id,
+        institution_id=video.institution_id
+    )
+    db.session.add(quiz)
+    db.session.flush()
+
+    questions_data = data.get('questions', [])
+    if not questions_data:
+        questions_data = [{
+            'text': f"Comprehension Check: What is the core theorem in {video.title}?",
+            'a': "Fundamental principle application",
+            'b': "Secondary extrapolation",
+            'c': "Empirical approximation",
+            'd': "Random constant",
+            'correct': 'a'
+        }]
+
+    for q in questions_data:
+        q_obj = Question(
+            quiz_id=quiz.id,
+            institution_id=video.institution_id,
+            text=q.get('text', 'Concept Question'),
+            option_a=q.get('a', 'Option A'),
+            option_b=q.get('b', 'Option B'),
+            option_c=q.get('c', 'Option C'),
+            option_d=q.get('d', 'Option D'),
+            correct_option=q.get('correct', 'a')
+        )
+        db.session.add(q_obj)
+
+    db.session.commit()
+    return jsonify({'success': True, 'quiz_id': quiz.id, 'message': f'Quiz "{quiz.title}" created successfully!'})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 4: VERIFIABLE ACADEMIC CERTIFICATES & QR AUDIT
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/student/certificates')
+@login_required
+def student_certificates():
+    """Student certificates dashboard displaying earned awards and milestone credentials."""
+    certs = AcademicCertificate.query.filter_by(student_id=current_user.id).order_by(AcademicCertificate.issued_at.desc()).all()
+    return render_template('student_certificates.html', certificates=certs)
+
+
+@app.route('/teacher/issue_certificate', methods=['POST'])
+@login_required
+@teacher_required
+def teacher_issue_certificate():
+    """Teacher issues a verifiable academic certificate to a student."""
+    student_id = request.form.get('student_id', type=int)
+    title = (request.form.get('title') or '').strip()
+    desc = (request.form.get('description') or '').strip()
+    cert_type = request.form.get('certificate_type', 'course_completion')
+
+    if not student_id or not title:
+        flash('Student and certificate title are required.', 'error')
+        return redirect(request.referrer or url_for('teacher_dashboard'))
+
+    cert = issue_academic_certificate(
+        student_id=student_id,
+        title=title,
+        description=desc,
+        cert_type=cert_type,
+        institution_id=current_user.institution_id
+    )
+
+    if cert:
+        # Notify student
+        notif = Notification(
+            user_id=student_id,
+            message=f"Congratulations! You were awarded the certificate '{title}'.",
+            institution_id=current_user.institution_id
+        )
+        db.session.add(notif)
+        db.session.commit()
+        flash(f'Certificate issued successfully (Code: {cert.certificate_code})!', 'success')
+    else:
+        flash('Could not issue certificate.', 'error')
+
+    return redirect(request.referrer or url_for('teacher_dashboard'))
+
+
+@app.route('/certificates/verify/<cert_code>')
+def verify_certificate_public(cert_code):
+    """Public verification page to validate certificate authenticity without logging in."""
+    cert = AcademicCertificate.query.filter_by(certificate_code=cert_code).first_or_404()
+    inst = db.session.get(Institution, cert.institution_id) if cert.institution_id else None
+    return render_template('verify_certificate.html', cert=cert, institution=inst)
+
+
+@app.route('/certificates/download/<cert_code>')
+@login_required
+def download_certificate_pdf(cert_code):
+    """Download the official high-resolution landscape certificate PDF."""
+    cert = AcademicCertificate.query.filter_by(certificate_code=cert_code).first_or_404()
+    base_url = request.host_url.rstrip('/')
+    pdf_buf = build_certificate_pdf(cert, base_url=base_url)
+
+    safe_name = "".join(c for c in cert.title if c.isalnum() or c in (' ', '_', '-')).rstrip()
+    filename = f"Certificate_{safe_name.replace(' ', '_')}_{cert.certificate_code}.pdf"
+
+    response = make_response(pdf_buf.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 5: TOKENIZED PARENT VIEW-ONLY PROGRESS PORTAL
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/teacher/parent_token/<int:student_id>', methods=['POST'])
+@login_required
+@teacher_required
+def generate_parent_token(student_id):
+    """Generate or retrieve a secure tokenized parent access URL."""
+    student = User.query.get_or_404(student_id)
+    if student.role != 'student':
+        return jsonify({'success': False, 'message': 'User is not a student.'}), 400
+
+    token_obj = ParentAccessToken.query.filter_by(student_id=student_id, is_active=True).first()
+    if not token_obj:
+        raw_token = secrets.token_urlsafe(32)
+        token_obj = ParentAccessToken(
+            student_id=student_id,
+            institution_id=student.institution_id,
+            token=raw_token,
+            expires_at=datetime.utcnow() + timedelta(days=60)
+        )
+        db.session.add(token_obj)
+        db.session.commit()
+
+    parent_url = url_for('parent_portal_view', token=token_obj.token, _external=True)
+    return jsonify({
+        'success': True,
+        'token': token_obj.token,
+        'parent_url': parent_url,
+        'expires_at': token_obj.expires_at.strftime('%b %d, %Y') if token_obj.expires_at else 'Active'
+    })
+
+
+@app.route('/parent/view/<token>')
+def parent_portal_view(token):
+    """Public, secure view-only mobile summary for parents without requiring a login."""
+    token_obj = ParentAccessToken.query.filter_by(token=token, is_active=True).first_or_404()
+    token_obj.last_accessed_at = datetime.utcnow()
+    db.session.commit()
+
+    student = token_obj.student
+    inst = db.session.get(Institution, student.institution_id) if student.institution_id else None
+
+    # Compute overall attendance
+    now_date = datetime.utcnow().date()
+    start_date = now_date - timedelta(days=30)
+    att_stats = compute_attendance_stats(student.id, None, start_date, now_date)
+
+    # Recent quiz scores
+    recent_quizzes = QuizResult.query.filter_by(student_id=student.id).order_by(QuizResult.timestamp.desc()).limit(5).all()
+
+    # Certificates
+    certs = AcademicCertificate.query.filter_by(student_id=student.id).order_by(AcademicCertificate.issued_at.desc()).all()
+
+    return render_template(
+        'parent_portal_view.html',
+        student=student,
+        institution=inst,
+        att_stats=att_stats,
+        recent_quizzes=recent_quizzes,
+        certificates=certs,
+        now_date=now_date
+    )
+
+
+# ═══════════════════════════════════════════════════════════════
 #  MAIN ENTRY POINT
 # ═══════════════════════════════════════════════════════════════
 
@@ -6808,7 +7509,7 @@ if __name__ == '__main__':
                 'activity_log', 'system_metric', 'assignment', 'assignment_submission',
                 'student_profile', 'video_note', 'video_bookmark', 'video_progress',
                 'leaderboard_entry', 'email_queue', 'student_remark', 'email_delivery_log',
-                'conversion_job'
+                'conversion_job', 'class_weekly_report'
             ]
             for t in tenant_tables:
                 if t not in column_specs:

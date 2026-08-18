@@ -19,13 +19,13 @@
             </div>
             <div style="flex:1;">
                 <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.2rem; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    ✨ Welcome back, {{ current_user.username }}
-                    <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:6px; white-space:nowrap;">
-                        ⚡ LEVEL {{ (current_user.xp // 500) + 1 }}
+                    <i class="material-icons" style="font-size:1.25rem; vertical-align:middle; color:var(--primary);">auto_awesome</i> Welcome back, {{ current_user.username }}
+                    <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:6px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+                        <i class="material-icons" style="font-size:0.82rem;">bolt</i> LEVEL {{ (current_user.xp // 500) + 1 }}
                     </span>
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-dim); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                    🏆 <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP Total</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
+                    <i class="material-icons" style="font-size:0.95rem; color:var(--primary); vertical-align:middle;">emoji_events</i> <span style="color:var(--text); font-weight:700;">{{ current_user.xp }} XP Total</span> &bull; {{ 500 - (current_user.xp % 500) }} XP to Level {{ (current_user.xp // 500) + 2 }}
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <!-- Attendance Standing Box -->
             <div class="cp-badge-stat" style="background:var(--surface2); border:1px solid var(--border); padding:8px 16px; border-radius:8px; display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.1rem;">{{ '🟢' if attendance_pct >= 75 else '🔴' }}</span>
+                <i class="material-icons" style="font-size:1rem; color:{{ 'var(--success-color)' if attendance_pct >= 75 else 'var(--danger-color)' }};">fiber_manual_record</i>
                 <div>
                     <div style="color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Attendance Standing</div>
                     <strong style="color:{{ 'var(--success-color)' if attendance_pct >= 75 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace; font-size:0.92rem;"> {{ attendance_pct }}%</strong>
@@ -44,8 +44,8 @@
             <!-- Daily Quests Action Box -->
             {% if daily_quests %}
             {% set unclaimed_count = daily_quests.values() | selectattr('claimed', 'equalto', false) | selectattr('progress', 'ge', 1) | list | length %}
-            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:8px 16px; font-size:0.8rem; border-radius:8px; min-height:42px; position:relative; gap:6px; background:rgba(138,106,58,0.1); border-color:rgba(138,106,58,0.3); color:var(--primary);">
-                <span style="font-size:1.05rem;">🎯</span>
+            <button onclick="toggleQuestsDrawer()" class="btn btn-outline" style="width:auto; padding:8px 16px; font-size:0.8rem; border-radius:8px; min-height:42px; position:relative; gap:6px; background:rgba(212,175,55,0.1); border-color:rgba(212,175,55,0.3); color:var(--primary);">
+                <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">track_changes</i>
                 <span style="font-weight:700;">Daily Quests</span>
                 {% if unclaimed_count > 0 %}
                 <span style="position:absolute; top:-4px; right:-4px; background:var(--primary); color:#ffffff; font-weight:800; font-size:0.68rem; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center;">
@@ -56,17 +56,17 @@
             {% endif %}
 
             <a href="{{ url_for('student_assignments') }}" class="btn btn-primary" style="width:auto; padding:8px 18px; font-size:0.82rem; border-radius:8px; min-height:42px; gap:6px;">
-                <span style="font-size:1.05rem;">📌</span> <span style="font-weight:700;">Submit Homework</span>
+                <i class="material-icons" style="font-size:1.05rem;">push_pin</i> <span style="font-weight:700;">Submit Homework</span>
             </a>
         </div>
     </div>
 
-    <!-- 🎯 DAILY QUESTS COLLAPSIBLE DRAWER -->
+    <!-- DAILY QUESTS COLLAPSIBLE DRAWER -->
     {% if daily_quests %}
-    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(138,106,58,0.3); background:var(--surface2); border-radius:12px; margin-bottom:24px;">
+    <div id="cpQuestsDrawer" class="card card-royal mb-24" style="display:none; border:1px solid rgba(212,175,55,0.3); background:var(--surface2); border-radius:12px; margin-bottom:24px;">
         <div class="flex-between mb-12">
             <div class="card-title font-display" style="margin:0; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                <span>🏆</span> Daily Quests &amp; Milestone Challenges
+                <i class="material-icons" style="color:var(--primary); font-size:1.25rem;">military_tech</i> Daily Quests &amp; Milestone Challenges
             </div>
             <button onclick="toggleQuestsDrawer()" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
                 <i class="material-icons">close</i>
@@ -74,11 +74,11 @@
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
             {% for q_id, q in daily_quests.items() %}
-            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(61,143,163,0.4)' if q.claimed else ('rgba(138,106,58,0.4)' if q.progress >= q.target else 'var(--border)') }}; border-radius:8px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(61,143,163,0.4)' if q.claimed else ('rgba(212,175,55,0.4)' if q.progress >= q.target else 'var(--border)') }}; border-radius:8px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
                     <div class="flex-between mb-8" style="gap:8px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="width:34px; height:34px; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.claimed else ('rgba(138,106,58,0.15)' if q.progress >= q.target else 'rgba(37,65,178,0.15)') }}; display:flex; align-items:center; justify-content:center;">
+                            <div style="width:34px; height:34px; border-radius:6px; background:{{ 'rgba(61,143,163,0.15)' if q.claimed else ('rgba(212,175,55,0.15)' if q.progress >= q.target else 'rgba(37,65,178,0.15)') }}; display:flex; align-items:center; justify-content:center;">
                                 <i class="material-icons" style="font-size:1.1rem; color:{{ 'var(--success-color)' if q.claimed else ('var(--primary)' if q.progress >= q.target else 'var(--secondary-color)') }};">{{ q.icon }}</i>
                             </div>
                             <div>
@@ -86,7 +86,7 @@
                                 <div style="font-size:0.7rem; color:var(--text-dim);">{{ q.desc }}</div>
                             </div>
                         </div>
-                        <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
+                        <span class="badge" style="background:rgba(212,175,55,0.15); color:var(--primary); border:1px solid rgba(212,175,55,0.3); font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
                             +{{ q.xp }} XP
                         </span>
                     </div>
@@ -105,17 +105,19 @@
                 <div style="margin-top:8px;">
                     {% if q.claimed %}
                     <span style="font-size:0.74rem; color:var(--success-color); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
-                        ✅ Claimed
+                        <i class="material-icons" style="font-size:0.85rem;">check_circle</i> Claimed
                     </span>
                     {% elif q.progress >= q.target %}
                     <form method="POST" action="{{ url_for('claim_quest', quest_id=q_id) }}" style="margin:0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn btn-primary" style="width:100%; padding:6px 10px; font-size:0.76rem; font-weight:800; border-radius:8px;">
-                            Claim +{{ q.xp }} XP 🎉
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:6px 10px; font-size:0.76rem; font-weight:800; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
+                            <i class="material-icons" style="font-size:0.9rem;">redeem</i> Claim +{{ q.xp }} XP
                         </button>
                     </form>
                     {% else %}
-                    <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">⏳ In Progress...</span>
+                    <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; display:inline-flex; align-items:center; gap:3px;">
+                        <i class="material-icons" style="font-size:0.8rem;">schedule</i> In Progress...
+                    </span>
                     {% endif %}
                 </div>
             </div>
@@ -128,7 +130,9 @@
     <div style="margin-bottom:28px;">
         <div class="flex-between" style="align-items:center; margin-bottom:14px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.3rem;">🚀</span>
+                <div style="width:36px; height:36px; border-radius:8px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.25); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                    <i class="material-icons" style="font-size:1.3rem;">rocket_launch</i>
+                </div>
                 <div>
                     <h2 class="font-display" style="font-size:1.15rem; font-weight:800; color:var(--text); margin:0;">
                         Academic Hub &amp; Quick Options
@@ -144,8 +148,8 @@
                onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--secondary-color)';"
                onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                        📝
+                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); display:flex; align-items:center; justify-content:center; color:var(--secondary-color);">
+                        <i class="material-icons" style="font-size:1.3rem;">assignment</i>
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
@@ -160,8 +164,8 @@
                onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)';"
                onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(138,106,58,0.15); border:1px solid rgba(138,106,58,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                        ❓
+                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                        <i class="material-icons" style="font-size:1.3rem;">quiz</i>
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
@@ -176,8 +180,8 @@
                onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--primary)';"
                onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(138,106,58,0.15); border:1px solid rgba(138,106,58,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                        🏆
+                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                        <i class="material-icons" style="font-size:1.3rem;">emoji_events</i>
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
@@ -192,8 +196,8 @@
                onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--secondary-color)';"
                onmouseout="this.style.transform='none'; this.style.borderColor='var(--border)';">
                 <div style="display:flex; align-items:center; justify-content:space-between;">
-                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
-                        🤖
+                    <div style="width:40px; height:40px; border-radius:8px; background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); display:flex; align-items:center; justify-content:center; color:var(--secondary-color);">
+                        <i class="material-icons" style="font-size:1.3rem;">smart_toy</i>
                     </div>
                     <i class="material-icons" style="color:var(--text-dim); font-size:1.1rem;">arrow_forward</i>
                 </div>
@@ -211,7 +215,9 @@
         <div style="width:100%;">
             <div class="flex-between" style="align-items:center; margin-bottom:12px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-size:1.5rem;">💬</span>
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.25); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                        <i class="material-icons" style="font-size:1.3rem;">forum</i>
+                    </div>
                     <div>
                         <h3 class="font-display" style="font-size:1.1rem; font-weight:800; color:var(--text); margin:0;">
                             Live Classroom Chat Hubs
@@ -219,8 +225,8 @@
                         <p style="font-size:0.74rem; color:var(--text-dim); margin:0;">Instant real-time class chats with scholars and faculty</p>
                     </div>
                 </div>
-                <span class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:6px;">
-                    🟢 {{ enrolled_classes|length }} ACTIVE ROOMS
+                <span class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:4px 12px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="material-icons" style="font-size:0.75rem;">fiber_manual_record</i> {{ enrolled_classes|length }} ACTIVE ROOMS
                 </span>
             </div>
 
@@ -230,15 +236,15 @@
                      onmouseover="this.style.borderColor='var(--secondary-color)';"
                      onmouseout="this.style.borderColor='var(--border)';">
                     <div style="min-width:0; flex:1;">
-                        <div style="font-weight:700; font-size:0.92rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            💬 {{ cls.name }}
+                        <div style="font-weight:700; font-size:0.92rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px;">
+                            <i class="material-icons" style="font-size:1rem; color:var(--primary);">chat_bubble_outline</i> {{ cls.name }}
                         </div>
-                        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
-                            👨‍🏫 {{ cls.teacher.username }} &bull; 🎓 <b>{{ cls.students.count() }}</b> Scholars
+                        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px; display:flex; align-items:center; gap:4px;">
+                            <i class="material-icons" style="font-size:0.8rem;">school</i> {{ cls.teacher.username }} &bull; <i class="material-icons" style="font-size:0.8rem;">group</i> <b>{{ cls.students.count() }}</b> Scholars
                         </div>
                     </div>
-                    <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:6px; font-weight:700; flex-shrink:0;">
-                        Open Chat 🚀
+                    <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:6px; font-weight:700; flex-shrink:0; display:inline-flex; align-items:center; gap:4px;">
+                        Open Chat <i class="material-icons" style="font-size:0.85rem;">arrow_forward</i>
                     </a>
                 </div>
                 {% endfor %}

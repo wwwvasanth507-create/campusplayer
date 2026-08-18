@@ -18,7 +18,7 @@
            Campus Player - Locked Cyber-Neutral Design System (Dark/Light)
            ═══════════════════════════════════════════════════════════════ */
 
-        /* ── Dark Theme (default) — deep charcoal black with bronze gold & royal blue ── */
+        /* ── Dark Theme (default) — deep charcoal black with classic bright gold & royal blue ── */
         :root,
         [data-theme="dark"] {
             --bg: #0d0d10;
@@ -29,14 +29,14 @@
             --surface2: #202026;
             --surface-glass: rgba(23, 23, 28, 0.95);
             
-            /* Primary / Hero Accent: Deep Bronze Gold (max 1-2 per screen) */
-            --gold: #8a6a3a;
-            --gold-light: #a47e46;
-            --gold-dark: #70542d;
-            --primary: #8a6a3a;
-            --primary-color: #8a6a3a;
-            --primary-light: #a47e46;
-            --primary-dark: #70542d;
+            /* Primary / Hero Accent: Classic Bright Gold (max 1-2 per screen) */
+            --gold: #d4af37;
+            --gold-light: #e5c158;
+            --gold-dark: #b38f20;
+            --primary: #d4af37;
+            --primary-color: #d4af37;
+            --primary-light: #e5c158;
+            --primary-dark: #b38f20;
             --btn-primary-color: #ffffff;
             
             /* Secondary Accent: True Royal Blue (solid fill with white text) */
@@ -52,9 +52,9 @@
             --error-color: #d9822b;
             --badge-color: #d9822b;
             --info-color: #d9822b;
-            --highlight: #8a6a3a;
+            --highlight: #d4af37;
             --quiz-failed: #d9822b;
-            --chart-bar: #8a6a3a;
+            --chart-bar: #d4af37;
             
             /* Text Hierarchy */
             --text: #f0f2f5;
@@ -90,8 +90,8 @@
             
             /* Flat fills only */
             --royal-gradient: #202026;
-            --brand-gradient: #8a6a3a;
-            --gold-gradient: #8a6a3a;
+            --brand-gradient: #d4af37;
+            --gold-gradient: #d4af37;
             --btn-outline-hover: rgba(255, 255, 255, 0.06);
             --table-row-border: rgba(255, 255, 255, 0.06);
             --inst-badge-bg: #202026;
@@ -109,14 +109,14 @@
             --surface2: #ebeef2;
             --surface-glass: rgba(255, 255, 255, 0.95);
             
-            /* Primary / Hero Accent: Deep Bronze Gold */
-            --gold: #8a6a3a;
-            --gold-light: #a47e46;
-            --gold-dark: #70542d;
-            --primary: #8a6a3a;
-            --primary-color: #8a6a3a;
-            --primary-light: #a47e46;
-            --primary-dark: #70542d;
+            /* Primary / Hero Accent: Classic Bright Gold */
+            --gold: #d4af37;
+            --gold-light: #e5c158;
+            --gold-dark: #b38f20;
+            --primary: #d4af37;
+            --primary-color: #d4af37;
+            --primary-light: #e5c158;
+            --primary-dark: #b38f20;
             --btn-primary-color: #ffffff;
             
             /* Secondary Accent: True Royal Blue */
@@ -132,9 +132,9 @@
             --error-color: #d9822b;
             --badge-color: #d9822b;
             --info-color: #d9822b;
-            --highlight: #8a6a3a;
+            --highlight: #d4af37;
             --quiz-failed: #d9822b;
-            --chart-bar: #8a6a3a;
+            --chart-bar: #d4af37;
             
             /* Text Hierarchy */
             --text: #11141a;
@@ -170,8 +170,8 @@
             
             /* Flat fills only */
             --royal-gradient: #ebeef2;
-            --brand-gradient: #8a6a3a;
-            --gold-gradient: #8a6a3a;
+            --brand-gradient: #d4af37;
+            --gold-gradient: #d4af37;
             --btn-outline-hover: rgba(0, 0, 0, 0.04);
             --table-row-border: #e2e5ea;
             --inst-badge-bg: #ebeef2;
@@ -1368,6 +1368,10 @@
                 class="s-nav-link {{ 'active' if request.endpoint in ['levels_pdf', 'class_pdf'] }}">
                 <i class="material-icons">military_tech</i> XP Reports
             </a>
+            <a href="{{ url_for('admin_class_reports') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['admin_class_reports'] }}">
+                <i class="material-icons">summarize</i> Weekly Class Reports
+            </a>
             <a href="{{ url_for('bio_data_list') }}"
                 class="s-nav-link {{ 'active' if request.endpoint in ['bio_data_list', 'bio_data_detail'] }}">
                 <i class="material-icons">badge</i> Student Bio Data
@@ -1392,6 +1396,10 @@
             <a href="{{ url_for('teacher_classes_page') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_classes_page' }}">
                 <i class="material-icons">school</i> Classes
+            </a>
+            <a href="{{ url_for('teacher_weekly_reports') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['teacher_weekly_reports', 'teacher_weekly_report_detail'] }}">
+                <i class="material-icons">assessment</i> Weekly Class Reports
             </a>
             <a href="{{ url_for('teacher_assignments') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_assignments' }}">
@@ -1457,6 +1465,10 @@
             <a href="{{ url_for('student_progress_reports') }}"
                 class="s-nav-link {{ 'active' if request.endpoint in ['student_progress_reports', 'student_view_progress_report'] }}">
                 <i class="material-icons">assignment_turned_in</i> Progress Reports
+            </a>
+            <a href="{{ url_for('student_certificates') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'student_certificates' }}">
+                <i class="material-icons">military_tech</i> My Certificates
             </a>
             <a href="{{ url_for('student_bio_data') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'student_bio_data' }}">

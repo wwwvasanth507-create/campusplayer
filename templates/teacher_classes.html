@@ -270,7 +270,7 @@
         <ul class="student-list">
             {% for student in cls.students %}
             <li>
-                <span>👤 {{ student.username }}</span>
+                <span><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> {{ student.username }}</span>
                 <form action="{{ url_for('remove_student_from_class') }}" method="POST"
                     style="display:inline; margin:0;">
                     <input type="hidden" name="class_id" value="{{ cls.id }}">
@@ -362,7 +362,7 @@ function searchStudents(classId, query) {
                                data-class-id="${classId}" 
                                data-student-id="${s.id}" 
                                data-student-name="${s.username}" ${checked}>
-                        <span class="s-name">👤 ${s.username}</span>
+                        <span class="s-name"><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> ${s.username}</span>
                     </label>
                 `;
             });

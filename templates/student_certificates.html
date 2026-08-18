@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block title %}My Academic Certificates — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:1080px; margin:0 auto;">
+
+    <!-- Header -->
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="material-icons" style="font-size:1.6rem; color:var(--primary);">military_tech</i> My Academic Credentials & Certificates
+                </h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">Official verified credentials, milestone honors, and course completion certificates</p>
+            </div>
+        </div>
+    </div>
+
+    {% if certificates %}
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px;">
+        {% for cert in certificates %}
+        <div class="card" style="padding:22px; margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between; border-top:4px solid var(--primary); position:relative;">
+            
+            <div>
+                <!-- Top Badge -->
+                <div class="flex-between" style="margin-bottom:12px;">
+                    <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); font-size:0.7rem; padding:2px 8px; border-radius:var(--radius-pill); text-transform:uppercase; font-weight:700;">
+                        {{ cert.certificate_type.replace('_', ' ') }}
+                    </span>
+                    <span style="font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                        {{ cert.issued_at.strftime('%b %d, %Y') }}
+                    </span>
+                </div>
+
+                <h3 class="font-display" style="margin:0 0 8px 0; font-size:1.1rem; color:var(--text);">
+                    {{ cert.title }}
+                </h3>
+
+                {% if cert.description %}
+                <p style="font-size:0.82rem; color:var(--text-dim); line-height:1.45; margin:0 0 14px 0;">
+                    {{ cert.description }}
+                </p>
+                {% endif %}
+
+                <!-- Verification Code -->
+                <div style="background:var(--surface2); border-radius:6px; padding:6px 10px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+                    <span style="font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Credential Code:</span>
+                    <span style="font-size:0.75rem; color:var(--primary); font-family:'JetBrains Mono',monospace; font-weight:700;">{{ cert.certificate_code }}</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <a href="{{ url_for('verify_certificate_public', cert_code=cert.certificate_code) }}" target="_blank" class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; text-align:center;">
+                    <i class="material-icons" style="font-size:0.85rem;">verified</i> Verify
+                </a>
+                <a href="{{ url_for('download_certificate_pdf', cert_code=cert.certificate_code) }}" class="btn btn-primary" style="padding:6px 10px; font-size:0.75rem; text-align:center;">
+                    <i class="material-icons" style="font-size:0.85rem;">download</i> PDF
+                </a>
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center" style="padding:60px 20px;">
+        <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:12px;">military_tech</i>
+        <h3 class="font-display" style="font-size:1.15rem; color:var(--text); margin:0 0 6px 0;">No Certificates Earned Yet</h3>
+        <p style="font-size:0.84rem; color:var(--text-dim); margin:0 0 16px 0;">Complete course playlists, achieve level milestones, and maintain attendance to unlock verifiable academic certificates.</p>
+        <a href="{{ url_for('student_classes') }}" class="btn btn-primary" style="width:auto; padding:8px 18px; margin:auto;">
+            <i class="material-icons" style="font-size:1rem;">school</i> Browse My Classrooms
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

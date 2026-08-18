@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Progress Summary — {{ student.username }} — Campus Player</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+    <style>
+        :root {
+            --primary: #d4af37;
+            --primary-hover: #b38f20;
+            --bg: #0b0f19;
+            --surface: rgba(18, 24, 38, 0.85);
+            --surface2: rgba(28, 38, 58, 0.6);
+            --border: rgba(212, 175, 55, 0.18);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --success-color: #3d8fa3;
+            --danger-color: #d9822b;
+            --secondary-color: #4a6fa5;
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div style="max-width:640px; margin:0 auto; padding-bottom:30px;">
+
+    <!-- Top Header -->
+    <div style="text-align:center; padding:18px 0 24px 0;">
+        <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <i class="material-icons" style="color:var(--primary); font-size:1.8rem;">school</i>
+            <span style="font-weight:800; font-size:1.2rem; letter-spacing:0.5px; color:var(--text);">CAMPUS PLAYER</span>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Parent & Guardian Progress Digest</div>
+        <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">{{ institution.name if institution else 'Official Academic Portal' }}</div>
+    </div>
+
+    <!-- Student Profile Card -->
+    <div class="card" style="padding:22px; margin-bottom:16px; border:1px solid var(--border); background:var(--surface); border-radius:14px;">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:58px; height:58px; border-radius:14px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.6rem; font-weight:800; flex-shrink:0;">
+                {{ student.username[0].upper() }}
+            </div>
+            <div style="flex:1;">
+                <h2 class="font-display" style="margin:0 0 4px 0; font-size:1.25rem; color:var(--text);">
+                    {{ student.username }}
+                </h2>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem;">
+                    <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); padding:2px 8px; border-radius:var(--radius-pill);">
+                        Level {{ student.level }} Scholar
+                    </span>
+                    <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); padding:2px 8px; border-radius:var(--radius-pill);">
+                        {{ "{:,}".format(student.xp) }} XP Earned
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Performance (30 Days) -->
+    <div class="card" style="padding:20px; margin-bottom:16px; border:1px solid var(--border); background:var(--surface); border-radius:14px;">
+        <div class="flex-between" style="margin-bottom:14px;">
+            <h3 class="font-display" style="margin:0; font-size:1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="color:var(--primary); font-size:1.15rem;">fact_check</i> Attendance (Past 30 Days)
+            </h3>
+            <span style="font-size:1.1rem; font-weight:800; color:{{ 'var(--success-color)' if (att_stats.percentage or 100.0) >= 75 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace;">
+                {{ "%.0f"|format(att_stats.percentage) if att_stats.percentage is not none else "100" }}%
+            </span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; text-align:center;">
+            <div style="background:var(--surface2); border-radius:8px; padding:10px;">
+                <div style="font-size:1.1rem; font-weight:700; color:var(--success-color);">{{ att_stats.present }}</div>
+                <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Present</div>
+            </div>
+            <div style="background:var(--surface2); border-radius:8px; padding:10px;">
+                <div style="font-size:1.1rem; font-weight:700; color:var(--primary);">{{ att_stats.late }}</div>
+                <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Late</div>
+            </div>
+            <div style="background:var(--surface2); border-radius:8px; padding:10px;">
+                <div style="font-size:1.1rem; font-weight:700; color:var(--danger-color);">{{ att_stats.absent }}</div>
+                <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Absent</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Assessment / Quiz Results -->
+    <div class="card" style="padding:20px; margin-bottom:16px; border:1px solid var(--border); background:var(--surface); border-radius:14px;">
+        <h3 class="font-display" style="margin:0 0 14px 0; font-size:1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+            <i class="material-icons" style="color:var(--secondary-color); font-size:1.15rem;">quiz</i> Recent Quiz Assessments
+        </h3>
+
+        {% if recent_quizzes %}
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            {% for q in recent_quizzes %}
+            <div style="background:var(--surface2); border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:700; font-size:0.86rem; color:var(--text);">
+                        {{ q.quiz.title if q.quiz else 'Class Assessment' }}
+                    </div>
+                    <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                        {{ q.timestamp.strftime('%b %d, %Y') }}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:800; font-size:0.95rem; color:{{ 'var(--success-color)' if (q.score / (q.total_questions or 1)) >= 0.7 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace;">
+                        {{ q.score }} / {{ q.total_questions }}
+                    </div>
+                    <div style="font-size:0.68rem; color:var(--text-dim);">
+                        {{ "%.0f"|format((q.score / (q.total_questions or 1)) * 100) }}% Score
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:0.82rem; color:var(--text-dim); margin:0;">No recent quizzes recorded.</p>
+        {% endif %}
+    </div>
+
+    <!-- Earned Academic Credentials -->
+    {% if certificates %}
+    <div class="card" style="padding:20px; margin-bottom:16px; border:1px solid var(--border); background:var(--surface); border-radius:14px;">
+        <h3 class="font-display" style="margin:0 0 14px 0; font-size:1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+            <i class="material-icons" style="color:var(--primary); font-size:1.15rem;">military_tech</i> Earned Credentials & Certificates ({{ certificates|length }})
+        </h3>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            {% for cert in certificates %}
+            <div style="background:var(--surface2); border-left:3px solid var(--primary); border-radius:8px; padding:10px 14px;">
+                <div style="font-weight:700; font-size:0.86rem; color:var(--text);">{{ cert.title }}</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">Conferred on {{ cert.issued_at.strftime('%B %d, %Y') }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer Note -->
+    <div style="text-align:center; padding:16px 0; font-size:0.74rem; color:var(--text-dim);">
+        Report updated in real-time &bull; Protected by Campus Player Student Privacy Guard
+    </div>
+
+</div>
+
+</body>
+</html>

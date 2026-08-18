@@ -483,6 +483,154 @@ def migrate():
                     ('ix_conversion_job_institution_id', 'institution_id'),
                 ]
             },
+            'class_weekly_report': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('teacher_id', 'INTEGER'),
+                    ('period_start', 'DATE'),
+                    ('period_end', 'DATE'),
+                    ('generated_at', 'DATETIME'),
+                    ('total_students', 'INTEGER DEFAULT 0'),
+                    ('avg_attendance_pct', 'FLOAT DEFAULT 0.0'),
+                    ('total_xp_gained', 'INTEGER DEFAULT 0'),
+                    ('avg_quiz_score_pct', 'FLOAT DEFAULT 0.0'),
+                    ('total_video_watch_seconds', 'INTEGER DEFAULT 0'),
+                    ('report_data_json', "TEXT DEFAULT '{}'"),
+                    ('teacher_remarks', 'TEXT'),
+                    ('status', "VARCHAR(30) DEFAULT 'generated'"),
+                    ('sent_to_admin_at', 'DATETIME'),
+                    ('admin_feedback', 'TEXT'),
+                ],
+                'indexes': [
+                    ('ix_class_weekly_report_institution_id', 'institution_id'),
+                    ('ix_class_weekly_report_classroom_id', 'classroom_id'),
+                    ('ix_class_weekly_report_teacher_id', 'teacher_id'),
+                    ('ix_class_weekly_report_period_start', 'period_start'),
+                    ('ix_class_weekly_report_period_end', 'period_end'),
+                    ('ix_class_weekly_report_generated_at', 'generated_at'),
+                    ('ix_class_weekly_report_status', 'status'),
+                ]
+            },
+            'video_checkpoint': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('timestamp_seconds', 'FLOAT'),
+                    ('question_text', 'TEXT'),
+                    ('option_a', 'VARCHAR(300)'),
+                    ('option_b', 'VARCHAR(300)'),
+                    ('option_c', 'VARCHAR(300)'),
+                    ('option_d', 'VARCHAR(300)'),
+                    ('correct_option', 'VARCHAR(1)'),
+                    ('explanation', 'TEXT'),
+                    ('xp_reward', 'INTEGER DEFAULT 25'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_video_checkpoint_institution_id', 'institution_id'),
+                    ('ix_video_checkpoint_video_id', 'video_id'),
+                    ('ix_video_checkpoint_timestamp_seconds', 'timestamp_seconds'),
+                ]
+            },
+            'checkpoint_response': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('checkpoint_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('selected_option', 'VARCHAR(1)'),
+                    ('is_correct', 'BOOLEAN DEFAULT 0'),
+                    ('answered_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_checkpoint_response_institution_id', 'institution_id'),
+                    ('ix_checkpoint_response_checkpoint_id', 'checkpoint_id'),
+                    ('ix_checkpoint_response_student_id', 'student_id'),
+                ]
+            },
+            'video_doubt': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('timestamp_seconds', 'FLOAT DEFAULT 0.0'),
+                    ('question_text', 'TEXT'),
+                    ('is_resolved', 'BOOLEAN DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_video_doubt_institution_id', 'institution_id'),
+                    ('ix_video_doubt_video_id', 'video_id'),
+                    ('ix_video_doubt_user_id', 'user_id'),
+                    ('ix_video_doubt_timestamp_seconds', 'timestamp_seconds'),
+                    ('ix_video_doubt_is_resolved', 'is_resolved'),
+                ]
+            },
+            'video_doubt_reply': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('doubt_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('content', 'TEXT'),
+                    ('is_teacher_endorsed', 'BOOLEAN DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_video_doubt_reply_institution_id', 'institution_id'),
+                    ('ix_video_doubt_reply_doubt_id', 'doubt_id'),
+                    ('ix_video_doubt_reply_user_id', 'user_id'),
+                ]
+            },
+            'video_flashcard': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('front_term', 'VARCHAR(300)'),
+                    ('back_definition', 'TEXT'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_video_flashcard_institution_id', 'institution_id'),
+                    ('ix_video_flashcard_video_id', 'video_id'),
+                    ('ix_video_flashcard_user_id', 'user_id'),
+                ]
+            },
+            'academic_certificate': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('certificate_code', 'VARCHAR(64)'),
+                    ('student_id', 'INTEGER'),
+                    ('title', 'VARCHAR(200)'),
+                    ('description', 'TEXT'),
+                    ('certificate_type', "VARCHAR(50) DEFAULT 'course_completion'"),
+                    ('issued_at', 'DATETIME'),
+                    ('criteria_met_json', "TEXT DEFAULT '{}'"),
+                ],
+                'indexes': [
+                    ('ix_academic_certificate_institution_id', 'institution_id'),
+                    ('ix_academic_certificate_certificate_code', 'certificate_code'),
+                    ('ix_academic_certificate_student_id', 'student_id'),
+                    ('ix_academic_certificate_certificate_type', 'certificate_type'),
+                ]
+            },
+            'parent_access_token': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('token', 'VARCHAR(64)'),
+                    ('created_at', 'DATETIME'),
+                    ('expires_at', 'DATETIME'),
+                    ('is_active', 'BOOLEAN DEFAULT 1'),
+                    ('last_accessed_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_parent_access_token_institution_id', 'institution_id'),
+                    ('ix_parent_access_token_student_id', 'student_id'),
+                    ('ix_parent_access_token_token', 'token'),
+                    ('ix_parent_access_token_is_active', 'is_active'),
+                ]
+            },
         }
         
         # Dynamically add institution_id to all tenant tables
@@ -493,7 +641,9 @@ def migrate():
             'activity_log', 'system_metric', 'assignment', 'assignment_submission',
             'student_profile', 'video_note', 'video_bookmark', 'video_progress',
             'leaderboard_entry', 'email_queue', 'student_remark', 'email_delivery_log',
-            'conversion_job'
+            'conversion_job', 'class_weekly_report', 'video_checkpoint',
+            'checkpoint_response', 'video_doubt', 'video_doubt_reply',
+            'video_flashcard', 'academic_certificate', 'parent_access_token'
         ]
         for table in tenant_tables:
             if table not in migrations:

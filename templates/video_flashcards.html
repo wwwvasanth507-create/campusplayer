@@ -1,0 +1,166 @@
+{% extends "layout.html" %}
+{% block title %}AI Interactive Flashcards — {{ video.title }} — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto;">
+
+    <!-- Top Navigation -->
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="material-icons" style="font-size:1.6rem; color:var(--primary);">style</i> AI Study Flashcards
+                </h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">{{ video.title }} &nbsp;•&nbsp; Active Recall & Concept Mastery</p>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+            <a href="{{ url_for('watch_video', video_id=video.id) }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.82rem;">
+                <i class="material-icons" style="font-size:0.95rem;">videocam</i> Resume Lecture
+            </a>
+        </div>
+    </div>
+
+    {% if flashcards %}
+    <!-- Flashcard Container -->
+    <div style="perspective:1000px; margin:30px auto; max-width:620px; min-height:340px; cursor:pointer;" onclick="flipCurrentCard()">
+        <div id="flashcardElement" class="card" style="position:relative; width:100%; min-height:340px; padding:32px 28px; text-align:center; transform-style:preserve-3d; transition:transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-direction:column; justify-content:center; align-items:center; box-shadow:0 15px 35px rgba(0,0,0,0.25); border:1px solid rgba(212,175,55,0.3);">
+            
+            <!-- Card Badge -->
+            <div style="position:absolute; top:18px; left:22px; font-size:0.75rem; color:var(--primary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:4px;">
+                <i class="material-icons" style="font-size:0.9rem;">psychology</i> <span id="cardSideIndicator">Concept / Term</span>
+            </div>
+
+            <!-- Card Counter -->
+            <div style="position:absolute; top:18px; right:22px; font-size:0.75rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace;">
+                Card <span id="cardIdx">1</span> of {{ flashcards|length }}
+            </div>
+
+            <!-- Main Content (Front / Back) -->
+            <div id="cardContent" style="font-size:1.35rem; font-weight:700; color:var(--text); line-height:1.4; padding:20px 10px;">
+                <!-- Populated via JS -->
+            </div>
+
+            <div style="position:absolute; bottom:16px; font-size:0.75rem; color:var(--text-dim); display:flex; align-items:center; gap:4px;">
+                <i class="material-icons" style="font-size:0.85rem;">touch_app</i> Click card or press <b>Space</b> to flip
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Controls Toolbar -->
+    <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-top:20px;">
+        <button onclick="prevCard()" class="btn btn-outline" style="width:auto; padding:10px 20px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i> Previous
+        </button>
+        <button onclick="flipCurrentCard()" class="btn btn-primary" style="width:auto; padding:10px 24px; display:inline-flex; align-items:center; gap:6px;">
+            <i class="material-icons" style="font-size:1.1rem;">flip</i> Flip Card
+        </button>
+        <button onclick="nextCard()" class="btn btn-outline" style="width:auto; padding:10px 20px; display:inline-flex; align-items:center; gap:6px;">
+            Next <i class="material-icons" style="font-size:1.1rem;">arrow_forward</i>
+        </button>
+    </div>
+
+    <div class="text-center" style="margin-top:20px; font-size:0.78rem; color:var(--text-dim);">
+        Keyboard shortcuts: <b>←</b> Previous &nbsp;|&nbsp; <b>→</b> Next &nbsp;|&nbsp; <b>Space</b> Flip
+    </div>
+
+    {% else %}
+    <div class="card text-center" style="padding:60px 20px;">
+        <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:12px;">style</i>
+        <h3 class="font-display" style="font-size:1.15rem; color:var(--text); margin:0 0 6px 0;">No Flashcards Generated Yet</h3>
+        <p style="font-size:0.84rem; color:var(--text-dim); margin:0 0 16px 0;">Generate interactive study kits with 1-click inside the video lecture player.</p>
+        <a href="{{ url_for('watch_video', video_id=video.id) }}" class="btn btn-primary" style="width:auto; padding:8px 18px; margin:auto;">
+            <i class="material-icons" style="font-size:1rem;">videocam</i> Open Lecture Player
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% if flashcards %}
+<script>
+const cards = [
+    {% for fc in flashcards %}
+    {
+        front: {{ fc.front_term|tojson }},
+        back: {{ fc.back_definition|tojson }}
+    },
+    {% endfor %}
+];
+
+let currentIndex = 0;
+let isFlipped = false;
+
+function renderCard() {
+    const card = cards[currentIndex];
+    const el = document.getElementById("flashcardElement");
+    const content = document.getElementById("cardContent");
+    const indicator = document.getElementById("cardSideIndicator");
+    const idxEl = document.getElementById("cardIdx");
+
+    idxEl.textContent = (currentIndex + 1);
+
+    if (isFlipped) {
+        content.textContent = card.back;
+        content.style.fontSize = "1.05rem";
+        content.style.fontWeight = "400";
+        content.style.color = "var(--text)";
+        indicator.textContent = "Definition & Core Insight";
+        el.style.borderColor = "var(--secondary-color)";
+    } else {
+        content.textContent = card.front;
+        content.style.fontSize = "1.35rem";
+        content.style.fontWeight = "700";
+        content.style.color = "var(--text)";
+        indicator.textContent = "Concept / Key Term";
+        el.style.borderColor = "rgba(212,175,55,0.4)";
+    }
+}
+
+function flipCurrentCard() {
+    isFlipped = !isFlipped;
+    const el = document.getElementById("flashcardElement");
+    el.style.transform = isFlipped ? "rotateY(180deg)" : "rotateY(0deg)";
+    setTimeout(renderCard, 200);
+}
+
+function nextCard() {
+    if (currentIndex < cards.length - 1) {
+        currentIndex++;
+        isFlipped = false;
+        document.getElementById("flashcardElement").style.transform = "rotateY(0deg)";
+        renderCard();
+    }
+}
+
+function prevCard() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        isFlipped = false;
+        document.getElementById("flashcardElement").style.transform = "rotateY(0deg)";
+        renderCard();
+    }
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+        e.preventDefault();
+        flipCurrentCard();
+    } else if (e.code === "ArrowRight") {
+        nextCard();
+    } else if (e.code === "ArrowLeft") {
+        prevCard();
+    }
+});
+
+// Initial render
+renderCard();
+</script>
+{% endif %}
+
+{% endblock %}

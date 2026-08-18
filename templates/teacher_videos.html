@@ -166,9 +166,9 @@
             <div>
                 <label>Classroom Association</label>
                 <select name="classroom_id" id="video-classroom" style="margin-bottom:0;">
-                    <option value="-1">🌐 Global Video (Public to Campus)</option>
+                    <option value="-1">Global Video (Public to Campus)</option>
                     {% for c in classes %}
-                    <option value="{{ c.id }}">📚 {{ c.name }}</option>
+                    <option value="{{ c.id }}">{{ c.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -276,10 +276,10 @@
             <div class="thumb">
                 <i class="material-icons" style="font-size:3rem; color:var(--text); opacity:0.2;">movie</i>
                 {% endif %}
-                {% if video.status == 'completed' %}<span class="status-chip chip-ok">✓ Ready</span>
+                {% if video.status == 'completed' %}<span class="status-chip chip-ok" style="display:inline-flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:0.8rem;">check_circle</i> Ready</span>
                 {% elif video.status == 'processing' %}<span class="status-chip chip-proc">{{ video.processing_progress
                     }}%</span>
-                {% elif video.status == 'failed' %}<span class="status-chip chip-fail">! Failed</span>
+                {% elif video.status == 'failed' %}<span class="status-chip chip-fail">Failed</span>
                 {% endif %}
             </div>
             <div class="vbody">
@@ -363,7 +363,7 @@
                 });
                 Array.from(list.children).forEach(child => {
                     const id = parseInt(child.id.split('-')[1]);
-                    if (!serverIds.has(id)) { child.innerHTML = '<p style="text-align:center;padding:20px;color:#3d8fa3;">✓ Complete! Refreshing...</p>'; setTimeout(() => { child.remove(); if (!list.children.length) window.location.reload(); }, 2000); }
+                    if (!serverIds.has(id)) { child.innerHTML = '<p style="text-align:center;padding:20px;color:#3d8fa3;display:flex;align-items:center;justify-content:center;gap:6px;"><i class="material-icons" style="font-size:1.1rem;">check_circle</i> Complete! Refreshing...</p>'; setTimeout(() => { child.remove(); if (!list.children.length) window.location.reload(); }, 2000); }
                 });
             } catch (e) { }
         }

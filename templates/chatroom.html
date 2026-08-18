@@ -271,8 +271,8 @@
             <i class="material-icons" style="font-size:1rem;">arrow_back</i> Back
         </a>
 
-        <div class="chat-top-av">
-            💬
+        <div class="chat-top-av" style="display:flex; align-items:center; justify-content:center;">
+            <i class="material-icons" style="font-size:1.4rem; color:var(--primary);">forum</i>
         </div>
         <div class="chat-top-info">
             <div class="chat-top-name">
@@ -282,9 +282,9 @@
                 </span>
             </div>
             <div class="chat-top-sub">
-                <span>🎓 <b>{{ classroom.students.count() }}</b> Scholars Enrolled</span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">school</i> <b>{{ classroom.students.count() }}</b> Scholars Enrolled</span>
                 <span>&bull;</span>
-                <span>👨‍🏫 Faculty: <b>{{ classroom.teacher.username }}</b></span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> Faculty: <b>{{ classroom.teacher.username }}</b></span>
             </div>
         </div>
 
@@ -310,9 +310,9 @@
                     <div class="msg-author">
                         <span>{{ msg.user.username }}</span>
                         {% if msg.user.role == 'teacher' %}
-                        <span class="staff-tag">👑 FACULTY</span>
+                        <span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>
                         {% else %}
-                        <span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;">🎓 Scholar</span>
+                        <span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;"><i class="material-icons" style="font-size:0.7rem; vertical-align:middle;">school</i> Scholar</span>
                         {% endif %}
                     </div>
                     {% endif %}
@@ -334,7 +334,7 @@
         {% endfor %}
         {% else %}
         <div class="text-center" id="emptyChat" style="padding:60px 20px; margin:auto;">
-            <div style="font-size:3.5rem; margin-bottom:12px;">💬✨</div>
+            <div style="font-size:3rem; margin-bottom:12px; color:var(--primary);"><i class="material-icons" style="font-size:3.5rem;">forum</i></div>
             <h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0 0 6px 0;">Classroom Discussion Ready</h3>
             <p style="font-size:0.82rem; color:var(--text-dim); margin:0;">Be the first scholar to drop a message or question!</p>
         </div>
@@ -373,7 +373,7 @@
 
     <!-- Typing Input Box -->
     <div class="chat-type-box">
-        <input type="text" id="chatInput" class="type-input" placeholder="Type a live message or question to {{ classroom.name }}… 💬" autocomplete="off"
+        <input type="text" id="chatInput" class="type-input" placeholder="Type a live message or question to {{ classroom.name }}..." autocomplete="off"
             onkeydown="if(event.key==='Enter') sendMessage();">
         <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn" style="width:44px; height:44px; min-height:44px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
             <i class="material-icons" style="font-size:1.2rem;">send</i>
@@ -428,8 +428,8 @@
 
         const l = (m.username || '?')[0].toUpperCase();
         let bad = '';
-        if (st && !own) bad = '<span class="staff-tag">👑 FACULTY</span>';
-        else if (!own) bad = '<span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;">🎓 Scholar</span>';
+        if (st && !own) bad = '<span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>';
+        else if (!own) bad = '<span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;"><i class="material-icons" style="font-size:0.7rem; vertical-align:middle;">school</i> Scholar</span>';
 
         let del = '';
         if (isTeacherOwner) del = `<button class="msg-del" onclick="deleteMessage(${m.id})" title="Delete Message"><i class="material-icons" style="font-size:0.75rem;">close</i></button>`;
@@ -469,7 +469,7 @@
         fetch(`/api/chatroom/${classId}/delete_all`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
         .then(r => r.json())
         .then(d => {
-            if (d.success) document.getElementById('chatMessages').innerHTML = `<div class="text-center" id="emptyChat" style="padding:60px 20px; margin:auto;"><div style="font-size:3.5rem; margin-bottom:12px;">💬✨</div><h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0 0 6px 0;">Classroom Discussion Ready</h3><p style="font-size:0.82rem; color:var(--text-dim); margin:0;">Be the first scholar to drop a message or question!</p></div>`;
+            if (d.success) document.getElementById('chatMessages').innerHTML = `<div class="text-center" id="emptyChat" style="padding:60px 20px; margin:auto;"><div style="font-size:3rem; margin-bottom:12px; color:var(--primary);"><i class="material-icons" style="font-size:3.5rem;">forum</i></div><h3 class="font-display" style="font-size:1.1rem; color:var(--text); margin:0 0 6px 0;">Classroom Discussion Ready</h3><p style="font-size:0.82rem; color:var(--text-dim); margin:0;">Be the first scholar to drop a message or question!</p></div>`;
         });
     }
 

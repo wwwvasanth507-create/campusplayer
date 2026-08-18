@@ -13,13 +13,13 @@
 
 :root {
     /* ══ Core Locked Palette ══ */
-    --vp-primary: #8a6a3a;
-    --vp-primary-dark: #74572e;
+    --vp-primary: #d4af37;
+    --vp-primary-dark: #b38f20;
     --vp-secondary: #2541b2;
     --vp-secondary-light: #3a56cf;
     --vp-accent: #2541b2;
-    --vp-gold: #8a6a3a;
-    --vp-gold-light: #9f7c46;
+    --vp-gold: #d4af37;
+    --vp-gold-light: #e5c158;
     --vp-cyan: #3d8fa3;
     --vp-cyan-light: #3d8fa3;
     --vp-green: #3d8fa3;
@@ -27,14 +27,14 @@
     --vp-violet: #2541b2;
 
     /* ══ Gradients & Fills (Solid Flat) ══ */
-    --vp-gradient-1: #8a6a3a;
+    --vp-gradient-1: #d4af37;
     --vp-gradient-2: #2541b2;
     --vp-gradient-3: #2541b2;
     --vp-gradient-4: #3d8fa3;
-    --vp-gradient-5: #8a6a3a;
+    --vp-gradient-5: #d4af37;
     --vp-gradient-6: #3d8fa3;
     --vp-gradient-title: #f0f2f5;
-    --vp-gradient-neon: #8a6a3a;
+    --vp-gradient-neon: #d4af37;
     --vp-gradient-bg: #0d0d10;
 
     /* ══ Surfaces ══ */
@@ -232,12 +232,6 @@
     display: flex;
     align-items: center;
     gap: 5px;
-}
-
-.vp-views::before {
-    content: '👁';
-    font-size: 0.7rem;
-    opacity: 0.5;
 }
 
 .vp-date {
@@ -1284,6 +1278,38 @@
                     srclang="{{ video.subtitle_language or 'en' }}" label="Subtitles" default>
                 {% endif %}
             </video>
+
+            <!-- ═══ IN-VIDEO POP-UP CHECKPOINT OVERLAY ═══ -->
+            <div id="video-checkpoint-overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(8px); z-index:90; align-items:center; justify-content:center; padding:20px;">
+                <div class="card" style="max-width:520px; width:100%; padding:26px; border:2px solid var(--primary); background:var(--surface); box-shadow:0 20px 50px rgba(0,0,0,0.6); text-align:left; position:relative;">
+                    <div class="flex-between" style="margin-bottom:12px;">
+                        <span class="badge" style="background:rgba(212,175,55,0.15); color:var(--primary); border:1px solid rgba(212,175,55,0.3); font-size:0.72rem; padding:3px 10px; border-radius:var(--radius-pill); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="material-icons" style="font-size:0.8rem;">psychology</i> Comprehension Checkpoint
+                        </span>
+                        <span id="cp-xp-badge" class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); font-size:0.72rem; padding:3px 10px; border-radius:var(--radius-pill); font-weight:700;">
+                            +25 XP Reward
+                        </span>
+                    </div>
+
+                    <h3 id="cp-question-text" class="font-display" style="font-size:1.05rem; color:var(--text); margin:0 0 16px 0; line-height:1.4;"></h3>
+
+                    <div id="cp-options-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+                        <!-- Options generated dynamically -->
+                    </div>
+
+                    <div id="cp-feedback-box" style="display:none; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:0.84rem;"></div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button id="cp-submit-btn" onclick="submitActiveCheckpoint()" class="btn btn-primary" style="width:auto; padding:8px 18px;">
+                            <i class="material-icons" style="font-size:1rem;">check</i> Submit Answer
+                        </button>
+                        <button id="cp-continue-btn" onclick="resumeAfterCheckpoint()" class="btn btn-outline" style="display:none; width:auto; padding:8px 18px;">
+                            <i class="material-icons" style="font-size:1rem;">play_arrow</i> Continue Watching
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {% if not hls_source %}
             <div class="vp-error" style="margin-top:16px;color:#ff6b6b;font-weight:600;">This video is not ready for playback yet.</div>
             {% endif %}
@@ -1362,11 +1388,29 @@
                         <div class="vp-uploader-subs">{% if video.uploader.subscriber_count %}{{ video.uploader.subscriber_count }} subscribers{% endif %}</div>
                     </div>
                 </div>
-                <div class="vp-action-buttons" style="display:flex; align-items:center; gap:10px;">
-                    <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-primary" id="vp-ai-summarize-btn" style="background:var(--primary); color:#ffffff !important; padding:9px 18px; border-radius:8px; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:8px; text-decoration:none; border:none;">
-                        <i class="material-icons" style="font-size:1.1rem;">smart_toy</i>
+                <div class="vp-action-buttons" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-primary" id="vp-ai-summarize-btn" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="material-icons" style="font-size:0.95rem;">smart_toy</i>
                         <span>AI Summarize</span>
                     </a>
+                    <button onclick="openAIStudyKitModal()" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; color:var(--primary); border-color:rgba(212,175,55,0.4);">
+                        <i class="material-icons" style="font-size:0.95rem;">psychology</i>
+                        <span>AI Study Kit</span>
+                    </button>
+                    <a href="{{ url_for('view_video_flashcards', video_id=video.id) }}" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="material-icons" style="font-size:0.95rem;">style</i>
+                        <span>Flashcards</span>
+                    </a>
+                    <button onclick="document.getElementById('doubts-section').scrollIntoView({behavior:'smooth'})" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="material-icons" style="font-size:0.95rem;">question_answer</i>
+                        <span>Q&A Doubts</span>
+                    </button>
+                    {% if current_user.role in ['teacher', 'admin'] %}
+                    <button onclick="openAddCheckpointModal()" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; color:var(--secondary-color);">
+                        <i class="material-icons" style="font-size:0.95rem;">add_task</i>
+                        <span>Add Checkpoint</span>
+                    </button>
+                    {% endif %}
                 </div>
             </div>
 
@@ -1401,7 +1445,9 @@
                             <i class="material-icons" style="font-size:1.25rem;">smart_toy</i>
                         </div>
                         <div>
-                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text);">✨ AI Video Summarizer</h3>
+                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text); display:flex; align-items:center; gap:6px;">
+                                <i class="material-icons" style="font-size:1.25rem; color:var(--primary);">auto_awesome</i> AI Video Summarizer
+                            </h3>
                             <span style="font-size: 0.78rem; color: var(--text-dim);">Instant AI breakdown &amp; key learning takeaways</span>
                         </div>
                     </div>
@@ -1438,8 +1484,8 @@
                     {% else %}
                         <div style="text-align: center; padding: 20px 0;">
                             <p style="color: var(--text-dim); font-size:0.85rem; margin-bottom: 12px;">Click below to generate an AI summary for this video lesson.</p>
-                            <button onclick="fetchAISummary(false)" class="btn btn-primary" style="background: var(--primary); color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size:0.85rem; cursor: pointer;">
-                                🚀 Generate AI Summary Now
+                            <button onclick="fetchAISummary(false)" class="btn btn-primary" style="background: var(--primary); color: #ffffff; border: none; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size:0.85rem; cursor: pointer; display:inline-flex; align-items:center; gap:6px;">
+                                <i class="material-icons" style="font-size:1rem;">auto_awesome</i> Generate AI Summary Now
                             </button>
                         </div>
                     {% endif %}
@@ -1499,6 +1545,144 @@
                         <p>No comments yet. Start the conversation!</p>
                     </div>
                     {% endfor %}
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- TIME-STAMPED DOUBTS & CLASSROOM Q&A SECTION                     -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <div id="doubts-section" class="card mb-16" style="padding:22px; margin-top:20px; background:var(--surface); border:1px solid var(--border); border-radius:12px;">
+                <div class="flex-between" style="margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:8px; background:rgba(37,65,178,0.15); display:flex; align-items:center; justify-content:center; color:var(--secondary-color);">
+                            <i class="material-icons" style="font-size:1.25rem;">question_answer</i>
+                        </div>
+                        <div>
+                            <h3 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text); display:flex; align-items:center; gap:6px;">
+                                Time-Stamped Doubts &amp; Discussion
+                            </h3>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">Ask doubts linked to exact video moments &bull; Click timestamps to jump</span>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleNewDoubtForm()" class="btn btn-primary" style="padding:6px 14px; font-size:0.78rem; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="material-icons" style="font-size:0.95rem;">add_comment</i>
+                        <span>Ask Doubt at Current Time</span>
+                    </button>
+                </div>
+
+                <!-- New Doubt Form -->
+                <div id="new-doubt-container" style="display:none; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px; margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Timestamp:</span>
+                        <input type="number" id="doubt-timestamp-input" step="1" min="0" style="width:85px; padding:4px 8px; font-size:0.8rem; margin-bottom:0;" placeholder="Secs">
+                        <span id="doubt-time-formatted" style="font-size:0.75rem; color:var(--primary); font-family:'JetBrains Mono',monospace;">(00:00)</span>
+                    </div>
+                    <textarea id="doubt-question-input" placeholder="What part of the concept or equation do you have a question about?..." style="width:100%; height:65px; resize:none; font-size:0.82rem; margin-bottom:10px;"></textarea>
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" onclick="toggleNewDoubtForm()" class="btn btn-outline" style="padding:5px 12px; font-size:0.75rem;">Cancel</button>
+                        <button type="button" onclick="submitNewDoubt()" class="btn btn-primary" style="padding:5px 14px; font-size:0.75rem;">Post Doubt</button>
+                    </div>
+                </div>
+
+                <!-- Doubts List -->
+                <div id="doubts-list-container" style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="text-align:center; padding:16px; color:var(--text-dim); font-size:0.82rem;">Loading classroom doubts...</div>
+                </div>
+            </div>
+
+            <!-- ═══ MODAL: ADD CHECKPOINT (Teacher Only) ═══ -->
+            {% if current_user.role in ['teacher', 'admin'] %}
+            <div id="addCheckpointModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+                <div class="card" style="max-width:500px; width:90%; padding:24px; position:relative; background:var(--surface); border:1px solid var(--border); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+                    <div class="flex-between" style="margin-bottom:14px;">
+                        <h3 class="font-display" style="margin:0; color:var(--text); display:flex; align-items:center; gap:8px;">
+                            <i class="material-icons" style="color:var(--secondary-color); font-size:1.25rem;">add_task</i> Add In-Video Checkpoint
+                        </h3>
+                        <button onclick="document.getElementById('addCheckpointModal').style.display='none'" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                            <i class="material-icons" style="font-size:1.2rem;">close</i>
+                        </button>
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:0.75rem; color:var(--text-dim);">Trigger Timestamp (Seconds) *</label>
+                        <input type="number" id="cp-add-timestamp" min="0" step="1" style="width:100%; font-size:0.82rem;" placeholder="e.g. 120">
+                    </div>
+
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:0.75rem; color:var(--text-dim);">Question Text *</label>
+                        <textarea id="cp-add-question" style="width:100%; height:55px; resize:none; font-size:0.82rem;" placeholder="What is the result of the previous derivation?"></textarea>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-dim);">Option A *</label>
+                            <input type="text" id="cp-add-opta" style="width:100%; font-size:0.8rem;" placeholder="Option A">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-dim);">Option B *</label>
+                            <input type="text" id="cp-add-optb" style="width:100%; font-size:0.8rem;" placeholder="Option B">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-dim);">Option C (Optional)</label>
+                            <input type="text" id="cp-add-optc" style="width:100%; font-size:0.8rem;" placeholder="Option C">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; color:var(--text-dim);">Option D (Optional)</label>
+                            <input type="text" id="cp-add-optd" style="width:100%; font-size:0.8rem;" placeholder="Option D">
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+                        <div>
+                            <label style="font-size:0.75rem; color:var(--text-dim);">Correct Option *</label>
+                            <select id="cp-add-correct" style="width:100%; font-size:0.8rem; margin-bottom:0;">
+                                <option value="a">Option A</option>
+                                <option value="b">Option B</option>
+                                <option value="c">Option C</option>
+                                <option value="d">Option D</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem; color:var(--text-dim);">XP Reward</label>
+                            <input type="number" id="cp-add-xp" value="25" min="5" step="5" style="width:100%; font-size:0.8rem; margin-bottom:0;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" onclick="document.getElementById('addCheckpointModal').style.display='none'" class="btn btn-outline" style="padding:6px 14px; font-size:0.78rem;">Cancel</button>
+                        <button type="button" onclick="saveNewCheckpoint()" class="btn btn-primary" style="padding:6px 16px; font-size:0.78rem;">Save Checkpoint</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ═══ MODAL: AI STUDY KIT ═══ -->
+            <div id="aiStudyKitModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+                <div class="card" style="max-width:540px; width:90%; padding:24px; position:relative; background:var(--surface); border:1px solid var(--border); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+                    <div class="flex-between" style="margin-bottom:14px;">
+                        <h3 class="font-display" style="margin:0; color:var(--text); display:flex; align-items:center; gap:8px;">
+                            <i class="material-icons" style="color:var(--primary); font-size:1.3rem;">auto_awesome</i> AI Study Kit Generator
+                        </h3>
+                        <button onclick="document.getElementById('aiStudyKitModal').style.display='none'" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                            <i class="material-icons" style="font-size:1.2rem;">close</i>
+                        </button>
+                    </div>
+
+                    <p style="font-size:0.82rem; color:var(--text-dim); margin-top:0;">Generate interactive 3D concept flashcards and automatic assessment questions for <b>{{ video.title }}</b>.</p>
+
+                    <div id="study-kit-status" style="padding:14px; border-radius:8px; background:var(--surface2); margin-bottom:16px; font-size:0.82rem; color:var(--text);">
+                        Ready to synthesize lecture takeaways into study flashcards and quiz questions.
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+                        <a href="{{ url_for('view_video_flashcards', video_id=video.id) }}" class="btn btn-outline" style="padding:7px 14px; font-size:0.78rem;">
+                            <i class="material-icons" style="font-size:0.95rem;">style</i> View Flashcards
+                        </a>
+                        <button type="button" onclick="generateStudyKit()" id="btn-gen-kit" class="btn btn-primary" style="padding:7px 16px; font-size:0.78rem;">
+                            <i class="material-icons" style="font-size:0.95rem;">psychology</i> Synthesize Study Kit
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1719,5 +1903,351 @@ function postReply(event, parentId) {
     .then(r => r.json())
     .then(data => { if (data.success) location.reload(); });
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   IN-VIDEO CHECKPOINTS ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+let videoCheckpoints = [];
+let triggeredCheckpoints = new Set();
+let activeCheckpoint = null;
+
+function loadCheckpoints() {
+    fetch(`/api/video/${currentVideoId}/checkpoints`)
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            videoCheckpoints = data.checkpoints || [];
+            videoCheckpoints.forEach(cp => {
+                if (cp.answered) triggeredCheckpoints.add(cp.id);
+            });
+            attachCheckpointListeners();
+        }
+    })
+    .catch(err => console.debug('Checkpoints fetch:', err));
+}
+
+function attachCheckpointListeners() {
+    const videoEl = document.getElementById('video-player') || document.querySelector('video');
+    if (!videoEl) return;
+
+    videoEl.addEventListener('timeupdate', function() {
+        const curTime = videoEl.currentTime;
+        for (const cp of videoCheckpoints) {
+            if (!triggeredCheckpoints.has(cp.id) && Math.abs(curTime - cp.timestamp) < 1.0) {
+                triggerCheckpoint(cp);
+                break;
+            }
+        }
+    });
+}
+
+function triggerCheckpoint(cp) {
+    activeCheckpoint = cp;
+    triggeredCheckpoints.add(cp.id);
+
+    // Pause player
+    const videoEl = document.getElementById('video-player') || document.querySelector('video');
+    if (videoEl) videoEl.pause();
+    if (window.campusPlayer && window.campusPlayer.pause) window.campusPlayer.pause();
+
+    const overlay = document.getElementById('video-checkpoint-overlay');
+    const qText = document.getElementById('cp-question-text');
+    const optList = document.getElementById('cp-options-list');
+    const fbBox = document.getElementById('cp-feedback-box');
+    const submitBtn = document.getElementById('cp-submit-btn');
+    const continueBtn = document.getElementById('cp-continue-btn');
+
+    qText.textContent = cp.question;
+    fbBox.style.display = 'none';
+    submitBtn.style.display = 'inline-flex';
+    continueBtn.style.display = 'none';
+
+    let optionsHtml = '';
+    ['a', 'b', 'c', 'd'].forEach(opt => {
+        const val = cp['option_' + opt];
+        if (val) {
+            optionsHtml += `
+                <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; font-size:0.86rem; color:var(--text);">
+                    <input type="radio" name="cp-option" value="${opt}" style="margin:0;">
+                    <span><b>${opt.toUpperCase()}.</b> ${val}</span>
+                </label>
+            `;
+        }
+    });
+    optList.innerHTML = optionsHtml;
+    overlay.style.display = 'flex';
+}
+
+function submitActiveCheckpoint() {
+    if (!activeCheckpoint) return;
+    const selected = document.querySelector('input[name="cp-option"]:checked');
+    if (!selected) {
+        alert('Please select an option to submit your answer.');
+        return;
+    }
+
+    fetch(`/api/video/checkpoint/${activeCheckpoint.id}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected_option: selected.value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const fbBox = document.getElementById('cp-feedback-box');
+        const submitBtn = document.getElementById('cp-submit-btn');
+        const continueBtn = document.getElementById('cp-continue-btn');
+
+        fbBox.style.display = 'block';
+        if (data.is_correct) {
+            fbBox.style.background = 'rgba(61,143,163,0.15)';
+            fbBox.style.border = '1px solid rgba(61,143,163,0.3)';
+            fbBox.style.color = 'var(--success-color)';
+            fbBox.innerHTML = `<b><i class="material-icons" style="font-size:1rem; vertical-align:middle;">check_circle</i> Correct! (+${data.xp_awarded} XP)</b><br/>${data.explanation}`;
+        } else {
+            fbBox.style.background = 'rgba(217,130,43,0.15)';
+            fbBox.style.border = '1px solid rgba(217,130,43,0.3)';
+            fbBox.style.color = 'var(--danger-color)';
+            fbBox.innerHTML = `<b><i class="material-icons" style="font-size:1rem; vertical-align:middle;">cancel</i> Incorrect (Correct was Option ${data.correct_option.toUpperCase()})</b><br/>${data.explanation}`;
+        }
+
+        submitBtn.style.display = 'none';
+        continueBtn.style.display = 'inline-flex';
+    });
+}
+
+function resumeAfterCheckpoint() {
+    document.getElementById('video-checkpoint-overlay').style.display = 'none';
+    const videoEl = document.getElementById('video-player') || document.querySelector('video');
+    if (videoEl) videoEl.play();
+    if (window.campusPlayer && window.campusPlayer.play) window.campusPlayer.play();
+}
+
+function openAddCheckpointModal() {
+    const videoEl = document.getElementById('video-player') || document.querySelector('video');
+    const curTime = videoEl ? Math.floor(videoEl.currentTime) : 0;
+    document.getElementById('cp-add-timestamp').value = curTime;
+    document.getElementById('addCheckpointModal').style.display = 'flex';
+}
+
+function saveNewCheckpoint() {
+    const ts = parseFloat(document.getElementById('cp-add-timestamp').value || 0);
+    const q = document.getElementById('cp-add-question').value.trim();
+    const opta = document.getElementById('cp-add-opta').value.trim();
+    const optb = document.getElementById('cp-add-optb').value.trim();
+    const optc = document.getElementById('cp-add-optc').value.trim();
+    const optd = document.getElementById('cp-add-optd').value.trim();
+    const correct = document.getElementById('cp-add-correct').value;
+    const xp = parseInt(document.getElementById('cp-add-xp').value || 25);
+
+    if (!q || !opta || !optb) {
+        alert('Please fill in the question and at least 2 options.');
+        return;
+    }
+
+    fetch(`/api/video/${currentVideoId}/checkpoints/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            timestamp_seconds: ts,
+            question_text: q,
+            option_a: opta,
+            option_b: optb,
+            option_c: optc,
+            option_d: optd,
+            correct_option: correct,
+            xp_reward: xp
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Checkpoint saved successfully!');
+            document.getElementById('addCheckpointModal').style.display = 'none';
+            loadCheckpoints();
+        } else {
+            alert(data.message || 'Error saving checkpoint.');
+        }
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIME-STAMPED DOUBTS & Q&A ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+function loadDoubts() {
+    fetch(`/api/video/${currentVideoId}/doubts`)
+    .then(r => r.json())
+    .then(data => {
+        const container = document.getElementById('doubts-list-container');
+        if (!data.success || !data.doubts || data.doubts.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-dim); font-size:0.84rem;">No student doubts asked yet. Be the first to start a lecture thread!</div>`;
+            return;
+        }
+
+        let html = '';
+        data.doubts.forEach(d => {
+            let repliesHtml = '';
+            (d.replies || []).forEach(r => {
+                repliesHtml += `
+                    <div style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 12px; margin-top:6px; font-size:0.8rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                            <span style="font-weight:700; color:var(--text);">
+                                ${r.author} ${r.is_teacher_endorsed ? '<span class="badge" style="background:rgba(212,175,55,0.15); color:var(--primary); font-size:0.65rem; padding:1px 6px; border-radius:4px;">Faculty</span>' : ''}
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--text-dim);">${r.created_at}</span>
+                        </div>
+                        <p style="margin:0; color:var(--text-secondary);">${r.content}</p>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div style="background:var(--surface2); border:1px solid ${d.is_resolved ? 'rgba(61,143,163,0.3)' : 'var(--border)'}; border-radius:8px; padding:14px;">
+                    <div class="flex-between" style="margin-bottom:6px; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button onclick="seekToTime(${d.timestamp})" class="btn btn-outline" style="padding:2px 8px; font-size:0.72rem; min-height:24px; font-family:'JetBrains Mono',monospace; color:var(--primary); border-color:rgba(212,175,55,0.4);">
+                                <i class="material-icons" style="font-size:0.75rem;">play_arrow</i> ${d.timestamp_str}
+                            </button>
+                            <span style="font-weight:700; font-size:0.85rem; color:var(--text);">${d.author}</span>
+                            <span style="font-size:0.72rem; color:var(--text-dim);">${d.created_at}</span>
+                        </div>
+                        <div>
+                            ${d.is_resolved ? '<span class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); font-size:0.68rem; padding:2px 8px; border-radius:var(--radius-pill);"><i class="material-icons" style="font-size:0.75rem;">check</i> Resolved</span>' : ''}
+                        </div>
+                    </div>
+                    <p style="margin:0 0 10px 0; font-size:0.86rem; color:var(--text); font-weight:500;">${d.question}</p>
+
+                    <!-- Replies -->
+                    <div style="margin-left:12px; margin-bottom:8px;">
+                        ${repliesHtml}
+                    </div>
+
+                    <!-- Add reply form -->
+                    <div style="display:flex; gap:6px; margin-top:8px;">
+                        <input type="text" id="reply-doubt-input-${d.id}" placeholder="Reply to this doubt..." style="flex:1; padding:4px 10px; font-size:0.78rem; height:28px; min-height:28px; margin-bottom:0; border-radius:6px;">
+                        <button onclick="submitDoubtReply(${d.id})" class="btn btn-primary" style="padding:4px 10px; font-size:0.75rem; min-height:28px;">Reply</button>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    });
+}
+
+function toggleNewDoubtForm() {
+    const box = document.getElementById('new-doubt-container');
+    const isHidden = (box.style.display === 'none');
+    box.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+        const videoEl = document.getElementById('video-player') || document.querySelector('video');
+        const curTime = videoEl ? Math.floor(videoEl.currentTime) : 0;
+        document.getElementById('doubt-timestamp-input').value = curTime;
+        const mins = Math.floor(curTime / 60);
+        const secs = curTime % 60;
+        document.getElementById('doubt-time-formatted').textContent = `(${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs})`;
+    }
+}
+
+function submitNewDoubt() {
+    const ts = parseFloat(document.getElementById('doubt-timestamp-input').value || 0);
+    const q = document.getElementById('doubt-question-input').value.trim();
+    if (!q) {
+        alert('Please enter your question / doubt.');
+        return;
+    }
+
+    fetch(`/api/video/${currentVideoId}/doubts/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ timestamp_seconds: ts, question_text: q })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('doubt-question-input').value = '';
+            toggleNewDoubtForm();
+            loadDoubts();
+        } else {
+            alert(data.message || 'Error posting doubt.');
+        }
+    });
+}
+
+function submitDoubtReply(doubtId) {
+    const inp = document.getElementById(`reply-doubt-input-${doubtId}`);
+    const content = (inp ? inp.value : '').trim();
+    if (!content) return;
+
+    fetch(`/api/video/doubts/${doubtId}/reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            inp.value = '';
+            loadDoubts();
+        }
+    });
+}
+
+function seekToTime(seconds) {
+    const videoEl = document.getElementById('video-player') || document.querySelector('video');
+    if (videoEl) {
+        videoEl.currentTime = seconds;
+        videoEl.play();
+    }
+    if (window.campusPlayer && window.campusPlayer.seek) {
+        window.campusPlayer.seek(seconds);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI STUDY KIT ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+function openAIStudyKitModal() {
+    document.getElementById('aiStudyKitModal').style.display = 'flex';
+}
+
+function generateStudyKit() {
+    const statusBox = document.getElementById('study-kit-status');
+    const btn = document.getElementById('btn-gen-kit');
+    btn.disabled = true;
+    statusBox.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px; color:var(--primary);">
+            <div class="spinner-border" style="width:1.2rem; height:1.2rem; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+            <span>Synthesizing lecture concepts into flashcards &amp; assessment questions...</span>
+        </div>
+    `;
+
+    fetch(`/api/video/${currentVideoId}/generate_ai_study_kit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        if (data.success) {
+            statusBox.innerHTML = `
+                <div style="color:var(--success-color); font-weight:700; margin-bottom:8px;">
+                    <i class="material-icons" style="font-size:1rem; vertical-align:middle;">check_circle</i> Study Kit Generated! (${data.flashcards.length} Flashcards &amp; Assessment Questions Ready)
+                </div>
+                <p style="margin:0; font-size:0.8rem; color:var(--text-secondary);">You can now review 3D active recall flashcards or test comprehension.</p>
+            `;
+        } else {
+            statusBox.innerHTML = `<span style="color:var(--danger-color);">Error generating study kit. Please try again.</span>`;
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        statusBox.innerHTML = `<span style="color:var(--danger-color);">Connection error while generating study kit.</span>`;
+    });
+}
+
+// Initialize Checkpoints & Doubts on load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCheckpoints();
+    loadDoubts();
+});
 </script>
 {% endblock %}

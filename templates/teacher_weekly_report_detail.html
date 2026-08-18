@@ -1,0 +1,290 @@
+{% extends "layout.html" %}
+{% block title %}Weekly Digest — {{ report.classroom.name }} — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:1160px; margin:0 auto;">
+
+    <!-- Top Action Bar & Back Navigation -->
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('teacher_weekly_reports') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <h1 class="page-title font-display" style="margin:0;">
+                        {{ report.classroom.name }}
+                    </h1>
+                    {% if report.status == 'sent_to_admin' %}
+                    <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.72rem; padding:3px 10px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:4px;">
+                        <i class="material-icons" style="font-size:0.8rem;">send</i> Dispatched to Principal
+                    </span>
+                    {% elif report.status == 'reviewed' %}
+                    <span class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); font-size:0.72rem; padding:3px 10px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:4px;">
+                        <i class="material-icons" style="font-size:0.8rem;">verified</i> Principal Reviewed
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); font-size:0.72rem; padding:3px 10px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:4px;">
+                        <i class="material-icons" style="font-size:0.8rem;">drafts</i> Draft Digest
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="page-sub" style="margin:2px 0 0 0; font-family:'JetBrains Mono',monospace;">
+                    Period: <b>{{ report.period_start.strftime('%b %d') }} – {{ report.period_end.strftime('%b %d, %Y') }}</b> &nbsp;|&nbsp; 
+                    Faculty: <b>{{ report.teacher.username }}</b> &nbsp;|&nbsp; 
+                    Compiled: <b>{{ report.generated_at.strftime('%b %d, %Y at %I:%M %p') }}</b>
+                </p>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <a href="{{ url_for('download_weekly_report_pdf', report_id=report.id) }}" class="btn btn-outline" style="padding:8px 14px; font-size:0.82rem; min-height:38px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1rem; color:var(--primary);">download</i>
+                <span>Download Official PDF</span>
+            </a>
+
+            {% if current_user.role in ['teacher', 'admin'] and report.status != 'sent_to_admin' and report.status != 'reviewed' %}
+            <form method="POST" action="{{ url_for('send_weekly_report_to_admin', report_id=report.id) }}" style="margin:0;" onsubmit="return confirm('Dispatch this weekly performance digest to the Principal / Admin inbox?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-primary" style="padding:8px 16px; font-size:0.82rem; min-height:38px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="font-size:1rem;">forward_to_inbox</i>
+                    <span>Send to Principal / Admin</span>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 4 High-Impact KPI Stat Cards -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px;">
+        <div class="card" style="padding:18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-left:4px solid var(--primary);">
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(212,175,55,0.12); display:flex; align-items:center; justify-content:center; color:var(--primary); flex-shrink:0;">
+                <i class="material-icons" style="font-size:1.4rem;">fact_check</i>
+            </div>
+            <div>
+                <div style="font-size:1.35rem; font-weight:800; color:var(--text); font-family:'JetBrains Mono',monospace; line-height:1.1;">{{ data.avg_attendance_pct }}%</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-top:2px;">Class Attendance</div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-left:4px solid var(--secondary-color);">
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(37,65,178,0.12); display:flex; align-items:center; justify-content:center; color:var(--secondary-color); flex-shrink:0;">
+                <i class="material-icons" style="font-size:1.4rem;">emoji_events</i>
+            </div>
+            <div>
+                <div style="font-size:1.35rem; font-weight:800; color:var(--text); font-family:'JetBrains Mono',monospace; line-height:1.1;">{{ "{:,}".format(data.total_xp) }}</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-top:2px;">Total Class XP</div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-left:4px solid var(--success-color);">
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(61,143,163,0.12); display:flex; align-items:center; justify-content:center; color:var(--success-color); flex-shrink:0;">
+                <i class="material-icons" style="font-size:1.4rem;">quiz</i>
+            </div>
+            <div>
+                <div style="font-size:1.35rem; font-weight:800; color:var(--text); font-family:'JetBrains Mono',monospace; line-height:1.1;">{{ data.avg_quiz_score_pct }}%</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-top:2px;">Average Quiz Mastery</div>
+            </div>
+        </div>
+
+        <div class="card" style="padding:18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-left:4px solid var(--text-dim);">
+            <div style="width:44px; height:44px; border-radius:10px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:var(--text); flex-shrink:0;">
+                <i class="material-icons" style="font-size:1.4rem;">play_circle</i>
+            </div>
+            <div>
+                <div style="font-size:1.35rem; font-weight:800; color:var(--text); font-family:'JetBrains Mono',monospace; line-height:1.1;">{{ data.total_watch_hours }}h</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-top:2px;">Video Lecture Hours</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attention Required Scholars Callout (If any) -->
+    {% if data.at_risk_students %}
+    <div class="card mb-16" style="padding:18px 22px; border:1px solid rgba(217,130,43,0.35); background:rgba(217,130,43,0.05);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+            <i class="material-icons" style="color:var(--danger-color); font-size:1.25rem;">warning</i>
+            <h3 class="font-display" style="margin:0; font-size:1rem; color:var(--danger-color);">Attention Required — Scholars Needing Intervention ({{ data.at_risk_students|length }})</h3>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px;">
+            {% for s in data.at_risk_students %}
+            <div style="background:var(--surface); border:1px solid rgba(217,130,43,0.25); border-radius:8px; padding:10px 14px;">
+                <div style="font-weight:700; font-size:0.85rem; color:var(--text); display:flex; justify-content:space-between;">
+                    <span>{{ s.name }}</span>
+                    <span style="color:var(--danger-color); font-size:0.75rem; font-family:'JetBrains Mono',monospace;">{{ s.attendance_pct }} Att</span>
+                </div>
+                <div style="font-size:0.74rem; color:var(--text-dim); margin-top:3px;">
+                    {{ s.reason }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Consolidated Student Performance Roster Table -->
+    <div class="card mb-16" style="padding:0; overflow:hidden;">
+        <div style="padding:16px 20px; border-bottom:1px solid var(--border);" class="flex-between">
+            <div>
+                <h3 class="font-display" style="margin:0; font-size:1.05rem; color:var(--text); display:flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="font-size:1.15rem; color:var(--primary);">group</i> Consolidated Scholar Roster ({{ data.students|length }})
+                </h3>
+            </div>
+            <div style="position:relative; width:220px;">
+                <i class="material-icons" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:0.9rem; color:var(--text-dim);">search</i>
+                <input type="text" id="rosterSearch" placeholder="Filter scholars..." onkeyup="filterRosterTable()"
+                       style="padding-left:30px; height:32px; min-height:32px; font-size:0.75rem; border-radius:var(--radius-pill); margin-bottom:0;">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table" id="rosterTable" style="margin:0;">
+                <thead>
+                    <tr>
+                        <th style="padding:12px 16px; width:40px;">#</th>
+                        <th style="padding:12px 16px;">Scholar Name</th>
+                        <th style="padding:12px 16px; text-align:center;">Level</th>
+                        <th style="padding:12px 16px; text-align:center;">Total XP</th>
+                        <th style="padding:12px 16px; text-align:center;">Attendance</th>
+                        <th style="padding:12px 16px; text-align:center;">Quizzes Taken</th>
+                        <th style="padding:12px 16px; text-align:center;">Watch Time</th>
+                        <th style="padding:12px 16px; text-align:center;">Standing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in data.students %}
+                    <tr class="roster-row">
+                        <td style="padding:12px 16px; font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:var(--text-dim);">{{ loop.index }}</td>
+                        <td style="padding:12px 16px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div style="width:32px; height:32px; border-radius:8px; background:var(--surface2); color:var(--text); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0;">
+                                    {{ s.username[0].upper() }}
+                                </div>
+                                <div class="student-name" style="font-weight:700; color:var(--text); font-size:0.86rem;">
+                                    {{ s.username }}
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding:12px 16px; text-align:center;">
+                            <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); font-size:0.72rem; padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace;">
+                                Lvl {{ s.level }}
+                            </span>
+                        </td>
+                        <td style="padding:12px 16px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.84rem; font-weight:700; color:var(--secondary-color);">
+                            {{ "{:,}".format(s.total_xp) }}
+                        </td>
+                        <td style="padding:12px 16px; text-align:center;">
+                            <span style="font-family:'JetBrains Mono',monospace; font-weight:700; font-size:0.84rem; color:{{ 'var(--success-color)' if s.attendance_pct >= 75 else 'var(--danger-color)' }};">
+                                {{ s.attendance_display }}
+                            </span>
+                        </td>
+                        <td style="padding:12px 16px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--text);">
+                            {% if s.quizzes_taken > 0 %}
+                            <b>{{ s.quiz_display }}</b> <span style="font-size:0.72rem; color:var(--text-dim);">({{ s.quizzes_taken }})</span>
+                            {% else %}
+                            <span style="color:var(--text-dim);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding:12px 16px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--text);">
+                            {{ s.watch_display }}
+                        </td>
+                        <td style="padding:12px 16px; text-align:center;">
+                            {% if s.health_status == 'excellent' %}
+                            <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); font-size:0.7rem; border-radius:var(--radius-pill); padding:2px 8px;">
+                                <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">star</i> {{ s.health_label }}
+                            </span>
+                            {% elif s.health_status in ['critical', 'attention'] %}
+                            <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); font-size:0.7rem; border-radius:var(--radius-pill); padding:2px 8px;">
+                                <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">warning</i> {{ s.health_label }}
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-size:0.7rem; border-radius:var(--radius-pill); padding:2px 8px;">
+                                <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">check_circle</i> {{ s.health_label }}
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Live Faculty Remarks Editor & Principal Review Feedback Grid -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-bottom:24px;">
+        
+        <!-- Faculty Remarks -->
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <i class="material-icons" style="color:var(--primary); font-size:1.25rem;">rate_review</i>
+                <h3 class="font-display" style="margin:0; font-size:1rem; color:var(--text);">Faculty Executive Remarks</h3>
+            </div>
+            {% if current_user.role in ['teacher', 'admin'] and report.classroom.teacher_id == current_user.id %}
+            <form method="POST" action="{{ url_for('update_weekly_report_remarks', report_id=report.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <textarea name="teacher_remarks" style="width:100%; height:90px; resize:none; font-size:0.82rem; margin-bottom:10px;" placeholder="Add remarks on weekly curriculum retention, exams, or student achievements...">{{ report.teacher_remarks or '' }}</textarea>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button type="submit" class="btn btn-outline" style="padding:6px 14px; font-size:0.76rem;">
+                        <i class="material-icons" style="font-size:0.9rem;">save</i> Update Remarks
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            <p style="font-size:0.84rem; color:var(--text-secondary); line-height:1.5; margin:0; font-style:italic;">
+                "{{ report.teacher_remarks or 'No faculty remarks provided for this digest.' }}"
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Principal / Admin Feedback -->
+        <div class="card" style="padding:20px; margin-bottom:0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+                <i class="material-icons" style="color:var(--secondary-color); font-size:1.25rem;">verified_user</i>
+                <h3 class="font-display" style="margin:0; font-size:1rem; color:var(--text);">Principal / Admin Feedback</h3>
+            </div>
+            {% if current_user.role == 'admin' %}
+            <form method="POST" action="{{ url_for('admin_submit_report_feedback', report_id=report.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <textarea name="admin_feedback" style="width:100%; height:90px; resize:none; font-size:0.82rem; margin-bottom:10px;" placeholder="Provide administrative guidance, intervention approvals, or commendations to the teacher...">{{ report.admin_feedback or '' }}</textarea>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button type="submit" class="btn btn-primary" style="padding:6px 14px; font-size:0.76rem;">
+                        <i class="material-icons" style="font-size:0.9rem;">send</i> Submit Official Review
+                    </button>
+                </div>
+            </form>
+            {% else %}
+            {% if report.admin_feedback %}
+            <div style="background:rgba(37,65,178,0.06); border:1px solid rgba(37,65,178,0.2); border-radius:8px; padding:12px 14px;">
+                <p style="font-size:0.84rem; color:var(--text); line-height:1.5; margin:0;">
+                    {{ report.admin_feedback }}
+                </p>
+            </div>
+            {% else %}
+            <p style="font-size:0.82rem; color:var(--text-dim); margin:0;">
+                Pending review from the Principal / Institutional Admin.
+            </p>
+            {% endif %}
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function filterRosterTable() {
+    const input = document.getElementById("rosterSearch");
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll(".roster-row");
+
+    rows.forEach(row => {
+        const name = row.querySelector(".student-name").textContent.toLowerCase();
+        if (name.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+</script>
+
+{% endblock %}

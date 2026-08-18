@@ -523,7 +523,7 @@ class SiteSettings(db.Model):
     session_timeout_minutes = db.Column(db.Integer, default=120)
 
     # Appearance
-    primary_color = db.Column(db.String(7), default='#d4a853')
+    primary_color = db.Column(db.String(7), default='#d4af37')
     logo_url = db.Column(db.String(500), nullable=True)
 
     # NEW: Email settings
@@ -1121,6 +1121,163 @@ class ConversionJob(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════
+# NEW MODEL: Weekly Class Performance & XP Digest
+# ═══════════════════════════════════════════════════════════════
+
+class ClassWeeklyReport(db.Model):
+    """Weekly/Periodic Consolidated Class Performance, XP, Attendance & Assessment Report."""
+    __tablename__ = 'class_weekly_report'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False, index=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+
+    period_start = db.Column(db.Date, nullable=False, index=True)
+    period_end = db.Column(db.Date, nullable=False, index=True)
+    generated_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    # Consolidated class summary KPIs
+    total_students = db.Column(db.Integer, default=0)
+    avg_attendance_pct = db.Column(db.Float, default=0.0)
+    total_xp_gained = db.Column(db.Integer, default=0)
+    avg_quiz_score_pct = db.Column(db.Float, default=0.0)
+    total_video_watch_seconds = db.Column(db.Integer, default=0)
+
+    # Granular per-student telemetry and metrics (JSON encoded)
+    report_data_json = db.Column(db.Text, default='{}')
+    teacher_remarks = db.Column(db.Text, nullable=True)
+
+    # Principal / Admin Dispatch Tracking
+    status = db.Column(db.String(30), default='generated', index=True)  # 'generated', 'sent_to_admin', 'reviewed'
+    sent_to_admin_at = db.Column(db.DateTime, nullable=True)
+    admin_feedback = db.Column(db.Text, nullable=True)
+
+    classroom = db.relationship('Classroom', backref=db.backref('weekly_reports', lazy=True, cascade='all, delete-orphan'))
+    teacher = db.relationship('User', foreign_keys=[teacher_id])
+
+    def get_report_data(self):
+        return json.loads(self.report_data_json or '{}')
+
+    def set_report_data(self, data_dict):
+        self.report_data_json = json.dumps(data_dict)
+
+
+# ═══════════════════════════════════════════════════════════════
+# NEW MODELS: Video Checkpoints, Doubts, Flashcards, Certificates, Parent Portal
+# ═══════════════════════════════════════════════════════════════
+
+class VideoCheckpoint(db.Model):
+    """In-stream pop-up comprehension checkpoints in videos."""
+    __tablename__ = 'video_checkpoint'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id'), nullable=False, index=True)
+    timestamp_seconds = db.Column(db.Float, nullable=False, index=True)
+    question_text = db.Column(db.Text, nullable=False)
+    option_a = db.Column(db.String(300), nullable=False)
+    option_b = db.Column(db.String(300), nullable=False)
+    option_c = db.Column(db.String(300), nullable=True)
+    option_d = db.Column(db.String(300), nullable=True)
+    correct_option = db.Column(db.String(1), nullable=False)  # 'a', 'b', 'c', 'd'
+    explanation = db.Column(db.Text, nullable=True)
+    xp_reward = db.Column(db.Integer, default=25)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    video = db.relationship('Video', backref=db.backref('checkpoints', lazy=True, cascade='all, delete-orphan'))
+    responses = db.relationship('CheckpointResponse', backref='checkpoint', lazy=True, cascade='all, delete-orphan')
+
+
+class CheckpointResponse(db.Model):
+    """Student responses to in-video checkpoints."""
+    __tablename__ = 'checkpoint_response'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    checkpoint_id = db.Column(db.Integer, db.ForeignKey('video_checkpoint.id'), nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    selected_option = db.Column(db.String(1), nullable=False)
+    is_correct = db.Column(db.Boolean, default=False)
+    answered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship('User', backref=db.backref('checkpoint_responses', lazy=True, cascade='all, delete-orphan'))
+
+
+class VideoDoubt(db.Model):
+    """Time-stamped student doubts / Q&A threads in videos."""
+    __tablename__ = 'video_doubt'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    timestamp_seconds = db.Column(db.Float, default=0.0, index=True)
+    question_text = db.Column(db.Text, nullable=False)
+    is_resolved = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User', backref=db.backref('video_doubts', lazy=True, cascade='all, delete-orphan'))
+    video = db.relationship('Video', backref=db.backref('doubts', lazy=True, cascade='all, delete-orphan'))
+    replies = db.relationship('VideoDoubtReply', backref='doubt', lazy=True, cascade='all, delete-orphan')
+
+
+class VideoDoubtReply(db.Model):
+    """Replies to video doubts."""
+    __tablename__ = 'video_doubt_reply'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    doubt_id = db.Column(db.Integer, db.ForeignKey('video_doubt.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    content = db.Column(db.Text, nullable=False)
+    is_teacher_endorsed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+
+class VideoFlashcard(db.Model):
+    """AI-generated or manual revision flashcards."""
+    __tablename__ = 'video_flashcard'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    front_term = db.Column(db.String(300), nullable=False)
+    back_definition = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    video = db.relationship('Video', backref=db.backref('flashcards', lazy=True, cascade='all, delete-orphan'))
+
+
+class AcademicCertificate(db.Model):
+    """Verifiable certificates of course completion & milestone excellence."""
+    __tablename__ = 'academic_certificate'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    certificate_code = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    certificate_type = db.Column(db.String(50), default='course_completion', index=True)
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    criteria_met_json = db.Column(db.Text, default='{}')
+
+    student = db.relationship('User', backref=db.backref('certificates', lazy=True, cascade='all, delete-orphan'))
+
+
+class ParentAccessToken(db.Model):
+    """Secure, tokenized read-only portal access for parents."""
+    __tablename__ = 'parent_access_token'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+    last_accessed_at = db.Column(db.DateTime, nullable=True)
+
+    student = db.relationship('User', backref=db.backref('parent_tokens', lazy=True, cascade='all, delete-orphan'))
+
+
+# ═══════════════════════════════════════════════════════════════
 # MULTI-TENANCY INTERCEPTORS (Automatic Query & Insert Isolation)
 # ═══════════════════════════════════════════════════════════════
 from flask import has_request_context, g
@@ -1206,7 +1363,9 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             AttendanceSession, AttendanceSubSession, ActivityLog, SystemMetric,
             Assignment, AssignmentSubmission, StudentProfile, VideoNote,
             VideoBookmark, VideoProgress, LeaderboardEntry, EmailQueue,
-            StudentRemark, EmailDeliveryLog, ConversionJob
+            StudentRemark, EmailDeliveryLog, ConversionJob, ClassWeeklyReport,
+            VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
+            VideoFlashcard, AcademicCertificate, ParentAccessToken
         ]
         
         # Bypass before_compile filter by setting ignore flag on g

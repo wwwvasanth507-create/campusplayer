@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+{% block title %}Verify Academic Credential — {{ cert.certificate_code }} — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:680px; margin:40px auto;">
+
+    <!-- Verification Card -->
+    <div class="card" style="padding:36px 32px; text-align:center; position:relative; border:2px solid rgba(212,175,55,0.4); box-shadow:0 20px 45px rgba(0,0,0,0.3);">
+        
+        <!-- Verification Status Stamp -->
+        <div style="width:68px; height:68px; border-radius:50%; background:rgba(61,143,163,0.12); border:2px solid var(--success-color); color:var(--success-color); display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto;">
+            <i class="material-icons" style="font-size:2.4rem;">verified</i>
+        </div>
+
+        <div class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); font-size:0.8rem; padding:4px 14px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:5px; margin-bottom:16px;">
+            <i class="material-icons" style="font-size:0.95rem;">check_circle</i> Officially Verified Academic Credential
+        </div>
+
+        <h1 class="font-display" style="margin:0 0 6px 0; font-size:1.6rem; color:var(--text);">
+            {{ cert.title }}
+        </h1>
+        <p style="font-size:0.88rem; color:var(--text-dim); margin:0 0 22px 0;">
+            {{ institution.name if institution else 'Campus Player Academic Portal' }}
+        </p>
+
+        <div style="background:var(--surface2); border-radius:10px; padding:18px 20px; margin-bottom:24px; text-align:left;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div>
+                    <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Recipient Scholar</div>
+                    <div style="font-size:1rem; font-weight:700; color:var(--text); margin-top:2px;">{{ cert.student.username }}</div>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Credential Code</div>
+                    <div style="font-size:0.95rem; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--primary); margin-top:2px;">{{ cert.certificate_code }}</div>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Date Conferred</div>
+                    <div style="font-size:0.88rem; color:var(--text); margin-top:2px;">{{ cert.issued_at.strftime('%B %d, %Y') }}</div>
+                </div>
+                <div>
+                    <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Credential Status</div>
+                    <div style="font-size:0.88rem; color:var(--success-color); font-weight:700; margin-top:2px;">Valid & Authentic</div>
+                </div>
+            </div>
+        </div>
+
+        {% if cert.description %}
+        <p style="font-size:0.86rem; color:var(--text-secondary); line-height:1.5; font-style:italic; margin:0 0 24px 0;">
+            "{{ cert.description }}"
+        </p>
+        {% endif %}
+
+        <div style="display:flex; justify-content:center; gap:12px;">
+            <a href="{{ url_for('download_certificate_pdf', cert_code=cert.certificate_code) }}" class="btn btn-primary" style="width:auto; padding:10px 22px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1.1rem;">download</i> Download Official PDF
+            </a>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

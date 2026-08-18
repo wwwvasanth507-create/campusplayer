@@ -214,9 +214,13 @@
             </div>
             <div>
                 {% if attendance_open %}
-                <span style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700;">🟢 Attendance Open</span>
+                <span style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="material-icons" style="font-size:0.85rem;">lock_open</i> Attendance Open
+                </span>
                 {% else %}
-                <span style="background:rgba(217,130,43,0.15); color:var(--danger-color); border:1px solid rgba(217,130,43,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700;">🔴 Locked</span>
+                <span style="background:rgba(217,130,43,0.15); color:var(--danger-color); border:1px solid rgba(217,130,43,0.3); padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                    <i class="material-icons" style="font-size:0.85rem;">lock</i> Locked
+                </span>
                 {% endif %}
             </div>
         </div>
@@ -320,8 +324,8 @@
             <div class="s-actions">
                 {% if today_att %}
                 <span
-                    class="today-status {{ 'st-present' if today_att.status=='Present' else ('st-late' if today_att.status=='Late' else 'st-absent') }}">
-                    ✓ {{ today_att.status }}
+                    class="today-status {{ 'st-present' if today_att.status=='Present' else ('st-late' if today_att.status=='Late' else 'st-absent') }}" style="display:inline-flex; align-items:center; gap:3px;">
+                    <i class="material-icons" style="font-size:0.8rem;">check</i> {{ today_att.status }}
                 </span>
                 {% elif attendance_open %}
                 <form
@@ -436,12 +440,12 @@
         const closeBtn = document.getElementById('sms-modal-close-btn');
 
         const STATUS_LABELS = {
-            queued: '⏳ Queued...',
-            starting: '🚀 Launching Chrome...',
-            waiting: '📱 Waiting for Google Messages login...',
-            sending: '📤 Sending SMS...',
-            done: '✅ Done!',
-            error: '❌ Error'
+            queued: 'Queued...',
+            starting: 'Launching Chrome...',
+            waiting: 'Waiting for Google Messages login...',
+            sending: 'Sending SMS...',
+            done: 'Done!',
+            error: 'Error'
         };
 
         smsPollInterval = setInterval(() => {
@@ -460,16 +464,16 @@
 
                     let label = STATUS_LABELS[status] || status;
                     if (status === 'sending') {
-                        label = `📤 Sending SMS reports (${current}/${total})...`;
+                        label = `Sending SMS reports (${current}/${total})...`;
                         progressBar.style.width = percent + '%';
                     } else if (status === 'done') {
-                        label = `✅ SMS reports sent successfully! (${current}/${total})`;
+                        label = `SMS reports sent successfully! (${current}/${total})`;
                         progressBar.style.width = '100%';
                         progressBar.style.background = '#3d8fa3';
                         clearInterval(smsPollInterval);
                         closeBtn.style.display = 'block';
                     } else if (status === 'error') {
-                        label = `❌ Error: ${msg}`;
+                        label = `Error: ${msg}`;
                         progressBar.style.width = '100%';
                         progressBar.style.background = '#d9822b';
                         clearInterval(smsPollInterval);

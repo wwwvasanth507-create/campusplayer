@@ -1,0 +1,196 @@
+{% extends "layout.html" %}
+{% block title %}Weekly Classroom Performance Reports — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto;">
+
+    <!-- Top Breadcrumb & Header -->
+    <div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+                <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+            </a>
+            <div>
+                <h1 class="page-title font-display" style="margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="material-icons" style="font-size:1.6rem; color:var(--primary);">assessment</i> Weekly Classroom Performance Digests
+                </h1>
+                <p class="page-sub" style="margin:2px 0 0 0;">Automated Sunday student XP, attendance, and assessment digests ready for Principal review</p>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button onclick="document.getElementById('generateReportModal').style.display='flex'" class="btn btn-primary" style="padding:8px 16px; font-size:0.82rem; min-height:38px; display:inline-flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:1.05rem;">auto_fix_high</i>
+                <span>Compile Custom Report</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar: Classroom & Status Tabs -->
+    <div class="card mb-16" style="padding:14px 18px;">
+        <div class="flex-between" style="flex-wrap:wrap; gap:12px;">
+            <!-- Classroom filter chips -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-right:4px;">Class:</span>
+                <a href="{{ url_for('teacher_weekly_reports', status=status_filter) }}" 
+                   class="btn {{ 'btn-primary' if not selected_class_id else 'btn-outline' }}" 
+                   style="padding:5px 12px; font-size:0.74rem; min-height:30px;">
+                    All Classes
+                </a>
+                {% for c in classes %}
+                <a href="{{ url_for('teacher_weekly_reports', class_id=c.id, status=status_filter) }}" 
+                   class="btn {{ 'btn-primary' if selected_class_id == c.id else 'btn-outline' }}" 
+                   style="padding:5px 12px; font-size:0.74rem; min-height:30px;">
+                    {{ c.name }}
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- Status filter dropdown -->
+            <div style="display:flex; gap:8px; align-items:center;">
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Status:</span>
+                <select onchange="location = this.value;" style="margin-bottom:0; font-size:0.76rem; padding:5px 10px; height:32px; min-height:32px; border-radius:6px; background:var(--surface);">
+                    <option value="{{ url_for('teacher_weekly_reports', class_id=selected_class_id, status='all') }}" {{ 'selected' if status_filter == 'all' }}>All Statuses</option>
+                    <option value="{{ url_for('teacher_weekly_reports', class_id=selected_class_id, status='generated') }}" {{ 'selected' if status_filter == 'generated' }}>Draft / Generated</option>
+                    <option value="{{ url_for('teacher_weekly_reports', class_id=selected_class_id, status='sent_to_admin') }}" {{ 'selected' if status_filter == 'sent_to_admin' }}>Dispatched to Admin</option>
+                    <option value="{{ url_for('teacher_weekly_reports', class_id=selected_class_id, status='reviewed') }}" {{ 'selected' if status_filter == 'reviewed' }}>Reviewed by Principal</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Grid / List -->
+    {% if reports %}
+    <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for r in reports %}
+        <div class="card" style="padding:18px 22px; margin-bottom:0; transition:all 0.2s ease;">
+            <div class="flex-between" style="flex-wrap:wrap; gap:14px; align-items:center;">
+                
+                <div style="display:flex; align-items:center; gap:16px; min-width:280px; flex:1;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.25); display:flex; align-items:center; justify-content:center; color:var(--primary); flex-shrink:0;">
+                        <i class="material-icons" style="font-size:1.5rem;">summarize</i>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                            <h3 class="font-display" style="margin:0; font-size:1.05rem; color:var(--text);">
+                                {{ r.classroom.name }}
+                            </h3>
+                            {% if r.status == 'sent_to_admin' %}
+                            <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.68rem; padding:2px 8px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:3px;">
+                                <i class="material-icons" style="font-size:0.75rem;">send</i> Sent to Principal
+                            </span>
+                            {% elif r.status == 'reviewed' %}
+                            <span class="badge" style="background:rgba(61,143,163,0.15); color:var(--success-color); border:1px solid rgba(61,143,163,0.3); font-size:0.68rem; padding:2px 8px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:3px;">
+                                <i class="material-icons" style="font-size:0.75rem;">verified</i> Principal Reviewed
+                            </span>
+                            {% else %}
+                            <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); font-size:0.68rem; padding:2px 8px; border-radius:var(--radius-pill); display:inline-flex; align-items:center; gap:3px;">
+                                <i class="material-icons" style="font-size:0.75rem;">drafts</i> Draft Digest
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-dim); display:flex; gap:12px; flex-wrap:wrap; font-family:'JetBrains Mono',monospace;">
+                            <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">date_range</i> {{ r.period_start.strftime('%b %d') }} – {{ r.period_end.strftime('%b %d, %Y') }}</span>
+                            <span>•</span>
+                            <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">group</i> {{ r.total_students }} Scholars</span>
+                            <span>•</span>
+                            <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">schedule</i> Compiled {{ r.generated_at.strftime('%b %d %I:%M %p') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fast Telemetry Chips -->
+                <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                    <div style="text-align:center; min-width:70px;">
+                        <div style="font-size:1.1rem; font-weight:800; color:var(--primary); font-family:'JetBrains Mono',monospace;">{{ r.avg_attendance_pct }}%</div>
+                        <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Attendance</div>
+                    </div>
+                    <div style="text-align:center; min-width:70px;">
+                        <div style="font-size:1.1rem; font-weight:800; color:var(--secondary-color); font-family:'JetBrains Mono',monospace;">{{ "{:,}".format(r.total_xp_gained) }}</div>
+                        <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Class XP</div>
+                    </div>
+                    <div style="text-align:center; min-width:70px;">
+                        <div style="font-size:1.1rem; font-weight:800; color:var(--success-color); font-family:'JetBrains Mono',monospace;">{{ r.avg_quiz_score_pct }}%</div>
+                        <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Quiz Mastery</div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <a href="{{ url_for('teacher_weekly_report_detail', report_id=r.id) }}" class="btn btn-outline" style="padding:6px 14px; font-size:0.78rem; min-height:34px;">
+                        <i class="material-icons" style="font-size:0.95rem; color:var(--secondary-color);">visibility</i> Preview
+                    </a>
+                    <a href="{{ url_for('download_weekly_report_pdf', report_id=r.id) }}" class="btn btn-primary" style="padding:6px 14px; font-size:0.78rem; min-height:34px;">
+                        <i class="material-icons" style="font-size:0.95rem;">download</i> PDF
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center" style="padding:60px 20px;">
+        <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:12px;">assessment</i>
+        <h3 class="font-display" style="font-size:1.15rem; color:var(--text); margin:0 0 6px 0;">No Weekly Reports Found</h3>
+        <p style="font-size:0.84rem; color:var(--text-dim); margin:0 0 16px 0;">Weekly digests automatically compile every Sunday for your active classes, or you can compile a custom period report now.</p>
+        <button onclick="document.getElementById('generateReportModal').style.display='flex'" class="btn btn-primary" style="padding:8px 18px; font-size:0.82rem; margin:auto;">
+            <i class="material-icons" style="font-size:1rem;">auto_fix_high</i> Compile First Report
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Modal: Compile Custom Report -->
+<div id="generateReportModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(6px);">
+    <div class="card" style="max-width:480px; width:90%; padding:24px; position:relative; background:var(--surface); border:1px solid var(--border); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <div class="flex-between" style="margin-bottom:16px;">
+            <h3 class="font-display" style="margin:0; color:var(--text); display:flex; align-items:center; gap:8px;">
+                <i class="material-icons" style="color:var(--primary); font-size:1.3rem;">auto_fix_high</i> Compile Class Performance Digest
+            </h3>
+            <button onclick="document.getElementById('generateReportModal').style.display='none'" style="background:none; border:none; color:var(--text-dim); cursor:pointer;">
+                <i class="material-icons" style="font-size:1.3rem;">close</i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('teacher_generate_weekly_report') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div style="margin-bottom:14px;">
+                <label style="font-size:0.8rem; color:var(--text-dim);">Select Classroom *</label>
+                <select name="classroom_id" required style="width:100%; margin-bottom:0;">
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {{ 'selected' if selected_class_id == c.id }}>{{ c.name }} ({{ c.students.count() }} Scholars)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div>
+                    <label style="font-size:0.75rem; color:var(--text-dim);">Period Start Date</label>
+                    <input type="date" name="period_start" style="margin-bottom:0; font-size:0.8rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.75rem; color:var(--text-dim);">Period End Date</label>
+                    <input type="date" name="period_end" style="margin-bottom:0; font-size:0.8rem;">
+                </div>
+            </div>
+            <p style="font-size:0.72rem; color:var(--text-dim); margin-top:-8px; margin-bottom:14px;"><i>Leave dates blank to automatically generate for the latest weekly cycle (Monday – Sunday).</i></p>
+
+            <div style="margin-bottom:18px;">
+                <label style="font-size:0.8rem; color:var(--text-dim);">Faculty Executive Remarks (Optional)</label>
+                <textarea name="remarks" placeholder="Add specific curriculum milestones, student commendations, or notes for the Principal..." style="width:100%; height:75px; resize:none; font-size:0.8rem; margin-bottom:0;"></textarea>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" onclick="document.getElementById('generateReportModal').style.display='none'" class="btn btn-outline" style="width:auto; padding:8px 14px;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="width:auto; padding:8px 16px;">
+                    <i class="material-icons" style="font-size:1rem;">assessment</i> Compile Digest
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

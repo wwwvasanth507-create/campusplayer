@@ -59,11 +59,17 @@
                     <td style="font-size:0.82rem; color:var(--text);">{{ log.subject or 'Academic Progress Report' }}</td>
                     <td>
                         {% if log.status == 'sent' %}
-                        <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px;">✓ Delivered</span>
+                        <span class="badge" style="background:rgba(61,143,163,0.12); color:var(--success-color); border:1px solid rgba(61,143,163,0.25); border-radius:6px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="material-icons" style="font-size:0.8rem;">check</i> Delivered
+                        </span>
                         {% elif log.status == 'stored' %}
-                        <span class="badge" style="background:rgba(138,106,58,0.12); color:var(--primary); border:1px solid rgba(138,106,58,0.25); border-radius:6px; padding:2px 6px;">📄 Stored</span>
+                        <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); border-radius:6px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="material-icons" style="font-size:0.8rem;">description</i> Stored
+                        </span>
                         {% else %}
-                        <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); border-radius:6px; padding:2px 6px;">Failed</span>
+                        <span class="badge" style="background:rgba(217,130,43,0.12); color:var(--danger-color); border:1px solid rgba(217,130,43,0.25); border-radius:6px; padding:2px 6px; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="material-icons" style="font-size:0.8rem;">error_outline</i> Failed
+                        </span>
                         {% endif %}
                     </td>
                     <td style="text-align:right; white-space:nowrap;">

@@ -1107,7 +1107,7 @@ pre, code {
 .video-card-thumb-placeholder i,
 .vcard .thumb i {
     font-size: 3.2rem;
-    color: var(--gold, #d4a853);
+    color: var(--gold, #d4af37);
     opacity: 0.85;
 }
 
