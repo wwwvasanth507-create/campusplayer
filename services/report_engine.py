@@ -85,15 +85,15 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
 
         # Quiz Mastery in period
         q_results = QuizResult.query.filter(
-            QuizResult.user_id == s.id,
+            QuizResult.student_id == s.id,
             QuizResult.quiz_id.in_(class_quiz_ids) if class_quiz_ids else db.text('1=0'),
-            QuizResult.completed_at >= start_dt,
-            QuizResult.completed_at <= end_dt
+            QuizResult.timestamp >= start_dt,
+            QuizResult.timestamp <= end_dt
         ).all() if class_quiz_ids else []
 
         quizzes_taken = len(q_results)
         if quizzes_taken > 0:
-            avg_quiz_score = sum(r.percentage for r in q_results) / quizzes_taken
+            avg_quiz_score = sum((r.score * 100.0 / r.total_questions) if r.total_questions and r.total_questions > 0 else 0.0 for r in q_results) / quizzes_taken
             total_quiz_pct_sum += avg_quiz_score
             valid_quiz_count += 1
             quiz_display = f"{int(round(avg_quiz_score))}%"
@@ -105,11 +105,11 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
         view_recs = ViewAnalytics.query.filter(
             ViewAnalytics.user_id == s.id,
             ViewAnalytics.video_id.in_(class_video_ids) if class_video_ids else db.text('1=0'),
-            ViewAnalytics.watched_at >= start_dt,
-            ViewAnalytics.watched_at <= end_dt
+            ViewAnalytics.start_time >= start_dt,
+            ViewAnalytics.start_time <= end_dt
         ).all() if class_video_ids else []
 
-        s_watch_secs = sum(v.watch_duration for v in view_recs if v.watch_duration)
+        s_watch_secs = sum(v.duration_seconds for v in view_recs if v.duration_seconds)
         total_watch_seconds += s_watch_secs
         watch_hours_str = f"{(s_watch_secs / 3600):.1f}h" if s_watch_secs >= 3600 else f"{int(s_watch_secs // 60)}m"
 
@@ -234,8 +234,12 @@ def generate_or_get_weekly_report(classroom_id, teacher_id, period_start=None, p
     if not data:
         return None
 
+    classroom = db.session.get(Classroom, classroom_id)
+    inst_id = classroom.institution_id if classroom else None
+
     if not report:
         report = ClassWeeklyReport(
+            institution_id=inst_id,
             classroom_id=classroom_id,
             teacher_id=teacher_id,
             period_start=period_start,
@@ -251,8 +255,16 @@ def generate_or_get_weekly_report(classroom_id, teacher_id, period_start=None, p
         report.set_report_data(data)
         db.session.add(report)
     else:
+        if not report.institution_id and inst_id:
+            report.institution_id = inst_id
         report.total_students = data['total_students']
         report.avg_attendance_pct = data['avg_attendance_pct']
+        report.total_xp_gained = data['total_xp']
+        report.avg_quiz_score_pct = data['avg_quiz_score_pct']
+        report.total_video_watch_seconds = data['total_watch_seconds']
+        if remarks:
+            report.teacher_remarks = remarks
+        report.set_report_data(data)
         report.total_xp_gained = data['total_xp']
         report.avg_quiz_score_pct = data['avg_quiz_score_pct']
         report.total_video_watch_seconds = data['total_watch_seconds']

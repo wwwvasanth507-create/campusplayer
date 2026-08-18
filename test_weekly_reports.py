@@ -57,6 +57,27 @@ class TestWeeklyClassReports(unittest.TestCase):
                 cls_obj.students.append(student)
                 db.session.commit()
 
+            # Ensure a test quiz and result exist for telemetry testing
+            test_quiz = Quiz.query.filter_by(title='Weekly Telemetry Quiz', classroom_id=cls_obj.id).first()
+            if not test_quiz:
+                test_quiz = Quiz(title='Weekly Telemetry Quiz', classroom_id=cls_obj.id, teacher_id=teacher.id, passing_percent=50, institution_id=inst.id)
+                db.session.add(test_quiz)
+                db.session.commit()
+
+            test_qres = QuizResult.query.filter_by(quiz_id=test_quiz.id, student_id=student.id).first()
+            if not test_qres:
+                test_qres = QuizResult(
+                    institution_id=inst.id,
+                    quiz_id=test_quiz.id,
+                    student_id=student.id,
+                    score=4,
+                    total_questions=5,
+                    timestamp=datetime.utcnow(),
+                    passed=True
+                )
+                db.session.add(test_qres)
+                db.session.commit()
+
             # Clean up prior test reports for idempotency
             ClassWeeklyReport.query.filter_by(classroom_id=cls_obj.id).delete()
             db.session.commit()

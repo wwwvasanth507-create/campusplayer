@@ -53,7 +53,7 @@
                         {% endif %}
 
                         {% if not notif.is_read %}
-                        <button onclick="markOneRead({{ notif.id }})" class="btn btn-outline"
+                        <button onclick="markOneRead('{{ notif.id }}')" class="btn btn-outline"
                             style="padding:4px 10px; font-size:0.72rem; min-height:28px; color:var(--secondary-color);">
                             Mark Seen
                         </button>

@@ -56,6 +56,40 @@
     </div>
 </div>
 
+<script>
+(function() {
+    var formSubmitted = false;
+    var quizForm = document.getElementById('quizForm');
+    
+    if (quizForm) {
+        quizForm.addEventListener('submit', function() {
+            formSubmitted = true;
+        });
+    }
+
+    // Warn on refresh or navigation during active quiz
+    window.addEventListener('beforeunload', function(e) {
+        if (!formSubmitted) {
+            var msg = "WARNING: Leaving or refreshing this page will not reset your quiz timer. Are you sure?";
+            e.preventDefault();
+            e.returnValue = msg;
+            return msg;
+        }
+    });
+
+    // Block accidental refresh shortcuts (F5, Ctrl+R, Cmd+R)
+    window.addEventListener('keydown', function(e) {
+        if (!formSubmitted) {
+            if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R'))) {
+                if (!confirm("WARNING: Refreshing will not reset your quiz timer. Do you still want to reload?")) {
+                    e.preventDefault();
+                }
+            }
+        }
+    });
+})();
+</script>
+
 {% if remaining_seconds is not none %}
 <script>
 (function() {

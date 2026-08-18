@@ -382,9 +382,9 @@
 </div>
 
 <script>
-    const classId = {{ classroom.id }};
-    const currentUserId = {{ current_user.id }};
-    const isTeacherOwner = {{ 'true' if current_user.role in ['teacher', 'admin'] else 'false' }};
+    const classId = parseInt("{{ classroom.id }}", 10);
+    const currentUserId = parseInt("{{ current_user.id }}", 10);
+    const isTeacherOwner = ("{{ current_user.role }}" === "teacher" || "{{ current_user.role }}" === "admin");
     let lastMsgId = 0;
 
     document.querySelectorAll('.msg').forEach(m => {

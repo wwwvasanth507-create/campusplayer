@@ -48,9 +48,9 @@
 
         <div>
             {% if quiz.id in taken_ids %}
-            <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-outline" style="width:100%; font-size:0.8rem; min-height:36px;">
-                <i class="material-icons" style="font-size:0.95rem;">replay</i> Retake Quiz
-            </a>
+            <button class="btn btn-outline" disabled style="width:100%; font-size:0.8rem; min-height:36px; opacity:0.75; cursor:not-allowed;">
+                <i class="material-icons" style="font-size:0.95rem; color:var(--success-color);">check_circle</i> Completed (1/1 Attempt)
+            </button>
             {% else %}
             <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary" style="width:100%; font-size:0.8rem; min-height:36px;">
                 <i class="material-icons" style="font-size:0.95rem;">play_arrow</i> Begin Quiz (+XP)

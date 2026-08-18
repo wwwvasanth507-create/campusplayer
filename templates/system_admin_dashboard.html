@@ -122,7 +122,7 @@
                     </td>
                     <td style="padding: 10px; text-align: right;">
                         <div style="display: inline-flex; gap: 6px;">
-                            <button onclick="editQuestModal('{{ q.id }}', '{{ q.quest_key }}', '{{ q.title|e }}', '{{ q.desc|e }}', '{{ q.xp }}', '{{ q.icon }}', '{{ q.target }}', {{ 'true' if q.is_active else 'false' }})"
+                            <button onclick="editQuestModal('{{ q.id }}', '{{ q.quest_key }}', '{{ q.title|e }}', '{{ q.desc|e }}', '{{ q.xp }}', '{{ q.icon }}', '{{ q.target }}', {{ q.is_active|tojson }})"
                                 class="btn btn-outline" style="padding: 4px 8px; font-size: 0.72rem; height: 30px;">
                                 Edit
                             </button>

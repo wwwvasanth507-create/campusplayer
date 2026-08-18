@@ -91,7 +91,7 @@
             <!-- Action Buttons -->
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                 {% if student.phone %}
-                <button onclick="openSmsModal({{ student.id }}, '{{ student.username }}')" class="btn btn-outline"
+                <button onclick="openSmsModal('{{ student.id }}', '{{ student.username }}')" class="btn btn-outline"
                     style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--secondary-color);" title="SMS Report">
                     <i class="material-icons" style="font-size:0.95rem;">message</i>
                 </button>

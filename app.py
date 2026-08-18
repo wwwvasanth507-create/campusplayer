@@ -46,6 +46,11 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 load_dotenv()
 
 from extensions import db, login_manager, cache, limiter, socketio, mail, swagger, assets_env
+try:
+    from flask_socketio import join_room, emit
+except ImportError:
+    join_room = None
+    emit = None
 from models import (
     User, Video, Playlist, Comment, ViewAnalytics, Notification,
     playlist_videos, Quiz, Question, QuizResult, SiteSettings,
@@ -3028,6 +3033,12 @@ def take_quiz(quiz_id):
             flash('You are not enrolled in the class for this quiz.', 'error')
             return redirect(url_for('student_quizzes'))
 
+    # Single-Attempt Guard: Check if student has already taken this quiz
+    existing_result = QuizResult.query.filter_by(quiz_id=quiz.id, student_id=current_user.id).first()
+    if existing_result:
+        flash('You have already completed this quiz. Only one attempt is permitted.', 'info')
+        return redirect(url_for('student_quizzes'))
+
     session_start_key = f'quiz_start_{quiz_id}_{current_user.id}'
     session_order_key = f'quiz_order_{quiz_id}_{current_user.id}'
 
@@ -3059,8 +3070,16 @@ def take_quiz(quiz_id):
             answers[q.id] = selected
             if selected == q.correct_option: score += 1
         passed = total > 0 and (score * 100.0 / total) >= (quiz.passing_percent or 50)
-        result = QuizResult(quiz_id=quiz.id, student_id=current_user.id, score=score, total_questions=total,
-                             answers_json=json.dumps(answers), time_taken_seconds=elapsed_seconds, passed=passed)
+        result = QuizResult(
+            institution_id=current_user.institution_id,
+            quiz_id=quiz.id,
+            student_id=current_user.id,
+            score=score,
+            total_questions=total,
+            answers_json=json.dumps(answers),
+            time_taken_seconds=elapsed_seconds,
+            passed=passed
+        )
         db.session.add(result)
         session.pop(session_start_key, None)
         session.pop(session_order_key, None)
