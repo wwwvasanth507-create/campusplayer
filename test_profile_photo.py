@@ -51,6 +51,8 @@ class ProfilePhotoTestCase(unittest.TestCase):
     def test_1_get_avatar_url_helper(self):
         with app.app_context():
             user = User.query.filter_by(username='pic_student').first()
+            user.avatar_url = None
+            db.session.commit()
             self.assertIsNone(user.get_avatar_url())
             
             user.avatar_url = '/static/uploads/avatars/avatar_test.png'

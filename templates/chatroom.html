@@ -262,6 +262,110 @@
     .type-input:focus {
         border-color: var(--secondary-color);
     }
+
+    /* Mobile Differentiated UI Improvements (< 992px) */
+    @media (max-width: 991px) {
+        .chat-wrap {
+            height: calc(100dvh - 130px - env(safe-area-inset-bottom, 0px));
+            max-width: 100%;
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .chat-top-box {
+            padding: 10px 14px;
+            gap: 10px;
+            border-radius: 0;
+        }
+
+        .chat-top-av {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+        }
+
+        .chat-top-name {
+            font-size: 1rem;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .chat-top-sub {
+            font-size: 0.72rem;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chat-msgs {
+            padding: 12px 10px;
+            gap: 10px;
+        }
+
+        .msg-box {
+            max-width: 86%;
+            min-width: 80px;
+        }
+
+        .msg-bub {
+            padding: 9px 13px 7px;
+            font-size: 0.88rem;
+        }
+
+        .msg-pic {
+            width: 32px;
+            height: 32px;
+        }
+
+        .emoji-ribbon {
+            padding: 6px 10px;
+            gap: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .emoji-btn {
+            padding: 6px 12px;
+            font-size: 1.15rem;
+            min-height: 42px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .chat-bar {
+            padding: 6px 12px;
+            font-size: 0.72rem;
+        }
+
+        .chat-type-box {
+            padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+            gap: 8px;
+            border-radius: 0;
+            background: var(--surface);
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.2);
+        }
+
+        .type-input {
+            padding: 12px 16px;
+            font-size: 1rem; /* Prevents mobile iOS safari zoom */
+            min-height: 48px;
+            border-radius: 24px;
+        }
+
+        #sendBtn {
+            width: 48px !important;
+            height: 48px !important;
+            min-height: 48px !important;
+            min-width: 48px !important;
+            border-radius: 50% !important;
+            box-shadow: 0 4px 12px rgba(138, 106, 58, 0.4);
+            touch-action: manipulation;
+        }
+    }
 </style>
 
 <div class="chat-wrap">
@@ -398,6 +502,15 @@
 
     const chatBox = document.getElementById('chatMessages');
     chatBox.scrollTop = chatBox.scrollHeight;
+
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 300);
+        });
+    }
 
     function insertEmoji(emoji) {
         const inp = document.getElementById('chatInput');
