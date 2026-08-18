@@ -1399,23 +1399,28 @@
         {% endif %}
         <div class="top-bar-right">
             {% if current_user.is_authenticated %}
-            <button class="top-bar-icon-btn mobile-search-trigger" onclick="toggleMobileSearch()" title="Search" aria-label="Open Search">
+            <button class="top-bar-icon-btn mobile-search-trigger" onclick="toggleMobileSearch()" title="Search" aria-label="Search">
                 <i class="material-icons">search</i>
             </button>
             <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
                 <i class="material-icons" id="themeToggleIcon">{% if session.get('theme') == 'light' %}dark_mode{% else %}light_mode{% endif %}</i>
             </button>
-            {% endif %}
-            {% if current_user.is_authenticated and settings and settings.institution_name %}
+            {% if settings and settings.institution_name %}
             <span class="inst-badge">
                 <i class="material-icons">school</i>
                 {{ settings.institution_name }}
             </span>
             {% endif %}
-            {% if current_user.is_authenticated %}
-            <button class="menu-btn" onclick="toggleSidebar()" title="Menu" aria-label="Toggle Navigation Menu">
+            <button class="menu-btn" onclick="toggleSidebar()" title="Menu" aria-label="Open menu">
                 <i class="material-icons">menu</i>
             </button>
+            {% else %}
+            <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark/light theme">
+                <i class="material-icons" id="themeToggleIcon">{% if session.get('theme') == 'light' %}dark_mode{% else %}light_mode{% endif %}</i>
+            </button>
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="padding:6px 14px; font-size:0.8rem; min-height:36px; gap:4px;" title="Login">
+                <i class="material-icons" style="font-size:0.95rem;">login</i> <span>Login</span>
+            </a>
             {% endif %}
         </div>
     </header>

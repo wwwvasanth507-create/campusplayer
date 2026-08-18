@@ -148,6 +148,32 @@ button:has(i:only-child),
 }
 
 @media (max-width: 991px) {
+    .top-bar {
+        min-height: 56px;
+        height: 56px;
+        padding-top: calc(6px + var(--safe-top)) !important;
+        padding-bottom: 6px !important;
+    }
+
+    .top-bar-right {
+        gap: 6px;
+    }
+
+    .top-bar-icon-btn,
+    .theme-toggle-btn,
+    .menu-btn {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        padding: 0;
+        border-radius: var(--radius-sm);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+
     .search-bar-wrap {
         display: none !important;
     }
