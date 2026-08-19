@@ -422,7 +422,7 @@ def admin_required(f):
 def teacher_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role not in ['admin', 'teacher']:
+        if not current_user.is_authenticated or current_user.role not in ['admin', 'teacher', 'system_admin']:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
@@ -3088,6 +3088,10 @@ def purge_video_dependent_records(video_id):
         Notification.query.filter_by(video_id=video_id).delete(synchronize_session=False)
         ConversionJob.query.filter_by(video_id=video_id).delete(synchronize_session=False)
 
+        # Quizzes linked to this video: disassociate video_id to prevent FK constraint failures
+        from models import Quiz
+        Quiz.query.filter_by(video_id=video_id).update({'video_id': None}, synchronize_session=False)
+
         # Playlist videos association table
         db.session.execute(playlist_videos.delete().where(playlist_videos.c.video_id == video_id))
         db.session.commit()
@@ -3128,7 +3132,8 @@ def delete_video(video_id):
     db.session.commit()
     flash(f'Video "{video_title}" deleted successfully.', 'success')
     log_activity('delete_video', f'Deleted video "{video_title}"')
-    return redirect(url_for('teacher_videos_page'))
+    redirect_target = request.referrer if (request.referrer and '/watch/' not in request.referrer) else url_for('teacher_videos_page')
+    return redirect(redirect_target)
 
 @app.route('/teacher/delete_playlist/<int:playlist_id>', methods=['POST'])
 @login_required

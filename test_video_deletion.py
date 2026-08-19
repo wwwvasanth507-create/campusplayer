@@ -22,7 +22,7 @@ sys.path.insert(0, BASE_DIR)
 
 from app import app
 from extensions import db
-from models import Video, User, Institution, ConversionJob, SiteSettings
+from models import Video, User, Institution, ConversionJob, SiteSettings, Quiz
 from services.video_cleanup import permanently_delete_video_assets, safe_remove_file, safe_remove_dir
 from services.conversion_engine import register_active_process, unregister_active_process, cancel_conversion_jobs_for_video
 
@@ -413,6 +413,84 @@ def test_6_ubuntu_linux_paths_and_instant_performance():
     print("  [PASS] Test 6: Ubuntu Linux path variants resolved and deleted in < 500ms.")
 
 
+def test_7_quiz_disassociation_on_video_delete():
+    """Test 7: Deleting a video attached to a Quiz disassociates quiz.video_id without FK errors."""
+    print("\n[TEST 7] Quiz Disassociation on Video Deletion...")
+    setup_test_environment()
+
+    with app.app_context():
+        teacher = User.query.filter_by(username='del_teacher_quiz').first()
+        if not teacher:
+            teacher = User(username='del_teacher_quiz', email='del_teacher_quiz@test.com', role='teacher')
+            teacher.set_password('password123')
+            db.session.add(teacher)
+            db.session.commit()
+
+        video = Video(title='Quiz Attached Video', filename='quiz_vid_123.mp4', uploader_id=teacher.id, status='completed')
+        db.session.add(video)
+        db.session.commit()
+
+        quiz = Quiz(title='Video Quiz', teacher_id=teacher.id, video_id=video.id)
+        db.session.add(quiz)
+        db.session.commit()
+
+        # Delete video via route
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['_user_id'] = str(teacher.id)
+                sess['_fresh'] = True
+                sess['csrf_token'] = 'test_csrf'
+
+            del_res = client.post(f'/teacher/delete_video/{video.id}', data={'csrf_token': 'test_csrf'}, follow_redirects=True)
+            assert del_res.status_code in (200, 302), f"Expected 200/302, got {del_res.status_code}"
+
+        # Verify video deleted and quiz disassociated cleanly
+        v_check = db.session.get(Video, video.id)
+        q_check = db.session.get(Quiz, quiz.id)
+
+        assert v_check is None, "Video DB record was not deleted"
+        assert q_check is not None, "Quiz record was incorrectly deleted"
+        assert q_check.video_id is None, f"Quiz video_id expected None, got {q_check.video_id}"
+
+        db.session.delete(quiz)
+        db.session.commit()
+
+    print("  [PASS] Test 7: Video deleted and linked Quiz disassociated cleanly without FK error.")
+
+
+def test_8_sysadmin_video_deletion():
+    """Test 8: System Admin can execute delete_video route without 403 Forbidden."""
+    print("\n[TEST 8] System Admin Video Deletion Access...")
+    setup_test_environment()
+
+    with app.app_context():
+        sysadmin = User.query.filter_by(username='del_sysadmin').first()
+        if not sysadmin:
+            sysadmin = User(username='del_sysadmin', email='del_sysadmin@test.com', role='system_admin')
+            sysadmin.set_password('password123')
+            db.session.add(sysadmin)
+            db.session.commit()
+
+        video = Video(title='Sysadmin Deletion Video', filename='sysadmin_vid_999.mp4', uploader_id=sysadmin.id, status='completed')
+        db.session.add(video)
+        db.session.commit()
+
+        vid_id = video.id
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['_user_id'] = str(sysadmin.id)
+                sess['_fresh'] = True
+                sess['csrf_token'] = 'test_csrf'
+
+            del_res = client.post(f'/teacher/delete_video/{vid_id}', data={'csrf_token': 'test_csrf'}, follow_redirects=True)
+            assert del_res.status_code == 200, f"Expected 200, got {del_res.status_code}"
+
+        v_check = db.session.get(Video, vid_id)
+        assert v_check is None, "Video DB record was not deleted by System Admin"
+
+    print("  [PASS] Test 8: System Admin executed delete_video route successfully.")
+
+
 def run_all_tests():
     print("=" * 65)
     print("CAMPUSPLAYER PERMANENT VIDEO DELETION TEST SUITE")
@@ -424,9 +502,11 @@ def run_all_tests():
     test_4_windows_readonly_and_permission_safety()
     test_5_teacher_cascade_deletion_cleans_video_files()
     test_6_ubuntu_linux_paths_and_instant_performance()
+    test_7_quiz_disassociation_on_video_delete()
+    test_8_sysadmin_video_deletion()
 
     print("\n" + "=" * 65)
-    print("ALL VIDEO DELETION TESTS PASSED SUCCESSFULLY! (6/6)")
+    print("ALL VIDEO DELETION TESTS PASSED SUCCESSFULLY! (8/8)")
     print("=" * 65)
 
 

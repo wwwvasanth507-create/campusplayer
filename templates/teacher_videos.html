@@ -376,7 +376,9 @@
                         <button type="button" class="btn"
                             style="background:rgba(217,130,43,0.15);color:#d9822b;border:1px solid rgba(217,130,43,0.3);padding:9px;"
                             title="Delete video and clean disk storage"
-                            onclick="confirmDeleteVideo('{{ video.id }}', {{ video.title|tojson }})">
+                            data-video-id="{{ video.id }}"
+                            data-video-title="{{ video.title }}"
+                            onclick="confirmDeleteVideo(this)">
                             <i class="material-icons" style="font-size:1.1rem;">delete</i>
                         </button>
                     </div>
@@ -397,7 +399,14 @@
     {% endif %}
 
     <script>
-        function confirmDeleteVideo(videoId, title) {
+        function confirmDeleteVideo(target) {
+            let videoId = target, title = 'this video';
+            if (typeof target === 'object' && target !== null && target.getAttribute) {
+                videoId = target.getAttribute('data-video-id');
+                title = target.getAttribute('data-video-title') || title;
+            } else if (arguments.length >= 2) {
+                title = arguments[1];
+            }
             if (!confirm(`Delete "${title}"?\n\nThis will permanently clean up the video, adaptive HLS stream files, and disk storage.`)) return;
             const card = document.getElementById(`vcard-${videoId}`);
             if (card) {

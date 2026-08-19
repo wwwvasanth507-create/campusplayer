@@ -1579,11 +1579,20 @@
                         <i class="material-icons" style="font-size:0.95rem;">question_answer</i>
                         <span>Q&A Doubts</span>
                     </button>
-                    {% if current_user.role in ['teacher', 'admin'] %}
+                    {% if current_user.role in ['teacher', 'admin', 'system_admin'] %}
                     <button onclick="openAddCheckpointModal()" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; color:var(--secondary-color);">
                         <i class="material-icons" style="font-size:0.95rem;">add_task</i>
                         <span>Add Checkpoint</span>
                     </button>
+                    {% endif %}
+                    {% if current_user.role in ['admin', 'system_admin'] or (current_user.role == 'teacher' and video.uploader_id == current_user.id) %}
+                    <form action="{{ url_for('delete_video', video_id=video.id) }}" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete video &quot;{{ video.title|e }}&quot; permanently and clean up disk storage?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.3);" title="Delete video permanently">
+                            <i class="material-icons" style="font-size:0.95rem;">delete</i>
+                            <span>Delete Video</span>
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
             </div>
