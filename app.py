@@ -8211,11 +8211,13 @@ def timetable_hub():
     selected_class_id = request.args.get('class_id', type=int)
 
     if current_user.role == 'student':
-        classes = current_user.enrolled_classes.all()
+        raw_classes = current_user.enrolled_classes.all() if hasattr(current_user.enrolled_classes, 'all') else list(current_user.enrolled_classes)
+        classes = [c for c in raw_classes if not inst_id or c.institution_id == inst_id]
         if not selected_class_id and classes:
             selected_class_id = classes[0].id
     elif current_user.role == 'teacher':
-        classes = current_user.created_classes
+        raw_classes = current_user.created_classes
+        classes = [c for c in raw_classes if not inst_id or c.institution_id == inst_id]
         if not selected_class_id and classes:
             selected_class_id = classes[0].id
     elif current_user.role in ('admin', 'system_admin'):
@@ -8224,6 +8226,9 @@ def timetable_hub():
             selected_class_id = classes[0].id
 
     selected_class = Classroom.query.get(selected_class_id) if selected_class_id else None
+    if selected_class and inst_id and current_user.role != 'system_admin' and selected_class.institution_id != inst_id:
+        selected_class = None
+
 
     # Load slots for selected classroom
     slots_by_day = {
