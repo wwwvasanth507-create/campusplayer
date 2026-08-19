@@ -1558,10 +1558,6 @@
                 class="s-nav-link {{ 'active' if request.endpoint in ['student_progress_reports', 'student_view_progress_report'] }}">
                 <i class="material-icons">assignment_turned_in</i> Progress Reports
             </a>
-            <a href="{{ url_for('student_certificates') }}"
-                class="s-nav-link {{ 'active' if request.endpoint == 'student_certificates' }}">
-                <i class="material-icons">military_tech</i> My Certificates
-            </a>
             <a href="{{ url_for('student_bio_data') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'student_bio_data' }}">
                 <i class="material-icons">badge</i> My Bio Data

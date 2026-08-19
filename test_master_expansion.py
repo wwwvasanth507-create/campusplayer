@@ -196,11 +196,11 @@ class TestMasterExpansionFeatures(unittest.TestCase):
             self.assertIsNotNone(cert)
             cert_code = cert.certificate_code
 
-        # 2. Student views certificates hub
+        # 2. Student attempts to view certificates hub (now disabled on backend)
         self.login_as('test_student_exp', 'student123', 'student')
-        res = self.client.get('/student/certificates')
+        res = self.client.get('/student/certificates', follow_redirects=True)
         self.assertEqual(res.status_code, 200)
-        self.assertIn(b'Mastery of Quantum Mechanics', res.data)
+        self.assertIn(b'Certificates option is disabled for students.', res.data)
 
         # 3. Public QR Verification endpoint (no auth needed)
         self.client.get('/logout', follow_redirects=True)
@@ -208,8 +208,12 @@ class TestMasterExpansionFeatures(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn(b'Officially Verified Academic Credential', res.data)
 
-        # 4. Download ReportLab PDF
+        # 4. Download ReportLab PDF (blocked for students, available for teachers)
         self.login_as('test_student_exp', 'student123', 'student')
+        res = self.client.get(f'/certificates/download/{cert_code}', follow_redirects=True)
+        self.assertIn(b'Access denied. Certificate download is disabled for students.', res.data)
+
+        self.login_as('test_teacher_exp', 'teacher123', 'teacher')
         res = self.client.get(f'/certificates/download/{cert_code}')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.content_type, 'application/pdf')

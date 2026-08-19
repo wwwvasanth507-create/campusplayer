@@ -7514,9 +7514,11 @@ def save_ai_quiz(video_id):
 @app.route('/student/certificates')
 @login_required
 def student_certificates():
-    """Student certificates dashboard displaying earned awards and milestone credentials."""
-    certs = AcademicCertificate.query.filter_by(student_id=current_user.id).order_by(AcademicCertificate.issued_at.desc()).all()
-    return render_template('student_certificates.html', certificates=certs)
+    """Student certificates dashboard is disabled for student access."""
+    flash('Certificates option is disabled for students.', 'error')
+    if current_user.role == 'student':
+        return redirect(url_for('student_dashboard'))
+    return redirect(url_for('index'))
 
 
 @app.route('/teacher/issue_certificate', methods=['POST'])
@@ -7568,7 +7570,10 @@ def verify_certificate_public(cert_code):
 @app.route('/certificates/download/<cert_code>')
 @login_required
 def download_certificate_pdf(cert_code):
-    """Download the official high-resolution landscape certificate PDF."""
+    """Download official certificate PDF (restricted for students)."""
+    if current_user.role == 'student':
+        flash('Access denied. Certificate download is disabled for students.', 'error')
+        return redirect(url_for('student_dashboard'))
     cert = AcademicCertificate.query.filter_by(certificate_code=cert_code).first_or_404()
     base_url = request.host_url.rstrip('/')
     pdf_buf = build_certificate_pdf(cert, base_url=base_url)
