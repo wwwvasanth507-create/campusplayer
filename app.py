@@ -113,17 +113,15 @@ ALLOWED_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv'}
 # `Access-Control-Allow-Origin: *` combined with credentials=true is an
 # invalid/insecure combination, so origins are reflected only from an
 # explicit allow-list (MEDIA_ALLOWED_ORIGINS env var, comma-separated).
-from services.utils import apply_media_cors_headers
+from services.utils import apply_media_cors_headers, get_or_create_persistent_secret_key
+from services.session_store import SqlAlchemySessionInterface
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 ALLOWED_SUBTITLE_EXTENSIONS = {'vtt', 'srt'}
 
 app = Flask(__name__)
 
 # ── Configuration ──
-secret_key = os.getenv('SECRET_KEY')
-if not secret_key:
-    secret_key = secrets.token_urlsafe(32)
-    print('WARNING: SECRET_KEY is not set. A temporary secret key has been generated. Set SECRET_KEY in environment before production.')
+secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -150,6 +148,8 @@ app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 app.config['JSON_AS_ASCII'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.session_interface = SqlAlchemySessionInterface()
+
 
 # ── Initialize Extensions ──
 db.init_app(app)
@@ -247,10 +247,13 @@ def enforce_https():
 
 @app.before_request
 def csrf_protect_request():
+    if app.config.get('TESTING') or not app.config.get('WTF_CSRF_ENABLED', True):
+        return
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
         token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
         if not validate_csrf_token(token):
             abort(400, description='Invalid CSRF token')
+
 
 import gzip
 
@@ -423,7 +426,17 @@ def inject_settings():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        user = User.query.get(int(user_id))
+        if user and getattr(user, 'is_active_account', True):
+            sess_ver = session.get('session_version')
+            if sess_ver is not None and sess_ver != getattr(user, 'session_version', 1):
+                return None
+            return user
+        return None
+    except Exception:
+        return None
+
 
 # ── Utility Decorators ──
 def admin_required(f):
@@ -858,16 +871,18 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        if not validate_csrf_token(request.form.get('csrf_token')):
-            abort(400, description='Invalid CSRF token')
+        if not app.config.get('TESTING') and app.config.get('WTF_CSRF_ENABLED', True):
+            if not validate_csrf_token(request.form.get('csrf_token')):
+                abort(400, description='Invalid CSRF token')
 
         username = sanitize_input(request.form.get('username'), 150)
         password = request.form.get('password') or ''
         role = sanitize_input(request.form.get('role'), 20)
 
-        if not username or not password or not role:
-            flash('Please provide username, password, and role.', 'error')
+        if not username or not password:
+            flash('Please provide username and password.', 'error')
             return render_template('login.html')
+
 
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
@@ -891,8 +906,11 @@ def login():
             user.login_count = (user.login_count or 0) + 1
             db.session.commit()
             
-            # Apply user theme preference
+            # Apply user theme preference & session tracking metadata
             session['theme'] = user.theme_preference or 'dark'
+            session['session_version'] = getattr(user, 'session_version', 1)
+            session['institution_id'] = getattr(user, 'institution_id', None)
+
             
             log_activity('login', f'User {user.username} logged in')
             
@@ -915,6 +933,51 @@ def logout():
     logout_user()
     session.pop('theme', None)
     return redirect(url_for('index'))
+
+# ── Health & Diagnostics Endpoints ──
+@app.route('/health')
+def public_health_check():
+    """Public basic health endpoint for load balancers & monitoring."""
+    try:
+        db.session.execute(db.select(1))
+        return jsonify({
+            'status': 'healthy',
+            'service': 'CampusPlayer',
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'service': 'CampusPlayer',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
+@app.route('/health/db')
+@login_required
+@admin_required
+def admin_health_db_check():
+    """Detailed internal/admin diagnostic health endpoint."""
+    try:
+        inst_count = Institution.query.count()
+        user_count = User.query.count()
+        video_count = Video.query.count()
+        return jsonify({
+            'status': 'healthy',
+            'database': app.config.get('SQLALCHEMY_DATABASE_URI', '').split('://')[0],
+            'institutions': inst_count,
+            'users': user_count,
+            'videos': video_count,
+            'timestamp': datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.utcnow().isoformat()
+        }), 500
+
+
 
 # ── Profile Routes ──
 @app.route('/profile', methods=['GET', 'POST'])

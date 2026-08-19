@@ -13,6 +13,58 @@ from models import Video, Playlist, Classroom, Quiz, User
 MEDIA_ALLOWED_ORIGINS = {o.strip() for o in os.getenv('MEDIA_ALLOWED_ORIGINS', '').split(',') if o.strip()}
 
 
+def get_or_create_persistent_secret_key(base_dir):
+    """
+    Retrieve SECRET_KEY from environment or persist a dedicated key to file/env
+    so it survives process, Gunicorn, systemd, and server restarts.
+    """
+    key = os.getenv('SECRET_KEY') or os.getenv('CAMPUSPLAYER_SECRET_KEY')
+    if key and key.strip():
+        return key.strip()
+
+    key_file = os.path.join(base_dir, '.secret_key')
+    if os.path.exists(key_file):
+        try:
+            with open(key_file, 'r', encoding='utf-8') as f:
+                k = f.read().strip()
+                if k:
+                    return k
+        except Exception:
+            pass
+
+    new_key = secrets.token_urlsafe(48)
+    try:
+        with open(key_file, 'w', encoding='utf-8') as f:
+            f.write(new_key + '\n')
+    except Exception:
+        pass
+
+    env_file = os.path.join(base_dir, '.env')
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            if 'SECRET_KEY=' in content:
+                lines = content.splitlines()
+                updated_lines = []
+                for line in lines:
+                    if line.strip().startswith('SECRET_KEY='):
+                        val = line.split('=', 1)[1].strip()
+                        if not val:
+                            updated_lines.append(f'SECRET_KEY={new_key}')
+                        else:
+                            updated_lines.append(line)
+                    else:
+                        updated_lines.append(line)
+                with open(env_file, 'w', encoding='utf-8') as f:
+                    f.write('\n'.join(updated_lines) + '\n')
+        except Exception:
+            pass
+
+    return new_key
+
+
+
 def apply_media_cors_headers(response):
     """Attach CORS headers for media responses using an origin allow-list or request origin."""
     origin = request.headers.get('Origin')

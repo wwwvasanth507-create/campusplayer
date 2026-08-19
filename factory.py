@@ -14,12 +14,13 @@ SUBTITLE_FOLDER = os.path.join(BASE_DIR, 'static', 'subtitles')
 PDF_DIR = os.path.join(BASE_DIR, 'generated_pdfs')
 
 
+from services.utils import get_or_create_persistent_secret_key
+from services.session_store import SqlAlchemySessionInterface
+
 def create_app(test_config=None):
     app = Flask(__name__, static_folder='static', template_folder='templates')
 
-    secret_key = os.getenv('SECRET_KEY') or secrets.token_urlsafe(32)
-    if not os.getenv('SECRET_KEY'):
-        print('WARNING: SECRET_KEY is not set. A temporary secret key has been generated. Set SECRET_KEY in environment before production.')
+    secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 
     app.config.update(
         SECRET_KEY=secret_key,
@@ -40,8 +41,11 @@ def create_app(test_config=None):
         SESSION_REFRESH_EACH_REQUEST=True,
         PREFERRED_URL_SCHEME='https',
         JSON_AS_ASCII=False,
-        PERMANENT_SESSION_LIFETIME=timedelta(hours=int(os.getenv('SESSION_TIMEOUT_HOURS', 2)))
+        PERMANENT_SESSION_LIFETIME=timedelta(days=30)
     )
+
+    app.session_interface = SqlAlchemySessionInterface()
+
 
     if test_config:
         app.config.update(test_config)
@@ -84,8 +88,9 @@ def register_extensions(app):
                 cursor.close()
 
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'login'
     login_manager.session_protection = 'basic'
+
     cache.init_app(app)
     limiter.init_app(app)
     socketio.init_app(app)

@@ -114,10 +114,13 @@ class FullPlatformAudit(unittest.TestCase):
                 user.set_password("pass123")
                 db.session.add(user)
                 db.session.commit()
+            else:
+                user.set_password("pass123")
+                db.session.commit()
 
-            with self.client.session_transaction() as sess:
-                sess['_user_id'] = str(user.id)
-                sess['_fresh'] = True
+            self.client.post('/login', data={'username': user.username, 'password': 'pass123', 'role': user.role}, follow_redirects=True)
+
+
 
             vid = Video.query.first()
             if not vid:

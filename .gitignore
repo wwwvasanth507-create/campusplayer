@@ -11,6 +11,10 @@
 .env.development
 .env.production
 !.env.example
+.secret_key
+backups/
+audit_baseline.json
+
 
 # ------------------------------------------------------------------------------
 # 2. Python & Bytecode Cache

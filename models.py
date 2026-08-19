@@ -108,6 +108,7 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime, nullable=True)
     last_active = db.Column(db.DateTime, nullable=True, index=True)
     login_count = db.Column(db.Integer, default=0)
+    session_version = db.Column(db.Integer, default=1)
 
     # === GAMIFICATION FIELDS ===
     level = db.Column(db.Integer, default=1, index=True)
@@ -1651,6 +1652,20 @@ def before_update_listener(mapper, connection, target):
                 target.institution_id = inst_id
 
 
+class UserSession(db.Model):
+    __tablename__ = 'user_session'
+    sid = db.Column(db.String(128), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=True, index=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='SET NULL'), nullable=True, index=True)
+    data = db.Column(db.Text, nullable=False)
+    expiry = db.Column(db.DateTime, nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_accessed = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    user_agent = db.Column(db.String(500), nullable=True)
+    ip_address = db.Column(db.String(100), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, index=True)
+
+
 def backfill_all_tables_with_default_institution(db, logger=None):
     try:
         default_inst = Institution.query.filter_by(slug='default').first()
@@ -1673,7 +1688,7 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
             VideoFlashcard, AcademicCertificate, ParentAccessToken,
             Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
-            EBook, EBookProgress, AICopilotInteraction
+            EBook, EBookProgress, AICopilotInteraction, UserSession
         ]
         
         # Bypass before_compile filter by setting ignore flag on g
@@ -1687,10 +1702,12 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             for model in tables_to_backfill:
                 if hasattr(model, 'institution_id'):
                     if model == User:
-                        User.query.filter(User.institution_id == None).filter(User.role != 'system_admin').update(
-                            {User.institution_id: default_inst.id},
-                            synchronize_session=False
-                        )
+                        unattached = User.query.filter(User.institution_id == None).filter(User.role != 'system_admin').all()
+                        for u in unattached:
+                            existing = User.query.filter_by(username=u.username, institution_id=default_inst.id).first()
+                            if existing and existing.id != u.id:
+                                u.username = f"{u.username}_legacy_{u.id}"
+                            u.institution_id = default_inst.id
                     elif model == SiteSettings:
                         if not SiteSettings.query.filter_by(institution_id=default_inst.id).first():
                             first_settings = SiteSettings.query.filter_by(institution_id=None).first()
@@ -1711,6 +1728,7 @@ def backfill_all_tables_with_default_institution(db, logger=None):
         finally:
             if has_request_context():
                 g.ignore_tenant_filter = orig_ignore
+
                 
     except Exception as e:
         db.session.rollback()

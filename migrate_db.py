@@ -22,6 +22,16 @@ def migrate():
         print("=" * 60)
         print("CampusPlayer Database Migration")
         print("=" * 60)
+
+        # Automated Pre-Migration Backup
+        from services.backup_engine import create_backup
+        ok, backup_res = create_backup(app)
+        if not ok:
+            print(f"❌ [Migration Error] Pre-migration database backup failed: {backup_res}")
+            print("Aborting migration to preserve database integrity.")
+            sys.exit(1)
+        print(f"[Backup] Pre-migration database backup verified: {backup_res}\n")
+
         
         # Rebuild user table to scope unique username to institution_id
         try:
@@ -147,6 +157,8 @@ def migrate():
                     ('equipped_avatar_frame', 'VARCHAR(100)'),
                     ('equipped_title', 'VARCHAR(100)'),
                     ('equipped_badge', 'VARCHAR(100)'),
+                    ('session_version', 'INTEGER DEFAULT 1'),
+
                 ],
                 'indexes': [
                     ('ix_user_role', 'role'),
@@ -919,9 +931,24 @@ def migrate():
         else:
             print("[OK] YouTube thumbnails already synced")
 
+        # Post-Migration Integrity Validation
+        from services.audit_engine import run_platform_audit
+        healthy, audit_rep = run_platform_audit(app)
+        if not healthy:
+            print("❌ [Migration Error] Post-migration validation failed!")
+            if audit_rep['integrity']['message']:
+                print(f"  Integrity Error: {audit_rep['integrity']['message']}")
+            if audit_rep['foreign_keys']['violations']:
+                print("  FK Violations:")
+                for v in audit_rep['foreign_keys']['violations']:
+                    print(f"    - {v}")
+            sys.exit(1)
+        print("[OK] Post-migration validation PASSED cleanly!")
+
         print("\n" + "=" * 60)
         print("Migration Complete!")
         print("=" * 60)
+
 
 
 def reset_db():
