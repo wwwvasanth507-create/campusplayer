@@ -92,6 +92,18 @@ class User(UserMixin, db.Model):
             return self.avatar_url
         return None
 
+    @property
+    def name(self):
+        """Returns updated profile display name if set, otherwise formatted clean display name."""
+        if self.display_name and self.display_name.strip():
+            return self.display_name.strip()
+        if self.username:
+            return self.username.replace('_', ' ').replace('.', ' ').title()
+        return "User"
+
+    def get_display_name(self):
+        return self.name
+
     # Session Tracking
     last_login = db.Column(db.DateTime, nullable=True)
     last_active = db.Column(db.DateTime, nullable=True, index=True)

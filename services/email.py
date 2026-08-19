@@ -30,13 +30,13 @@ def send_profile_email_confirmation(student, old_email, new_email):
     changed_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
     remote_ip = request.remote_addr if has_request_context() else 'Unknown'
     browser_info = request.user_agent.string if has_request_context() else 'Unknown'
-    teacher_name = teacher.display_name or teacher.username if teacher else 'Campus Player System'
+    teacher_name = teacher.name if teacher else 'Campus Player System'
     teacher_contact = f"{teacher_name} <{teacher.email_sender_address}>" if teacher and teacher.email_sender_address else support_contact
 
     body_text = (
         f"Campus Player - Email Address Updated\n"
         f"\n"
-        f"Hello {student.display_name or student.username},\n"
+        f"Hello {student.name},\n"
         f"\n"
         f"Your Campus Player email address has been updated.\n"
         f"Previous Email: {old_email or '(not set)'}\n"
@@ -55,7 +55,7 @@ def send_profile_email_confirmation(student, old_email, new_email):
     try:
         body_html = render_template(
             'email_profile_update.html',
-            student_name=student.display_name or student.username,
+            student_name=student.name,
             account_username=student.username,
             student_id=f"{student.id:04d}",
             old_email=old_email or '(not set)',
@@ -72,7 +72,7 @@ def send_profile_email_confirmation(student, old_email, new_email):
         )
     except Exception:
         body_html = (
-            f"<p>Hello {student.display_name or student.username},<br>"
+            f"<p>Hello {student.name},<br>"
             f"Your Campus Player email address has been updated from <strong>{old_email or 'none'}</strong> to <strong>{new_email}</strong> on {changed_at}.<br><br>"
             f"If you did not make this change, contact {support_contact} immediately and change your password in Campus Player.</p>"
         )
@@ -85,8 +85,8 @@ def send_profile_email_confirmation(student, old_email, new_email):
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = formataddr((teacher.display_name or teacher.username, sender))
-        msg['To'] = formataddr((student.display_name or student.username, new_email))
+        msg['From'] = formataddr((teacher.name, sender))
+        msg['To'] = formataddr((student.name, new_email))
         msg['Date'] = formatdate(localtime=True)
         msg['Message-ID'] = make_msgid()
         msg.attach(MIMEText(body_text, 'plain', 'utf-8'))

@@ -65,13 +65,13 @@
             <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
                 <div style="width:42px; height:42px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:#ffffff; flex-shrink:0; overflow:hidden;">
                     {% if student.avatar_url %}
-                    <img src="{{ student.avatar_url }}" alt="{{ student.username }}" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="{{ student.avatar_url }}" alt="{{ student.name }}" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
-                    {{ student.username[0].upper() }}
+                    {{ student.name[0].upper() }}
                     {% endif %}
                 </div>
                 <div style="min-width:0;">
-                    <div style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.username }}</div>
+                    <div style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.name }}</div>
                     <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
                         <span style="color:var(--primary); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--primary);">bolt</i> {{ student.xp }} XP</span> &bull;
                         Level {{ (student.xp // 500) + 1 }} &bull;
@@ -95,7 +95,7 @@
             <!-- Action Buttons -->
             <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                 {% if student.phone %}
-                <button onclick="openSmsModal('{{ student.id }}', '{{ student.username }}')" class="btn btn-outline"
+                <button onclick="openSmsModal('{{ student.id }}', '{{ student.name }}')" class="btn btn-outline"
                     style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--secondary-color);" title="SMS Report">
                     <i class="material-icons" style="font-size:0.95rem;">message</i>
                 </button>
@@ -114,7 +114,7 @@
                     <i class="material-icons" style="font-size:0.95rem;">assessment</i>
                 </a>
                 <form action="{{ url_for('delete_student', student_id=student.id) }}" method="POST"
-                    onsubmit="return confirm('Delete student account \'{{ student.username }}\'?')" style="margin:0;">
+                    onsubmit="return confirm('Delete student account \'{{ student.name }}\'?')" style="margin:0;">
                     <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem; min-height:34px;" title="Delete Student">
                         <i class="material-icons" style="font-size:0.95rem;">person_remove</i>
                     </button>
@@ -124,7 +124,7 @@
 
         <!-- Inline Remarks Form -->
         <div id="srm-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm);">
-            <h4 class="font-display" style="margin:0 0 8px 0; font-size:0.82rem; color:var(--primary);">Teacher Remarks for {{ student.username }}</h4>
+            <h4 class="font-display" style="margin:0 0 8px 0; font-size:0.82rem; color:var(--primary);">Teacher Remarks for {{ student.name }}</h4>
             {% set ns = namespace(my_classes=0) %}
             {% for cls in item.class_details %}
                 {% if current_user.role == 'admin' or cls.teacher_id == current_user.id %}
@@ -159,7 +159,7 @@
             <form action="{{ url_for('change_student_password') }}" method="POST"
                 style="display:flex; gap:8px; align-items:center; margin:0;">
                 <input type="hidden" name="student_id" value="{{ student.id }}">
-                <input type="password" name="new_password" placeholder="New password for {{ student.username }}" required
+                <input type="password" name="new_password" placeholder="New password for {{ student.name }}" required
                     style="flex:1; margin:0; padding:6px 10px; font-size:0.8rem; height:34px; min-height:34px; border-radius:6px;">
                 <button type="submit" class="btn btn-primary" style="padding:6px 12px; font-size:0.75rem; height:34px; min-height:34px; white-space:nowrap;">Set Password</button>
             </form>

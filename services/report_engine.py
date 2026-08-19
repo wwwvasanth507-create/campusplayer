@@ -136,7 +136,7 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
             health_color = '#d9822b'
             at_risk_students.append({
                 'id': s.id,
-                'name': s.username,
+                'name': s.name,
                 'reason': 'Low Attendance & Low Quiz Score',
                 'attendance_pct': att_display,
                 'quiz_pct': quiz_display
@@ -147,7 +147,7 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
             health_color = '#d9822b'
             at_risk_students.append({
                 'id': s.id,
-                'name': s.username,
+                'name': s.name,
                 'reason': f'Attendance below 75% ({att_display})',
                 'attendance_pct': att_display,
                 'quiz_pct': quiz_display
@@ -158,7 +158,7 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
             health_color = '#d9822b'
             at_risk_students.append({
                 'id': s.id,
-                'name': s.username,
+                'name': s.name,
                 'reason': f'Quiz Mastery below 50% ({quiz_display})',
                 'attendance_pct': att_display,
                 'quiz_pct': quiz_display
@@ -174,7 +174,8 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
 
         student_rows.append({
             'student_id': s.id,
-            'username': s.username,
+            'username': s.name,
+            'name': s.name,
             'level': level,
             'total_xp': total_xp,
             'attendance_pct': att_pct if att_pct is not None else 100.0,
@@ -201,7 +202,7 @@ def aggregate_class_weekly_data(classroom_id, period_start=None, period_end=None
     return {
         'classroom_id': classroom.id,
         'classroom_name': classroom.name,
-        'teacher_name': classroom.teacher.username if classroom.teacher else 'Faculty',
+        'teacher_name': classroom.teacher.name if classroom.teacher else 'Faculty',
         'period_start': period_start.strftime('%Y-%m-%d'),
         'period_end': period_end.strftime('%Y-%m-%d'),
         'period_label': f"{period_start.strftime('%b %d')} – {period_end.strftime('%b %d, %Y')}",

@@ -424,6 +424,30 @@ def log_activity(action, details=None):
 def ratelimit_handler(e):
     return jsonify({'error': 'Too many requests. Please slow down.'}), 429
 
+# ── Custom Jinja Template Filters for Security & Privacy ──
+@app.template_filter('display_name')
+def display_name_filter(user):
+    if not user:
+        return 'User'
+    if hasattr(user, 'name'):
+        return user.name
+    if isinstance(user, dict):
+        return user.get('display_name') or user.get('name') or (user.get('username') or '').replace('_', ' ').title() or 'User'
+    return str(user)
+
+@app.template_filter('avatar_initial')
+def avatar_initial_filter(user):
+    if not user:
+        return 'U'
+    name = ''
+    if hasattr(user, 'name'):
+        name = user.name
+    elif isinstance(user, dict):
+        name = user.get('display_name') or user.get('name') or user.get('username') or ''
+    else:
+        name = str(user)
+    return name[0].upper() if name else 'U'
+
 # ── SMS Jobs Storage ──
 SMS_JOBS = {}
 SMS_LOCK = threading.Lock()
@@ -3258,7 +3282,7 @@ def post_comment():
     if parent_id:
         parent_comment = Comment.query.get(parent_id)
         if parent_comment and parent_comment.user_id != current_user.id:
-            role_label = "Teacher" if current_user.role == 'teacher' else current_user.username
+            role_label = "Teacher" if current_user.role == 'teacher' else current_user.name
             notif = Notification(user_id=parent_comment.user_id,
                 message=f'{role_label} replied to your comment: "{content[:100]}"',
                 video_id=video_id, comment_id=new_comment.id, notification_type='info')
@@ -3266,11 +3290,11 @@ def post_comment():
     else:
         if video and video.uploader_id != current_user.id:
             notif = Notification(user_id=video.uploader_id,
-                message=f'{current_user.username} commented on your video "{video.title}": "{content[:100]}"',
+                message=f'{current_user.name} commented on your video "{video.title}": "{content[:100]}"',
                 video_id=video_id, comment_id=new_comment.id, notification_type='info')
             db.session.add(notif)
     db.session.commit()
-    return jsonify({'success': True, 'username': current_user.username, 'content': content})
+    return jsonify({'success': True, 'username': current_user.username, 'display_name': current_user.name, 'name': current_user.name, 'avatar_url': current_user.get_avatar_url(), 'content': content})
 
 @app.route('/api/analytics/start', methods=['POST'])
 @login_required
@@ -3486,14 +3510,16 @@ def send_chat_message(class_id):
     socketio.emit('new_message', {
         'id': msg.id, 'username': current_user.username, 'role': current_user.role,
         'content': msg.content, 'timestamp': msg.timestamp.strftime('%I:%M %p'),
-        'classroom_id': class_id, 'avatar_url': current_user.avatar_url
+        'classroom_id': class_id, 'avatar_url': current_user.avatar_url,
+        'display_name': current_user.name, 'name': current_user.name
     }, room=f'class_{class_id}')
     
     return jsonify({
         'success': True, 'id': msg.id, 'username': current_user.username,
         'role': current_user.role, 'content': msg.content,
         'timestamp': msg.timestamp.strftime('%I:%M %p'),
-        'avatar_url': current_user.avatar_url
+        'avatar_url': current_user.avatar_url,
+        'display_name': current_user.name, 'name': current_user.name
     })
 
 @app.route('/api/chatroom/<int:class_id>/messages')
@@ -3507,7 +3533,7 @@ def get_chat_messages(class_id):
         'messages': [{
             'id': m.id, 'username': m.user.username, 'role': m.user.role,
             'content': m.content, 'timestamp': m.timestamp.strftime('%I:%M %p'), 'user_id': m.user_id,
-            'avatar_url': m.user.avatar_url
+            'avatar_url': m.user.avatar_url, 'display_name': m.user.name, 'name': m.user.name
         } for m in messages]
     })
 

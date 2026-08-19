@@ -72,14 +72,14 @@
                     <div style="display:flex; align-items:center; gap:14px; min-width:240px; flex:1;">
                         <div style="width:42px; height:42px; border-radius:8px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.05rem; color:#ffffff; flex-shrink:0; overflow:hidden;">
                             {% if teacher.avatar_url %}
-                            <img src="{{ teacher.avatar_url }}" alt="{{ teacher.username }}" style="width:100%; height:100%; object-fit:cover;">
+                            <img src="{{ teacher.avatar_url }}" alt="{{ teacher.name }}" style="width:100%; height:100%; object-fit:cover;">
                             {% else %}
-                            {{ teacher.username[0].upper() }}
+                            {{ teacher.name[0].upper() }}
                             {% endif %}
                         </div>
                         <div>
                             <div class="flex-between" style="gap:8px; justify-content:flex-start;">
-                                <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ teacher.username }}</span>
+                                <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ teacher.name }}</span>
                                 <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-family:'JetBrains Mono',monospace; font-size:0.68rem; padding:2px 6px; border-radius:6px;">
                                     ID #{{ teacher.id }}
                                 </span>

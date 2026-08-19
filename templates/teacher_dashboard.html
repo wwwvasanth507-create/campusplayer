@@ -5,14 +5,14 @@
     <div style="display:flex; align-items:center; gap:16px;">
         <div style="width:48px; height:48px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:800; font-size:1.2rem; color:#fff; flex-shrink:0;">
             {% if current_user.avatar_url %}
-            <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
+            <img src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" style="width:100%; height:100%; object-fit:cover;">
             {% else %}
-            {{ current_user.username[:1].upper() }}
+            {{ current_user.name[0].upper() }}
             {% endif %}
         </div>
         <div>
             <h1 class="page-title font-display" style="margin:0;">Teacher Command Center</h1>
-            <p class="page-sub" style="margin:2px 0 0 0;">Welcome back, <b style="color:var(--text);">{{ current_user.username }}</b> &bull; Manage coursework, lectures &amp; student performance</p>
+            <p class="page-sub" style="margin:2px 0 0 0;">Welcome back, <b style="color:var(--text);">{{ current_user.name }}</b> &bull; Manage coursework, lectures &amp; student performance</p>
         </div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">

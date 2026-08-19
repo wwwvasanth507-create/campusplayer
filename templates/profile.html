@@ -49,11 +49,11 @@
             <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:20px; padding:16px; background:var(--surface2); border:1px solid var(--border); border-radius:12px;">
                 <div style="position:relative; width:80px; height:80px; flex-shrink:0;">
                     {% if current_user.avatar_url %}
-                    <img id="avatarPreview" src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" 
+                    <img id="avatarPreview" src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" 
                          style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--primary); box-shadow:0 4px 14px rgba(0,0,0,0.3);">
                     {% else %}
                     <div id="avatarFallback" style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--primary), var(--secondary-color)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; font-family:'JetBrains Mono',monospace; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
-                        {{ current_user.username[0].upper() }}
+                        {{ current_user.name[0].upper() }}
                     </div>
                     <img id="avatarPreview" src="" alt="" style="display:none; width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
                     {% endif %}

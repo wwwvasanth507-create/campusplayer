@@ -388,7 +388,7 @@
             <div class="chat-top-sub">
                 <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">school</i> <b>{{ classroom.students.count() }}</b> Scholars Enrolled</span>
                 <span>&bull;</span>
-                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> Faculty: <b>{{ classroom.teacher.username }}</b></span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> Faculty: <b>{{ classroom.teacher.name }}</b></span>
             </div>
         </div>
 
@@ -402,12 +402,12 @@
     <div class="chat-msgs" id="chatMessages">
         {% if messages %}
         {% for msg in messages %}
-        {% set initial = msg.user.username[0].upper() %}
+        {% set initial = msg.user.name[0].upper() %}
         <div class="msg {{ 'own' if msg.user_id == current_user.id else 'other' }} {{ 'staff-msg' if msg.user.role == 'teacher' else '' }}"
             id="msg-{{ msg.id }}">
             <div class="msg-pic {{ 'me' if msg.user_id == current_user.id else 'you' }} {{ 'staff' if msg.user.role == 'teacher' else '' }}">
                 {% if msg.user.avatar_url %}
-                <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.username }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+                <img src="{{ msg.user.avatar_url }}" alt="{{ msg.user.name }}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
                 {% else %}
                 {{ initial }}
                 {% endif %}
@@ -416,7 +416,7 @@
                 <div class="msg-bub">
                     {% if msg.user_id != current_user.id %}
                     <div class="msg-author">
-                        <span>{{ msg.user.username }}</span>
+                        <span>{{ msg.user.name }}</span>
                         {% if msg.user.role == 'teacher' %}
                         <span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>
                         {% else %}
@@ -543,7 +543,8 @@
         r.className = `msg ${own ? 'own' : 'other'} ${st && !own ? 'staff-msg' : ''}`;
         r.id = `msg-${m.id}`;
 
-        const l = (m.username || '?')[0].toUpperCase();
+        const displayName = m.display_name || m.name || m.username || 'User';
+        const l = (displayName || '?')[0].toUpperCase();
         let bad = '';
         if (st && !own) bad = '<span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>';
         else if (!own) bad = '<span style="font-size:0.6rem; color:var(--text-dim); opacity:0.8;"><i class="material-icons" style="font-size:0.7rem; vertical-align:middle;">school</i> Scholar</span>';
@@ -553,9 +554,9 @@
         let chk = '';
         if (own) chk = '<span class="msg-rcpt">✓✓</span>';
         let auth = '';
-        if (!own) auth = `<div class="msg-author"><span>${esc(m.username)}</span> ${bad}</div>`;
+        if (!own) auth = `<div class="msg-author"><span>${esc(displayName)}</span> ${bad}</div>`;
 
-        const picContent = m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="${esc(m.username)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : l;
+        const picContent = m.avatar_url ? `<img src="${esc(m.avatar_url)}" alt="${esc(displayName)}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : l;
 
         r.innerHTML = `
             <div class="msg-pic ${own ? 'me' : 'you'} ${st && !own ? 'staff' : ''}">${picContent}</div>

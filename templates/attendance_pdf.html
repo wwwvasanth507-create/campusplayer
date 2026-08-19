@@ -111,9 +111,9 @@
                         <td>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <div style="width:28px; height:28px; border-radius:6px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.75rem; color:#ffffff;">
-                                    {{ r.student.username[0].upper() }}
+                                    {{ r.student.name[0].upper() }}
                                 </div>
-                                <strong style="color:var(--text); font-size:0.88rem;">{{ r.student.username }}</strong>
+                                <strong style="color:var(--text); font-size:0.88rem;">{{ r.student.name }}</strong>
                             </div>
                         </td>
                         <td>
@@ -130,7 +130,7 @@
                             {{ r.arrival_time.strftime('%H:%M') if r.arrival_time else '—' }}
                         </td>
                         <td class="no-print">
-                            <button onclick="openSmsModal({{ r.student_id }}, '{{ r.student.username }}')"
+                            <button onclick="openSmsModal({{ r.student_id }}, '{{ r.student.name }}')"
                                 style="background:none; border:none; color:var(--secondary-color); cursor:pointer; padding:4px;"
                                 title="Send SMS Attendance Report">
                                 <i class="material-icons" style="font-size:1.1rem;">chat</i>

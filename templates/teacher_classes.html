@@ -223,7 +223,7 @@
         <div class="cls-header">
             <div>
                 <div class="cls-name">{{ cls.name }}</div>
-                <div class="cls-meta">Teacher: <b style="color:var(--text);">{{ cls.teacher.username }}</b> &bull; {{ cls.students.count() }} students</div>
+                <div class="cls-meta">Teacher: <b style="color:var(--text);">{{ cls.teacher.name }}</b> &bull; {{ cls.students.count() }} students</div>
                 <div class="cls-meta" style="font-family:'JetBrains Mono',monospace; color:var(--primary);">Code: {{ cls.class_code or '—' }}</div>
             </div>
             <form action="{{ url_for('delete_class', class_id=cls.id) }}" method="POST"
@@ -240,7 +240,7 @@
                 <select name="new_teacher_id" required style="margin:0; height:38px; font-size:0.8rem; padding:6px 10px;">
                     <option value="">Reassign teacher...</option>
                     {% for teacher in teachers %}
-                    <option value="{{ teacher.id }}" {% if teacher.id == cls.teacher_id %}selected{% endif %}>{{ teacher.username }}</option>
+                    <option value="{{ teacher.id }}" {% if teacher.id == cls.teacher_id %}selected{% endif %}>{{ teacher.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -270,7 +270,7 @@
         <ul class="student-list">
             {% for student in cls.students %}
             <li>
-                <span><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> {{ student.username }}</span>
+                <span><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> {{ student.name }}</span>
                 <form action="{{ url_for('remove_student_from_class') }}" method="POST"
                     style="display:inline; margin:0;">
                     <input type="hidden" name="class_id" value="{{ cls.id }}">
@@ -355,14 +355,15 @@ function searchStudents(classId, query) {
             
             let html = '';
             data.forEach(s => {
+                const sName = s.display_name || s.name || s.username;
                 const checked = selectedStudents[classId].has(s.id) ? 'checked' : '';
                 html += `
                     <label class="student-check-item">
                         <input type="checkbox" class="student-cb" 
                                data-class-id="${classId}" 
                                data-student-id="${s.id}" 
-                               data-student-name="${s.username}" ${checked}>
-                        <span class="s-name"><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> ${s.username}</span>
+                               data-student-name="${sName}" ${checked}>
+                        <span class="s-name"><i class="material-icons" style="font-size:0.9rem; vertical-align:middle; color:var(--text-dim);">person</i> ${sName}</span>
                     </label>
                 `;
             });

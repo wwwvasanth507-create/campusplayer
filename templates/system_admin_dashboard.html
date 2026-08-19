@@ -267,7 +267,7 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
                     color:{{ '#3d8fa3' if inst.status=='active' else '#d9822b' }};
                     border:1px solid {{ 'rgba(61,143,163,0.3)' if inst.status=='active' else 'rgba(217,130,43,0.3)' }};">{{ inst.status|upper }}</span>
                 <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
-                    Admin: <b style="color:var(--text);">{{ inst.owner_admin.username if inst.owner_admin else '—' }}</b> &bull; Slug: <span style="font-family:'JetBrains Mono',monospace;">{{ inst.slug }}</span>
+                    Admin: <b style="color:var(--text);">{{ inst.owner_admin.name if inst.owner_admin else '—' }}</b> &bull; Slug: <span style="font-family:'JetBrains Mono',monospace;">{{ inst.slug }}</span>
                 </div>
             </div>
             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">

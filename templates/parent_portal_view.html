@@ -47,12 +47,16 @@
     <!-- Student Profile Card -->
     <div class="card" style="padding:22px; margin-bottom:16px; border:1px solid var(--border); background:var(--surface); border-radius:14px;">
         <div style="display:flex; align-items:center; gap:16px;">
-            <div style="width:58px; height:58px; border-radius:14px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.6rem; font-weight:800; flex-shrink:0;">
-                {{ student.username[0].upper() }}
+            <div style="width:58px; height:58px; border-radius:14px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:1.6rem; font-weight:800; flex-shrink:0; overflow:hidden;">
+                {% if student.avatar_url %}
+                <img src="{{ student.avatar_url }}" alt="{{ student.name }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                {{ student.name[0].upper() }}
+                {% endif %}
             </div>
             <div style="flex:1;">
                 <h2 class="font-display" style="margin:0 0 4px 0; font-size:1.25rem; color:var(--text);">
-                    {{ student.username }}
+                    {{ student.name }}
                 </h2>
                 <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:0.75rem;">
                     <span class="badge" style="background:rgba(212,175,55,0.12); color:var(--primary); border:1px solid rgba(212,175,55,0.25); padding:2px 8px; border-radius:var(--radius-pill);">

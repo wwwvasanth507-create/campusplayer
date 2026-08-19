@@ -125,7 +125,7 @@ def build_certificate_pdf(cert, base_url=''):
 
     story.append(Paragraph("THIS CERTIFICATE IS PROUDLY CONFERRED UPON", cert_sub))
     story.append(Spacer(1, 3*mm))
-    story.append(Paragraph(f"<u>{cert.student.username.upper()}</u>", student_name_style))
+    story.append(Paragraph(f"<u>{cert.student.name.upper()}</u>", student_name_style))
     story.append(Spacer(1, 4*mm))
 
     story.append(Paragraph(f"in recognition of outstanding academic performance and successful completion of <b>{cert.title}</b>.", desc_style))

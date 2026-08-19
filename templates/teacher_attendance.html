@@ -319,8 +319,14 @@
         {% set today_att = student.attendance_records|selectattr('classroom_id', 'equalto',
         selected_class.id)|selectattr('date', 'equalto', now_date)|list|first %}
         <div class="att-student">
-            <div class="s-avatar">{{ student.username[0].upper() }}</div>
-            <div class="s-name">{{ student.username }}</div>
+            <div class="s-avatar">
+                {% if student.avatar_url %}
+                <img src="{{ student.avatar_url }}" alt="{{ student.name }}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                {% else %}
+                {{ student.name[0].upper() }}
+                {% endif %}
+            </div>
+            <div class="s-name">{{ student.name }}</div>
             <div class="s-actions">
                 {% if today_att %}
                 <span

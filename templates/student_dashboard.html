@@ -11,17 +11,17 @@
             <div class="cp-avatar-ring" style="width:48px; height:48px; border-radius:8px; padding:2px; background:var(--primary); flex-shrink:0;">
                 <div class="cp-avatar-inner" style="width:100%; height:100%; border-radius:6px; background:var(--surface2); display:flex; align-items:center; justify-content:center; overflow:hidden; font-weight:800; font-size:1.2rem; color:var(--text);">
                     {% if current_user.avatar_url %}
-                    <img src="{{ current_user.avatar_url }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" style="width:100%; height:100%; object-fit:cover;">
                     {% elif current_user.avatar_path %}
-                    <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.username }}" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="{{ url_for('static', filename=current_user.avatar_path) }}" alt="{{ current_user.name }}" style="width:100%; height:100%; object-fit:cover;">
                     {% else %}
-                    {{ current_user.username[:1].upper() }}
+                    {{ current_user.name[0].upper() }}
                     {% endif %}
                 </div>
             </div>
             <div style="flex:1;">
                 <div style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.2rem; color:var(--text); display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <i class="material-icons" style="font-size:1.25rem; vertical-align:middle; color:var(--primary);">auto_awesome</i> Welcome back, {{ current_user.username }}
+                    <i class="material-icons" style="font-size:1.25rem; vertical-align:middle; color:var(--primary);">auto_awesome</i> Welcome back, {{ current_user.name }}
                     <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); font-size:0.72rem; font-family:'JetBrains Mono',monospace; padding:3px 10px; border-radius:6px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
                         <i class="material-icons" style="font-size:0.82rem;">bolt</i> LEVEL {{ (current_user.xp // 500) + 1 }}
                     </span>
@@ -242,7 +242,7 @@
                             <i class="material-icons" style="font-size:1rem; color:var(--primary);">chat_bubble_outline</i> {{ cls.name }}
                         </div>
                         <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px; display:flex; align-items:center; gap:4px;">
-                            <i class="material-icons" style="font-size:0.8rem;">school</i> {{ cls.teacher.username }} &bull; <i class="material-icons" style="font-size:0.8rem;">group</i> <b>{{ cls.students.count() }}</b> Scholars
+                            <i class="material-icons" style="font-size:0.8rem;">school</i> {{ cls.teacher.name }} &bull; <i class="material-icons" style="font-size:0.8rem;">group</i> <b>{{ cls.students.count() }}</b> Scholars
                         </div>
                     </div>
                     <a href="{{ url_for('chatroom', class_id=cls.id) }}" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:0.76rem; border-radius:6px; font-weight:700; flex-shrink:0; display:inline-flex; align-items:center; gap:4px;">
@@ -299,7 +299,7 @@
                 <div class="cp-track-body">
                     <div class="cp-track-title">{{ playlist.title }}</div>
                     <div style="font-size:0.78rem; color:var(--text-dim); display:flex; align-items:center; justify-content:space-between; margin-top:auto;">
-                        <span>By <b>{{ playlist.creator.username if playlist.creator else 'Faculty' }}</b></span>
+                        <span>By <b>{{ playlist.creator.name if playlist.creator else 'Faculty' }}</b></span>
                         <span style="color:var(--primary); font-weight:700; display:flex; align-items:center; gap:2px;">
                             Track <i class="material-icons" style="font-size:0.85rem;">chevron_right</i>
                         </span>
@@ -371,10 +371,12 @@
                 <div class="cp-card-body" style="padding:10px 12px; display:flex; gap:10px; align-items:flex-start;">
                     <!-- Circular Faculty Avatar (Small Size) -->
                     <div class="cp-faculty-avatar" style="width:32px; height:32px; border-radius:50%; background:var(--primary); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.78rem; color:#fff; overflow:hidden; border:1px solid var(--border);">
-                        {% if video.uploader and video.uploader.avatar_path %}
-                        <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.username }}" style="width:100%; height:100%; object-fit:cover;">
+                        {% if video.uploader and video.uploader.avatar_url %}
+                        <img src="{{ video.uploader.avatar_url }}" alt="{{ video.uploader.name }}" style="width:100%; height:100%; object-fit:cover;">
+                        {% elif video.uploader and video.uploader.avatar_path %}
+                        <img src="{{ url_for('static', filename=video.uploader.avatar_path) }}" alt="{{ video.uploader.name }}" style="width:100%; height:100%; object-fit:cover;">
                         {% else %}
-                        {{ video.uploader.username[:1].upper() if video.uploader else 'T' }}
+                        {{ video.uploader.name[0].upper() if video.uploader else 'T' }}
                         {% endif %}
                     </div>
 
@@ -390,7 +392,7 @@
 
                         <!-- Faculty Name + Verified Checkmark -->
                         <div style="font-size:0.76rem; color:var(--text-dim); font-weight:500; display:flex; align-items:center; gap:3px; margin-bottom:2px;">
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ video.uploader.username if video.uploader else 'Faculty Instructor' }}</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ video.uploader.name if video.uploader else 'Faculty Instructor' }}</span>
                             <i class="material-icons" style="font-size:0.8rem; color:var(--secondary-color);" title="Verified Faculty">check_circle</i>
                         </div>
 

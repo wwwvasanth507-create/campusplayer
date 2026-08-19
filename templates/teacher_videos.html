@@ -284,7 +284,7 @@
             </div>
             <div class="vbody">
                 <div class="vtitle">{{ video.title }}</div>
-                <div class="vmeta">By: {{ video.uploader.username }} &bull; {{ video.upload_date.strftime('%b %d, %Y')
+                <div class="vmeta">By: {{ video.uploader.name }} &bull; {{ video.upload_date.strftime('%b %d, %Y')
                     }}</div>
                 <form action="{{ url_for('add_to_playlist') }}" method="POST" style="margin-bottom:10px;">
                     <input type="hidden" name="video_id" value="{{ video.id }}">
