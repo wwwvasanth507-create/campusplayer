@@ -421,6 +421,10 @@ def transcode_rendition_resumable(
     Transcode a single rendition with crash-recovery & segment-level resume.
     """
     name, width, height, bitrate, maxrate, bufsize, audio_bitrate = rendition
+    if not input_path or not os.path.exists(input_path):
+        logger.warning(f"[HLS] Source video file does not exist on disk: '{input_path}'. Aborting rendition {name}.")
+        return None, None
+
     os.makedirs(output_dir, exist_ok=True)
 
     video_bps = int(bitrate.replace('k', '')) * 1000
@@ -507,6 +511,7 @@ def transcode_rendition_resumable(
     try:
         last_time_sec = completed_secs
         time_regex = re.compile(r"time=(\d+):(\d+):(\d+\.\d+)")
+        recent_log_lines = []
 
         while True:
             if stop_event.is_set():
@@ -530,6 +535,11 @@ def transcode_rendition_resumable(
             if not char and not line:
                 break
 
+            if line.strip():
+                recent_log_lines.append(line.strip())
+                if len(recent_log_lines) > 10:
+                    recent_log_lines.pop(0)
+
             m = time_regex.search(line)
             if m:
                 hours, mins, secs = m.groups()
@@ -547,7 +557,8 @@ def transcode_rendition_resumable(
             unregister_active_process(job_id, video_id)
 
     if process.returncode != 0:
-        logger.error(f"FFmpeg failed for rendition {name} with code {process.returncode}")
+        err_excerpt = " | ".join(recent_log_lines[-3:]) if recent_log_lines else "No output"
+        logger.error(f"FFmpeg failed for rendition {name} with code {process.returncode}: {err_excerpt}")
         # Clean up temp playlist
         if os.path.exists(temp_playlist_path):
             try:
