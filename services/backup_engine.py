@@ -27,9 +27,17 @@ def get_db_path(app=None):
             path = db_uri.replace('sqlite:///', '')
             if not os.path.isabs(path):
                 path = os.path.join(BASE_DIR, path)
-            return os.path.abspath(path)
+            if os.path.exists(path):
+                return os.path.abspath(path)
 
     default_path = os.path.join(BASE_DIR, 'app.db')
+    if os.path.exists(default_path):
+        return os.path.abspath(default_path)
+
+    instance_path = os.path.join(BASE_DIR, 'instance', 'app.db')
+    if os.path.exists(instance_path):
+        return os.path.abspath(instance_path)
+
     return os.path.abspath(default_path)
 
 
@@ -63,7 +71,9 @@ def create_backup(app=None, prefix="campusplayer"):
     db_path = get_db_path(app)
 
     if not os.path.exists(db_path):
-        return False, f"Source database file does not exist: {db_path}"
+        print(f"[Backup] Initial setup detected: Database file {db_path} does not exist yet. Skipping pre-migration backup.")
+        return True, f"Skipped (Initial setup - {db_path} does not exist)"
+
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
     backup_filename = f"{prefix}_{timestamp}.db"
