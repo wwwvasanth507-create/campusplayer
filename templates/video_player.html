@@ -1005,6 +1005,177 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   PREMIUM CYBER-GLASS BUTTONS & SIDEBAR TABS
+   ═══════════════════════════════════════════════════════════════ */
+
+.vp-action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.vp-action-btn {
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--vp-surface2);
+    border: 1px solid var(--vp-border);
+    color: var(--vp-text);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.vp-action-btn i {
+    font-size: 0.95rem;
+}
+
+.vp-action-btn:hover {
+    background: var(--vp-surface3);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--vp-text);
+    transform: translateY(-1px);
+}
+
+.vp-action-btn.vp-btn-gold {
+    background: rgba(212, 175, 55, 0.12);
+    border-color: rgba(212, 175, 55, 0.4);
+    color: var(--vp-gold);
+    font-weight: 700;
+}
+
+.vp-action-btn.vp-btn-gold:hover {
+    background: rgba(212, 175, 55, 0.22);
+    border-color: var(--vp-gold);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.2);
+}
+
+.vp-action-btn.vp-btn-blue {
+    background: rgba(37, 65, 178, 0.12);
+    border-color: rgba(37, 65, 178, 0.4);
+    color: #6c8aff;
+    font-weight: 700;
+}
+
+.vp-action-btn.vp-btn-blue:hover {
+    background: rgba(37, 65, 178, 0.22);
+    border-color: #6c8aff;
+}
+
+.vp-action-btn.vp-btn-danger {
+    background: rgba(217, 130, 43, 0.12);
+    border-color: rgba(217, 130, 43, 0.35);
+    color: #d9822b;
+}
+
+.vp-action-btn.vp-btn-danger:hover {
+    background: rgba(217, 130, 43, 0.22);
+    border-color: #d9822b;
+}
+
+/* Sidebar Tab Ribbon */
+.vp-sidebar-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    padding: 3px;
+    background: var(--vp-surface2);
+    border: 1px solid var(--vp-border);
+    border-radius: 10px;
+}
+
+.vp-tab-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--vp-text-dim);
+    background: transparent;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+}
+
+.vp-tab-btn i {
+    font-size: 0.88rem;
+}
+
+.vp-tab-btn:hover {
+    color: var(--vp-text);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.vp-tab-btn.active {
+    background: rgba(212, 175, 55, 0.12);
+    border-color: rgba(212, 175, 55, 0.35);
+    color: var(--vp-gold);
+    font-weight: 700;
+}
+
+/* Custom Sleek Switch for Watch Party */
+.vp-custom-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.76rem;
+    color: var(--vp-text-secondary);
+}
+
+.vp-custom-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.vp-switch-slider {
+    position: relative;
+    display: inline-block;
+    width: 32px;
+    height: 18px;
+    background-color: var(--vp-surface3);
+    border: 1px solid var(--vp-border);
+    border-radius: 20px;
+    transition: 0.25s;
+}
+
+.vp-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--vp-text-dim);
+    border-radius: 50%;
+    transition: 0.25s;
+}
+
+.vp-custom-switch input:checked + .vp-switch-slider {
+    background-color: rgba(37, 65, 178, 0.4);
+    border-color: var(--vp-secondary);
+}
+
+.vp-custom-switch input:checked + .vp-switch-slider:before {
+    transform: translateX(14px);
+    background-color: #6c8aff;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
 
@@ -1561,39 +1732,39 @@
                         <div class="vp-uploader-subs">{% if video.uploader.subscriber_count %}{{ video.uploader.subscriber_count }} subscribers{% endif %}</div>
                     </div>
                 </div>
-                <div class="vp-action-buttons" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <button onclick="document.getElementById('ai-copilot-section').scrollIntoView({behavior:'smooth'}); document.getElementById('copilot-question-input').focus();" class="btn btn-primary" id="vp-ai-copilot-btn" style="padding:7px 16px; font-size:0.8rem; font-weight:800; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, var(--primary) 0%, #b38f20 100%); color:#000; border:none; box-shadow:0 0 16px rgba(212,175,55,0.35);">
-                        <i class="material-icons" style="font-size:0.95rem;">auto_awesome</i>
+                <div class="vp-action-buttons">
+                    <button onclick="document.getElementById('ai-copilot-section').scrollIntoView({behavior:'smooth'}); document.getElementById('copilot-question-input').focus();" class="vp-action-btn vp-btn-gold" id="vp-ai-copilot-btn">
+                        <i class="material-icons">auto_awesome</i>
                         <span>AI Lecture Copilot</span>
                     </button>
-                    <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-primary" id="vp-ai-summarize-btn" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="material-icons" style="font-size:0.95rem;">smart_toy</i>
+                    <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="vp-action-btn" id="vp-ai-summarize-btn">
+                        <i class="material-icons">smart_toy</i>
                         <span>AI Summarize</span>
                     </a>
-                    <button onclick="openAIStudyKitModal()" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; color:var(--primary); border-color:rgba(212,175,55,0.4);">
-                        <i class="material-icons" style="font-size:0.95rem;">psychology</i>
+                    <button onclick="openAIStudyKitModal()" class="vp-action-btn">
+                        <i class="material-icons">psychology</i>
                         <span>AI Study Kit</span>
                     </button>
-                    <a href="{{ url_for('view_video_flashcards', video_id=video.id) }}" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="material-icons" style="font-size:0.95rem;">style</i>
+                    <a href="{{ url_for('view_video_flashcards', video_id=video.id) }}" class="vp-action-btn">
+                        <i class="material-icons">style</i>
                         <span>Flashcards</span>
                     </a>
-                    <button onclick="document.getElementById('doubts-section').scrollIntoView({behavior:'smooth'})" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="material-icons" style="font-size:0.95rem;">question_answer</i>
+                    <button onclick="document.getElementById('doubts-section').scrollIntoView({behavior:'smooth'})" class="vp-action-btn">
+                        <i class="material-icons">question_answer</i>
                         <span>Q&A Doubts</span>
                     </button>
                     {% if current_user.role in ['teacher', 'admin', 'system_admin'] %}
-                    <button onclick="openAddCheckpointModal()" class="btn btn-outline" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; color:var(--secondary-color);">
-                        <i class="material-icons" style="font-size:0.95rem;">add_task</i>
+                    <button onclick="openAddCheckpointModal()" class="vp-action-btn vp-btn-blue">
+                        <i class="material-icons">add_task</i>
                         <span>Add Checkpoint</span>
                     </button>
                     {% endif %}
                     {% if current_user.role in ['admin', 'system_admin'] or (current_user.role == 'teacher' and video.uploader_id == current_user.id) %}
-                    <form action="{{ url_for('delete_video', video_id=video.id) }}" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete video &quot;{{ video.title|e }}&quot; permanently and clean up disk storage?');">
+                    <form action="{{ url_for('delete_video', video_id=video.id) }}" method="POST" style="margin:0; display:inline;" onsubmit="return confirm('Delete video &quot;{{ video.title|e }}&quot; permanently?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <button type="submit" class="btn" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px; background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.3);" title="Delete video permanently">
-                            <i class="material-icons" style="font-size:0.95rem;">delete</i>
-                            <span>Delete Video</span>
+                        <button type="submit" class="vp-action-btn vp-btn-danger" title="Delete video permanently">
+                            <i class="material-icons">delete</i>
+                            <span>Delete</span>
                         </button>
                     </form>
                     {% endif %}
@@ -1960,15 +2131,18 @@
 
         <!-- ─── SIDEBAR TABBED PANEL ─── -->
         <div class="vp-sidebar">
-            <div class="d-flex gap-2 mb-3 border-bottom border-secondary border-opacity-25 pb-2" style="overflow-x:auto;">
-                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 active vp-side-tab-btn" data-target="relatedVideosPanel">
-                    <span class="material-icons align-middle fs-6 me-1">playlist_play</span> Related
+            <div class="vp-sidebar-tabs">
+                <button type="button" class="vp-tab-btn active vp-side-tab-btn" data-target="relatedVideosPanel">
+                    <i class="material-icons">playlist_play</i>
+                    <span>Related</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 vp-side-tab-btn" data-target="transcriptPanel" onclick="loadVideoTranscript()">
-                    <span class="material-icons align-middle fs-6 me-1">subtitles</span> Transcript
+                <button type="button" class="vp-tab-btn vp-side-tab-btn" data-target="transcriptPanel" onclick="loadVideoTranscript()">
+                    <i class="material-icons">subtitles</i>
+                    <span>Transcript</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 vp-side-tab-btn" data-target="watchTogetherPanel" onclick="initWatchTogetherRoom()">
-                    <span class="material-icons align-middle fs-6 me-1">group</span> Watch Party
+                <button type="button" class="vp-tab-btn vp-side-tab-btn" data-target="watchTogetherPanel" onclick="initWatchTogetherRoom()">
+                    <i class="material-icons">group</i>
+                    <span>Watch Party</span>
                 </button>
             </div>
 
@@ -2009,59 +2183,59 @@
 
             <!-- Panel 2: Interactive Searchable Transcript -->
             <div id="transcriptPanel" class="vp-side-panel" style="display:none;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h3 class="vp-sidebar-title mb-0">
-                        <span class="material-icons text-primary align-middle fs-5 me-1">subtitles</span> Lecture Transcript
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 class="vp-sidebar-title" style="margin:0;">
+                        <i class="material-icons" style="font-size:1.1rem; vertical-align:middle; color:var(--vp-gold);">subtitles</i> Lecture Transcript
                     </h3>
                 </div>
-                <div class="mb-3">
-                    <input type="text" id="transcriptSearchInput" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Search spoken text in video..." oninput="filterTranscriptCues(this.value)">
+                <div style="position:relative; margin-bottom:12px;">
+                    <i class="material-icons" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:1rem; color:var(--vp-text-dim);">search</i>
+                    <input type="text" id="transcriptSearchInput" placeholder="Search spoken text in video..." oninput="filterTranscriptCues(this.value)" style="width:100%; padding:8px 12px 8px 32px; background:var(--vp-surface2); border:1px solid var(--vp-border); border-radius:8px; color:var(--vp-text); font-size:0.8rem; outline:none; box-sizing:border-box;">
                 </div>
                 <div id="transcriptCuesList" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-                    <div class="text-center py-4 text-white-50 small">Loading lecture captions &amp; timecodes...</div>
+                    <div style="text-align:center; padding:24px 0; color:var(--vp-text-dim); font-size:0.82rem;">Loading lecture captions &amp; timecodes...</div>
                 </div>
             </div>
 
             <!-- Panel 3: Watch Together Virtual Classroom -->
             <div id="watchTogetherPanel" class="vp-side-panel" style="display:none;">
-                <div class="card bg-dark text-white border-secondary p-3 mb-3" style="border-radius: 12px; background: rgba(30,41,59,0.7);">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="badge bg-primary rounded-pill px-2 py-1 small">
-                            <span class="material-icons align-middle fs-6 me-1">sensors</span> LIVE PARTY
+                <div style="background:var(--vp-surface2); border:1px solid var(--vp-border); border-radius:12px; padding:14px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="badge" style="background:rgba(37,65,178,0.2); border:1px solid rgba(37,65,178,0.4); color:#6c8aff; font-size:0.7rem; font-weight:700; border-radius:10px; padding:3px 8px; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="material-icons" style="font-size:0.75rem;">sensors</i> LIVE PARTY
                         </span>
-                        <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" id="partyHostSyncToggle" onchange="toggleHostSyncMode(this.checked)">
-                            <label class="form-check-label text-white small" for="partyHostSyncToggle">Broadcast Sync</label>
-                        </div>
+                        <label class="vp-custom-switch">
+                            <input type="checkbox" id="partyHostSyncToggle" onchange="toggleHostSyncMode(this.checked)">
+                            <span class="vp-switch-slider"></span>
+                            <span class="vp-switch-text">Broadcast Sync</span>
+                        </label>
                     </div>
-                    <p class="text-white-50 small mb-2">Synchronize video playback and discuss in real-time with classmates.</p>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-warning w-100 rounded-pill fw-bold" onclick="raiseHandInParty()">
-                            ✋ Raise Hand
-                        </button>
-                    </div>
+                    <p style="color:var(--vp-text-dim); font-size:0.78rem; margin:0 0 10px 0; line-height:1.4;">Synchronize video playback and discuss in real-time with classmates.</p>
+                    <button type="button" class="btn" style="background:rgba(217,130,43,0.12); border:1px solid rgba(217,130,43,0.3); color:#d9822b; font-weight:700; font-size:0.8rem; border-radius:8px; padding:7px 14px; width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; cursor:pointer;" onclick="raiseHandInParty()">
+                        <i class="material-icons" style="font-size:0.95rem;">front_hand</i> Raise Hand
+                    </button>
                 </div>
 
                 <!-- Floating Hand Notification Banner -->
-                <div id="partyRaiseHandAlert" style="display:none;" class="alert alert-warning p-2 rounded-3 small mb-2 d-flex align-items-center gap-2">
-                    <span class="material-icons fs-5">front_hand</span>
+                <div id="partyRaiseHandAlert" style="display:none; background:rgba(217,130,43,0.15); border:1px solid rgba(217,130,43,0.4); border-radius:8px; padding:8px 12px; margin-bottom:10px; align-items:center; gap:8px; font-size:0.78rem; color:#d9822b;">
+                    <i class="material-icons" style="font-size:1.1rem;">front_hand</i>
                     <span id="partyRaiseHandUser">A student raised their hand!</span>
                 </div>
 
                 <!-- Connected Study Buddies -->
-                <h6 class="text-white-50 small fw-bold text-uppercase mb-2" style="letter-spacing: 0.5px;">Active Study Buddies (<span id="partyUserCount">1</span>)</h6>
-                <div id="partyUsersList" class="d-flex flex-wrap gap-2 mb-3">
-                    <span class="badge bg-secondary rounded-pill px-2 py-1">{{ current_user.name }} (You)</span>
+                <div style="font-size:0.7rem; color:var(--vp-text-dim); text-transform:uppercase; font-weight:700; letter-spacing:0.5px; margin-bottom:8px;">Active Study Buddies (<span id="partyUserCount">1</span>)</div>
+                <div id="partyUsersList" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                    <span class="badge" style="background:var(--vp-surface2); border:1px solid var(--vp-border); color:var(--vp-text); font-size:0.72rem; padding:3px 8px; border-radius:6px;">{{ current_user.name }} (You)</span>
                 </div>
 
                 <!-- Watch Party Real-time Chat -->
-                <div class="card bg-dark border-secondary p-2" style="border-radius: 12px;">
-                    <div id="partyChatMessages" style="height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 4px;" class="small">
-                        <div class="text-white-50 text-center py-3">Study party chat connected.</div>
+                <div style="background:var(--vp-surface2); border:1px solid var(--vp-border); border-radius:10px; padding:10px;">
+                    <div id="partyChatMessages" style="height:180px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:4px; font-size:0.8rem;">
+                        <div style="color:var(--vp-text-dim); text-align:center; padding:16px 0;">Study party chat connected.</div>
                     </div>
-                    <div class="input-group input-group-sm mt-2">
-                        <input type="text" id="partyChatInput" class="form-control bg-dark text-white border-secondary" placeholder="Chat with room..." onkeydown="if(event.key==='Enter'){sendPartyChat();}">
-                        <button class="btn btn-primary" type="button" onclick="sendPartyChat()">Send</button>
+                    <div style="display:flex; gap:6px; margin-top:8px;">
+                        <input type="text" id="partyChatInput" placeholder="Chat with room..." style="flex:1; background:var(--vp-surface); border:1px solid var(--vp-border); border-radius:6px; color:var(--vp-text); font-size:0.8rem; padding:6px 10px; outline:none;" onkeydown="if(event.key==='Enter'){sendPartyChat();}">
+                        <button class="btn btn-primary" type="button" style="padding:6px 12px; font-size:0.78rem; border-radius:6px;" onclick="sendPartyChat()">Send</button>
                     </div>
                 </div>
             </div>
@@ -2626,15 +2800,19 @@ function renderTranscriptCues(cues) {
     container.innerHTML = '';
     cues.forEach(cue => {
         const row = document.createElement('div');
-        row.className = 'p-2 rounded-3 text-white small d-flex gap-2 align-items-start';
-        row.style.background = 'rgba(255,255,255,0.03)';
-        row.style.border = '1px solid rgba(255,255,255,0.05)';
+        row.style.background = 'var(--vp-surface2)';
+        row.style.border = '1px solid var(--vp-border)';
+        row.style.borderRadius = '8px';
+        row.style.padding = '8px 10px';
         row.style.cursor = 'pointer';
+        row.style.display = 'flex';
+        row.style.gap = '8px';
+        row.style.alignItems = 'flex-start';
         row.innerHTML = `
-            <span class="badge bg-primary bg-opacity-20 text-primary font-mono fw-bold" style="font-size: 11px;">
+            <span style="background:rgba(212,175,55,0.15); color:var(--vp-gold); font-family:var(--vp-font-mono); font-size:11px; font-weight:700; padding:2px 6px; border-radius:4px; white-space:nowrap;">
                 ${cue.start_formatted}
             </span>
-            <span class="flex-grow-1 text-light text-opacity-90">${cue.text}</span>
+            <span style="flex:1; color:var(--vp-text); font-size:0.78rem; line-height:1.4;">${cue.text}</span>
         `;
         row.addEventListener('click', () => {
             seekVideoTo(cue.start);
@@ -2757,8 +2935,11 @@ function appendPartyChatMessage(user, message) {
     const box = document.getElementById('partyChatMessages');
     if (!box) return;
     const line = document.createElement('div');
-    line.className = 'text-light';
-    line.innerHTML = `<strong class="text-primary">${user}:</strong> ${message}`;
+    line.style.padding = '4px 8px';
+    line.style.borderRadius = '6px';
+    line.style.background = 'rgba(255,255,255,0.03)';
+    line.style.border = '1px solid rgba(255,255,255,0.04)';
+    line.innerHTML = `<strong style="color:var(--vp-gold); margin-right:4px;">${user}:</strong> <span style="color:var(--vp-text);">${message}</span>`;
     box.appendChild(line);
     box.scrollTop = box.scrollHeight;
 }
