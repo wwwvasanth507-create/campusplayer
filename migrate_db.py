@@ -710,14 +710,28 @@ def migrate():
         
         db.session.commit()
         
-        # Update admin user level
-        print("\n[Levels] Updating user levels...")
-        users = User.query.all()
-        for user in users:
-            user.update_level()
-        db.session.commit()
-        print(f"[OK] Updated {len(users)} users")
-        
+        # Auto-sync YouTube thumbnails
+        print("\n[YouTube] Syncing YouTube thumbnails...")
+        yt_videos = Video.query.filter(
+            (Video.video_type == 'youtube') | (Video.filename.like('youtube_%'))
+        ).all()
+        yt_updated = 0
+        for v in yt_videos:
+            yt_id = v.youtube_id or (v.filename.replace('youtube_', '') if v.filename and v.filename.startswith('youtube_') else None)
+            if yt_id:
+                expected_thumb = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+                if v.thumbnail_path != expected_thumb or v.video_type != 'youtube' or v.youtube_id != yt_id:
+                    v.thumbnail_path = expected_thumb
+                    v.video_type = 'youtube'
+                    v.youtube_id = yt_id
+                    v.youtube_url = f"https://www.youtube.com/watch?v={yt_id}"
+                    yt_updated += 1
+        if yt_updated > 0:
+            db.session.commit()
+            print(f"[OK] Synced {yt_updated} YouTube video thumbnails")
+        else:
+            print("[OK] YouTube thumbnails already synced")
+
         print("\n" + "=" * 60)
         print("Migration Complete!")
         print("=" * 60)

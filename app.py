@@ -341,9 +341,34 @@ from services.conversion_engine import (
     get_active_conversion_jobs, retry_conversion_job, cancel_conversion_job,
     retry_all_failed_conversion_jobs, ConversionWorkerManager
 )
+def auto_sync_youtube_thumbnails():
+    """Ensure all YouTube video records have valid thumbnail_path, youtube_id, and youtube_url set."""
+    try:
+        videos = Video.query.filter(
+            (Video.video_type == 'youtube') | (Video.filename.like('youtube_%'))
+        ).all()
+        updated = 0
+        for v in videos:
+            yt_id = v.youtube_id or extract_youtube_id(v.filename) or extract_youtube_id(v.youtube_url or '')
+            if yt_id:
+                expected_thumb = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+                if v.thumbnail_path != expected_thumb or v.video_type != 'youtube' or v.youtube_id != yt_id:
+                    v.thumbnail_path = expected_thumb
+                    v.video_type = 'youtube'
+                    v.youtube_id = yt_id
+                    v.youtube_url = f"https://www.youtube.com/watch?v={yt_id}"
+                    updated += 1
+        if updated > 0:
+            db.session.commit()
+            logger.info(f"[YouTube Sync] Auto-updated thumbnails for {updated} YouTube videos.")
+    except Exception as e:
+        db.session.rollback()
+        logger.warning(f"[YouTube Sync Warning] {e}")
+
 with app.app_context():
     try:
         db.create_all()
+        auto_sync_youtube_thumbnails()
     except Exception:
         pass
 init_conversion_system(app)

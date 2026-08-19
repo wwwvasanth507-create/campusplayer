@@ -395,6 +395,24 @@ class Video(db.Model):
     # NEW: Thumbnails for timeline preview (VTT file)
     thumbnails_vtt_path = db.Column(db.String(500), nullable=True)  # Path to thumbnails.vtt
 
+    @property
+    def thumbnail_url(self):
+        """Dynamic helper returning proper thumbnail URL for YouTube or local videos."""
+        v_type = getattr(self, 'video_type', 'local') or 'local'
+        yt_id = getattr(self, 'youtube_id', None)
+        if not yt_id and self.filename and self.filename.startswith('youtube_'):
+            yt_id = self.filename.replace('youtube_', '')
+
+        if v_type == 'youtube' or yt_id:
+            if yt_id:
+                return f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+
+        if self.thumbnail_path:
+            if self.thumbnail_path.startswith('http://') or self.thumbnail_path.startswith('https://'):
+                return self.thumbnail_path
+            return f"/static/{self.thumbnail_path.lstrip('/')}"
+        return "/static/img/default_thumbnail.png"
+
     def get_chapters(self):
         return json.loads(self.chapters_json or '[]')
 

@@ -1269,8 +1269,13 @@
                 {% endif %}
             {% endif %}
             {% if video.video_type == 'youtube' %}
-            <div id="youtube-embed-wrapper" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden;">
-                <div id="youtube-player" style="width:100%; height:100%;"></div>
+            <div id="youtube-embed-wrapper" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; border-radius:12px;">
+                <iframe id="youtube-player"
+                        src="https://www.youtube.com/embed/{{ video.youtube_id or video.filename.replace('youtube_', '') }}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&origin={{ request.scheme }}://{{ request.host }}"
+                        style="width:100%; height:100%; border:0;"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen>
+                </iframe>
             </div>
             {% else %}
             <video id="video-player" class="video-js" preload="auto" width="100%" height="100%"
@@ -1460,20 +1465,30 @@
                         });
                     }
 
-                    // Load YouTube API script
-                    document.addEventListener('DOMContentLoaded', function () {
-                        if (!window.YT) {
+                    // Load YouTube API script dynamically
+                    function loadYouTubeApi() {
+                        if (window.YT && window.YT.Player) {
+                            window.initYouTubeEngine();
+                        } else if (!document.getElementById('yt-iframe-api-script')) {
                             var tag = document.createElement('script');
+                            tag.id = 'yt-iframe-api-script';
                             tag.src = "https://www.youtube.com/iframe_api";
                             var firstScriptTag = document.getElementsByTagName('script')[0];
                             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-                        } else {
+                        }
+                    }
+
+                    window.onYouTubeIframeAPIReady = function() {
+                        if (typeof window.initYouTubeEngine === 'function') {
                             window.initYouTubeEngine();
                         }
-                    });
-                    window.onYouTubeIframeAPIReady = function() {
-                        window.initYouTubeEngine();
                     };
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', loadYouTubeApi);
+                    } else {
+                        loadYouTubeApi();
+                    }
                 } else {
                     // Standard HLS CampusPlayer initialization
                     var hasAdaptive = {{ 'true' if video.has_adaptive_streams else 'false' }};
@@ -1866,8 +1881,8 @@
                 {% for related in related_videos %}
                 <a href="{{ url_for('watch_video', video_id=related.id) }}" class="vp-related-card">
                     <div class="vp-related-thumb">
-                        {% if related.thumbnail_path %}
-                        <img src="{{ url_for('static', filename=related.thumbnail_path) }}" alt="{{ related.title }}" loading="lazy">
+                        {% if related.video_type == 'youtube' or related.thumbnail_path %}
+                        <img src="{{ related.thumbnail_url }}" alt="{{ related.title }}" loading="lazy">
                         {% else %}
                         <div class="vp-related-thumb-placeholder">
                             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" opacity="0.3"><path d="M8 5v14l11-7z"/></svg>

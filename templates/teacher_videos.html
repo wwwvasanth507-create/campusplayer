@@ -327,7 +327,7 @@
     {% for video in videos %}
     <div class="vcard" id="vcard-{{ video.id }}">
         {% if video.video_type == 'youtube' %}
-        <div class="thumb" style="background-image:url('https://img.youtube.com/vi/{{ video.youtube_id }}/hqdefault.jpg'); background-size:cover; background-position:center;">
+        <div class="thumb" style="background-image:url('{{ video.thumbnail_url }}'); background-size:cover; background-position:center;">
             <span class="status-chip chip-ok" style="background:rgba(255,0,0,0.18); color:#ff4d4d; border:1px solid rgba(255,0,0,0.3); display:inline-flex; align-items:center; gap:4px;">
                 <i class="fab fa-youtube"></i> YouTube
             </span>
