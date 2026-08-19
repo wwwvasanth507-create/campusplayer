@@ -50,14 +50,25 @@ class YouTubeVideoTestCase(unittest.TestCase):
         self.ctx.pop()
 
     def test_youtube_url_extraction(self):
-        """Test extract_youtube_id helper parses various YouTube URL formats including share links."""
+        """Test extract_youtube_id helper parses various YouTube URL formats including share links and live streams."""
         self.assertEqual(extract_youtube_id('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('https://youtu.be/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('https://youtu.be/jFWsj_QT0G8?si=vOallyl-WvqdZPrl'), 'jFWsj_QT0G8')
         self.assertEqual(extract_youtube_id('https://www.youtube.com/embed/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('https://www.youtube.com/shorts/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
+        self.assertEqual(extract_youtube_id('https://www.youtube.com/live/dQw4w9WgXcQ?feature=share'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertIsNone(extract_youtube_id('invalid_url_string'))
+
+    def test_resolved_youtube_id_property(self):
+        """Test Video.resolved_youtube_id property resolves YouTube ID from youtube_id, filename, or youtube_url."""
+        v1 = Video(title='V1', filename='youtube_jFWsj_QT0G8', video_type='youtube', youtube_id='jFWsj_QT0G8', uploader_id=self.teacher.id)
+        v2 = Video(title='V2', filename='youtube_dQw4w9WgXcQ', video_type='youtube', youtube_id=None, uploader_id=self.teacher.id)
+        v3 = Video(title='V3', filename='local_file.mp4', video_type='youtube', youtube_id=None, youtube_url='https://youtu.be/jFWsj_QT0G8', uploader_id=self.teacher.id)
+
+        self.assertEqual(v1.resolved_youtube_id, 'jFWsj_QT0G8')
+        self.assertEqual(v2.resolved_youtube_id, 'dQw4w9WgXcQ')
+        self.assertEqual(v3.resolved_youtube_id, 'jFWsj_QT0G8')
 
     def test_teacher_add_and_delete_youtube_video_route(self):
         """Test teacher adding a YouTube share video link and deleting it cleanly."""
@@ -117,6 +128,7 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertIn('youtube-player', html)
             self.assertIn('dQw4w9WgXcQ', html)
             self.assertIn('initYouTubeEngine', html)
+
 
 if __name__ == '__main__':
     unittest.main()

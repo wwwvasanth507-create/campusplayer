@@ -396,12 +396,23 @@ class Video(db.Model):
     thumbnails_vtt_path = db.Column(db.String(500), nullable=True)  # Path to thumbnails.vtt
 
     @property
-    def thumbnail_url(self):
-        """Dynamic helper returning proper thumbnail URL for YouTube or local videos."""
-        v_type = getattr(self, 'video_type', 'local') or 'local'
+    def resolved_youtube_id(self):
+        """Always return valid 11-character YouTube ID from youtube_id, filename, or youtube_url."""
         yt_id = getattr(self, 'youtube_id', None)
         if not yt_id and self.filename and self.filename.startswith('youtube_'):
             yt_id = self.filename.replace('youtube_', '')
+        if not yt_id and getattr(self, 'youtube_url', None):
+            import re
+            m = re.search(r'(?:v=|\/embed\/|\/shorts\/|\/live\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})', self.youtube_url or '')
+            if m:
+                yt_id = m.group(1)
+        return yt_id or ''
+
+    @property
+    def thumbnail_url(self):
+        """Dynamic helper returning proper thumbnail URL for YouTube or local videos."""
+        v_type = getattr(self, 'video_type', 'local') or 'local'
+        yt_id = self.resolved_youtube_id
 
         if v_type == 'youtube' or yt_id:
             if yt_id:

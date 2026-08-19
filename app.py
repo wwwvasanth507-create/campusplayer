@@ -2261,8 +2261,8 @@ def extract_youtube_id(url):
         return None
     url = url.strip()
     
-    # 1. Standard YouTube URL patterns (watch?v=, youtu.be/, embed/, shorts/, etc.)
-    yt_pattern = r'(?:v=|\/embed\/|\/shorts\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})'
+    # 1. Standard YouTube URL patterns (watch?v=, youtu.be/, embed/, shorts/, live/, etc.)
+    yt_pattern = r'(?:v=|\/embed\/|\/shorts\/|\/live\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})'
     match = re.search(yt_pattern, url)
     if match:
         return match.group(1)
