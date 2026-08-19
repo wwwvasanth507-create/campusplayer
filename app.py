@@ -352,15 +352,22 @@ def auto_sync_youtube_thumbnails():
             yt_id = v.youtube_id or extract_youtube_id(v.filename) or extract_youtube_id(v.youtube_url or '')
             if yt_id:
                 expected_thumb = f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg"
+                needs_update = False
                 if v.thumbnail_path != expected_thumb or v.video_type != 'youtube' or v.youtube_id != yt_id:
                     v.thumbnail_path = expected_thumb
                     v.video_type = 'youtube'
                     v.youtube_id = yt_id
                     v.youtube_url = f"https://www.youtube.com/watch?v={yt_id}"
+                    needs_update = True
+                if v.status != 'completed':
+                    v.status = 'completed'
+                    v.processing_progress = 100
+                    needs_update = True
+                if needs_update:
                     updated += 1
         if updated > 0:
             db.session.commit()
-            logger.info(f"[YouTube Sync] Auto-updated thumbnails for {updated} YouTube videos.")
+            logger.info(f"[YouTube Sync] Auto-updated thumbnails and status for {updated} YouTube videos.")
     except Exception as e:
         db.session.rollback()
         logger.warning(f"[YouTube Sync Warning] {e}")
@@ -2249,18 +2256,21 @@ def teacher_dashboard():
         teacher_stats=teacher_stats, now_date=datetime.utcnow().date(), settings=settings)
 
 def extract_youtube_id(url):
-    """Extract 11-character YouTube video ID from various URL formats or raw ID."""
+    """Extract 11-character YouTube video ID from various URL formats, share links, or raw ID."""
     if not url:
         return None
     url = url.strip()
-    patterns = [
-        r'(?:v=|\/embed\/|\/shorts\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})',
-        r'^([\w-]{11})$'
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, url)
-        if match:
-            return match.group(1)
+    
+    # 1. Standard YouTube URL patterns (watch?v=, youtu.be/, embed/, shorts/, etc.)
+    yt_pattern = r'(?:v=|\/embed\/|\/shorts\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})'
+    match = re.search(yt_pattern, url)
+    if match:
+        return match.group(1)
+        
+    # 2. Raw 11-character ID format (e.g., "jFWsj_QT0G8" or "dQw4w9WgXcQ" or "jFWsj_QT0G8?si=...")
+    if re.match(r'^[\w-]{11}(?:[?#].*)?$', url):
+        return url[:11]
+        
     return None
 
 @app.route('/teacher/add_youtube_video', methods=['POST'])
@@ -2296,7 +2306,7 @@ def add_youtube_video():
         video_type='youtube',
         youtube_id=yt_id,
         youtube_url=f"https://www.youtube.com/watch?v={yt_id}",
-        status='ready',
+        status='completed',
         processing_progress=100,
         thumbnail_path=f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
         description=description if description else None,
@@ -3085,7 +3095,7 @@ def purge_video_dependent_records(video_id):
         db.session.rollback()
         logger.warning(f"[Purge Video Records Warning] Video #{video_id}: {e}")
 
-@app.route('/teacher/delete_video/<int:video_id>', methods=['POST'])
+@app.route('/teacher/delete_video/<int:video_id>', methods=['GET', 'POST'])
 @login_required
 @teacher_required
 def delete_video(video_id):
@@ -3098,8 +3108,8 @@ def delete_video(video_id):
         log_activity('delete_video_blocked', f'Blocked deletion of video "{video.title}" due to Sysadmin restriction')
         return redirect(url_for('teacher_videos_page'))
     
-    # Permission check: ensure teacher owns the video or is admin/system_admin
-    if current_user.role not in ['admin', 'system_admin'] and video.uploader_id != current_user.id:
+    # Permission check: ensure teacher owns the video, or video has no uploader_id set, or user is admin/system_admin
+    if current_user.role not in ['admin', 'system_admin'] and video.uploader_id and video.uploader_id != current_user.id:
         flash('You are not authorized to delete this video.', 'danger')
         return redirect(url_for('teacher_videos_page'))
 
@@ -3332,10 +3342,10 @@ def student_dashboard():
     query = request.args.get('q')
     if query:
         playlists = Playlist.query.filter(Playlist.title.contains(query)).all()
-        videos = Video.query.filter(Video.title.contains(query), Video.status=='completed', Video.is_archived==False).all()
+        videos = Video.query.filter(Video.title.contains(query), Video.status.in_(['completed', 'ready']), Video.is_archived==False).all()
     else:
         playlists = Playlist.query.all()
-        videos = Video.query.filter_by(status='completed', is_archived=False).order_by(Video.upload_date.desc()).limit(20).all()
+        videos = Video.query.filter(Video.status.in_(['completed', 'ready']), Video.is_archived==False).order_by(Video.upload_date.desc()).limit(20).all()
     
     unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     settings = SiteSettings.query.first()

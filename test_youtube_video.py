@@ -50,22 +50,23 @@ class YouTubeVideoTestCase(unittest.TestCase):
         self.ctx.pop()
 
     def test_youtube_url_extraction(self):
-        """Test extract_youtube_id helper parses various YouTube URL formats."""
+        """Test extract_youtube_id helper parses various YouTube URL formats including share links."""
         self.assertEqual(extract_youtube_id('https://www.youtube.com/watch?v=dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('https://youtu.be/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
+        self.assertEqual(extract_youtube_id('https://youtu.be/jFWsj_QT0G8?si=vOallyl-WvqdZPrl'), 'jFWsj_QT0G8')
         self.assertEqual(extract_youtube_id('https://www.youtube.com/embed/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('https://www.youtube.com/shorts/dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertEqual(extract_youtube_id('dQw4w9WgXcQ'), 'dQw4w9WgXcQ')
         self.assertIsNone(extract_youtube_id('invalid_url_string'))
 
-    def test_teacher_add_youtube_video_route(self):
-        """Test teacher adding a YouTube video link creates a valid Video row and awards XP."""
+    def test_teacher_add_and_delete_youtube_video_route(self):
+        """Test teacher adding a YouTube share video link and deleting it cleanly."""
         initial_xp = self.teacher.xp
         with self.client:
             self.client.post('/login', data={'username': 'yt_teacher_user', 'password': 'pass123', 'role': 'teacher'}, follow_redirects=True)
             res = self.client.post('/teacher/add_youtube_video', data={
-                'title': 'Quantum Physics Lecture 1',
-                'youtube_url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                'title': 'Quantum Physics Share Link Lecture',
+                'youtube_url': 'https://youtu.be/jFWsj_QT0G8?si=vOallyl-WvqdZPrl',
                 'description': 'Introductory quantum physics overview',
                 'tags': 'physics,quantum,lecture'
             }, follow_redirects=True)
@@ -73,12 +74,20 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertEqual(res.status_code, 200)
 
             # Query created video
-            video = Video.query.filter_by(title='Quantum Physics Lecture 1').first()
+            video = Video.query.filter_by(title='Quantum Physics Share Link Lecture').first()
             self.assertIsNotNone(video)
             self.assertEqual(video.video_type, 'youtube')
-            self.assertEqual(video.youtube_id, 'dQw4w9WgXcQ')
-            self.assertEqual(video.status, 'ready')
-            self.assertEqual(video.thumbnail_path, 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg')
+            self.assertEqual(video.youtube_id, 'jFWsj_QT0G8')
+            self.assertEqual(video.status, 'completed')
+
+            vid_id = video.id
+            del_res = self.client.post(f'/teacher/delete_video/{vid_id}', follow_redirects=True)
+            self.assertEqual(del_res.status_code, 200)
+
+            # Assert video row is completely removed
+            deleted_video = Video.query.get(vid_id)
+            self.assertIsNone(deleted_video)
+            self.assertEqual(video.thumbnail_path, 'https://img.youtube.com/vi/jFWsj_QT0G8/hqdefault.jpg')
             self.assertEqual(video.institution_id, self.inst.id)
 
             # Check teacher gained +50 XP
