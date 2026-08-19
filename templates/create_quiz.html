@@ -61,11 +61,38 @@
                 <p style="font-size:0.72rem; color:var(--text-dim); margin:4px 0 0 0;">Leave both at 0 for an untimed, self-paced assessment.</p>
             </div>
 
-            <div class="card" style="padding:12px 16px; margin-bottom:20px; background:var(--surface2); border-color:var(--border);">
+            <div class="card" style="padding:12px 16px; margin-bottom:12px; background:var(--surface2); border-color:var(--border);">
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin:0; font-size:0.85rem; color:var(--text);">
                     <input type="checkbox" name="shuffle_questions" id="shuffle_questions" style="width:16px; height:16px; accent-color:var(--primary); margin:0;">
                     <span><b>Shuffle Question Sequence</b> (randomized order per student to prevent collusion)</span>
                 </label>
+            </div>
+
+            <!-- Anti-Cheat Proctoring Settings -->
+            <div class="card p-3 mb-4" style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px;">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="material-icons text-danger fs-5">shield</span>
+                    <strong class="text-white small">AI Proctoring Shield &amp; Anti-Cheating</strong>
+                </div>
+
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" name="proctoring_enabled" id="proctoring_enabled" checked>
+                    <label class="form-check-label text-white small" for="proctoring_enabled">Enforce tab-switch and blur violation tracking</label>
+                </div>
+
+                <div class="row g-2 mb-2 align-items-center">
+                    <div class="col-auto">
+                        <label class="text-white-50 small">Max allowed tab switches before auto-lock:</label>
+                    </div>
+                    <div class="col-auto">
+                        <input type="number" name="max_tab_switches" value="3" min="1" max="10" class="form-control form-control-sm bg-dark text-white border-secondary" style="width: 70px;">
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" name="block_copy_paste" id="block_copy_paste" checked>
+                    <label class="form-check-label text-white small" for="block_copy_paste">Block clipboard copy / paste &amp; right-click context menu</label>
+                </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end;">

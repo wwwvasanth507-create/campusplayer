@@ -1,0 +1,272 @@
+{% extends "layout.html" %}
+{% block title %}Reading: {{ book.title }} — Campus Player{% endblock %}
+
+{% block content %}
+<div class="reader-wrapper" style="min-height: calc(100vh - 80px); background: var(--bg); display: flex; flex-direction: column;">
+    
+    <!-- Reader Top Toolbar -->
+    <div class="reader-toolbar" 
+         style="position: sticky; top: 70px; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 100; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
+        
+        <!-- Left: Back & Title -->
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a href="{{ url_for('library_hub') }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.78rem; border-radius: var(--radius-pill); text-decoration: none;">
+                <i class="material-icons" style="font-size: 0.9rem;">arrow_back</i> Library
+            </a>
+            <div>
+                <h4 class="font-display" style="font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ book.title }}">
+                    {{ book.title }}
+                </h4>
+                <span style="color: var(--text-dim); font-size: 0.72rem;">{{ book.subject }} • {{ book.academic_level }}</span>
+            </div>
+        </div>
+
+        <!-- Center: Page Nav -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btn-outline" id="prevPageBtn" title="Previous Page" style="width: 32px; height: 32px; padding: 0; min-height: 32px; border-radius: 50%;">
+                <i class="material-icons" style="font-size: 1rem;">chevron_left</i>
+            </button>
+            <div style="display: flex; align-items: center; color: var(--text); font-size: 0.8rem; gap: 6px;">
+                <span>Page</span>
+                <input type="number" id="pageNumberInput" value="{{ start_page }}" min="1" max="{{ book.page_count or 1000 }}" 
+                       style="width: 58px; height: 32px; text-align: center; margin: 0; padding: 2px 4px; font-size: 0.82rem;">
+                <span style="color: var(--text-dim);">/ <span id="pageCountDisplay">{{ book.page_count or '?' }}</span></span>
+            </div>
+            <button type="button" class="btn btn-outline" id="nextPageBtn" title="Next Page" style="width: 32px; height: 32px; padding: 0; min-height: 32px; border-radius: 50%;">
+                <i class="material-icons" style="font-size: 1rem;">chevron_right</i>
+            </button>
+        </div>
+
+        <!-- Right: Zoom, Theme, Download & Fullscreen -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" class="btn btn-outline" id="zoomOutBtn" title="Zoom Out" style="padding: 6px 10px; font-size: 0.78rem;">
+                <i class="material-icons" style="font-size: 0.9rem;">zoom_out</i>
+            </button>
+            <button type="button" class="btn btn-outline" id="zoomInBtn" title="Zoom In" style="padding: 6px 10px; font-size: 0.78rem;">
+                <i class="material-icons" style="font-size: 0.9rem;">zoom_in</i>
+            </button>
+            <button type="button" class="btn btn-outline" id="fitWidthBtn" title="Fit to Width" style="padding: 6px 10px; font-size: 0.78rem;">
+                <i class="material-icons" style="font-size: 0.9rem;">fit_screen</i>
+            </button>
+
+            <!-- Contrast / Dark Invert Toggle -->
+            <button type="button" class="btn btn-outline" id="readerContrastBtn" title="Toggle High Contrast / Dark Invert" style="width: 32px; height: 32px; padding: 0; min-height: 32px; border-radius: 50%;">
+                <i class="material-icons" style="font-size: 1rem;">contrast</i>
+            </button>
+
+            <!-- Fullscreen -->
+            <button type="button" class="btn btn-outline" id="fullscreenBtn" title="Toggle Fullscreen" style="width: 32px; height: 32px; padding: 0; min-height: 32px; border-radius: 50%;">
+                <i class="material-icons" style="font-size: 1rem;">fullscreen</i>
+            </button>
+
+            {% if book.allow_download or current_user.role in ['admin', 'system_admin'] %}
+            <a href="{{ url_for('download_ebook', book_id=book.id) }}" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.78rem; font-weight: 700; border-radius: var(--radius-pill); text-decoration: none;">
+                <i class="material-icons" style="font-size: 0.9rem;">download</i> <span>Download</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Reader Viewport Container -->
+    <div class="reader-viewport" id="readerContainer" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 10px; overflow: auto; min-height: 80vh;">
+        
+        <!-- PDF Render Canvas Area -->
+        <div id="pdfCanvasContainer" style="background: #ffffff; border-radius: var(--radius-sm); border: 1px solid var(--border); box-shadow: 0 16px 36px rgba(0,0,0,0.5); overflow: hidden; transition: filter 0.3s ease; max-width: 100%;">
+            <canvas id="pdfCanvas"></canvas>
+        </div>
+
+        <!-- Fallback standard viewer if Canvas is restricted -->
+        <div id="pdfEmbedFallback" style="display: none; width: 100%; height: 85vh;">
+            <embed src="{{ pdf_url }}#page={{ start_page }}" type="application/pdf" width="100%" height="100%" style="border-radius: var(--radius-sm); border: none;">
+        </div>
+    </div>
+
+    <!-- Reading Progress Floating Toast -->
+    <div id="readingProgressToast" 
+         style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface2); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 30px; padding: 8px 18px; color: var(--text); font-size: 0.78rem; display: flex; align-items: center; gap: 8px; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; z-index: 1050; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+        <i class="material-icons" style="color: var(--primary); font-size: 1rem;">bookmark_added</i>
+        <span id="readingProgressText">Reading progress saved</span>
+    </div>
+</div>
+
+<!-- PDF.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const url = "{{ pdf_url }}";
+    const bookId = {{ book.id }};
+    let pdfDoc = null;
+    let pageNum = {{ start_page or 1 }};
+    let pageRendering = false;
+    let pageNumPending = null;
+    let scale = 1.35;
+    const canvas = document.getElementById('pdfCanvas');
+    const ctx = canvas.getContext('2d');
+    const pageNumInput = document.getElementById('pageNumberInput');
+    const pageCountDisplay = document.getElementById('pageCountDisplay');
+    const readerContainer = document.getElementById('readerContainer');
+    const pdfCanvasContainer = document.getElementById('pdfCanvasContainer');
+    let isNightMode = false;
+    let progressTimer = null;
+
+    function showToast(msg) {
+        const toast = document.getElementById('readingProgressToast');
+        document.getElementById('readingProgressText').textContent = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+    }
+
+    function syncProgress(p, total) {
+        clearTimeout(progressTimer);
+        progressTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/library/book/${bookId}/progress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ page: p, total_pages: total })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Page ${p} of ${total} (${data.percent_completed}%) saved`);
+                }
+            } catch (err) {
+                console.warn('Progress sync error:', err);
+            }
+        }, 1200);
+    }
+
+    function renderPage(num) {
+        pageRendering = true;
+        pdfDoc.getPage(num).then(function(page) {
+            const viewport = page.getViewport({ scale: scale });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+            const renderTask = page.render(renderContext);
+
+            renderTask.promise.then(function() {
+                pageRendering = false;
+                if (pageNumPending !== null) {
+                    renderPage(pageNumPending);
+                    pageNumPending = null;
+                }
+            });
+        });
+
+        pageNumInput.value = num;
+        syncProgress(num, pdfDoc ? pdfDoc.numPages : 1);
+    }
+
+    function queueRenderPage(num) {
+        if (pageRendering) {
+            pageNumPending = num;
+        } else {
+            renderPage(num);
+        }
+    }
+
+    function onPrevPage() {
+        if (pageNum <= 1) return;
+        pageNum--;
+        queueRenderPage(pageNum);
+    }
+
+    function onNextPage() {
+        if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        queueRenderPage(pageNum);
+    }
+
+    // PDF.js Document Load
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            pageCountDisplay.textContent = pdfDoc.numPages;
+            pageNumInput.max = pdfDoc.numPages;
+            renderPage(pageNum);
+        }).catch(function(error) {
+            console.warn('PDF.js canvas render fallback:', error);
+            document.getElementById('pdfCanvasContainer').style.display = 'none';
+            document.getElementById('pdfEmbedFallback').style.display = 'block';
+        });
+    } else {
+        document.getElementById('pdfCanvasContainer').style.display = 'none';
+        document.getElementById('pdfEmbedFallback').style.display = 'block';
+    }
+
+    // Button Listeners
+    document.getElementById('prevPageBtn').addEventListener('click', onPrevPage);
+    document.getElementById('nextPageBtn').addEventListener('click', onNextPage);
+
+    pageNumInput.addEventListener('change', (e) => {
+        let val = parseInt(e.target.value);
+        if (pdfDoc && val >= 1 && val <= pdfDoc.numPages) {
+            pageNum = val;
+            queueRenderPage(pageNum);
+        } else {
+            e.target.value = pageNum;
+        }
+    });
+
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+        scale = Math.min(scale + 0.2, 3.0);
+        queueRenderPage(pageNum);
+    });
+
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        scale = Math.max(scale - 0.2, 0.6);
+        queueRenderPage(pageNum);
+    });
+
+    document.getElementById('fitWidthBtn').addEventListener('click', () => {
+        if (!pdfDoc) return;
+        pdfDoc.getPage(pageNum).then(function(page) {
+            const vp = page.getViewport({ scale: 1.0 });
+            const containerWidth = readerContainer.clientWidth - 40;
+            scale = containerWidth / vp.width;
+            queueRenderPage(pageNum);
+        });
+    });
+
+    // Night Mode / Invert Contrast
+    document.getElementById('readerContrastBtn').addEventListener('click', () => {
+        isNightMode = !isNightMode;
+        if (isNightMode) {
+            pdfCanvasContainer.style.filter = 'invert(0.92) hue-rotate(180deg) contrast(1.1)';
+        } else {
+            pdfCanvasContainer.style.filter = 'none';
+        }
+    });
+
+    // Fullscreen Toggle
+    document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            readerContainer.requestFullscreen().catch(err => console.warn(err));
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // Keyboard Arrow navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.target === pageNumInput) return;
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            onPrevPage();
+        } else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+            onNextPage();
+        }
+    });
+});
+</script>
+{% endblock %}

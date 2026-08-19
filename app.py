@@ -63,7 +63,13 @@ from models import (
     VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
     VideoFlashcard, AcademicCertificate, ParentAccessToken,
     # NEW: multi-tenancy, attendance sessions, bio data
-    Institution, AttendanceSession, AttendanceSubSession, StudentProfile, DailyQuestTemplate
+    Institution, AttendanceSession, AttendanceSubSession, StudentProfile, DailyQuestTemplate,
+    # NEW: Announcements, Timetable & XP Rewards Store
+    Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
+    # NEW: Digital E-Book Library
+    EBook, EBookProgress,
+    # NEW: AI Lecture Copilot
+    AICopilotInteraction
 )
 from crypto_helper import encrypt_password, decrypt_password
 from attendance_utils import (
@@ -77,6 +83,9 @@ from services.report_engine import (
 from services.certificate_engine import (
     issue_academic_certificate, build_certificate_pdf
 )
+from services.ai_assessment_engine import generate_quiz_from_video
+from services.transcript_engine import parse_vtt_or_srt_to_cues
+from services.retention_engine import calculate_video_retention_curve
 
 # ── Logging Configuration ──
 logging.basicConfig(
@@ -185,13 +194,17 @@ if assets_env:
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# CSRF helpers and input sanitization
+class CallableStr(str):
+    """String subclass that is also callable to support both {{ csrf_token }} and {{ csrf_token() }}."""
+    def __call__(self, *args, **kwargs):
+        return self
+
 def generate_csrf_token():
     token = session.get('csrf_token')
     if not token:
         token = secrets.token_urlsafe(32)
         session['csrf_token'] = token
-    return token
+    return CallableStr(token)
 
 @app.context_processor
 def inject_csrf_token():
@@ -255,14 +268,14 @@ def set_security_and_performance_headers(response):
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.youtube.com https://s.ytimg.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: blob: https://img.youtube.com https://i.ytimg.com https://*.ytimg.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
             "media-src 'self' blob: data: https://www.youtube.com; "
             "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; "
             "child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; "
-            "connect-src 'self' blob: data: https://www.youtube.com; "
+            "connect-src 'self' blob: data: https://www.youtube.com https://cdn.jsdelivr.net; "
             "frame-ancestors 'none'; base-uri 'self';"
         )
         if app.config.get('FORCE_HTTPS') or request.is_secure:
@@ -3182,8 +3195,19 @@ def create_quiz():
             # Backward compatible fallback if the old single-field name is posted
             time_limit = request.form.get('time_limit_minutes', 0, type=int)
         shuffle = request.form.get('shuffle_questions') == 'on'
+        proctoring = request.form.get('proctoring_enabled') == 'on'
+        max_tabs = request.form.get('max_tab_switches', 3, type=int)
+        block_cp = request.form.get('block_copy_paste') == 'on'
         
-        quiz = Quiz(title=title, teacher_id=current_user.id, time_limit_minutes=time_limit, shuffle_questions=shuffle)
+        quiz = Quiz(
+            title=title,
+            teacher_id=current_user.id,
+            time_limit_minutes=time_limit,
+            shuffle_questions=shuffle,
+            proctoring_enabled=proctoring,
+            max_tab_switches=max_tabs,
+            block_copy_paste=block_cp
+        )
         if video_id: quiz.video_id = int(video_id)
         if classroom_id: quiz.classroom_id = int(classroom_id)
         db.session.add(quiz)
@@ -3291,6 +3315,12 @@ def take_quiz(quiz_id):
             answers[q.id] = selected
             if selected == q.correct_option: score += 1
         passed = total > 0 and (score * 100.0 / total) >= (quiz.passing_percent or 50)
+        
+        # Proctoring tracking
+        proctoring_violations = int(request.form.get('proctoring_violations_count', 0))
+        proctoring_log = request.form.get('proctoring_log_json', '[]')
+        auto_cheated = request.form.get('auto_submitted_due_to_cheating') == 'true'
+
         result = QuizResult(
             institution_id=current_user.institution_id,
             quiz_id=quiz.id,
@@ -3299,12 +3329,17 @@ def take_quiz(quiz_id):
             total_questions=total,
             answers_json=json.dumps(answers),
             time_taken_seconds=elapsed_seconds,
-            passed=passed
+            passed=passed,
+            proctoring_violations_count=proctoring_violations,
+            proctoring_log_json=proctoring_log,
+            auto_submitted_due_to_cheating=auto_cheated
         )
         db.session.add(result)
         session.pop(session_start_key, None)
         session.pop(session_order_key, None)
-        if passed:
+        if auto_cheated:
+            flash(f'Quiz was automatically submitted due to exceeding proctoring tab-switch limits. Score: {score}/{total}.', 'warning')
+        elif passed:
             current_user.xp += 100
             if current_user.role == 'student':
                 current_user.update_quest_progress('take_quiz', 1)
@@ -5089,6 +5124,92 @@ def ai_video_chat():
     return jsonify({'response': response_text})
 
 # ═══════════════════════════════════════════════════════════════
+#  AI LECTURE COPILOT & INSTANT TIMESTAMP CITATION ENGINE
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/copilot/ask', methods=['POST'])
+@login_required
+@limiter.limit("10000 per minute")
+def api_ask_lecture_copilot(video_id):
+    """Answers student doubts with exact timestamp citations, digital library guide links, and micro-quiz."""
+    video = Video.query.get_or_404(video_id)
+    data = request.json or {}
+    question = data.get('question', '').strip()
+    current_time = float(data.get('current_time', 0.0))
+    if not question:
+        return jsonify({'success': False, 'message': 'Please type or speak your doubt.'}), 400
+    
+    from services.ai_lecture_copilot import ask_lecture_copilot, calculate_video_exam_readiness
+    result = ask_lecture_copilot(video, current_user, question, current_time)
+    result['readiness'] = calculate_video_exam_readiness(current_user, video)
+    return jsonify(result)
+
+
+@app.route('/api/video/copilot/interaction/<int:interaction_id>/quiz_submit', methods=['POST'])
+@login_required
+def api_submit_copilot_quiz(interaction_id):
+    """Evaluates 1-click micro-quiz answer, awards +20 XP, and logs mastery."""
+    data = request.json or {}
+    selected_index = data.get('selected_index', 0)
+    try:
+        selected_index = int(selected_index)
+    except Exception:
+        selected_index = 0
+    
+    from services.ai_lecture_copilot import evaluate_micro_quiz, calculate_video_exam_readiness
+    result = evaluate_micro_quiz(interaction_id, current_user, selected_index)
+    interaction = AICopilotInteraction.query.get(interaction_id)
+    if interaction and interaction.video:
+        result['readiness'] = calculate_video_exam_readiness(current_user, interaction.video)
+    return jsonify(result)
+
+
+@app.route('/api/video/<int:video_id>/copilot/history', methods=['GET'])
+@login_required
+def api_get_copilot_history(video_id):
+    """Returns past copilot query cards, citations, and micro-quizzes for this video."""
+    video = Video.query.get_or_404(video_id)
+    interactions = AICopilotInteraction.query.filter_by(
+        user_id=current_user.id, video_id=video_id
+    ).order_by(AICopilotInteraction.created_at.asc()).limit(30).all()
+    
+    from services.ai_lecture_copilot import calculate_video_exam_readiness
+    readiness = calculate_video_exam_readiness(current_user, video)
+    
+    data = []
+    for it in interactions:
+        matched_book = it.cited_book
+        data.append({
+            'interaction_id': it.id,
+            'question': it.question,
+            'answer': it.answer,
+            'cited_timestamp': it.cited_timestamp,
+            'cited_timestamp_formatted': it.cited_timestamp_formatted,
+            'cited_book': {
+                'id': matched_book.id,
+                'title': matched_book.title,
+                'page': it.cited_page,
+                'type_label': matched_book.get_resource_type_label()
+            } if matched_book else None,
+            'micro_quiz': it.get_micro_quiz(),
+            'quiz_answered': it.quiz_answered,
+            'quiz_correct': it.quiz_correct,
+            'created_at': it.created_at.strftime('%I:%M %p')
+        })
+    return jsonify({'success': True, 'history': data, 'readiness': readiness})
+
+
+@app.route('/api/video/<int:video_id>/readiness', methods=['GET'])
+@login_required
+def api_get_video_readiness(video_id):
+    """Returns live student Exam Readiness Index for this video."""
+    video = Video.query.get_or_404(video_id)
+    from services.ai_lecture_copilot import calculate_video_exam_readiness
+    readiness = calculate_video_exam_readiness(current_user, video)
+    return jsonify({'success': True, 'readiness': readiness})
+
+
+# ═══════════════════════════════════════════════════════════════
 #  SOCKET.IO (REAL-TIME)
 # ═══════════════════════════════════════════════════════════════
 
@@ -5126,6 +5247,76 @@ def handle_message(data):
         'content': msg.content, 'timestamp': msg.timestamp.strftime('%I:%M %p'),
         'classroom_id': class_id, 'avatar_url': current_user.avatar_url
     }, room=f'class_{class_id}')
+
+
+# ── Watch Together / Synchronized Virtual Classroom Sockets ──
+
+@socketio.on('watch_party_join')
+def handle_watch_party_join(data):
+    video_id = data.get('video_id')
+    if not video_id:
+        return
+    room_name = f'watch_party_{video_id}'
+    join_room(room_name)
+    user_name = current_user.name if current_user.is_authenticated else 'Guest'
+    user_role = current_user.role if current_user.is_authenticated else 'viewer'
+    avatar = current_user.get_avatar_url() if current_user.is_authenticated else None
+    
+    emit('watch_party_user_joined', {
+        'username': user_name,
+        'role': user_role,
+        'avatar_url': avatar,
+        'user_id': current_user.id if current_user.is_authenticated else None
+    }, room=room_name)
+
+@socketio.on('watch_party_sync_action')
+def handle_watch_party_sync_action(data):
+    """Host broadcasts playback control action (play, pause, seek)."""
+    video_id = data.get('video_id')
+    action = data.get('action')  # 'play', 'pause', 'seek'
+    current_time = data.get('currentTime', 0.0)
+    if not video_id or not action:
+        return
+    room_name = f'watch_party_{video_id}'
+    user_name = current_user.name if current_user.is_authenticated else 'Host'
+    
+    emit('watch_party_broadcast_action', {
+        'action': action,
+        'currentTime': current_time,
+        'triggered_by': user_name,
+        'is_teacher': current_user.is_authenticated and current_user.role in ('teacher', 'admin', 'system_admin')
+    }, room=room_name, include_self=False)
+
+@socketio.on('watch_party_raise_hand')
+def handle_watch_party_raise_hand(data):
+    video_id = data.get('video_id')
+    if not video_id:
+        return
+    room_name = f'watch_party_{video_id}'
+    user_name = current_user.name if current_user.is_authenticated else 'Student'
+    emit('watch_party_hand_raised', {
+        'username': user_name,
+        'user_id': current_user.id if current_user.is_authenticated else None,
+        'timestamp': datetime.utcnow().strftime('%I:%M:%S %p')
+    }, room=room_name)
+
+@socketio.on('watch_party_chat_message')
+def handle_watch_party_chat(data):
+    video_id = data.get('video_id')
+    message = (data.get('message') or '').strip()
+    if not video_id or not message:
+        return
+    room_name = f'watch_party_{video_id}'
+    user_name = current_user.name if current_user.is_authenticated else 'User'
+    avatar = current_user.get_avatar_url() if current_user.is_authenticated else None
+    emit('watch_party_new_chat', {
+        'username': user_name,
+        'avatar_url': avatar,
+        'role': current_user.role if current_user.is_authenticated else 'student',
+        'message': message,
+        'timestamp': datetime.utcnow().strftime('%I:%M %p')
+    }, room=room_name)
+
 
 # ═══════════════════════════════════════════════════════════════
 #  SMS SYSTEM
@@ -7459,7 +7650,7 @@ def view_video_flashcards(video_id):
 @app.route('/api/video/<int:video_id>/save_ai_quiz', methods=['POST'])
 @login_required
 @teacher_required
-def save_ai_quiz(video_id):
+def api_save_ai_quiz(video_id):
     """1-Click conversion of AI generated questions into an active Classroom Quiz."""
     video = Video.query.get_or_404(video_id)
     data = request.get_json() or {}
@@ -7651,6 +7842,916 @@ def parent_portal_view(token):
         certificates=certs,
         now_date=now_date
     )
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 1: AI VIDEO ASSESSMENT & QUIZ GENERATOR
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/teacher/video/<int:video_id>/ai_generate_quiz', methods=['POST'])
+@login_required
+@teacher_required
+def ai_generate_quiz_for_video(video_id):
+    """API endpoint for teachers to generate multiple choice quiz questions using AI."""
+    video = Video.query.get_or_404(video_id)
+    data = request.get_json() or {}
+    num_q = int(data.get('num_questions', 5))
+    difficulty = data.get('difficulty', 'intermediate')
+    topic_focus = data.get('topic_focus', '')
+    custom_prompt = data.get('custom_prompt', '')
+
+    questions = generate_quiz_from_video(
+        video=video,
+        num_questions=min(max(1, num_q), 15),
+        difficulty=difficulty,
+        topic_focus=topic_focus,
+        custom_prompt=custom_prompt
+    )
+
+    return jsonify({
+        'success': True,
+        'video_id': video.id,
+        'video_title': video.title,
+        'questions': questions
+    })
+
+
+@app.route('/teacher/video/<int:video_id>/save_ai_quiz', methods=['POST'])
+@login_required
+@teacher_required
+def save_ai_quiz(video_id):
+    """Save generated AI questions as an official Quiz."""
+    video = Video.query.get_or_404(video_id)
+    data = request.get_json() or {}
+    title = (data.get('title') or f"AI Quiz: {video.title}").strip()
+    description = (data.get('description') or f"Assessment covering key concepts from {video.title}").strip()
+    passing_percent = int(data.get('passing_percent', 50))
+    time_limit = int(data.get('time_limit_minutes', 0))
+    max_attempts = int(data.get('max_attempts', 0))
+    proctoring = bool(data.get('proctoring_enabled', False))
+    questions_data = data.get('questions', [])
+
+    if not questions_data:
+        return jsonify({'success': False, 'message': 'No questions provided.'}), 400
+
+    quiz = Quiz(
+        title=title,
+        description=description,
+        teacher_id=current_user.id,
+        video_id=video.id,
+        classroom_id=video.classroom_id,
+        institution_id=current_user.institution_id,
+        passing_percent=passing_percent,
+        time_limit_minutes=time_limit,
+        max_attempts=max_attempts,
+        proctoring_enabled=proctoring
+    )
+    db.session.add(quiz)
+    db.session.flush()
+
+    for q in questions_data:
+        q_obj = Question(
+            quiz_id=quiz.id,
+            institution_id=current_user.institution_id,
+            text=q.get('text', 'Question'),
+            option_a=q.get('option_a', 'Option A'),
+            option_b=q.get('option_b', 'Option B'),
+            option_c=q.get('option_c', 'Option C'),
+            option_d=q.get('option_d', 'Option D'),
+            correct_option=str(q.get('correct_option', 'A')).upper()[:1],
+            explanation=q.get('explanation', ''),
+            points=int(q.get('points', 1))
+        )
+        db.session.add(q_obj)
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'quiz_id': quiz.id,
+        'message': 'Quiz successfully created from AI questions!'
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 2: SEARCHABLE VIDEO TRANSCRIPTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/transcript')
+def get_video_transcript(video_id):
+    """Returns parsed subtitle cues for the video player transcript sidebar."""
+    video = Video.query.get_or_404(video_id)
+    cues = []
+
+    # Check for subtitle path
+    if video.subtitle_path:
+        sub_full = os.path.join(BASE_DIR, 'static', video.subtitle_path.lstrip('/\\static/'))
+        if not os.path.exists(sub_full):
+            sub_full = os.path.join(SUBTITLE_FOLDER, os.path.basename(video.subtitle_path))
+        if os.path.exists(sub_full):
+            cues = parse_vtt_or_srt_to_cues(sub_full)
+
+    # If no subtitle file exists, synthesize cues from chapters or AI takeaways
+    if not cues:
+        chapters = video.get_chapters()
+        if chapters:
+            for idx, ch in enumerate(chapters):
+                st = float(ch.get('time', idx * 60))
+                mins = int(st // 60)
+                secs = int(st % 60)
+                cues.append({
+                    'start': st,
+                    'end': st + 60,
+                    'start_formatted': f"{mins:02d}:{secs:02d}",
+                    'text': f"Chapter: {ch.get('title', 'Lecture Section')}"
+                })
+        elif video.ai_summary:
+            takeaways = video.get_ai_takeaways()
+            step = max(30.0, (video.duration_seconds or 300) / max(1, len(takeaways) + 1))
+            for idx, t in enumerate(takeaways):
+                st = idx * step
+                mins = int(st // 60)
+                secs = int(st % 60)
+                cues.append({
+                    'start': st,
+                    'end': st + step,
+                    'start_formatted': f"{mins:02d}:{secs:02d}",
+                    'text': t
+                })
+
+    return jsonify({
+        'video_id': video.id,
+        'has_transcript': len(cues) > 0,
+        'cues': cues
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 3: QUIZ PROCTORING TELEMETRY & AUTO-SUBMISSION
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/quiz/<int:quiz_id>/proctoring_violation', methods=['POST'])
+@login_required
+def log_quiz_proctoring_violation(quiz_id):
+    """Logs client-side proctoring violation (tab switch, window blur, exit fullscreen)."""
+    quiz = Quiz.query.get_or_404(quiz_id)
+    data = request.get_json() or {}
+    reason = data.get('reason', 'Tab switch or window blur detected')
+
+    return jsonify({
+        'success': True,
+        'logged': True,
+        'reason': reason,
+        'timestamp': datetime.utcnow().strftime('%H:%M:%S')
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 4: CAMPUS NOTICE BOARD & ANNOUNCEMENTS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/announcements')
+@login_required
+def announcements_hub():
+    """Notice board displaying active institutional and classroom announcements."""
+    inst_id = current_user.institution_id
+    query = Announcement.query
+    if inst_id is not None:
+        query = query.filter_by(institution_id=inst_id)
+
+    # Filter target roles
+    if current_user.role == 'student':
+        query = query.filter(Announcement.target_role.in_(['all', 'student']))
+    elif current_user.role == 'teacher':
+        query = query.filter(Announcement.target_role.in_(['all', 'teacher']))
+
+    announcements = query.order_by(Announcement.is_pinned.desc(), Announcement.created_at.desc()).all()
+    user_classes = []
+    if current_user.role == 'teacher':
+        user_classes = current_user.created_classes
+    elif current_user.role == 'admin':
+        user_classes = Classroom.query.all()
+
+    return render_template(
+        'announcements.html',
+        announcements=announcements,
+        user_classes=user_classes,
+        current_time=datetime.utcnow()
+    )
+
+
+@app.route('/announcements/create', methods=['POST'])
+@login_required
+def create_announcement():
+    """Create a new broadcast or class announcement (Teacher or Admin)."""
+    if current_user.role not in ('admin', 'system_admin', 'teacher'):
+        flash('Permission denied to publish announcements.', 'error')
+        return redirect(url_for('announcements_hub'))
+
+    title = request.form.get('title', '').strip()
+    content = request.form.get('content', '').strip()
+    priority = request.form.get('priority', 'normal')
+    target_role = request.form.get('target_role', 'all')
+    classroom_id = request.form.get('classroom_id')
+    is_pinned = bool(request.form.get('is_pinned'))
+
+    if not title or not content:
+        flash('Title and announcement content are required.', 'error')
+        return redirect(url_for('announcements_hub'))
+
+    cid = int(classroom_id) if classroom_id and classroom_id.isdigit() else None
+
+    announcement = Announcement(
+        title=title,
+        content=content,
+        author_id=current_user.id,
+        institution_id=current_user.institution_id,
+        priority=priority,
+        target_role=target_role,
+        classroom_id=cid,
+        is_pinned=is_pinned,
+        created_at=datetime.utcnow()
+    )
+    db.session.add(announcement)
+    db.session.commit()
+
+    flash('Announcement broadcasted successfully!', 'success')
+    return redirect(url_for('announcements_hub'))
+
+
+@app.route('/announcements/<int:announcement_id>/delete', methods=['POST'])
+@login_required
+def delete_announcement(announcement_id):
+    """Delete announcement (author or admin)."""
+    ann = Announcement.query.get_or_404(announcement_id)
+    if current_user.role not in ('admin', 'system_admin') and ann.author_id != current_user.id:
+        flash('Permission denied to delete this announcement.', 'error')
+        return redirect(url_for('announcements_hub'))
+
+    db.session.delete(ann)
+    db.session.commit()
+    flash('Announcement deleted.', 'success')
+    return redirect(url_for('announcements_hub'))
+
+
+@app.route('/api/announcements/<int:announcement_id>/mark_read', methods=['POST'])
+@login_required
+def mark_announcement_read(announcement_id):
+    """Record read receipt for student/teacher."""
+    ann = Announcement.query.get_or_404(announcement_id)
+    read_entry = AnnouncementRead.query.filter_by(announcement_id=ann.id, user_id=current_user.id).first()
+    if not read_entry:
+        read_entry = AnnouncementRead(
+            announcement_id=ann.id,
+            user_id=current_user.id,
+            institution_id=current_user.institution_id,
+            read_at=datetime.utcnow()
+        )
+        db.session.add(read_entry)
+        db.session.commit()
+    return jsonify({'success': True})
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 5: ACADEMIC TIMETABLE & SMART SCHEDULE
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/timetable')
+@login_required
+def timetable_hub():
+    """Interactive weekly schedule grid for classrooms."""
+    inst_id = current_user.institution_id
+    classes = []
+    selected_class_id = request.args.get('class_id', type=int)
+
+    if current_user.role == 'student':
+        classes = current_user.enrolled_classes.all()
+        if not selected_class_id and classes:
+            selected_class_id = classes[0].id
+    elif current_user.role == 'teacher':
+        classes = current_user.created_classes
+        if not selected_class_id and classes:
+            selected_class_id = classes[0].id
+    elif current_user.role in ('admin', 'system_admin'):
+        classes = Classroom.query.filter_by(institution_id=inst_id).all() if inst_id else Classroom.query.all()
+        if not selected_class_id and classes:
+            selected_class_id = classes[0].id
+
+    selected_class = Classroom.query.get(selected_class_id) if selected_class_id else None
+
+    # Load slots for selected classroom
+    slots_by_day = {
+        'Monday': [], 'Tuesday': [], 'Wednesday': [],
+        'Thursday': [], 'Friday': [], 'Saturday': []
+    }
+    if selected_class:
+        slots = TimetableSlot.query.filter_by(classroom_id=selected_class.id).order_by(TimetableSlot.start_time.asc()).all()
+        for s in slots:
+            if s.day_of_week in slots_by_day:
+                slots_by_day[s.day_of_week].append(s)
+
+    days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    today_name = datetime.utcnow().strftime('%A')
+
+    return render_template(
+        'timetable.html',
+        classes=classes,
+        selected_class=selected_class,
+        slots_by_day=slots_by_day,
+        days_order=days_order,
+        today_name=today_name
+    )
+
+
+@app.route('/timetable/slot/create', methods=['POST'])
+@login_required
+def create_timetable_slot():
+    """Add a period slot to a classroom schedule."""
+    if current_user.role not in ('teacher', 'admin', 'system_admin'):
+        flash('Permission denied to modify timetable.', 'error')
+        return redirect(url_for('timetable_hub'))
+
+    classroom_id = request.form.get('classroom_id', type=int)
+    day = request.form.get('day_of_week')
+    period_name = request.form.get('period_name', '').strip()
+    start_time = request.form.get('start_time', '').strip()
+    end_time = request.form.get('end_time', '').strip()
+    subject = request.form.get('subject_name', '').strip()
+    room = request.form.get('room_number', '').strip()
+    link = request.form.get('meeting_link', '').strip()
+
+    if not classroom_id or not day or not start_time or not subject:
+        flash('Please fill all required timetable fields.', 'error')
+        return redirect(url_for('timetable_hub', class_id=classroom_id))
+
+    slot = TimetableSlot(
+        classroom_id=classroom_id,
+        institution_id=current_user.institution_id,
+        teacher_id=current_user.id,
+        day_of_week=day,
+        period_name=period_name or 'Period',
+        start_time=start_time,
+        end_time=end_time or start_time,
+        subject_name=subject,
+        room_number=room,
+        meeting_link=link
+    )
+    db.session.add(slot)
+    db.session.commit()
+    flash(f"Slot added for {day} ({start_time})!", 'success')
+    return redirect(url_for('timetable_hub', class_id=classroom_id))
+
+
+@app.route('/timetable/slot/<int:slot_id>/delete', methods=['POST'])
+@login_required
+def delete_timetable_slot(slot_id):
+    """Delete a timetable slot."""
+    slot = TimetableSlot.query.get_or_404(slot_id)
+    cid = slot.classroom_id
+    if current_user.role not in ('admin', 'system_admin') and slot.teacher_id != current_user.id:
+        flash('Permission denied.', 'error')
+        return redirect(url_for('timetable_hub', class_id=cid))
+
+    db.session.delete(slot)
+    db.session.commit()
+    flash('Period slot deleted.', 'success')
+    return redirect(url_for('timetable_hub', class_id=cid))
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 6: XP REWARDS STORE & PROFILE CUSTOMIZATION
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/rewards_store')
+@login_required
+def rewards_store_hub():
+    """Cyber-Glass marketplace to unlock avatar borders, badges, and titles using earned XP."""
+    all_rewards = RewardItem.query.filter_by(is_active=True).order_by(RewardItem.xp_cost.asc()).all()
+    user_purchases = {ur.reward_id: ur for ur in current_user.user_rewards}
+
+    # Group by category
+    frames = [r for r in all_rewards if r.item_type == 'avatar_frame']
+    badges = [r for r in all_rewards if r.item_type == 'badge']
+    titles = [r for r in all_rewards if r.item_type == 'title']
+
+    return render_template(
+        'rewards_store.html',
+        frames=frames,
+        badges=badges,
+        titles=titles,
+        user_purchases=user_purchases,
+        user_xp=current_user.xp or 0
+    )
+
+
+@app.route('/rewards_store/purchase/<int:reward_id>', methods=['POST'])
+@login_required
+def purchase_reward(reward_id):
+    """Purchase a reward item using user's XP balance."""
+    reward = RewardItem.query.get_or_404(reward_id)
+    if not reward.is_active:
+        return jsonify({'success': False, 'message': 'Item is not currently available.'}), 400
+
+    # Check if already owned
+    existing = UserReward.query.filter_by(user_id=current_user.id, reward_id=reward.id).first()
+    if existing:
+        return jsonify({'success': False, 'message': 'You already own this item!'}), 400
+
+    user_xp = current_user.xp or 0
+    if user_xp < reward.xp_cost:
+        return jsonify({
+            'success': False,
+            'message': f"Insufficient XP! You need {reward.xp_cost} XP but currently have {user_xp} XP."
+        }), 400
+
+    # Deduct XP and grant reward
+    current_user.xp -= reward.xp_cost
+    current_user.level = (current_user.xp // 500) + 1
+
+    purchase = UserReward(
+        user_id=current_user.id,
+        reward_id=reward.id,
+        institution_id=current_user.institution_id,
+        is_equipped=False
+    )
+    db.session.add(purchase)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f"Successfully unlocked {reward.name}!",
+        'new_xp': current_user.xp,
+        'new_level': current_user.level
+    })
+
+
+@app.route('/rewards_store/equip/<int:reward_id>', methods=['POST'])
+@login_required
+def equip_reward(reward_id):
+    """Equip or unequip an owned reward item."""
+    reward = RewardItem.query.get_or_404(reward_id)
+    purchase = UserReward.query.filter_by(user_id=current_user.id, reward_id=reward.id).first_or_404()
+
+    # Toggle equip state
+    if purchase.is_equipped:
+        purchase.is_equipped = False
+        if reward.item_type == 'avatar_frame' and current_user.equipped_avatar_frame == reward.item_value:
+            current_user.equipped_avatar_frame = None
+        elif reward.item_type == 'title' and current_user.equipped_title == reward.item_value:
+            current_user.equipped_title = None
+        elif reward.item_type == 'badge' and current_user.equipped_badge == reward.item_value:
+            current_user.equipped_badge = None
+        equipped = False
+    else:
+        # Unequip others in same category
+        same_cat_rewards = UserReward.query.join(RewardItem).filter(
+            UserReward.user_id == current_user.id,
+            RewardItem.item_type == reward.item_type
+        ).all()
+        for r in same_cat_rewards:
+            r.is_equipped = False
+
+        purchase.is_equipped = True
+        if reward.item_type == 'avatar_frame':
+            current_user.equipped_avatar_frame = reward.item_value
+        elif reward.item_type == 'title':
+            current_user.equipped_title = reward.item_value
+        elif reward.item_type == 'badge':
+            current_user.equipped_badge = reward.item_value
+        equipped = True
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'equipped': equipped,
+        'item_type': reward.item_type,
+        'item_value': reward.item_value,
+        'message': f"{'Equipped' if equipped else 'Unequipped'} {reward.name}!"
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 7: SECOND-BY-SECOND RETENTION HEATMAP
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/api/video/<int:video_id>/retention_heatmap')
+@login_required
+def get_video_retention_heatmap(video_id):
+    """API returning second-by-second audience watch retention curve."""
+    data = calculate_video_retention_curve(video_id, num_buckets=50)
+    return jsonify(data)
+
+
+# ═══════════════════════════════════════════════════════════════
+#  NEW FEATURE 8: AUDIO & VOICE HOMEWORK SUBMISSIONS
+# ═══════════════════════════════════════════════════════════════
+
+@app.route('/assignment/<int:assignment_id>/submit_audio', methods=['POST'])
+@login_required
+def submit_audio_assignment(assignment_id):
+    """Accepts recorded audio blob submissions from browser microphone."""
+    assignment = Assignment.query.get_or_404(assignment_id)
+    if current_user.role != 'student':
+        return jsonify({'success': False, 'message': 'Only students can submit assignments.'}), 403
+
+    if 'audio_file' not in request.files:
+        return jsonify({'success': False, 'message': 'No audio recorded.'}), 400
+
+    audio_file = request.files['audio_file']
+    if audio_file.filename == '':
+        return jsonify({'success': False, 'message': 'Empty audio recording.'}), 400
+
+    # Save audio in uploads directory
+    audio_dir = os.path.join(UPLOAD_FOLDER, 'audio_submissions')
+    os.makedirs(audio_dir, exist_ok=True)
+    ext = audio_file.filename.split('.')[-1] if '.' in audio_file.filename else 'webm'
+    safe_fn = f"audio_assign_{assignment.id}_user_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}"
+    dest_path = os.path.join(audio_dir, safe_fn)
+    audio_file.save(dest_path)
+    rel_path = f"uploads/audio_submissions/{safe_fn}"
+
+    # Upsert submission
+    submission = AssignmentSubmission.query.filter_by(assignment_id=assignment.id, student_id=current_user.id).first()
+    is_late = bool(assignment.due_date and datetime.utcnow() > assignment.due_date)
+
+    if submission:
+        submission.audio_file_path = rel_path
+        submission.submission_type = 'audio'
+        submission.submitted_at = datetime.utcnow()
+        submission.is_late = is_late
+        submission.status = 'submitted'
+    else:
+        submission = AssignmentSubmission(
+            assignment_id=assignment.id,
+            student_id=current_user.id,
+            institution_id=current_user.institution_id,
+            audio_file_path=rel_path,
+            submission_type='audio',
+            submitted_at=datetime.utcnow(),
+            is_late=is_late,
+            status='submitted'
+        )
+        db.session.add(submission)
+
+    # Award XP and update quest progress
+    current_user.xp = (current_user.xp or 0) + 50
+    current_user.level = (current_user.xp // 500) + 1
+    if hasattr(current_user, 'update_quest_progress'):
+        current_user.update_quest_progress('submit_assignment', 1)
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'message': 'Voice homework submitted successfully! +50 XP awarded.',
+        'audio_url': f"/static/{rel_path}"
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
+#  FEATURE: DIGITAL E-BOOK & RESOURCE LIBRARY (Schools & Colleges)
+# ═══════════════════════════════════════════════════════════════
+
+def get_pdf_page_count(file_path):
+    """Calculates number of pages in a PDF with pypdf and regex fallback."""
+    try:
+        import pypdf
+        reader = pypdf.PdfReader(file_path)
+        return len(reader.pages)
+    except Exception:
+        try:
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            matches = re.findall(rb'/Type\s*/Page\b', content)
+            return max(1, len(matches))
+        except Exception:
+            return 1
+
+
+@app.route('/library', methods=['GET'])
+@login_required
+def library_hub():
+    """Digital E-Book & Academic Resource Library Shelf for Students, Teachers & Admins."""
+    q = request.args.get('q', '').strip()
+    resource_type_filter = request.args.get('resource_type', '').strip()
+    subject_filter = request.args.get('subject', '').strip()
+    level_filter = request.args.get('level', '').strip()
+    inst_type_filter = request.args.get('type', '').strip()
+    dept_filter = request.args.get('dept', '').strip()
+
+    query = EBook.query
+
+    # Apply multi-level and search filters
+    if q:
+        search_term = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                EBook.title.ilike(search_term),
+                EBook.author.ilike(search_term),
+                EBook.subject.ilike(search_term),
+                EBook.description.ilike(search_term),
+                EBook.isbn.ilike(search_term)
+            )
+        )
+
+    if resource_type_filter and resource_type_filter != 'all':
+        if resource_type_filter == 'textbook':
+            query = query.filter(db.or_(EBook.resource_type == 'textbook', EBook.resource_type.is_(None)))
+        else:
+            query = query.filter_by(resource_type=resource_type_filter)
+
+    if subject_filter and subject_filter != 'all':
+        query = query.filter_by(subject=subject_filter)
+
+    if level_filter and level_filter != 'all':
+        query = query.filter_by(academic_level=level_filter)
+
+    if inst_type_filter and inst_type_filter != 'all':
+        query = query.filter(EBook.institution_type.in_([inst_type_filter, 'both']))
+
+    if dept_filter and dept_filter != 'all':
+        query = query.filter_by(department=dept_filter)
+
+    books = query.order_by(EBook.created_at.desc()).all()
+
+    # Get distinct subjects, levels, and departments for quick filtering
+    all_books = EBook.query.all()
+    distinct_subjects = sorted(list({b.subject for b in all_books if b.subject}))
+    distinct_levels = sorted(list({b.academic_level for b in all_books if b.academic_level}))
+    distinct_depts = sorted(list({b.department for b in all_books if b.department}))
+
+    # Category counts
+    textbooks_count = sum(1 for b in all_books if not b.resource_type or b.resource_type == 'textbook')
+    guides_count = sum(1 for b in all_books if b.resource_type in ['guide', 'study_guide'])
+    lab_manuals_count = sum(1 for b in all_books if b.resource_type == 'lab_manual')
+    notes_count = sum(1 for b in all_books if b.resource_type in ['notes', 'solution'])
+
+    # Map user progress
+    user_progress_map = {}
+    if current_user.is_authenticated:
+        records = EBookProgress.query.filter_by(user_id=current_user.id).all()
+        for r in records:
+            user_progress_map[r.ebook_id] = {
+                'last_read_page': r.last_read_page,
+                'percent': r.percent_completed,
+                'last_read_at': r.last_read_at
+            }
+
+    # Standard presets for easy selection
+    school_grades = [f"Grade {i}" for i in range(1, 13)]
+    college_years = ["Year 1 / 1st Year", "Year 2 / 2nd Year", "Year 3 / 3rd Year", "Year 4 / 4th Year", "Post-Graduate / Masters"]
+    standard_subjects = [
+        "Computer Science & IT", "Mathematics", "Physics", "Chemistry", "Biology",
+        "Commerce & Accounting", "Economics", "Literature & English", "Social Studies & History",
+        "Mechanical Engineering", "Electrical Engineering", "Civil Engineering", "General Reference"
+    ]
+
+    return render_template(
+        'library.html',
+        books=books,
+        search_query=q,
+        resource_type_filter=resource_type_filter,
+        subject_filter=subject_filter,
+        level_filter=level_filter,
+        inst_type_filter=inst_type_filter,
+        dept_filter=dept_filter,
+        distinct_subjects=distinct_subjects,
+        distinct_levels=distinct_levels,
+        distinct_depts=distinct_depts,
+        user_progress_map=user_progress_map,
+        school_grades=school_grades,
+        college_years=college_years,
+        standard_subjects=standard_subjects,
+        textbooks_count=textbooks_count,
+        guides_count=guides_count,
+        lab_manuals_count=lab_manuals_count,
+        notes_count=notes_count
+    )
+
+
+@app.route('/admin/library/upload', methods=['POST'])
+@login_required
+def upload_ebook():
+    """Upload an e-book or study guide PDF with School / College categorization."""
+    if current_user.role not in ['admin', 'system_admin', 'teacher']:
+        flash('Permission denied. Only faculty and administrators can upload library resources.', 'error')
+        return redirect(url_for('library_hub'))
+
+    title = request.form.get('title', '').strip()
+    resource_type = request.form.get('resource_type', 'textbook').strip()
+    author = request.form.get('author', '').strip()
+    publisher = request.form.get('publisher', '').strip()
+    edition = request.form.get('edition', '').strip()
+    isbn = request.form.get('isbn', '').strip()
+    subject = request.form.get('subject', 'General Reference').strip()
+    custom_subject = request.form.get('custom_subject', '').strip()
+    if subject == 'custom' and custom_subject:
+        subject = custom_subject
+
+    academic_level = request.form.get('academic_level', 'All').strip()
+    institution_type = request.form.get('institution_type', 'both').strip()
+    department = request.form.get('department', '').strip()
+    description = request.form.get('description', '').strip()
+    allow_download = bool(request.form.get('allow_download', '1') in ['1', 'true', 'on'])
+
+    if not title:
+        flash('Title is required.', 'error')
+        return redirect(url_for('library_hub'))
+
+    if 'pdf_file' not in request.files:
+        flash('Please select a PDF document to upload.', 'error')
+        return redirect(url_for('library_hub'))
+
+    pdf_file = request.files['pdf_file']
+    if not pdf_file or pdf_file.filename == '':
+        flash('Empty or missing PDF file.', 'error')
+        return redirect(url_for('library_hub'))
+
+    orig_fn = secure_filename(pdf_file.filename)
+    if not orig_fn.lower().endswith('.pdf'):
+        flash('Only PDF format documents (.pdf) are supported.', 'error')
+        return redirect(url_for('library_hub'))
+
+    # Store in ebooks upload directory
+    ebooks_dir = os.path.join(UPLOAD_FOLDER, 'ebooks')
+    os.makedirs(ebooks_dir, exist_ok=True)
+
+    unique_pdf_name = f"ebook_{uuid.uuid4().hex[:10]}_{orig_fn}"
+    full_pdf_path = os.path.join(ebooks_dir, unique_pdf_name)
+    pdf_file.save(full_pdf_path)
+
+    # Compute page count and file size
+    file_size = os.path.getsize(full_pdf_path) if os.path.exists(full_pdf_path) else 0
+    page_count = get_pdf_page_count(full_pdf_path)
+
+    # Cover image handling
+    cover_rel_path = None
+    if 'cover_image' in request.files:
+        cover_file = request.files['cover_image']
+        if cover_file and cover_file.filename != '':
+            cov_fn = secure_filename(cover_file.filename)
+            ext = cov_fn.rsplit('.', 1)[-1].lower() if '.' in cov_fn else 'jpg'
+            if ext in ALLOWED_IMAGE_EXTENSIONS:
+                covers_dir = os.path.join(UPLOAD_FOLDER, 'ebook_covers')
+                os.makedirs(covers_dir, exist_ok=True)
+                unique_cov_name = f"cover_{uuid.uuid4().hex[:10]}.{ext}"
+                cover_file.save(os.path.join(covers_dir, unique_cov_name))
+                cover_rel_path = f"uploads/ebook_covers/{unique_cov_name}"
+
+    rel_pdf_path = f"uploads/ebooks/{unique_pdf_name}"
+
+    ebook = EBook(
+        institution_id=current_user.institution_id,
+        uploader_id=current_user.id,
+        title=title,
+        resource_type=resource_type,
+        author=author or 'Academic Faculty',
+        publisher=publisher,
+        edition=edition,
+        isbn=isbn,
+        subject=subject,
+        academic_level=academic_level,
+        institution_type=institution_type,
+        department=department,
+        description=description,
+        file_path=rel_pdf_path,
+        file_name=orig_fn,
+        cover_image_path=cover_rel_path,
+        page_count=page_count,
+        file_size_bytes=file_size,
+        allow_download=allow_download
+    )
+    db.session.add(ebook)
+    db.session.commit()
+
+    flash(f'{ebook.get_resource_type_label()} "{title}" successfully published to Campus Library! ({page_count} pages)', 'success')
+    return redirect(url_for('library_hub'))
+
+
+@app.route('/library/book/<int:book_id>/read', methods=['GET'])
+@login_required
+def read_ebook(book_id):
+    """In-browser Cyber-Glass Interactive PDF Reader."""
+    book = EBook.query.get_or_404(book_id)
+    book.view_count = (book.view_count or 0) + 1
+    db.session.commit()
+
+    # Fetch user's previous reading progress
+    progress = EBookProgress.query.filter_by(ebook_id=book.id, user_id=current_user.id).first()
+    start_page = progress.last_read_page if progress else 1
+
+    pdf_url = url_for('static', filename=book.file_path.replace('\\', '/'))
+
+    return render_template(
+        'library_reader.html',
+        book=book,
+        pdf_url=pdf_url,
+        start_page=start_page
+    )
+
+
+@app.route('/api/library/book/<int:book_id>/progress', methods=['POST'])
+@login_required
+def update_ebook_progress(book_id):
+    """Saves student reading page progress and awards milestone XP."""
+    book = EBook.query.get_or_404(book_id)
+    data = request.get_json() or {}
+    page = int(data.get('page', 1))
+    total = int(data.get('total_pages', book.page_count or 1))
+
+    if page < 1:
+        page = 1
+    if total > 0 and page > total:
+        page = total
+
+    pct = round((page / float(total)) * 100.0, 1) if total > 0 else 0.0
+
+    progress = EBookProgress.query.filter_by(ebook_id=book.id, user_id=current_user.id).first()
+    if not progress:
+        progress = EBookProgress(
+            institution_id=current_user.institution_id,
+            ebook_id=book.id,
+            user_id=current_user.id,
+            last_read_page=page,
+            percent_completed=pct,
+            last_read_at=datetime.utcnow()
+        )
+        db.session.add(progress)
+    else:
+        progress.last_read_page = page
+        progress.percent_completed = max(progress.percent_completed or 0.0, pct)
+        progress.last_read_at = datetime.utcnow()
+
+    # Small XP boost for continuous reading
+    if current_user.role == 'student' and page % 10 == 0:
+        current_user.xp = (current_user.xp or 0) + 5
+        current_user.level = (current_user.xp // 500) + 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'page': page,
+        'percent_completed': pct
+    })
+
+
+@app.route('/library/book/<int:book_id>/download', methods=['GET'])
+@login_required
+def download_ebook(book_id):
+    """Download the original PDF file."""
+    book = EBook.query.get_or_404(book_id)
+    if not book.allow_download and current_user.role not in ['admin', 'system_admin']:
+        flash('Direct file downloads are disabled for this protected textbook. You can read it online.', 'info')
+        return redirect(url_for('read_ebook', book_id=book.id))
+
+    book.download_count = (book.download_count or 0) + 1
+    db.session.commit()
+
+    full_path = os.path.join(BASE_DIR, 'static', book.file_path.replace('/', os.sep))
+    if not os.path.exists(full_path):
+        flash('Book file is unavailable on server.', 'error')
+        return redirect(url_for('library_hub'))
+
+    directory = os.path.dirname(full_path)
+    filename = os.path.basename(full_path)
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=True,
+        download_name=book.file_name or f"{book.title}.pdf"
+    )
+
+
+@app.route('/admin/library/book/<int:book_id>/delete', methods=['POST'])
+@login_required
+def delete_ebook(book_id):
+    """Delete an e-book and physically remove PDF/cover files."""
+    book = EBook.query.get_or_404(book_id)
+    if current_user.role not in ['admin', 'system_admin'] and book.uploader_id != current_user.id:
+        flash('Permission denied to delete this book.', 'error')
+        return redirect(url_for('library_hub'))
+
+    # Clean up physical files
+    if book.file_path:
+        full_pdf = os.path.join(BASE_DIR, 'static', book.file_path.replace('/', os.sep))
+        if os.path.exists(full_pdf):
+            try:
+                os.remove(full_pdf)
+            except Exception as e:
+                logger.warning(f"Failed removing ebook file {full_pdf}: {e}")
+
+    if book.cover_image_path:
+        full_cov = os.path.join(BASE_DIR, 'static', book.cover_image_path.replace('/', os.sep))
+        if os.path.exists(full_cov):
+            try:
+                os.remove(full_cov)
+            except Exception as e:
+                logger.warning(f"Failed removing ebook cover {full_cov}: {e}")
+
+    title = book.title
+    db.session.delete(book)
+    db.session.commit()
+
+    flash(f'E-Book "{title}" deleted from library.', 'success')
+    return redirect(url_for('library_hub'))
 
 
 # ═══════════════════════════════════════════════════════════════

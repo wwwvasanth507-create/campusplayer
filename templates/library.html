@@ -1,0 +1,410 @@
+{% extends "layout.html" %}
+{% block title %}Digital Library &amp; Study Guides — Campus Player{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="card card-royal mb-16" style="padding: 24px;">
+    <div class="flex-between" style="flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="badge" style="background: rgba(212, 175, 55, 0.12); color: var(--primary); border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;">
+                    <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">menu_book</i> DIGITAL ACADEMIC REPOSITORY
+                </span>
+                <span style="color: var(--text-dim); font-size: 0.78rem;">Textbooks, Study Guides &amp; Lab Manuals</span>
+            </div>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.6rem;">Campus Digital Library &amp; Guides</h1>
+            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.82rem;">Browse textbooks, reference guides, lab manuals, and exam revision materials with instant in-browser reading.</p>
+        </div>
+        {% if current_user.role in ['admin', 'system_admin', 'teacher'] %}
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadEBookModal" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-pill);">
+                <i class="material-icons" style="font-size: 1.1rem;">upload_file</i> Upload Resource / Guide
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Primary Resource Type Category Navigation Tabs -->
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
+    <a href="{{ url_for('library_hub', q=search_query, subject=subject_filter, level=level_filter) }}" 
+       class="btn {% if not resource_type_filter %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 700;">
+        <i class="material-icons" style="font-size: 1.05rem;">auto_stories</i> All Resources ({{ books|length }})
+    </a>
+    <a href="{{ url_for('library_hub', resource_type='textbook', q=search_query, subject=subject_filter, level=level_filter) }}" 
+       class="btn {% if resource_type_filter == 'textbook' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 700;">
+        <i class="material-icons" style="font-size: 1.05rem;">menu_book</i> Textbooks ({{ textbooks_count }})
+    </a>
+    <a href="{{ url_for('library_hub', resource_type='guide', q=search_query, subject=subject_filter, level=level_filter) }}" 
+       class="btn {% if resource_type_filter == 'guide' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 700; color: {% if resource_type_filter != 'guide' %}var(--primary){% endif %}; border-color: {% if resource_type_filter != 'guide' %}rgba(212, 175, 55, 0.4){% endif %};">
+        <i class="material-icons" style="font-size: 1.05rem;">assignment</i> Study Guides ({{ guides_count }})
+    </a>
+    <a href="{{ url_for('library_hub', resource_type='lab_manual', q=search_query, subject=subject_filter, level=level_filter) }}" 
+       class="btn {% if resource_type_filter == 'lab_manual' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 700; color: {% if resource_type_filter != 'lab_manual' %}var(--success-color){% endif %}; border-color: {% if resource_type_filter != 'lab_manual' %}rgba(61, 143, 163, 0.4){% endif %};">
+        <i class="material-icons" style="font-size: 1.05rem;">science</i> Lab Manuals ({{ lab_manuals_count }})
+    </a>
+    <a href="{{ url_for('library_hub', resource_type='notes', q=search_query, subject=subject_filter, level=level_filter) }}" 
+       class="btn {% if resource_type_filter == 'notes' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 700;">
+        <i class="material-icons" style="font-size: 1.05rem;">edit_note</i> Notes &amp; Solutions ({{ notes_count }})
+    </a>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card mb-16" style="padding: 18px;">
+    <form method="GET" action="{{ url_for('library_hub') }}" style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr auto; gap: 12px; margin: 0; align-items: center;">
+        {% if resource_type_filter %}
+        <input type="hidden" name="resource_type" value="{{ resource_type_filter }}">
+        {% endif %}
+        
+        <div style="position: relative;">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search title, author, guide topic, or ISBN..." style="margin-bottom: 0; padding-left: 38px; height: 42px;">
+            <i class="material-icons" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 1.1rem; pointer-events: none;">search</i>
+        </div>
+
+        <div>
+            <select name="subject" onchange="this.form.submit()" style="margin-bottom: 0; height: 42px;">
+                <option value="">All Subjects</option>
+                {% for sub in standard_subjects %}
+                <option value="{{ sub }}" {% if subject_filter == sub %}selected{% endif %}>{{ sub }}</option>
+                {% endfor %}
+                {% for s in distinct_subjects %}
+                {% if s not in standard_subjects %}
+                <option value="{{ s }}" {% if subject_filter == s %}selected{% endif %}>{{ s }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <select name="level" onchange="this.form.submit()" style="margin-bottom: 0; height: 42px;">
+                <option value="">All Academic Levels</option>
+                <optgroup label="School Grades">
+                    {% for g in school_grades %}
+                    <option value="{{ g }}" {% if level_filter == g %}selected{% endif %}>{{ g }}</option>
+                    {% endfor %}
+                </optgroup>
+                <optgroup label="College / University">
+                    {% for y in college_years %}
+                    <option value="{{ y }}" {% if level_filter == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </optgroup>
+                <option value="General Reference" {% if level_filter == 'General Reference' %}selected{% endif %}>General Reference</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-outline" style="height: 42px; padding: 0 18px; font-size: 0.82rem; font-weight: 700; border-radius: var(--radius-sm);">Filter</button>
+            {% if search_query or subject_filter or level_filter or resource_type_filter %}
+            <a href="{{ url_for('library_hub') }}" class="btn btn-outline" style="height: 42px; width: 42px; padding: 0; display: inline-flex; align-items: center; justify-content: center;" title="Reset Filters">
+                <i class="material-icons" style="font-size: 1.1rem;">restart_alt</i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Academic Level Filter Chips -->
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+    <a href="{{ url_for('library_hub', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if not level_filter %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">layers</i> All Grades &amp; Years
+    </a>
+    <a href="{{ url_for('library_hub', level='Grade 10', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == 'Grade 10' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">school</i> Grade 10
+    </a>
+    <a href="{{ url_for('library_hub', level='Grade 12', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == 'Grade 12' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">school</i> Grade 12
+    </a>
+    <a href="{{ url_for('library_hub', level='Year 1 / 1st Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == 'Year 1 / 1st Year' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 1
+    </a>
+    <a href="{{ url_for('library_hub', level='Year 2 / 2nd Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == 'Year 2 / 2nd Year' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 2
+    </a>
+    <a href="{{ url_for('library_hub', level='Year 3 / 3rd Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == 'Year 3 / 3rd Year' %}btn-primary{% else %}btn-outline{% endif %}" 
+       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 3
+    </a>
+</div>
+
+<!-- Books & Guides Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;" id="booksGrid">
+    {% if books %}
+        {% for book in books %}
+        {% set progress = user_progress_map.get(book.id) %}
+        <div class="card" style="padding: 0; display: flex; flex-direction: column; height: 100%; border: 1px solid var(--border); background: var(--surface); transition: transform 0.2s ease, border-color 0.2s ease;">
+            <!-- Cover / Spine Area -->
+            <div style="height: 190px; background: var(--surface2); border-bottom: 1px solid var(--border); position: relative; display: flex; align-items: center; justify-content: center; padding: 14px; overflow: hidden;">
+                {% if book.cover_image_path %}
+                <img src="{{ url_for('static', filename=book.cover_image_path) }}" alt="{{ book.title }}" style="max-height: 160px; object-fit: contain; border-radius: var(--radius-sm); box-shadow: 0 8px 16px rgba(0,0,0,0.4);">
+                {% else %}
+                <!-- Auto Cyber-Glass Resource Badge -->
+                <div style="text-align: center; padding: 14px; background: rgba(32, 32, 38, 0.8); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 85%;">
+                    <i class="material-icons" style="color: {% if book.resource_type == 'guide' %}var(--primary){% elif book.resource_type == 'lab_manual' %}var(--success-color){% else %}var(--secondary-color){% endif %}; font-size: 2.2rem; display: block; margin-bottom: 4px;">{{ book.get_resource_type_icon() }}</i>
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ book.subject }}</div>
+                    <span class="badge" style="background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); border-radius: 12px; font-size: 0.68rem; padding: 2px 8px; margin-top: 6px; display: inline-block;">
+                        {{ book.get_resource_type_label() }}
+                    </span>
+                </div>
+                {% endif %}
+
+                <!-- Badges Overlay -->
+                <div style="position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 4px;">
+                    <span class="badge" style="background: var(--primary); color: #000; font-weight: 800; font-size: 0.68rem; border-radius: 12px; padding: 3px 8px;">
+                        {{ book.academic_level }}
+                    </span>
+                    <span class="badge" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); font-size: 0.65rem; border-radius: 10px; padding: 2px 6px; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="material-icons" style="font-size: 0.75rem;">{{ book.get_resource_type_icon() }}</i> {{ book.get_resource_type_label() }}
+                    </span>
+                </div>
+
+                <div style="position: absolute; top: 10px; right: 10px;">
+                    {% if book.allow_download %}
+                    <span class="badge" style="background: rgba(61, 143, 163, 0.2); color: var(--success-color); border: 1px solid rgba(61, 143, 163, 0.4); border-radius: 12px; padding: 3px 6px;" title="Download Available">
+                        <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">download</i>
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(217, 130, 43, 0.2); color: var(--danger-color); border: 1px solid rgba(217, 130, 43, 0.4); border-radius: 12px; padding: 3px 6px;" title="Read Only">
+                        <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">visibility</i>
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div style="padding: 16px; display: flex; flex-direction: column; flex: 1;">
+                <div class="flex-between" style="margin-bottom: 6px; font-size: 0.72rem; color: var(--text-dim);">
+                    <span style="max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">{{ book.subject }}</span>
+                    <span>{{ book.page_count }} pages</span>
+                </div>
+
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 0.98rem; font-weight: 700; color: var(--text); margin: 0 0 4px 0; line-height: 1.3;" title="{{ book.title }}">
+                    {{ book.title }}
+                </h3>
+                <p style="font-size: 0.75rem; color: var(--text-dim); margin: 0 0 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    By {{ book.author or 'Faculty Author' }}
+                </p>
+
+                {% if book.description %}
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0 0 14px 0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1;">
+                    {{ book.description }}
+                </p>
+                {% else %}
+                <div style="flex: 1;"></div>
+                {% endif %}
+
+                <!-- Reading Progress Bar -->
+                {% if progress %}
+                <div style="margin-bottom: 14px; padding-top: 10px; border-top: 1px solid var(--border);">
+                    <div class="flex-between" style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 4px;">
+                        <span>Page {{ progress.last_read_page }} of {{ book.page_count or '?' }}</span>
+                        <span style="color: var(--success-color); font-weight: 700;">{{ progress.percent|int }}% read</span>
+                    </div>
+                    <div style="height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ progress.percent }}%; background: var(--success-color);"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border);">
+                    <a href="{{ url_for('read_ebook', book_id=book.id) }}" class="btn btn-primary" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; font-size: 0.78rem; font-weight: 700; border-radius: var(--radius-sm); text-align: center; text-decoration: none;">
+                        <i class="material-icons" style="font-size: 0.95rem;">auto_stories</i> 
+                        {% if progress %}Resume{% else %}Read Online{% endif %}
+                    </a>
+
+                    {% if book.allow_download or current_user.role in ['admin', 'system_admin'] %}
+                    <a href="{{ url_for('download_ebook', book_id=book.id) }}" class="btn btn-outline" style="padding: 8px 10px; width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center;" title="Download PDF ({{ book.get_file_size_formatted() }})">
+                        <i class="material-icons" style="font-size: 0.95rem;">download</i>
+                    </a>
+                    {% endif %}
+
+                    {% if current_user.role in ['admin', 'system_admin'] or book.uploader_id == current_user.id %}
+                    <form method="POST" action="{{ url_for('delete_ebook', book_id=book.id) }}" onsubmit="return confirm('Delete {{ book.title }} from library?');" style="margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-outline" style="padding: 8px 10px; width: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; color: var(--danger-color); border-color: rgba(217, 130, 43, 0.3);" title="Delete">
+                            <i class="material-icons" style="font-size: 0.95rem;">delete</i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="grid-column: 1 / -1;">
+            <div class="card text-center" style="padding: 48px 24px; border: 1px dashed var(--border); background: var(--surface);">
+                <i class="material-icons" style="font-size: 48px; color: var(--primary); opacity: 0.85;">menu_book</i>
+                <h3 class="font-display" style="margin: 14px 0 6px 0; font-size: 1.15rem; color: var(--text);">No Resources Found</h3>
+                <p style="color: var(--text-dim); font-size: 0.82rem; margin: 0 0 18px 0;">No library textbooks or study guides match your filter criteria or search query.</p>
+                {% if current_user.role in ['admin', 'system_admin', 'teacher'] %}
+                <div>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadEBookModal" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; font-size: 0.85rem; border-radius: var(--radius-pill); font-weight: 700;">
+                        <i class="material-icons" style="font-size: 1.05rem;">upload_file</i> Upload First Guide or Book
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal: Upload E-Book or Guide -->
+{% if current_user.role in ['admin', 'system_admin', 'teacher'] %}
+<div class="modal fade" id="uploadEBookModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="material-icons" style="color: var(--primary);">upload_file</i>
+                    <span>Upload Textbook, Study Guide, or Manual</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_ebook') }}" enctype="multipart/form-data" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
+                <div class="modal-body">
+                    <!-- Resource Type Selector -->
+                    <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+                        <label style="font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: block;">
+                            <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">category</i> Select Resource Classification <span style="color: var(--danger-color);">*</span>
+                        </label>
+                        <select name="resource_type" id="resourceTypeSelect" required style="margin-bottom: 0; font-weight: 600;">
+                            <option value="textbook">Curriculum Textbook / Core E-Book</option>
+                            <option value="guide" selected>Study Guide / Revision Guide / Exam Prep</option>
+                            <option value="lab_manual">Lab Manual / Practical Handbook</option>
+                            <option value="notes">Lecture Notes &amp; Chapter Summary</option>
+                            <option value="solution">Solutions Manual &amp; Question Bank Guide</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Document Title / Guide Name <span style="color: var(--danger-color);">*</span></label>
+                            <input type="text" name="title" placeholder="e.g. Complete Engineering Mechanics Study Guide" required style="margin-bottom: 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Author / Faculty Name</label>
+                            <input type="text" name="author" placeholder="e.g. Dr. A. Sharma / Department Team" style="margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Subject / Course Domain <span style="color: var(--danger-color);">*</span></label>
+                            <select name="subject" id="subjectSelect" onchange="toggleCustomSubject(this.value)" style="margin-bottom: 0;">
+                                {% for sub in standard_subjects %}
+                                <option value="{{ sub }}">{{ sub }}</option>
+                                {% endfor %}
+                                <option value="custom">Other / Custom Subject...</option>
+                            </select>
+                            <input type="text" name="custom_subject" id="customSubjectInput" placeholder="Type custom subject name..." style="display: none; margin-top: 8px; margin-bottom: 0;">
+                        </div>
+
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Target Academic Level <span style="color: var(--danger-color);">*</span></label>
+                            <select name="academic_level" required style="margin-bottom: 0;">
+                                <option value="All">All Levels / General</option>
+                                <optgroup label="School Grades">
+                                    {% for g in school_grades %}
+                                    <option value="{{ g }}">{{ g }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                <optgroup label="College / University">
+                                    {% for y in college_years %}
+                                    <option value="{{ y }}">{{ y }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Institution Scope</label>
+                            <select name="institution_type" style="margin-bottom: 0;">
+                                <option value="both">Both (School &amp; College)</option>
+                                <option value="school">School Only</option>
+                                <option value="college">College / University Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Department / Stream</label>
+                            <input type="text" name="department" placeholder="e.g. CSE, Science, Commerce" style="margin-bottom: 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Edition / Guide Code</label>
+                            <input type="text" name="edition" placeholder="e.g. 2026 Revision Guide / Lab Vol 1" style="margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Description / Syllabus Coverage</label>
+                        <textarea name="description" rows="3" placeholder="Brief summary of topics covered in this study guide or manual..." style="margin-bottom: 0;"></textarea>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">PDF Document (.pdf) <span style="color: var(--danger-color);">*</span></label>
+                            <input type="file" name="pdf_file" accept=".pdf" required style="margin-bottom: 4px;">
+                            <div style="font-size: 0.7rem; color: var(--text-dim);">Upload digital guide, textbook, or reference manual.</div>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Cover / Badge Thumbnail</label>
+                            <input type="file" name="cover_image" accept="image/*" style="margin-bottom: 4px;">
+                            <div style="font-size: 0.7rem; color: var(--text-dim);">Optional JPG/PNG cover image.</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; display: flex; align-items: center; gap: 12px;">
+                        <input type="checkbox" name="allow_download" id="allowDownloadCheck" checked style="width: 18px; height: 18px; margin: 0; accent-color: var(--primary); cursor: pointer;">
+                        <div>
+                            <label for="allowDownloadCheck" style="font-size: 0.8rem; font-weight: 700; color: var(--text); cursor: pointer; display: block; margin: 0;">
+                                Allow Offline PDF Download
+                            </label>
+                            <div style="font-size: 0.72rem; color: var(--text-dim);">If unchecked, students can only view the guide online inside the secure browser reader.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="padding: 8px 18px; font-size: 0.82rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; font-size: 0.82rem; font-weight: 700;">
+                        <i class="material-icons" style="font-size: 1.05rem;">publish</i> Publish to Library
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCustomSubject(val) {
+    const customInput = document.getElementById('customSubjectInput');
+    if (val === 'custom') {
+        customInput.style.display = 'block';
+        customInput.required = true;
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
+    }
+}
+</script>
+{% endif %}
+{% endblock %}

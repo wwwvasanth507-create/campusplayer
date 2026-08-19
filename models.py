@@ -117,6 +117,11 @@ class User(UserMixin, db.Model):
     total_quizzes_taken = db.Column(db.Integer, default=0)
     achievements_json = db.Column(db.Text, default='[]')  # JSON array of achievement IDs
     quests_json = db.Column(db.Text, default='{}')        # JSON object storing daily quests state and progress
+    
+    # Equipped XP Rewards
+    equipped_avatar_frame = db.Column(db.String(100), nullable=True)
+    equipped_title = db.Column(db.String(100), nullable=True)
+    equipped_badge = db.Column(db.String(100), nullable=True)
 
     def get_achievements(self):
         return json.loads(self.achievements_json or '[]')
@@ -640,6 +645,10 @@ class Quiz(db.Model):
     passing_percent = db.Column(db.Integer, default=50)
     # NEW: Max attempts
     max_attempts = db.Column(db.Integer, default=0)  # 0 = unlimited
+    # NEW: Proctoring & Anti-cheating fields
+    proctoring_enabled = db.Column(db.Boolean, default=False)
+    max_tab_switches = db.Column(db.Integer, default=3)
+    block_copy_paste = db.Column(db.Boolean, default=True)
 
     questions = db.relationship('Question', backref='quiz', lazy=True, cascade="all, delete-orphan")
     results = db.relationship('QuizResult', backref='quiz', lazy=True, cascade="all, delete-orphan")
@@ -674,6 +683,22 @@ class QuizResult(db.Model):
     time_taken_seconds = db.Column(db.Integer, default=0)
     # NEW: Pass/fail
     passed = db.Column(db.Boolean, default=False)
+    # NEW: Proctoring fields
+    proctoring_violations_count = db.Column(db.Integer, default=0)
+    proctoring_log_json = db.Column(db.Text, default='[]')
+    auto_submitted_due_to_cheating = db.Column(db.Boolean, default=False)
+
+    def get_proctoring_log(self):
+        return json.loads(self.proctoring_log_json or '[]')
+
+    def add_proctoring_violation(self, reason):
+        logs = self.get_proctoring_log()
+        logs.append({
+            'timestamp': datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
+            'reason': reason
+        })
+        self.proctoring_log_json = json.dumps(logs)
+        self.proctoring_violations_count = (self.proctoring_violations_count or 0) + 1
 
     # === ACADEMIC ARCHIVING FIELDS ===
     is_archived = db.Column(db.Boolean, default=False)
@@ -849,6 +874,9 @@ class AssignmentSubmission(db.Model):
     graded_at = db.Column(db.DateTime, nullable=True)
     is_late = db.Column(db.Boolean, default=False)
     status = db.Column(db.String(20), default='submitted', index=True)  # submitted, graded, returned
+    # NEW: Audio submission fields
+    audio_file_path = db.Column(db.String(500), nullable=True)
+    submission_type = db.Column(db.String(20), default='standard')  # standard, audio
 
     __table_args__ = (db.UniqueConstraint('assignment_id', 'student_id', name='unique_submission'),)
 
@@ -1329,6 +1357,233 @@ class ParentAccessToken(db.Model):
 
 
 # ═══════════════════════════════════════════════════════════════
+# NEW MODELS: Announcements, Timetable & XP Rewards Store
+# ═══════════════════════════════════════════════════════════════
+
+class Announcement(db.Model):
+    """Campus-wide or classroom-specific notice board and broadcast announcement."""
+    __tablename__ = 'announcement'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    priority = db.Column(db.String(20), default='normal', index=True)  # 'normal', 'important', 'urgent'
+    target_role = db.Column(db.String(20), default='all', index=True)  # 'all', 'student', 'teacher'
+    classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=True, index=True)
+    is_pinned = db.Column(db.Boolean, default=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    expires_at = db.Column(db.DateTime, nullable=True)
+
+    author = db.relationship('User', foreign_keys=[author_id], backref=db.backref('created_announcements', lazy=True))
+    classroom = db.relationship('Classroom', backref=db.backref('announcements', lazy=True, cascade='all, delete-orphan'))
+    reads = db.relationship('AnnouncementRead', backref='announcement', lazy=True, cascade='all, delete-orphan')
+
+    def is_read_by(self, user_id):
+        return any(r.user_id == user_id for r in self.reads)
+
+
+class AnnouncementRead(db.Model):
+    """Tracks user read receipts for announcements."""
+    __tablename__ = 'announcement_read'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    announcement_id = db.Column(db.Integer, db.ForeignKey('announcement.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    read_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('announcement_id', 'user_id', name='uq_announcement_user_read'),)
+
+
+class TimetableSlot(db.Model):
+    """Weekly recurring lecture/class period slot."""
+    __tablename__ = 'timetable_slot'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False, index=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    day_of_week = db.Column(db.String(15), nullable=False, index=True)  # 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+    period_name = db.Column(db.String(50), nullable=False)  # e.g. 'Period 1', 'Morning Lab'
+    start_time = db.Column(db.String(10), nullable=False)  # '09:00'
+    end_time = db.Column(db.String(10), nullable=False)  # '10:00'
+    subject_name = db.Column(db.String(150), nullable=False)
+    room_number = db.Column(db.String(50), nullable=True)
+    meeting_link = db.Column(db.String(500), nullable=True)
+
+    classroom = db.relationship('Classroom', backref=db.backref('timetable_slots', lazy=True, cascade='all, delete-orphan'))
+    teacher = db.relationship('User', foreign_keys=[teacher_id])
+
+
+class RewardItem(db.Model):
+    """Gamification reward catalog items purchased using XP."""
+    __tablename__ = 'reward_item'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    item_type = db.Column(db.String(30), nullable=False, index=True)  # 'avatar_frame', 'title', 'badge', 'theme'
+    item_value = db.Column(db.String(200), nullable=False)  # css class, frame url, or title string
+    xp_cost = db.Column(db.Integer, default=500)
+    icon = db.Column(db.String(50), default='military_tech')
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def seed_defaults():
+        defaults = [
+            # Avatar Frames
+            ('frame_cyber_neon', 'Cyber Neon Frame', 'Glowing cyan holographic border for your avatar', 'avatar_frame', 'frame-cyber-neon', 300, 'stars'),
+            ('frame_gold_halo', 'Golden Halo Frame', 'Prestigious shimmering gold luxury frame', 'avatar_frame', 'frame-gold-halo', 600, 'military_tech'),
+            ('frame_cosmic_pulse', 'Cosmic Pulse Frame', 'Animated deep-space violet aura border', 'avatar_frame', 'frame-cosmic-pulse', 1000, 'auto_awesome'),
+            ('frame_fire_flame', 'Inferno Flame Frame', 'Dynamic animated flame glow border', 'avatar_frame', 'frame-fire-flame', 1500, 'local_fire_department'),
+            # Badges
+            ('badge_quantum_mind', 'Quantum Mind Badge', 'Verified deep thinker badge next to your name', 'badge', 'badge-quantum-mind', 400, 'psychology'),
+            ('badge_video_master', 'Video Pioneer', 'Elite continuous learning badge', 'badge', 'badge-video-master', 500, 'play_circle'),
+            ('badge_top_scorer', 'Perfectionist', 'Badge of academic excellence and precision', 'badge', 'badge-top-scorer', 800, 'verified'),
+            # Titles
+            ('title_code_wizard', 'Code Wizard', 'Custom profile and leaderboard display title', 'title', 'Code Wizard', 250, 'school'),
+            ('title_quantum_scholar', 'Quantum Scholar', 'Custom profile and leaderboard display title', 'title', 'Quantum Scholar', 500, 'workspace_premium'),
+            ('title_campus_legend', 'Campus Legend', 'The highest honor student profile title', 'title', 'Campus Legend', 2000, 'diamond'),
+        ]
+        for code, name, desc, itype, ivalue, cost, icon in defaults:
+            if not RewardItem.query.filter_by(code=code).first():
+                db.session.add(RewardItem(
+                    code=code, name=name, description=desc,
+                    item_type=itype, item_value=ivalue, xp_cost=cost, icon=icon
+                ))
+        db.session.commit()
+
+
+class UserReward(db.Model):
+    """Tracks rewards purchased and equipped by users."""
+    __tablename__ = 'user_reward'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    reward_id = db.Column(db.Integer, db.ForeignKey('reward_item.id'), nullable=False, index=True)
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_equipped = db.Column(db.Boolean, default=False, index=True)
+
+    user = db.relationship('User', backref=db.backref('user_rewards', lazy=True, cascade='all, delete-orphan'))
+    reward = db.relationship('RewardItem')
+    __table_args__ = (db.UniqueConstraint('user_id', 'reward_id', name='uq_user_reward'),)
+
+
+class EBook(db.Model):
+    """Digital textbook, reference PDF, or academic publication."""
+    __tablename__ = 'ebook'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    title = db.Column(db.String(250), nullable=False, index=True)
+    author = db.Column(db.String(150), nullable=True, index=True)
+    publisher = db.Column(db.String(150), nullable=True)
+    edition = db.Column(db.String(50), nullable=True)
+    isbn = db.Column(db.String(50), nullable=True)
+    subject = db.Column(db.String(100), nullable=False, index=True)  # e.g. Mathematics, Computer Science, Physics
+    academic_level = db.Column(db.String(50), nullable=False, default='All', index=True)  # e.g. 'Grade 10', 'Year 2', 'All'
+    institution_type = db.Column(db.String(20), default='both', index=True)  # 'school', 'college', 'both'
+    resource_type = db.Column(db.String(50), default='textbook', index=True)  # 'textbook', 'guide', 'lab_manual', 'notes', 'solution'
+    department = db.Column(db.String(100), nullable=True, index=True)  # e.g. 'CSE', 'Science', 'Commerce'
+    description = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=False)
+    file_name = db.Column(db.String(255), nullable=False)
+    cover_image_path = db.Column(db.String(500), nullable=True)
+    page_count = db.Column(db.Integer, default=0)
+    file_size_bytes = db.Column(db.BigInteger, default=0)
+    allow_download = db.Column(db.Boolean, default=True, index=True)
+    view_count = db.Column(db.Integer, default=0)
+    download_count = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    uploader = db.relationship('User', foreign_keys=[uploader_id])
+    progress_records = db.relationship('EBookProgress', backref='ebook', lazy=True, cascade='all, delete-orphan')
+
+    def get_resource_type_label(self):
+        labels = {
+            'textbook': 'Curriculum Textbook',
+            'guide': 'Study Guide',
+            'lab_manual': 'Lab Manual',
+            'notes': 'Lecture Notes',
+            'solution': 'Solutions Guide'
+        }
+        return labels.get(self.resource_type, 'Study Guide' if 'guide' in (self.resource_type or '') else 'Textbook')
+
+    def get_resource_type_icon(self):
+        icons = {
+            'textbook': 'menu_book',
+            'guide': 'assignment',
+            'lab_manual': 'science',
+            'notes': 'edit_note',
+            'solution': 'task_alt'
+        }
+        return icons.get(self.resource_type, 'auto_stories')
+
+    def get_file_size_formatted(self):
+        if not self.file_size_bytes:
+            return '0 KB'
+        size = float(self.file_size_bytes)
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+
+    def get_progress_for_user(self, user_id):
+        if not user_id:
+            return None
+        return next((p for p in self.progress_records if p.user_id == user_id), None)
+
+
+class EBookProgress(db.Model):
+    """Tracks a user's reading progress and bookmarks for an e-book."""
+    __tablename__ = 'ebook_progress'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    ebook_id = db.Column(db.Integer, db.ForeignKey('ebook.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    last_read_page = db.Column(db.Integer, default=1)
+    percent_completed = db.Column(db.Float, default=0.0)
+    last_read_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User', backref=db.backref('ebook_progresses', lazy=True, cascade='all, delete-orphan'))
+    __table_args__ = (db.UniqueConstraint('ebook_id', 'user_id', name='uq_ebook_user_progress'),)
+
+
+class AICopilotInteraction(db.Model):
+    """Logs student AI Lecture Copilot doubts, citations, and micro-quiz results."""
+    __tablename__ = 'ai_copilot_interaction'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id'), nullable=False, index=True)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Text, nullable=False)
+    playback_timestamp = db.Column(db.Float, default=0.0)
+    cited_timestamp = db.Column(db.Float, nullable=True)
+    cited_timestamp_formatted = db.Column(db.String(20), nullable=True)
+    cited_book_id = db.Column(db.Integer, db.ForeignKey('ebook.id'), nullable=True)
+    cited_page = db.Column(db.Integer, nullable=True)
+    micro_quiz_json = db.Column(db.Text, nullable=True)
+    quiz_answered = db.Column(db.Boolean, default=False)
+    quiz_correct = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    video = db.relationship('Video', foreign_keys=[video_id])
+    cited_book = db.relationship('EBook', foreign_keys=[cited_book_id])
+
+    def get_micro_quiz(self):
+        if not self.micro_quiz_json:
+            return None
+        try:
+            return json.loads(self.micro_quiz_json)
+        except Exception:
+            return None
+
+
+# ═══════════════════════════════════════════════════════════════
 # MULTI-TENANCY INTERCEPTORS (Automatic Query & Insert Isolation)
 # ═══════════════════════════════════════════════════════════════
 from flask import has_request_context, g
@@ -1416,7 +1671,9 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             VideoBookmark, VideoProgress, LeaderboardEntry, EmailQueue,
             StudentRemark, EmailDeliveryLog, ConversionJob, ClassWeeklyReport,
             VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
-            VideoFlashcard, AcademicCertificate, ParentAccessToken
+            VideoFlashcard, AcademicCertificate, ParentAccessToken,
+            Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
+            EBook, EBookProgress, AICopilotInteraction
         ]
         
         # Bypass before_compile filter by setting ignore flag on g

@@ -2156,7 +2156,115 @@ class CampusPlayer {
     }
 }
 
-// Auto-initialize on DOM ready
+// ═══════════════════════════════════════════════════════════════
+//  CAMPUS PLAYER UNIVERSAL MODAL SYSTEM & BOOTSTRAP 5 ADAPTER
+// ═══════════════════════════════════════════════════════════════
+class CampusModal {
+    constructor(element, options = {}) {
+        this.element = typeof element === 'string' ? document.querySelector(element) : element;
+        this.options = options;
+        if (this.element) {
+            this.element._campusModal = this;
+        }
+    }
+
+    static getInstance(element) {
+        const el = typeof element === 'string' ? document.querySelector(element) : element;
+        return el ? (el._campusModal || new CampusModal(el)) : null;
+    }
+
+    static getOrCreateInstance(element, options) {
+        const el = typeof element === 'string' ? document.querySelector(element) : element;
+        return el ? (el._campusModal || new CampusModal(el, options)) : null;
+    }
+
+    show() {
+        if (!this.element) return;
+        this.element.style.display = 'flex';
+        // Force reflow for CSS transition
+        void this.element.offsetHeight;
+        this.element.classList.add('show');
+        this.element.setAttribute('aria-modal', 'true');
+        this.element.setAttribute('role', 'dialog');
+        this.element.removeAttribute('aria-hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hide() {
+        if (!this.element) return;
+        this.element.classList.remove('show');
+        setTimeout(() => {
+            if (!this.element.classList.contains('show')) {
+                this.element.style.display = 'none';
+            }
+        }, 200);
+        this.element.setAttribute('aria-hidden', 'true');
+        this.element.removeAttribute('aria-modal');
+        if (!document.querySelector('.modal.show')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    toggle() {
+        if (!this.element) return;
+        if (this.element.classList.contains('show')) {
+            this.hide();
+        } else {
+            this.show();
+        }
+    }
+}
+
+// Guarantee window.bootstrap & bootstrap.Modal availability
+if (typeof window.bootstrap === 'undefined') {
+    window.bootstrap = {};
+}
+if (!window.bootstrap.Modal) {
+    window.bootstrap.Modal = CampusModal;
+}
+
+// Global Event Listeners for Modals (data-bs-toggle and data-bs-dismiss)
 document.addEventListener('DOMContentLoaded', () => {
     window.campusPlayerReady = true;
+
+    // Delegated click handler
+    document.addEventListener('click', function (e) {
+        const toggleBtn = e.target.closest('[data-bs-toggle="modal"], [data-toggle="modal"]');
+        if (toggleBtn) {
+            e.preventDefault();
+            const targetSelector = toggleBtn.getAttribute('data-bs-target') || toggleBtn.getAttribute('data-target') || toggleBtn.getAttribute('href');
+            if (targetSelector && targetSelector.startsWith('#')) {
+                const modalEl = document.querySelector(targetSelector);
+                if (modalEl) {
+                    CampusModal.getOrCreateInstance(modalEl).show();
+                }
+            }
+            return;
+        }
+
+        const dismissBtn = e.target.closest('[data-bs-dismiss="modal"], [data-dismiss="modal"]');
+        if (dismissBtn) {
+            e.preventDefault();
+            const modalEl = dismissBtn.closest('.modal');
+            if (modalEl) {
+                CampusModal.getOrCreateInstance(modalEl).hide();
+            }
+            return;
+        }
+
+        // Close when clicking modal backdrop
+        if (e.target.classList && e.target.classList.contains('modal')) {
+            CampusModal.getOrCreateInstance(e.target).hide();
+        }
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            const openModals = document.querySelectorAll('.modal.show');
+            if (openModals.length > 0) {
+                CampusModal.getOrCreateInstance(openModals[openModals.length - 1]).hide();
+            }
+        }
+    });
 });

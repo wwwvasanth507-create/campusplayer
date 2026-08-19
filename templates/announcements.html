@@ -1,0 +1,237 @@
+{% extends "layout.html" %}
+{% block title %}Notice Board — Campus Player{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="card card-royal mb-16" style="padding: 24px;">
+    <div class="flex-between" style="flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="badge" style="background: rgba(212, 175, 55, 0.12); color: var(--primary); border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;">
+                    <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">campaign</i> OFFICIAL BROADCAST
+                </span>
+                <span style="color: var(--text-dim); font-size: 0.78rem;">Institution Notice Hub</span>
+            </div>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.6rem;">Campus Notice Board</h1>
+            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.82rem;">Stay informed with real-time academic circulars, timetable updates, and official alerts.</p>
+        </div>
+        {% if current_user.role in ['admin', 'system_admin', 'teacher'] %}
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAnnouncementModal" style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700; border-radius: var(--radius-pill);">
+                <i class="material-icons" style="font-size: 1rem;">add_circle</i> Post Announcement
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Announcement Filter Pills -->
+<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+    <button type="button" class="btn btn-primary filter-btn" data-filter="all" style="padding: 6px 14px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+        All Notices ({{ announcements|length }})
+    </button>
+    <button type="button" class="btn btn-outline filter-btn" data-filter="urgent" style="padding: 6px 14px; font-size: 0.78rem; border-radius: var(--radius-pill); color: var(--danger-color); border-color: rgba(217, 130, 43, 0.3);">
+        <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">warning</i> Urgent
+    </button>
+    <button type="button" class="btn btn-outline filter-btn" data-filter="important" style="padding: 6px 14px; font-size: 0.78rem; border-radius: var(--radius-pill); color: var(--primary); border-color: rgba(212, 175, 55, 0.3);">
+        <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">priority_high</i> Important
+    </button>
+    <button type="button" class="btn btn-outline filter-btn" data-filter="pinned" style="padding: 6px 14px; font-size: 0.78rem; border-radius: var(--radius-pill); color: var(--secondary-color); border-color: rgba(37, 65, 178, 0.3);">
+        <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">push_pin</i> Pinned
+    </button>
+</div>
+
+<!-- Announcements Feed -->
+<div style="display: flex; flex-direction: column; gap: 16px;" id="announcementsGrid">
+    {% if announcements %}
+        {% for ann in announcements %}
+        <div class="announcement-card-wrapper" data-priority="{{ ann.priority }}" data-pinned="{{ 'pinned' if ann.is_pinned else 'unpinned' }}">
+            <div class="card" style="padding: 22px; background: var(--surface); border: 1px solid {% if ann.priority == 'urgent' %}rgba(217, 130, 43, 0.4){% elif ann.priority == 'important' %}rgba(212, 175, 55, 0.4){% else %}var(--border){% endif %};">
+                <div class="flex-between" style="align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                        {% if ann.is_pinned %}
+                        <span class="badge" style="background: rgba(37, 65, 178, 0.2); color: var(--secondary-color); border: 1px solid rgba(37, 65, 178, 0.4); border-radius: 12px; padding: 2px 8px; font-size: 0.7rem; font-weight: 700;">
+                            <i class="material-icons" style="font-size: 0.75rem; vertical-align: middle;">push_pin</i> PINNED
+                        </span>
+                        {% endif %}
+                        
+                        {% if ann.priority == 'urgent' %}
+                        <span class="badge" style="background: rgba(217, 130, 43, 0.2); color: var(--danger-color); border: 1px solid rgba(217, 130, 43, 0.4); border-radius: 12px; padding: 3px 10px; font-size: 0.72rem; font-weight: 800;">
+                            <i class="material-icons" style="font-size: 0.8rem; vertical-align: middle;">emergency</i> URGENT
+                        </span>
+                        {% elif ann.priority == 'important' %}
+                        <span class="badge" style="background: rgba(212, 175, 55, 0.2); color: var(--primary); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 12px; padding: 3px 10px; font-size: 0.72rem; font-weight: 800;">
+                            <i class="material-icons" style="font-size: 0.8rem; vertical-align: middle;">notifications_active</i> IMPORTANT
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); border-radius: 12px; padding: 3px 10px; font-size: 0.72rem;">
+                            <i class="material-icons" style="font-size: 0.8rem; vertical-align: middle;">info</i> NOTICE
+                        </span>
+                        {% endif %}
+
+                        {% if ann.classroom %}
+                        <span class="badge" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; font-size: 0.72rem;">
+                            <i class="material-icons" style="font-size: 0.75rem; vertical-align: middle;">school</i> {{ ann.classroom.name }}
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; font-size: 0.72rem;">
+                            <i class="material-icons" style="font-size: 0.75rem; vertical-align: middle;">public</i> Campus Wide
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: var(--text-dim); font-size: 0.75rem;">{{ ann.created_at.strftime('%b %d, %Y • %I:%M %p') }}</span>
+                        {% if current_user.role in ['admin', 'system_admin'] or ann.author_id == current_user.id %}
+                        <form method="POST" action="{{ url_for('delete_announcement', announcement_id=ann.id) }}" onsubmit="return confirm('Delete this announcement?');" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-outline" style="padding: 4px 8px; min-height: 28px; width: 28px; color: var(--danger-color); border-color: rgba(217, 130, 43, 0.3);" title="Delete">
+                                <i class="material-icons" style="font-size: 0.85rem;">delete</i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text); margin: 0 0 8px 0;">{{ ann.title }}</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; white-space: pre-line; margin: 0 0 16px 0;">{{ ann.content }}</p>
+
+                <div class="flex-between" style="padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: var(--primary);">
+                            {{ ann.author.name[0].upper() if ann.author else 'A' }}
+                        </div>
+                        <span style="font-size: 0.78rem; color: var(--text-dim);">Posted by <strong style="color: var(--text);">{{ ann.author.name if ann.author else 'Administration' }}</strong> ({{ ann.author.role.title() if ann.author else 'Admin' }})</span>
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline mark-read-btn" data-id="{{ ann.id }}" style="padding: 6px 14px; font-size: 0.78rem; border-radius: var(--radius-pill);">
+                        <i class="material-icons" style="font-size: 0.85rem;">done_all</i> Mark Acknowledged
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card text-center" style="padding: 48px 24px; border: 1px dashed var(--border); background: var(--surface);">
+            <i class="material-icons" style="font-size: 48px; color: var(--text-dim); opacity: 0.5;">mark_email_read</i>
+            <h3 class="font-display" style="margin: 12px 0 4px 0; font-size: 1.1rem; color: var(--text);">No Active Announcements</h3>
+            <p style="color: var(--text-dim); font-size: 0.82rem; margin: 0;">All clear! Check back later for campus notices and academic updates.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal: Post Announcement -->
+{% if current_user.role in ['admin', 'system_admin', 'teacher'] %}
+<div class="modal fade" id="createAnnouncementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="material-icons" style="color: var(--primary);">campaign</i>
+                    <span>Broadcast Announcement</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_announcement') }}" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="modal-body">
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Title / Headline <span style="color: var(--danger-color);">*</span></label>
+                        <input type="text" name="title" placeholder="e.g. Midterm Exam Schedule Released" required style="margin-bottom: 0;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Priority Level</label>
+                            <select name="priority" style="margin-bottom: 0;">
+                                <option value="normal">Normal Notice</option>
+                                <option value="important">Important Alert</option>
+                                <option value="urgent">Urgent / Critical</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Target Audience</label>
+                            <select name="target_role" style="margin-bottom: 0;">
+                                <option value="all">Everyone (All)</option>
+                                <option value="student">Students Only</option>
+                                <option value="teacher">Faculty / Teachers Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Classroom Scope (Optional)</label>
+                        <select name="classroom_id" style="margin-bottom: 0;">
+                            <option value="">Institution-Wide (All Classes)</option>
+                            {% for c in user_classes %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Announcement Content <span style="color: var(--danger-color);">*</span></label>
+                        <textarea name="content" rows="4" placeholder="Type announcement details, important instructions, or deadlines..." required style="margin-bottom: 0;"></textarea>
+                    </div>
+
+                    <div style="background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" name="is_pinned" id="isPinnedCheck" style="width: 18px; height: 18px; margin: 0; accent-color: var(--primary); cursor: pointer;">
+                        <label for="isPinnedCheck" style="font-size: 0.8rem; font-weight: 600; color: var(--text); cursor: pointer; margin: 0;">Pin to top of notice board</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="padding: 8px 18px; font-size: 0.82rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.82rem; font-weight: 700;">Publish Broadcast</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.announcement-card-wrapper');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => {
+                b.className = 'btn btn-outline filter-btn';
+            });
+            btn.className = 'btn btn-primary filter-btn';
+            const filter = btn.getAttribute('data-filter');
+
+            cards.forEach(card => {
+                if (filter === 'all') {
+                    card.style.display = 'block';
+                } else if (filter === 'pinned') {
+                    card.style.display = card.getAttribute('data-pinned') === 'pinned' ? 'block' : 'none';
+                } else {
+                    card.style.display = card.getAttribute('data-priority') === filter ? 'block' : 'none';
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.mark-read-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-id');
+            btn.innerHTML = '<i class="material-icons" style="font-size:0.85rem;">check</i> Acknowledged';
+            btn.style.color = 'var(--success-color)';
+            btn.disabled = true;
+            try {
+                await fetch(`/api/announcements/${id}/mark_read`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+            } catch (err) {
+                console.warn('Mark read error:', err);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

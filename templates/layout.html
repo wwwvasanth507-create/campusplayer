@@ -4,12 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
     <title>{% block title %}Campus Video Player{% endblock %}</title>
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/player.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
@@ -1354,6 +1357,167 @@
             color: inherit !important;
             text-decoration: none !important;
         }
+
+        /* ── Cyber-Glass Universal Modal System ── */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1055;
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto;
+            outline: 0;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: opacity 0.2s ease;
+        }
+
+        .modal.fade {
+            opacity: 0;
+        }
+
+        .modal.show,
+        .modal.fade.show {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            opacity: 1 !important;
+        }
+
+        .modal-dialog {
+            position: relative;
+            width: 94%;
+            max-width: 580px;
+            margin: auto;
+            pointer-events: auto;
+            transform: translateY(-16px) scale(0.98);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal.show .modal-dialog {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-dialog-centered {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100% - 2rem);
+        }
+
+        .modal-dialog.modal-lg {
+            max-width: 820px;
+        }
+
+        .modal-dialog.modal-sm {
+            max-width: 420px;
+        }
+
+        .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            pointer-events: auto;
+            background: var(--surface) !important;
+            color: var(--text) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius) !important;
+            outline: 0;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+            overflow: hidden;
+            max-height: 88vh;
+        }
+
+        .modal-header {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border) !important;
+            background: var(--surface2);
+        }
+
+        .modal-title {
+            margin-bottom: 0;
+            line-height: 1.4;
+            font-size: 1.15rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text) !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-body {
+            position: relative;
+            flex: 1 1 auto;
+            padding: 22px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--scrollbar-thumb) transparent;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 10px;
+        }
+
+        .modal-footer {
+            display: flex;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 14px 22px;
+            border-top: 1px solid var(--border) !important;
+            background: var(--surface2);
+        }
+
+        .btn-close,
+        .btn-close-white {
+            box-sizing: content-box;
+            width: 1.1em;
+            height: 1.1em;
+            padding: 0.25em;
+            color: var(--text-dim);
+            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat !important;
+            border: 0;
+            border-radius: 0.375rem;
+            opacity: 0.7;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-close:hover,
+        .btn-close-white:hover {
+            opacity: 1;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1050;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+        }
     </style>
     {% block head %}{% endblock %}
     {% block head_extra %}{% endblock %}
@@ -1440,10 +1604,18 @@
                 class="s-nav-link {{ 'active' if request.endpoint == 'system_admin_dashboard' }}">
                 <i class="material-icons">admin_panel_settings</i> System Admin
             </a>
+            <a href="{{ url_for('library_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['library_hub', 'read_ebook'] }}">
+                <i class="material-icons">menu_book</i> Digital Library
+            </a>
             {% elif current_user.role == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'admin_dashboard' }}">
                 <i class="material-icons">dashboard</i> Dashboard
+            </a>
+            <a href="{{ url_for('library_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['library_hub', 'read_ebook'] }}">
+                <i class="material-icons">menu_book</i> Digital Library
             </a>
             <a href="{{ url_for('admin_teachers_page') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'admin_teachers_page' }}">
@@ -1472,10 +1644,30 @@
                 class="s-nav-link {{ 'active' if request.endpoint == 'admin_email_monitoring' }}">
                 <i class="material-icons">email</i> Email Monitoring
             </a>
+            <a href="{{ url_for('announcements_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'announcements_hub' }}">
+                <i class="material-icons">campaign</i> Notice Board
+            </a>
+            <a href="{{ url_for('timetable_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'timetable_hub' }}">
+                <i class="material-icons">calendar_month</i> Timetable
+            </a>
             {% elif current_user.role == 'teacher' %}
             <a href="{{ url_for('teacher_dashboard') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_dashboard' }}">
                 <i class="material-icons">space_dashboard</i> Dashboard
+            </a>
+            <a href="{{ url_for('library_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['library_hub', 'read_ebook'] }}">
+                <i class="material-icons">menu_book</i> Digital Library
+            </a>
+            <a href="{{ url_for('announcements_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'announcements_hub' }}">
+                <i class="material-icons">campaign</i> Notice Board
+            </a>
+            <a href="{{ url_for('timetable_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'timetable_hub' }}">
+                <i class="material-icons">calendar_month</i> Timetable
             </a>
             <a href="{{ url_for('teacher_videos_page') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_videos_page' }}">
@@ -1541,6 +1733,22 @@
             <a href="{{ url_for('student_dashboard') }}"
                 class="s-nav-link {{ 'active' if request.endpoint in ['student_dashboard','watch_video'] }}">
                 <i class="material-icons">explore</i> Discover
+            </a>
+            <a href="{{ url_for('library_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['library_hub', 'read_ebook'] }}">
+                <i class="material-icons">menu_book</i> Digital Library
+            </a>
+            <a href="{{ url_for('announcements_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'announcements_hub' }}">
+                <i class="material-icons">campaign</i> Notice Board
+            </a>
+            <a href="{{ url_for('timetable_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'timetable_hub' }}">
+                <i class="material-icons">calendar_month</i> Timetable
+            </a>
+            <a href="{{ url_for('rewards_store_hub') }}"
+                class="s-nav-link {{ 'active' if request.endpoint == 'rewards_store_hub' }}">
+                <i class="material-icons">shopping_bag</i> XP Rewards Store
             </a>
             <a href="{{ url_for('view_notifications') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'view_notifications' }}">
@@ -1994,7 +2202,39 @@
                 closeAutocomplete();
             }
         });
+
+        // ── Progressive Web App (PWA) Service Worker Registration ──
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((reg) => {
+                        console.log('[PWA] ServiceWorker registered with scope:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.warn('[PWA] ServiceWorker registration skipped:', err);
+                    });
+            });
+        }
     </script>
+    <style>
+        /* Avatar Holographic & Neon Frames */
+        .frame-cyber-neon {
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.8), 0 0 25px rgba(6, 182, 212, 0.4);
+            border: 2px solid #06b6d4 !important;
+        }
+        .frame-gold-halo {
+            box-shadow: 0 0 14px rgba(234, 179, 8, 0.8), 0 0 30px rgba(234, 179, 8, 0.4);
+            border: 2px solid #eab308 !important;
+        }
+        .frame-cosmic-pulse {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.9), 0 0 30px rgba(168, 85, 247, 0.5);
+            border: 2px solid #a855f7 !important;
+        }
+        .frame-fire-flame {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.9), 0 0 30px rgba(249, 115, 22, 0.6);
+            border: 2px solid #f97316 !important;
+        }
+    </style>
     {% block scripts %}{% endblock %}
 </body>
 

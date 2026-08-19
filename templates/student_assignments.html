@@ -87,6 +87,16 @@
                         {% if sub.is_late %}<span style="color:var(--danger-color); font-weight:700; margin-left:4px;">(Late Delivery)</span>{% endif %}
                     </div>
                 </div>
+
+                {% if sub.audio_file_path %}
+                <div class="mt-2 mb-2 p-2 rounded-3 bg-dark border border-secondary border-opacity-50">
+                    <span class="small text-white-50 d-block mb-1">Your Voice Response:</span>
+                    <audio controls style="width:100%; height:36px;">
+                        <source src="{{ url_for('static', filename=sub.audio_file_path) }}" type="audio/webm">
+                    </audio>
+                </div>
+                {% endif %}
+
                 {% if sub.feedback %}
                 <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.8rem; color:var(--text); line-height:1.5; margin-top:8px;">
                     <strong style="color:var(--primary);">Faculty Feedback:</strong> {{ sub.feedback }}
@@ -96,6 +106,30 @@
             {% else %}
             <div style="border-top:1px solid var(--border); padding-top:16px; margin-top:12px;">
                 {% set rmode = a.response_mode or 'either' %}
+                
+                <!-- Audio Recording Widget -->
+                <div class="card p-3 mb-3 bg-dark border-secondary" style="border-radius: 12px; background: rgba(15,23,42,0.6);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-white small d-flex align-items-center gap-1">
+                            <span class="material-icons text-primary fs-5">mic</span> Oral / Voice Recording Submission
+                        </strong>
+                        <span id="record-timer-{{ a.id }}" class="badge bg-danger rounded-pill px-2 py-1 font-mono" style="display:none;">00:00</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" id="start-rec-{{ a.id }}" onclick="startAudioRecord({{ a.id }})">
+                            <span class="material-icons align-middle fs-6 me-1">fiber_manual_record</span> Record Mic
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 fw-bold" id="stop-rec-{{ a.id }}" onclick="stopAudioRecord({{ a.id }})" style="display:none;">
+                            <span class="material-icons align-middle fs-6 me-1">stop</span> Stop
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold" id="upload-rec-{{ a.id }}" onclick="uploadAudioRecord({{ a.id }})" style="display:none;">
+                            <span class="material-icons align-middle fs-6 me-1">cloud_upload</span> Submit Audio
+                        </button>
+                    </div>
+                    <audio id="audio-preview-{{ a.id }}" controls style="width:100%; height:36px; display:none;" class="mt-2"></audio>
+                </div>
+
                 <form method="POST" action="{{ url_for('submit_assignment', assignment_id=a.id) }}" enctype="multipart/form-data" style="margin:0;">
                     {% if rmode in ('either', 'type_only') %}
                     <div style="margin-bottom:12px;">
@@ -111,7 +145,7 @@
                     {% endif %}
                     <div style="display:flex; justify-content:flex-end;">
                         <button type="submit" class="btn btn-primary" style="padding:8px 18px; font-size:0.82rem;">
-                            <i class="material-icons" style="font-size:0.95rem;">cloud_upload</i> Submit Assignment
+                            <i class="material-icons" style="font-size:0.95rem;">cloud_upload</i> Submit Written Assignment
                         </button>
                     </div>
                 </form>
@@ -127,4 +161,91 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+let mediaRecorders = {};
+let audioChunks = {};
+let audioBlobs = {};
+let timerIntervals = {};
+
+async function startAudioRecord(assignmentId) {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorders[assignmentId] = mediaRecorder;
+        audioChunks[assignmentId] = [];
+
+        mediaRecorder.ondataavailable = e => {
+            if (e.data.size > 0) audioChunks[assignmentId].push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks[assignmentId], { type: 'audio/webm' });
+            audioBlobs[assignmentId] = blob;
+            const preview = document.getElementById(`audio-preview-${assignmentId}`);
+            preview.src = URL.createObjectURL(blob);
+            preview.style.display = 'block';
+            document.getElementById(`upload-rec-${assignmentId}`).style.display = 'inline-flex';
+        };
+
+        mediaRecorder.start();
+        document.getElementById(`start-rec-${assignmentId}`).style.display = 'none';
+        document.getElementById(`stop-rec-${assignmentId}`).style.display = 'inline-flex';
+        
+        let secs = 0;
+        const timerEl = document.getElementById(`record-timer-${assignmentId}`);
+        timerEl.style.display = 'inline-block';
+        timerIntervals[assignmentId] = setInterval(() => {
+            secs++;
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            timerEl.textContent = `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+        }, 1000);
+    } catch (err) {
+        alert('Microphone access denied or unsupported browser.');
+    }
+}
+
+function stopAudioRecord(assignmentId) {
+    if (mediaRecorders[assignmentId] && mediaRecorders[assignmentId].state !== 'inactive') {
+        mediaRecorders[assignmentId].stop();
+        mediaRecorders[assignmentId].stream.getTracks().forEach(t => t.stop());
+    }
+    clearInterval(timerIntervals[assignmentId]);
+    document.getElementById(`stop-rec-${assignmentId}`).style.display = 'none';
+}
+
+async function uploadAudioRecord(assignmentId) {
+    const blob = audioBlobs[assignmentId];
+    if (!blob) return;
+
+    const fd = new FormData();
+    fd.append('audio_file', blob, 'audio_response.webm');
+
+    const uploadBtn = document.getElementById(`upload-rec-${assignmentId}`);
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Submitting...';
+
+    try {
+        const res = await fetch(`/assignment/${assignmentId}/submit_audio`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: fd
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('Voice assignment submitted successfully!');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Failed to submit voice assignment.');
+            uploadBtn.disabled = false;
+        }
+    } catch (err) {
+        alert('Network error submitting voice assignment.');
+        uploadBtn.disabled = false;
+    }
+}
+</script>
 {% endblock %}

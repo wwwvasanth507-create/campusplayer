@@ -119,6 +119,19 @@
                         </a>
                     </div>
                     {% endif %}
+
+                    {% if sub.audio_file_path %}
+                    <div style="margin-top: {{ '10px' if sub.file_path or sub.content else '0' }};">
+                        <span style="font-size:0.72rem; color:var(--primary); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:4px; margin-bottom:6px;">
+                            <i class="material-icons" style="font-size:0.95rem;">mic</i> Oral / Audio Homework Recording:
+                        </span>
+                        <audio controls style="width: 100%; height: 38px; border-radius: 8px;">
+                            <source src="{{ url_for('static', filename=sub.audio_file_path) }}" type="audio/webm">
+                            <source src="{{ url_for('static', filename=sub.audio_file_path) }}" type="audio/mpeg">
+                            Your browser does not support audio playback.
+                        </audio>
+                    </div>
+                    {% endif %}
                 </div>
 
                 {% if sub.status == 'graded' and sub.feedback %}

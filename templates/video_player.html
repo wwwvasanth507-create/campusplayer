@@ -1562,6 +1562,10 @@
                     </div>
                 </div>
                 <div class="vp-action-buttons" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button onclick="document.getElementById('ai-copilot-section').scrollIntoView({behavior:'smooth'}); document.getElementById('copilot-question-input').focus();" class="btn btn-primary" id="vp-ai-copilot-btn" style="padding:7px 16px; font-size:0.8rem; font-weight:800; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, var(--primary) 0%, #b38f20 100%); color:#000; border:none; box-shadow:0 0 16px rgba(212,175,55,0.35);">
+                        <i class="material-icons" style="font-size:0.95rem;">auto_awesome</i>
+                        <span>AI Lecture Copilot</span>
+                    </button>
                     <a href="{{ url_for('ai_assistant', video_id=video.id, t=0) }}" class="btn btn-primary" id="vp-ai-summarize-btn" style="padding:7px 14px; font-size:0.8rem; display:inline-flex; align-items:center; gap:6px;">
                         <i class="material-icons" style="font-size:0.95rem;">smart_toy</i>
                         <span>AI Summarize</span>
@@ -1615,6 +1619,81 @@
                 <p class="vp-desc-text">{{ video.description }}</p>
             </div>
             {% endif %}
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- 🧠 AI LECTURE COPILOT & INSTANT TIMESTAMP CITATION ENGINE      -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <div id="ai-copilot-section" class="card mb-16" style="padding:22px; margin-top:20px; background:var(--surface); border:1px solid rgba(212,175,55,0.35); border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+                
+                <!-- Copilot Header with Live Exam Readiness Radar -->
+                <div class="flex-between" style="border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:40px; height:40px; border-radius:10px; background:rgba(212,175,55,0.15); border:1px solid rgba(212,175,55,0.3); display:flex; align-items:center; justify-content:center; color:var(--primary);">
+                            <i class="material-icons" style="font-size:1.35rem;">psychology</i>
+                        </div>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <h3 class="font-display" style="margin:0; font-size:1.1rem; color:var(--text); font-weight:800;">
+                                    AI Lecture Copilot
+                                </h3>
+                                <span class="badge" style="background:rgba(212,175,55,0.15); color:var(--primary); border:1px solid rgba(212,175,55,0.3); font-size:0.68rem; padding:2px 8px; border-radius:12px; font-weight:700;">
+                                    LIVE MULTI-MODAL TUTOR
+                                </span>
+                            </div>
+                            <span style="font-size:0.75rem; color:var(--text-dim);">Ask any doubt by voice or text &bull; Click timestamp citations to jump video &bull; Instant micro-quizzes</span>
+                        </div>
+                    </div>
+
+                    <!-- Live Exam Readiness Meter -->
+                    <div id="copilot-readiness-widget" style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:6px 14px; display:flex; align-items:center; gap:10px;">
+                        <div style="text-align:right;">
+                            <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Exam Readiness</div>
+                            <div id="copilot-readiness-status" style="font-size:0.78rem; font-weight:700; color:var(--primary);">Loading...</div>
+                        </div>
+                        <div style="position:relative; width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(212,175,55,0.1); border-radius:50%; border:2px solid var(--primary); font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:800; color:var(--primary);" id="copilot-readiness-score">
+                            --%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Prompt Chips -->
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                    <button type="button" onclick="askQuickCopilotPrompt('Explain the main concept taught at the current video timestamp in simple terms.')" class="btn btn-outline" style="padding:4px 12px; font-size:0.74rem; border-radius:var(--radius-pill); color:var(--primary); border-color:rgba(212,175,55,0.35);">
+                        <i class="material-icons" style="font-size:0.8rem;">timer</i> Explain Current Moment
+                    </button>
+                    <button type="button" onclick="askQuickCopilotPrompt('What are the key formulas and equations derived in this lecture?')" class="btn btn-outline" style="padding:4px 12px; font-size:0.74rem; border-radius:var(--radius-pill);">
+                        <i class="material-icons" style="font-size:0.8rem;">functions</i> Key Formulas &amp; Equations
+                    </button>
+                    <button type="button" onclick="askQuickCopilotPrompt('What are the most frequent exam questions on this lecture topic?')" class="btn btn-outline" style="padding:4px 12px; font-size:0.74rem; border-radius:var(--radius-pill);">
+                        <i class="material-icons" style="font-size:0.8rem;">quiz</i> Typical Exam Questions
+                    </button>
+                    <button type="button" onclick="askQuickCopilotPrompt('Give me a 3-bullet summary of the core principles taught so far.')" class="btn btn-outline" style="padding:4px 12px; font-size:0.74rem; border-radius:var(--radius-pill);">
+                        <i class="material-icons" style="font-size:0.8rem;">summarize</i> Quick 3-Bullet Summary
+                    </button>
+                </div>
+
+                <!-- Copilot Stream Box -->
+                <div id="copilot-stream-container" style="max-height:450px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; padding:14px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; margin-bottom:14px;">
+                    <div id="copilot-empty-state" style="text-align:center; padding:28px 12px; color:var(--text-dim); font-size:0.84rem;">
+                        <i class="material-icons" style="font-size:36px; color:var(--primary); opacity:0.85; display:block; margin-bottom:8px;">auto_awesome</i>
+                        Ask any question or tap a prompt above. The AI Copilot will cite the exact lecture video timestamp and test your understanding!
+                    </div>
+                </div>
+
+                <!-- Voice & Text Input Bar -->
+                <div style="display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:30px; padding:5px 8px 5px 16px;">
+                    <input type="text" id="copilot-question-input" placeholder="Ask AI Lecture Copilot any doubt (e.g. Why did we take derivative here?)..." style="flex:1; background:transparent; border:none; color:var(--text); font-size:0.88rem; margin:0; outline:none;" onkeydown="if(event.key==='Enter') sendCopilotQuestion();">
+                    
+                    <!-- Voice Mic Button (Browser SpeechRecognition API) -->
+                    <button type="button" id="copilot-mic-btn" onclick="toggleVoiceDictation()" class="btn btn-outline" style="width:36px; height:36px; min-height:36px; border-radius:50%; padding:0; display:inline-flex; align-items:center; justify-content:center; color:var(--primary); border-color:rgba(212,175,55,0.4);" title="Speak your question using microphone">
+                        <i class="material-icons" id="copilot-mic-icon" style="font-size:1.1rem;">mic</i>
+                    </button>
+
+                    <button type="button" onclick="sendCopilotQuestion()" id="copilot-send-btn" class="btn btn-primary" style="width:36px; height:36px; min-height:36px; border-radius:50%; padding:0; display:inline-flex; align-items:center; justify-content:center;">
+                        <i class="material-icons" style="font-size:1.1rem;">send</i>
+                    </button>
+                </div>
+            </div>
 
             <!-- ═══════════════════════════════════════════════════════════════ -->
             <!-- AI VIDEO SUMMARIZER SECTION (At the bottom of video player)     -->
@@ -1879,38 +1958,112 @@
             </div>
         </div>
 
-        <!-- ─── SIDEBAR ─── -->
+        <!-- ─── SIDEBAR TABBED PANEL ─── -->
         <div class="vp-sidebar">
-            <h3 class="vp-sidebar-title">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
-                Related Videos
-            </h3>
-            <div class="vp-sidebar-list">
-                {% for related in related_videos %}
-                <a href="{{ url_for('watch_video', video_id=related.id) }}" class="vp-related-card">
-                    <div class="vp-related-thumb">
-                        {% if related.video_type == 'youtube' or related.thumbnail_path %}
-                        <img src="{{ related.thumbnail_url }}" alt="{{ related.title }}" loading="lazy">
-                        {% else %}
-                        <div class="vp-related-thumb-placeholder">
-                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" opacity="0.3"><path d="M8 5v14l11-7z"/></svg>
+            <div class="d-flex gap-2 mb-3 border-bottom border-secondary border-opacity-25 pb-2" style="overflow-x:auto;">
+                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 active vp-side-tab-btn" data-target="relatedVideosPanel">
+                    <span class="material-icons align-middle fs-6 me-1">playlist_play</span> Related
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 vp-side-tab-btn" data-target="transcriptPanel" onclick="loadVideoTranscript()">
+                    <span class="material-icons align-middle fs-6 me-1">subtitles</span> Transcript
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 vp-side-tab-btn" data-target="watchTogetherPanel" onclick="initWatchTogetherRoom()">
+                    <span class="material-icons align-middle fs-6 me-1">group</span> Watch Party
+                </button>
+            </div>
+
+            <!-- Panel 1: Related Videos -->
+            <div id="relatedVideosPanel" class="vp-side-panel">
+                <h3 class="vp-sidebar-title">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+                    Related Videos
+                </h3>
+                <div class="vp-sidebar-list">
+                    {% for related in related_videos %}
+                    <a href="{{ url_for('watch_video', video_id=related.id) }}" class="vp-related-card">
+                        <div class="vp-related-thumb">
+                            {% if related.video_type == 'youtube' or related.thumbnail_path %}
+                            <img src="{{ related.thumbnail_url }}" alt="{{ related.title }}" loading="lazy">
+                            {% else %}
+                            <div class="vp-related-thumb-placeholder">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" opacity="0.3"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                            {% endif %}
+                            {% if related.duration_seconds %}
+                            <span class="vp-related-dur">{{ (related.duration_seconds // 60)|string }}:{{ '%02d' % (related.duration_seconds % 60) }}</span>
+                            {% endif %}
                         </div>
-                        {% endif %}
-                        {% if related.duration_seconds %}
-                        <span class="vp-related-dur">{{ (related.duration_seconds // 60)|string }}:{{ '%02d' % (related.duration_seconds % 60) }}</span>
-                        {% endif %}
+                        <div class="vp-related-info">
+                            <h4 class="vp-related-title">{{ related.title }}</h4>
+                            <span class="vp-related-uploader">{{ related.uploader.name }}</span>
+                            <span class="vp-related-meta">{{ related.view_count or 0 }} views</span>
+                        </div>
+                    </a>
+                    {% else %}
+                    <div class="vp-no-related">
+                        <p>No related videos found.</p>
                     </div>
-                    <div class="vp-related-info">
-                        <h4 class="vp-related-title">{{ related.title }}</h4>
-                        <span class="vp-related-uploader">{{ related.uploader.name }}</span>
-                        <span class="vp-related-meta">{{ related.view_count or 0 }} views</span>
-                    </div>
-                </a>
-                {% else %}
-                <div class="vp-no-related">
-                    <p>No related videos found.</p>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+            </div>
+
+            <!-- Panel 2: Interactive Searchable Transcript -->
+            <div id="transcriptPanel" class="vp-side-panel" style="display:none;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h3 class="vp-sidebar-title mb-0">
+                        <span class="material-icons text-primary align-middle fs-5 me-1">subtitles</span> Lecture Transcript
+                    </h3>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="transcriptSearchInput" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="Search spoken text in video..." oninput="filterTranscriptCues(this.value)">
+                </div>
+                <div id="transcriptCuesList" style="max-height: 480px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                    <div class="text-center py-4 text-white-50 small">Loading lecture captions &amp; timecodes...</div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Watch Together Virtual Classroom -->
+            <div id="watchTogetherPanel" class="vp-side-panel" style="display:none;">
+                <div class="card bg-dark text-white border-secondary p-3 mb-3" style="border-radius: 12px; background: rgba(30,41,59,0.7);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-primary rounded-pill px-2 py-1 small">
+                            <span class="material-icons align-middle fs-6 me-1">sensors</span> LIVE PARTY
+                        </span>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="partyHostSyncToggle" onchange="toggleHostSyncMode(this.checked)">
+                            <label class="form-check-label text-white small" for="partyHostSyncToggle">Broadcast Sync</label>
+                        </div>
+                    </div>
+                    <p class="text-white-50 small mb-2">Synchronize video playback and discuss in real-time with classmates.</p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-warning w-100 rounded-pill fw-bold" onclick="raiseHandInParty()">
+                            ✋ Raise Hand
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Floating Hand Notification Banner -->
+                <div id="partyRaiseHandAlert" style="display:none;" class="alert alert-warning p-2 rounded-3 small mb-2 d-flex align-items-center gap-2">
+                    <span class="material-icons fs-5">front_hand</span>
+                    <span id="partyRaiseHandUser">A student raised their hand!</span>
+                </div>
+
+                <!-- Connected Study Buddies -->
+                <h6 class="text-white-50 small fw-bold text-uppercase mb-2" style="letter-spacing: 0.5px;">Active Study Buddies (<span id="partyUserCount">1</span>)</h6>
+                <div id="partyUsersList" class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-secondary rounded-pill px-2 py-1">{{ current_user.name }} (You)</span>
+                </div>
+
+                <!-- Watch Party Real-time Chat -->
+                <div class="card bg-dark border-secondary p-2" style="border-radius: 12px;">
+                    <div id="partyChatMessages" style="height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 4px;" class="small">
+                        <div class="text-white-50 text-center py-3">Study party chat connected.</div>
+                    </div>
+                    <div class="input-group input-group-sm mt-2">
+                        <input type="text" id="partyChatInput" class="form-control bg-dark text-white border-secondary" placeholder="Chat with room..." onkeydown="if(event.key==='Enter'){sendPartyChat();}">
+                        <button class="btn btn-primary" type="button" onclick="sendPartyChat()">Send</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2436,10 +2589,506 @@ function generateStudyKit() {
     });
 }
 
-// Initialize Checkpoints & Doubts on load
+// ── Sidebar Tab Switching ──
+document.querySelectorAll('.vp-side-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.vp-side-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const target = btn.getAttribute('data-target');
+        document.querySelectorAll('.vp-side-panel').forEach(p => p.style.display = 'none');
+        const activePanel = document.getElementById(target);
+        if (activePanel) activePanel.style.display = 'block';
+    });
+});
+
+// ── Searchable Interactive Video Transcripts ──
+let cachedTranscriptCues = [];
+
+async function loadVideoTranscript() {
+    if (cachedTranscriptCues.length > 0) return;
+    const container = document.getElementById('transcriptCuesList');
+    try {
+        const res = await fetch(`/api/video/${currentVideoId}/transcript`);
+        const data = await res.json();
+        if (data.cues && data.cues.length > 0) {
+            cachedTranscriptCues = data.cues;
+            renderTranscriptCues(data.cues);
+        } else {
+            container.innerHTML = '<div class="text-center py-4 text-white-50 small">No captions or transcript cues available for this video yet.</div>';
+        }
+    } catch (err) {
+        container.innerHTML = '<div class="text-center py-4 text-danger small">Failed to load lecture transcript.</div>';
+    }
+}
+
+function renderTranscriptCues(cues) {
+    const container = document.getElementById('transcriptCuesList');
+    container.innerHTML = '';
+    cues.forEach(cue => {
+        const row = document.createElement('div');
+        row.className = 'p-2 rounded-3 text-white small d-flex gap-2 align-items-start';
+        row.style.background = 'rgba(255,255,255,0.03)';
+        row.style.border = '1px solid rgba(255,255,255,0.05)';
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+            <span class="badge bg-primary bg-opacity-20 text-primary font-mono fw-bold" style="font-size: 11px;">
+                ${cue.start_formatted}
+            </span>
+            <span class="flex-grow-1 text-light text-opacity-90">${cue.text}</span>
+        `;
+        row.addEventListener('click', () => {
+            seekVideoTo(cue.start);
+        });
+        container.appendChild(row);
+    });
+}
+
+function filterTranscriptCues(query) {
+    const q = query.toLowerCase().trim();
+    if (!q) {
+        renderTranscriptCues(cachedTranscriptCues);
+        return;
+    }
+    const filtered = cachedTranscriptCues.filter(c => c.text.toLowerCase().includes(q));
+    renderTranscriptCues(filtered);
+}
+
+function seekVideoTo(seconds) {
+    if (window.campusPlayer && typeof window.campusPlayer.seek === 'function') {
+        window.campusPlayer.seek(seconds);
+    } else {
+        const vid = document.querySelector('video');
+        if (vid) { vid.currentTime = seconds; vid.play(); }
+    }
+}
+
+// ── Watch Together Virtual Classroom Socket.IO Integration ──
+let watchPartySocket = null;
+let isPartyHostSync = false;
+
+function initWatchTogetherRoom() {
+    if (watchPartySocket) return;
+    if (typeof io === 'undefined') {
+        console.warn('Socket.IO client library not loaded.');
+        return;
+    }
+
+    watchPartySocket = io();
+    watchPartySocket.emit('watch_party_join', {
+        video_id: currentVideoId,
+        user_name: '{{ current_user.name }}'
+    });
+
+    watchPartySocket.on('watch_party_user_joined', data => {
+        appendPartyChatMessage('System', `${data.user_name} joined the watch party!`);
+    });
+
+    watchPartySocket.on('watch_party_user_left', data => {
+        appendPartyChatMessage('System', `${data.user_name} left the room.`);
+    });
+
+    watchPartySocket.on('watch_party_broadcast_action', data => {
+        if (isPartyHostSync) return; // If we are host, don't override our own timeline
+        if (data.action === 'play') {
+            const vid = document.querySelector('video');
+            if (vid) { vid.currentTime = data.time || vid.currentTime; vid.play(); }
+        } else if (data.action === 'pause') {
+            const vid = document.querySelector('video');
+            if (vid) { vid.currentTime = data.time || vid.currentTime; vid.pause(); }
+        } else if (data.action === 'seek') {
+            seekVideoTo(data.time);
+        }
+    });
+
+    watchPartySocket.on('watch_party_raise_hand_alert', data => {
+        const banner = document.getElementById('partyRaiseHandAlert');
+        const userEl = document.getElementById('partyRaiseHandUser');
+        if (banner && userEl) {
+            userEl.textContent = `${data.user_name} raised their hand! ✋`;
+            banner.style.display = 'flex';
+            setTimeout(() => { banner.style.display = 'none'; }, 6000);
+        }
+    });
+
+    watchPartySocket.on('watch_party_new_chat', data => {
+        appendPartyChatMessage(data.user_name, data.message);
+    });
+
+    // Hook video play/pause events if host sync enabled
+    const vid = document.querySelector('video');
+    if (vid) {
+        vid.addEventListener('play', () => {
+            if (isPartyHostSync && watchPartySocket) {
+                watchPartySocket.emit('watch_party_sync_action', { video_id: currentVideoId, action: 'play', time: vid.currentTime });
+            }
+        });
+        vid.addEventListener('pause', () => {
+            if (isPartyHostSync && watchPartySocket) {
+                watchPartySocket.emit('watch_party_sync_action', { video_id: currentVideoId, action: 'pause', time: vid.currentTime });
+            }
+        });
+        vid.addEventListener('seeked', () => {
+            if (isPartyHostSync && watchPartySocket) {
+                watchPartySocket.emit('watch_party_sync_action', { video_id: currentVideoId, action: 'seek', time: vid.currentTime });
+            }
+        });
+    }
+}
+
+function toggleHostSyncMode(enabled) {
+    isPartyHostSync = enabled;
+}
+
+function raiseHandInParty() {
+    if (watchPartySocket) {
+        watchPartySocket.emit('watch_party_raise_hand', { video_id: currentVideoId, user_name: '{{ current_user.name }}' });
+    }
+}
+
+function sendPartyChat() {
+    const input = document.getElementById('partyChatInput');
+    const msg = input.value.trim();
+    if (!msg || !watchPartySocket) return;
+    watchPartySocket.emit('watch_party_chat_message', { video_id: currentVideoId, user_name: '{{ current_user.name }}', message: msg });
+    input.value = '';
+}
+
+function appendPartyChatMessage(user, message) {
+    const box = document.getElementById('partyChatMessages');
+    if (!box) return;
+    const line = document.createElement('div');
+    line.className = 'text-light';
+    line.innerHTML = `<strong class="text-primary">${user}:</strong> ${message}`;
+    box.appendChild(line);
+    box.scrollTop = box.scrollHeight;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AI LECTURE COPILOT CONTROLLER
+   ═══════════════════════════════════════════════════════════════ */
+let isVoiceDictating = false;
+let speechRecognizer = null;
+
+function loadCopilotHistory() {
+    fetch(`/api/video/${currentVideoId}/copilot/history`)
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            if (data.readiness) updateExamReadinessWidget(data.readiness);
+            const container = document.getElementById('copilot-stream-container');
+            if (data.history && data.history.length > 0) {
+                container.innerHTML = '';
+                data.history.forEach(item => renderCopilotCard(item, false));
+            }
+        }
+    })
+    .catch(e => console.warn('Copilot history load error:', e));
+}
+
+function updateExamReadinessWidget(readiness) {
+    if (!readiness) return;
+    const scoreEl = document.getElementById('copilot-readiness-score');
+    const statusEl = document.getElementById('copilot-readiness-status');
+    if (scoreEl) {
+        scoreEl.textContent = `${readiness.score}%`;
+        scoreEl.style.borderColor = readiness.badge_color || 'var(--primary)';
+        scoreEl.style.color = readiness.badge_color || 'var(--primary)';
+    }
+    if (statusEl) {
+        statusEl.textContent = readiness.status || 'Active';
+        statusEl.style.color = readiness.badge_color || 'var(--primary)';
+    }
+}
+
+function askQuickCopilotPrompt(promptText) {
+    document.getElementById('copilot-question-input').value = promptText;
+    sendCopilotQuestion(promptText);
+}
+
+function sendCopilotQuestion(customText) {
+    const input = document.getElementById('copilot-question-input');
+    const q = (customText || (input ? input.value : '')).trim();
+    if (!q) return;
+
+    if (input) input.value = '';
+    const btn = document.getElementById('copilot-send-btn');
+    if (btn) btn.disabled = true;
+
+    // Get current video time
+    const vid = document.getElementById('video-player') || document.querySelector('video');
+    const curTime = vid ? Math.floor(vid.currentTime) : 0;
+
+    const container = document.getElementById('copilot-stream-container');
+    const emptyState = document.getElementById('copilot-empty-state');
+    if (emptyState) emptyState.remove();
+
+    // Render student question immediately
+    const qNode = document.createElement('div');
+    qNode.style.cssText = "align-self:flex-end; background:rgba(37,65,178,0.25); border:1px solid rgba(37,65,178,0.4); border-radius:12px; padding:10px 14px; max-width:85%; color:var(--text); font-size:0.86rem;";
+    qNode.innerHTML = `<div style="font-size:0.7rem; color:var(--secondary-color); font-weight:700; margin-bottom:2px;">You &bull; ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div><div>${escapeHtml(q)}</div>`;
+    container.appendChild(qNode);
+
+    // Render loading indicator
+    const loadNode = document.createElement('div');
+    loadNode.id = 'copilot-thinking-card';
+    loadNode.style.cssText = "align-self:flex-start; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; max-width:85%; color:var(--primary); font-size:0.84rem; display:flex; align-items:center; gap:8px;";
+    loadNode.innerHTML = `<div class="spinner-border" style="width:1rem; height:1rem; border:2px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite;"></div><span>AI Copilot analyzing video transcript &amp; study guides...</span>`;
+    container.appendChild(loadNode);
+    container.scrollTop = container.scrollHeight;
+
+    fetch(`/api/video/${currentVideoId}/copilot/ask`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            question: q,
+            current_time: curTime
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (btn) btn.disabled = false;
+        const thinking = document.getElementById('copilot-thinking-card');
+        if (thinking) thinking.remove();
+
+        if (data.success) {
+            renderCopilotCard(data, false);
+            if (data.readiness) updateExamReadinessWidget(data.readiness);
+        } else {
+            alert(data.message || 'Copilot query failed.');
+        }
+    })
+    .catch(err => {
+        if (btn) btn.disabled = false;
+        const thinking = document.getElementById('copilot-thinking-card');
+        if (thinking) thinking.remove();
+        console.error('Copilot error:', err);
+    });
+}
+
+function renderCopilotCard(item, isPrepend) {
+    const container = document.getElementById('copilot-stream-container');
+    if (!container) return;
+    const emptyState = document.getElementById('copilot-empty-state');
+    if (emptyState) emptyState.remove();
+
+    const card = document.createElement('div');
+    card.style.cssText = "align-self:flex-start; background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--primary); border-radius:12px; padding:14px; max-width:92%; width:100%; box-shadow:0 4px 14px rgba(0,0,0,0.3);";
+    
+    // Header
+    let html = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <span class="badge" style="background:rgba(212,175,55,0.15); color:var(--primary); font-size:0.7rem; font-weight:700; border-radius:8px; padding:2px 8px;">
+                    <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">auto_awesome</i> AI Copilot
+                </span>
+                <span style="font-size:0.72rem; color:var(--text-dim);">${item.created_at || 'Just now'}</span>
+            </div>
+            <button type="button" onclick="seekToTime(${item.cited_timestamp || 0})" class="btn btn-outline" style="padding:3px 10px; font-size:0.74rem; font-family:'JetBrains Mono',monospace; font-weight:700; color:var(--primary); border-color:rgba(212,175,55,0.4); border-radius:var(--radius-pill);" title="Seek player to cited moment">
+                <i class="material-icons" style="font-size:0.8rem;">play_circle</i> Jump to ${item.cited_timestamp_formatted || '00:00'}
+            </button>
+        </div>
+    `;
+
+    // Markdown text
+    const cleanAnswer = formatMarkdownToHtml(item.answer);
+    html += `<div style="font-size:0.85rem; color:var(--text); line-height:1.5; margin-bottom:10px;">${cleanAnswer}</div>`;
+
+    // Digital Guide Link if cited
+    if (item.cited_book) {
+        html += `
+            <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.78rem;">
+                    <i class="material-icons" style="color:var(--primary); font-size:1.1rem;">menu_book</i>
+                    <div>
+                        <strong style="color:var(--text);">${escapeHtml(item.cited_book.title)}</strong>
+                        <span style="color:var(--text-dim); font-size:0.72rem;"> &bull; Page ${item.cited_book.page} (${item.cited_book.type_label})</span>
+                    </div>
+                </div>
+                <a href="/library/book/${item.cited_book.id}/read?page=${item.cited_book.page}" target="_blank" class="btn btn-outline" style="padding:3px 10px; font-size:0.72rem; border-radius:var(--radius-pill); text-decoration:none;">
+                    Open Guide
+                </a>
+            </div>
+        `;
+    }
+
+    // Micro-Quiz Widget
+    if (item.micro_quiz) {
+        const q = item.micro_quiz;
+        const qId = item.interaction_id;
+        const isAnswered = item.quiz_answered;
+        const isCorrect = item.quiz_correct;
+
+        html += `
+            <div id="quiz-box-${qId}" style="background:rgba(212,175,55,0.06); border:1px solid rgba(212,175,55,0.25); border-radius:10px; padding:12px; margin-top:10px;">
+                <div style="font-size:0.75rem; font-weight:700; color:var(--primary); margin-bottom:6px; display:flex; align-items:center; gap:4px;">
+                    <i class="material-icons" style="font-size:0.85rem;">quiz</i> 1-Click Micro-Check (+20 XP):
+                </div>
+                <div style="font-size:0.82rem; font-weight:600; color:var(--text); margin-bottom:10px;">${escapeHtml(q.question)}</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="quiz-opts-${qId}">
+        `;
+
+        (q.options || []).forEach((opt, idx) => {
+            let optStyle = "background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:6px 10px; font-size:0.76rem; border-radius:6px; text-align:left; cursor:pointer; transition:all 0.2s;";
+            if (isAnswered) {
+                if (idx === q.correct_index) {
+                    optStyle = "background:rgba(61,143,163,0.3); border:1px solid var(--success-color); color:#fff; padding:6px 10px; font-size:0.76rem; border-radius:6px; font-weight:700;";
+                } else {
+                    optStyle = "background:var(--surface2); border:1px solid var(--border); opacity:0.5; color:var(--text-dim); padding:6px 10px; font-size:0.76rem; border-radius:6px;";
+                }
+            }
+            html += `<button type="button" class="copilot-quiz-opt-btn" onclick="submitCopilotQuiz(${qId}, ${idx})" ${isAnswered ? 'disabled' : ''} style="${optStyle}">${String.fromCharCode(65 + idx)}. ${escapeHtml(opt)}</button>`;
+        });
+
+        html += `</div>`;
+        if (isAnswered) {
+            html += `<div style="margin-top:8px; font-size:0.74rem; color:${isCorrect ? 'var(--success-color)' : 'var(--danger-color)'}; font-weight:700;">${isCorrect ? '✅ Concept Verified! +20 XP Earned' : 'ℹ️ Keep Reviewing: ' + escapeHtml(q.explanation || '')}</div>`;
+        }
+        html += `</div>`;
+    }
+
+    card.innerHTML = html;
+    if (isPrepend) container.prepend(card);
+    else container.appendChild(card);
+    container.scrollTop = container.scrollHeight;
+}
+
+function submitCopilotQuiz(interactionId, optionIndex) {
+    fetch(`/api/video/copilot/interaction/${interactionId}/quiz_submit`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ selected_index: optionIndex })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const box = document.getElementById(`quiz-box-${interactionId}`);
+            if (box) {
+                const optBtns = box.querySelectorAll('.copilot-quiz-opt-btn');
+                optBtns.forEach((b, idx) => {
+                    b.disabled = true;
+                    if (idx === data.correct_index) {
+                        b.style.background = 'rgba(61,143,163,0.35)';
+                        b.style.borderColor = 'var(--success-color)';
+                        b.style.color = '#fff';
+                        b.style.fontWeight = '700';
+                    } else if (idx === optionIndex && !data.is_correct) {
+                        b.style.background = 'rgba(217,130,43,0.3)';
+                        b.style.borderColor = 'var(--danger-color)';
+                        b.style.color = '#fff';
+                    } else {
+                        b.style.opacity = '0.4';
+                    }
+                });
+
+                const feedback = document.createElement('div');
+                feedback.style.cssText = `margin-top:8px; font-size:0.75rem; font-weight:700; color:${data.is_correct ? 'var(--success-color)' : 'var(--danger-color)'};`;
+                feedback.innerHTML = data.is_correct ? `🎉 Correct! +${data.xp_awarded} XP Awarded &bull; Exam Readiness Updated` : `ℹ️ Explanation: ${escapeHtml(data.explanation || '')}`;
+                box.appendChild(feedback);
+            }
+            if (data.readiness) updateExamReadinessWidget(data.readiness);
+        }
+    });
+}
+
+function toggleVoiceDictation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert('Voice dictation is not supported by your browser. Please use Google Chrome, Microsoft Edge, or Safari.');
+        return;
+    }
+
+    const micBtn = document.getElementById('copilot-mic-btn');
+    const micIcon = document.getElementById('copilot-mic-icon');
+    const input = document.getElementById('copilot-question-input');
+
+    if (isVoiceDictating && speechRecognizer) {
+        speechRecognizer.stop();
+        isVoiceDictating = false;
+        if (micBtn) micBtn.style.background = 'transparent';
+        if (micIcon) micIcon.style.color = 'var(--primary)';
+        return;
+    }
+
+    try {
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.continuous = false;
+        speechRecognizer.interimResults = true;
+        speechRecognizer.lang = 'en-US';
+
+        speechRecognizer.onstart = function() {
+            isVoiceDictating = true;
+            if (micBtn) micBtn.style.background = 'rgba(217,130,43,0.3)';
+            if (micIcon) micIcon.style.color = 'var(--danger-color)';
+            if (input) input.placeholder = 'Listening... Speak your question now.';
+        };
+
+        speechRecognizer.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+            if (input) input.value = transcript;
+        };
+
+        speechRecognizer.onend = function() {
+            isVoiceDictating = false;
+            if (micBtn) micBtn.style.background = 'transparent';
+            if (micIcon) micIcon.style.color = 'var(--primary)';
+            if (input) {
+                input.placeholder = 'Ask AI Lecture Copilot any doubt (e.g. Why did we take derivative here?)...';
+                if (input.value.trim().length > 3) {
+                    sendCopilotQuestion(input.value.trim());
+                }
+            }
+        };
+
+        speechRecognizer.onerror = function(event) {
+            console.warn('Speech recognition notice:', event.error);
+            isVoiceDictating = false;
+            if (micBtn) micBtn.style.background = 'transparent';
+            if (micIcon) micIcon.style.color = 'var(--primary)';
+        };
+
+        speechRecognizer.start();
+    } catch (e) {
+        console.warn('Speech start error:', e);
+    }
+}
+
+function formatMarkdownToHtml(text) {
+    if (!text) return '';
+    let t = escapeHtml(text);
+    // Bold
+    t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    t = t.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Code
+    t = t.replace(/`([^`]+)`/g, '<code style="background:var(--surface2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-family:\'JetBrains Mono\',monospace; font-size:0.8rem; color:var(--primary);">$1</code>');
+    // Bullet points
+    t = t.replace(/^• (.*$)/gim, '<div style="display:flex; gap:6px; margin:4px 0;"><span style="color:var(--primary);">&bull;</span><span>$1</span></div>');
+    t = t.replace(/\n\n/g, '<br><br>');
+    return t;
+}
+
+function escapeHtml(t) {
+    if (!t) return '';
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+
+// Initialize Checkpoints, Doubts & AI Copilot on load
 document.addEventListener('DOMContentLoaded', function() {
     loadCheckpoints();
     loadDoubts();
+    loadCopilotHistory();
 });
 </script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 {% endblock %}

@@ -1,0 +1,208 @@
+{% extends "layout.html" %}
+{% block title %}Academic Timetable — Campus Player{% endblock %}
+
+{% block content %}
+<!-- Header Banner -->
+<div class="card card-royal mb-16" style="padding: 24px;">
+    <div class="flex-between" style="flex-wrap: wrap; gap: 16px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span class="badge" style="background: rgba(212, 175, 55, 0.12); color: var(--primary); border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;">
+                    <i class="material-icons" style="font-size: 0.85rem; vertical-align: middle;">calendar_month</i> ACADEMIC SCHEDULE
+                </span>
+                <span style="color: var(--text-dim); font-size: 0.78rem;">Today is <strong style="color: var(--text);">{{ today_name }}</strong></span>
+            </div>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.6rem;">Interactive Academic Timetable</h1>
+            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.82rem;">Track daily lecture periods, room locations, and direct access links.</p>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            {% if classes|length > 1 %}
+            <div>
+                <select onchange="window.location.href='/timetable?class_id=' + this.value" style="height: 38px; margin-bottom: 0; padding: 0 14px; border-radius: var(--radius-pill); font-size: 0.82rem;">
+                    {% for c in classes %}
+                    <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            {% if current_user.role in ['admin', 'system_admin', 'teacher'] and selected_class %}
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSlotModal" style="padding: 9px 18px; font-size: 0.82rem; font-weight: 700; border-radius: var(--radius-pill);">
+                <i class="material-icons" style="font-size: 0.95rem;">add_circle</i> Add Period
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if selected_class %}
+<!-- Day Tabs -->
+<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
+    {% for day in days_order %}
+    <button class="btn {% if day == today_name %}btn-primary{% elif not today_name in days_order and loop.first %}btn-primary{% else %}btn-outline{% endif %} timetable-tab-btn" 
+            onclick="switchTimetableDay('{{ day }}', this)"
+            style="padding: 7px 18px; font-size: 0.82rem; border-radius: var(--radius-pill); font-weight: 600;">
+        {{ day }}
+        {% if day == today_name %}
+        <span class="badge" style="background: rgba(0,0,0,0.3); color: #fff; font-size: 0.62rem; margin-left: 6px; padding: 2px 6px; border-radius: 10px;">TODAY</span>
+        {% endif %}
+    </button>
+    {% endfor %}
+</div>
+
+<!-- Day Content Containers -->
+<div id="timetableDayContainers">
+    {% for day in days_order %}
+    <div class="timetable-day-panel" id="panel-{{ day }}" style="display: {% if day == today_name %}block{% elif not today_name in days_order and loop.first %}block{% else %}none{% endif %};">
+        <div class="card" style="padding: 22px; background: var(--surface); border: 1px solid var(--border);">
+            <div class="flex-between" style="margin-bottom: 18px; border-bottom: 1px solid var(--border); padding-bottom: 14px;">
+                <div class="card-title font-display" style="margin: 0; font-size: 1.05rem;">
+                    <i class="material-icons" style="color: var(--primary);">schedule</i>
+                    <span>{{ day }} Schedule for {{ selected_class.name }}</span>
+                </div>
+                <span style="color: var(--text-dim); font-size: 0.78rem;">{{ slots_by_day[day]|length }} Periods Scheduled</span>
+            </div>
+
+            {% if slots_by_day[day] %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
+                {% for slot in slots_by_day[day] %}
+                <div class="card" style="padding: 16px; background: var(--surface2); border: 1px solid var(--border); margin: 0; display: flex; flex-direction: column;">
+                    <div class="flex-between" style="margin-bottom: 8px;">
+                        <span class="badge" style="background: var(--primary); color: #000; font-weight: 800; font-size: 0.72rem; border-radius: 12px; padding: 3px 10px;">
+                            {{ slot.start_time }} – {{ slot.end_time }}
+                        </span>
+                        {% if current_user.role in ['admin', 'system_admin'] or slot.teacher_id == current_user.id %}
+                        <form method="POST" action="{{ url_for('delete_timetable_slot', slot_id=slot.id) }}" onsubmit="return confirm('Delete this period?');" style="margin: 0;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-outline" style="padding: 4px 8px; min-height: 28px; width: 28px; color: var(--danger-color); border-color: rgba(217, 130, 43, 0.3);" title="Delete period">
+                                <i class="material-icons" style="font-size: 0.85rem;">delete</i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+
+                    <h4 style="font-family: 'Outfit', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text); margin: 0 0 4px 0;">
+                        {{ slot.subject_name }}
+                    </h4>
+                    <p style="font-size: 0.75rem; color: var(--text-dim); margin: 0 0 12px 0;">
+                        {{ slot.period_name }}
+                    </p>
+
+                    <div class="flex-between" style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-dim);">
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            <i class="material-icons" style="font-size: 0.9rem;">room</i> {{ slot.room_number or 'Classroom' }}
+                        </span>
+                        {% if slot.meeting_link %}
+                        <a href="{{ slot.meeting_link }}" target="_blank" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.72rem; border-radius: var(--radius-pill); text-decoration: none;">
+                            <i class="material-icons" style="font-size: 0.85rem;">video_call</i> Join Class
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center" style="padding: 36px 16px; color: var(--text-dim);">
+                <i class="material-icons" style="font-size: 40px; opacity: 0.4; display: block; margin-bottom: 8px;">event_busy</i>
+                <p style="margin: 0; font-size: 0.85rem;">No scheduled periods for {{ day }}.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="card text-center" style="padding: 48px 24px; border: 1px dashed var(--border); background: var(--surface);">
+    <i class="material-icons" style="font-size: 48px; color: var(--text-dim); opacity: 0.5;">class</i>
+    <h3 class="font-display" style="margin: 12px 0 4px 0; font-size: 1.1rem; color: var(--text);">No Classroom Enrolled</h3>
+    <p style="color: var(--text-dim); font-size: 0.82rem; margin: 0;">Join a classroom to access your personalized weekly schedule.</p>
+</div>
+{% endif %}
+
+<!-- Modal: Add Slot -->
+{% if current_user.role in ['admin', 'system_admin', 'teacher'] and selected_class %}
+<div class="modal fade" id="addSlotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="material-icons" style="color: var(--primary);">add_alarm</i>
+                    <span>Add Period Slot</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_timetable_slot') }}" style="margin: 0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="classroom_id" value="{{ selected_class.id }}">
+
+                <div class="modal-body">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Day of Week</label>
+                            <select name="day_of_week" required style="margin-bottom: 0;">
+                                {% for day in days_order %}
+                                <option value="{{ day }}">{{ day }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Period Label</label>
+                            <input type="text" name="period_name" placeholder="e.g. Period 1" required style="margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Start Time</label>
+                            <input type="time" name="start_time" required style="margin-bottom: 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">End Time</label>
+                            <input type="time" name="end_time" required style="margin-bottom: 0;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Subject / Course Name</label>
+                        <input type="text" name="subject_name" placeholder="e.g. Advanced Data Structures" required style="margin-bottom: 0;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Room / Hall (Optional)</label>
+                            <input type="text" name="room_number" placeholder="e.g. Lab 4 / Room 204" style="margin-bottom: 0;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Meeting / Video Link (Optional)</label>
+                            <input type="url" name="meeting_link" placeholder="https://..." style="margin-bottom: 0;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="padding: 8px 18px; font-size: 0.82rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.82rem; font-weight: 700;">Save Period</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function switchTimetableDay(day, btnEl) {
+    document.querySelectorAll('.timetable-tab-btn').forEach(b => {
+        b.className = 'btn btn-outline timetable-tab-btn';
+    });
+    btnEl.className = 'btn btn-primary timetable-tab-btn';
+    
+    document.querySelectorAll('.timetable-day-panel').forEach(p => {
+        p.style.display = 'none';
+    });
+    const activePanel = document.getElementById('panel-' + day);
+    if (activePanel) activePanel.style.display = 'block';
+}
+</script>
+{% endblock %}

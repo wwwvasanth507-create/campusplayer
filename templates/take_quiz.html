@@ -252,23 +252,39 @@
             <a href="{{ url_for('student_quizzes') }}" class="quiz-back-btn">
                 <i class="material-icons" style="font-size:1rem;">arrow_back</i> Back to Quizzes
             </a>
-            {% if remaining_seconds is not none %}
-            <div id="quizTimer" class="quiz-timer-box">
-                <i class="material-icons" style="font-size:1.15rem;">timer</i>
-                <span id="quizTimerText">--:--</span>
+
+            <div class="d-flex align-items-center gap-2">
+                {% if quiz.proctoring_enabled %}
+                <div class="quiz-timer-box" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.4);">
+                    <i class="material-icons" style="font-size:1.15rem;">shield</i>
+                    <span>Anti-Cheat Active (<span id="violationCountDisplay">0</span>/{{ quiz.max_tab_switches or 3 }})</span>
+                </div>
+                {% endif %}
+
+                {% if remaining_seconds is not none %}
+                <div id="quizTimer" class="quiz-timer-box">
+                    <i class="material-icons" style="font-size:1.15rem;">timer</i>
+                    <span id="quizTimerText">--:--</span>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
         <h1 class="quiz-title font-display">{{ quiz.title }}</h1>
         <p class="quiz-sub">
             Complete all questions below.
             {% if remaining_seconds is not none %}Quiz auto-submits when time expires.{% endif %}
+            {% if quiz.proctoring_enabled %}<strong class="text-danger">Proctored examination: Do not switch tabs or leave this window.</strong>{% endif %}
         </p>
     </div>
 
     <form method="POST" id="quizForm" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="proctoring_violations_count" id="proctoringViolationsCount" value="0">
+        <input type="hidden" name="proctoring_log_json" id="proctoringLogJson" value="[]">
+        <input type="hidden" name="auto_submitted_due_to_cheating" id="autoSubmittedDueToCheating" value="false">
+
         {% for q in questions %}
-        <div class="question-card">
+        <div class="question-card {% if quiz.block_copy_paste %}no-copy-block{% endif %}">
             <h3 class="question-title font-display">
                 {{ loop.index }}. {{ q.text }}
             </h3>
@@ -292,6 +308,31 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Proctoring Warning Modal -->
+<div class="modal fade" id="proctoringWarningModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-danger shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-danger border-opacity-50">
+                <h5 class="modal-title fw-bold text-danger d-flex align-items-center gap-2">
+                    <span class="material-icons text-danger">warning</span> Proctoring Violation Warning
+                </h5>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <span class="material-icons text-danger" style="font-size: 64px;">tab_unselected</span>
+                <h5 class="fw-bold mt-3 text-white">Tab Switch / Blur Detected!</h5>
+                <p class="text-white-50">
+                    Switching tabs or clicking outside the quiz window is strictly monitored. 
+                    Your violation count: <strong class="text-danger" id="modalViolationCount">1</strong> / {{ quiz.max_tab_switches or 3 }}.
+                </p>
+                <p class="small text-danger mb-0">Exceeding {{ quiz.max_tab_switches or 3 }} tab switches will automatically fail and lock your quiz submission.</p>
+            </div>
+            <div class="modal-footer border-danger border-opacity-50">
+                <button type="button" class="btn btn-danger w-100 rounded-pill fw-bold" data-bs-dismiss="modal">I Understand, Return to Quiz</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -333,6 +374,70 @@ function selectQuizOption(cardEl) {
             }
         }
     });
+
+    {% if quiz.block_copy_paste %}
+    // Anti-copy / right click blocking
+    document.querySelectorAll('.no-copy-block').forEach(el => {
+        el.addEventListener('copy', e => e.preventDefault());
+        el.addEventListener('cut', e => e.preventDefault());
+        el.addEventListener('paste', e => e.preventDefault());
+        el.addEventListener('contextmenu', e => e.preventDefault());
+    });
+    {% endif %}
+
+    {% if quiz.proctoring_enabled %}
+    // ── Anti-Cheat Proctoring Monitor ──
+    var violations = 0;
+    var maxViolations = {{ quiz.max_tab_switches or 3 }};
+    var violationLog = [];
+    var warningModalEl = document.getElementById('proctoringWarningModal');
+    var bsModal = warningModalEl ? new bootstrap.Modal(warningModalEl) : null;
+
+    function recordViolation(reason) {
+        if (formSubmitted) return;
+        violations++;
+        var timestamp = new Date().toLocaleTimeString();
+        violationLog.push({ reason: reason, time: timestamp });
+
+        document.getElementById('proctoringViolationsCount').value = violations;
+        document.getElementById('proctoringLogJson').value = JSON.stringify(violationLog);
+        var disp = document.getElementById('violationCountDisplay');
+        if (disp) disp.textContent = violations;
+        var modalDisp = document.getElementById('modalViolationCount');
+        if (modalDisp) modalDisp.textContent = violations;
+
+        // Telemetry ping
+        fetch('/api/quiz/{{ quiz.id }}/proctoring_violation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ reason: reason, violations: violations })
+        }).catch(err => console.warn(err));
+
+        if (violations >= maxViolations) {
+            document.getElementById('autoSubmittedDueToCheating').value = 'true';
+            formSubmitted = true;
+            alert(`PROCTORING LOCK: You have exceeded the maximum allowed tab switches (${maxViolations}). Your quiz is being automatically submitted.`);
+            quizForm.submit();
+        } else if (bsModal) {
+            bsModal.show();
+        }
+    }
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden' && !formSubmitted) {
+            recordViolation('Tab switched or browser minimized');
+        }
+    });
+
+    window.addEventListener('blur', function() {
+        if (!formSubmitted) {
+            recordViolation('Window focus lost (switched app or secondary screen)');
+        }
+    });
+    {% endif %}
 })();
 </script>
 

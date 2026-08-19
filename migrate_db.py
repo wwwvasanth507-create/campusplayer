@@ -144,6 +144,9 @@ def migrate():
                     ('last_report_sent', 'DATETIME'),
                     ('institution_id', 'INTEGER'),
                     ('is_active_account', 'BOOLEAN DEFAULT 1'),
+                    ('equipped_avatar_frame', 'VARCHAR(100)'),
+                    ('equipped_title', 'VARCHAR(100)'),
+                    ('equipped_badge', 'VARCHAR(100)'),
                 ],
                 'indexes': [
                     ('ix_user_role', 'role'),
@@ -178,6 +181,8 @@ def migrate():
                     ('score', 'INTEGER'),
                     ('feedback', 'TEXT'),
                     ('graded_at', 'DATETIME'),
+                    ('audio_file_path', 'VARCHAR(500)'),
+                    ('submission_type', "VARCHAR(20) DEFAULT 'standard'"),
                 ],
                 'indexes': [
                     ('ix_assignment_submission_institution_id', 'institution_id'),
@@ -305,6 +310,9 @@ def migrate():
                     ('passed', 'BOOLEAN DEFAULT 0'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
+                    ('proctoring_violations_count', 'INTEGER DEFAULT 0'),
+                    ('proctoring_log_json', "TEXT DEFAULT '[]'"),
+                    ('auto_submitted_due_to_cheating', 'BOOLEAN DEFAULT 0'),
                 ],
                 'indexes': [
                     ('ix_quiz_result_institution_id', 'institution_id'),
@@ -358,6 +366,9 @@ def migrate():
                     ('time_limit_minutes', 'INTEGER DEFAULT 0'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
+                    ('proctoring_enabled', 'BOOLEAN DEFAULT 0'),
+                    ('max_tab_switches', 'INTEGER DEFAULT 3'),
+                    ('block_copy_paste', 'BOOLEAN DEFAULT 1'),
                 ],
                 'indexes': [
                     ('ix_quiz_institution_id', 'institution_id'),
@@ -634,6 +645,172 @@ def migrate():
                     ('ix_parent_access_token_is_active', 'is_active'),
                 ]
             },
+            'announcement': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('title', 'VARCHAR(200)'),
+                    ('content', 'TEXT'),
+                    ('author_id', 'INTEGER'),
+                    ('priority', "VARCHAR(20) DEFAULT 'normal'"),
+                    ('target_role', "VARCHAR(20) DEFAULT 'all'"),
+                    ('classroom_id', 'INTEGER'),
+                    ('is_pinned', 'BOOLEAN DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                    ('expires_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_announcement_institution_id', 'institution_id'),
+                    ('ix_announcement_author_id', 'author_id'),
+                    ('ix_announcement_priority', 'priority'),
+                    ('ix_announcement_is_pinned', 'is_pinned'),
+                    ('ix_announcement_created_at', 'created_at'),
+                ]
+            },
+            'announcement_read': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('announcement_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('read_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_announcement_read_institution_id', 'institution_id'),
+                    ('ix_announcement_read_announcement_id', 'announcement_id'),
+                    ('ix_announcement_read_user_id', 'user_id'),
+                ]
+            },
+            'timetable_slot': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('teacher_id', 'INTEGER'),
+                    ('day_of_week', 'VARCHAR(15)'),
+                    ('period_name', 'VARCHAR(50)'),
+                    ('start_time', 'VARCHAR(10)'),
+                    ('end_time', 'VARCHAR(10)'),
+                    ('subject_name', 'VARCHAR(150)'),
+                    ('room_number', 'VARCHAR(50)'),
+                    ('meeting_link', 'VARCHAR(500)'),
+                ],
+                'indexes': [
+                    ('ix_timetable_slot_institution_id', 'institution_id'),
+                    ('ix_timetable_slot_classroom_id', 'classroom_id'),
+                    ('ix_timetable_slot_day_of_week', 'day_of_week'),
+                ]
+            },
+            'reward_item': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('code', 'VARCHAR(50)'),
+                    ('name', 'VARCHAR(150)'),
+                    ('description', 'TEXT'),
+                    ('item_type', 'VARCHAR(30)'),
+                    ('item_value', 'VARCHAR(200)'),
+                    ('xp_cost', 'INTEGER DEFAULT 500'),
+                    ('icon', "VARCHAR(50) DEFAULT 'military_tech'"),
+                    ('is_active', 'BOOLEAN DEFAULT 1'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_reward_item_institution_id', 'institution_id'),
+                    ('ix_reward_item_code', 'code'),
+                    ('ix_reward_item_item_type', 'item_type'),
+                ]
+            },
+            'user_reward': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('reward_id', 'INTEGER'),
+                    ('purchased_at', 'DATETIME'),
+                    ('is_equipped', 'BOOLEAN DEFAULT 0'),
+                ],
+                'indexes': [
+                    ('ix_user_reward_institution_id', 'institution_id'),
+                    ('ix_user_reward_user_id', 'user_id'),
+                    ('ix_user_reward_reward_id', 'reward_id'),
+                    ('ix_user_reward_is_equipped', 'is_equipped'),
+                ]
+            },
+            'ebook': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('uploader_id', 'INTEGER'),
+                    ('title', 'VARCHAR(250)'),
+                    ('author', 'VARCHAR(150)'),
+                    ('publisher', 'VARCHAR(150)'),
+                    ('edition', 'VARCHAR(50)'),
+                    ('isbn', 'VARCHAR(50)'),
+                    ('subject', 'VARCHAR(100)'),
+                    ('academic_level', "VARCHAR(50) DEFAULT 'All'"),
+                    ('institution_type', "VARCHAR(20) DEFAULT 'both'"),
+                    ('resource_type', "VARCHAR(50) DEFAULT 'textbook'"),
+                    ('department', 'VARCHAR(100)'),
+                    ('description', 'TEXT'),
+                    ('file_path', 'VARCHAR(500)'),
+                    ('file_name', 'VARCHAR(255)'),
+                    ('cover_image_path', 'VARCHAR(500)'),
+                    ('page_count', 'INTEGER DEFAULT 0'),
+                    ('file_size_bytes', 'BIGINT DEFAULT 0'),
+                    ('allow_download', 'BOOLEAN DEFAULT 1'),
+                    ('view_count', 'INTEGER DEFAULT 0'),
+                    ('download_count', 'INTEGER DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_ebook_institution_id', 'institution_id'),
+                    ('ix_ebook_uploader_id', 'uploader_id'),
+                    ('ix_ebook_title', 'title'),
+                    ('ix_ebook_author', 'author'),
+                    ('ix_ebook_subject', 'subject'),
+                    ('ix_ebook_academic_level', 'academic_level'),
+                    ('ix_ebook_institution_type', 'institution_type'),
+                    ('ix_ebook_resource_type', 'resource_type'),
+                    ('ix_ebook_department', 'department'),
+                    ('ix_ebook_allow_download', 'allow_download'),
+                    ('ix_ebook_created_at', 'created_at'),
+                ]
+            },
+            'ebook_progress': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('ebook_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('last_read_page', 'INTEGER DEFAULT 1'),
+                    ('percent_completed', 'FLOAT DEFAULT 0.0'),
+                    ('last_read_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_ebook_progress_institution_id', 'institution_id'),
+                    ('ix_ebook_progress_ebook_id', 'ebook_id'),
+                    ('ix_ebook_progress_user_id', 'user_id'),
+                    ('ix_ebook_progress_last_read_at', 'last_read_at'),
+                ]
+            },
+            'ai_copilot_interaction': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('question', 'TEXT'),
+                    ('answer', 'TEXT'),
+                    ('playback_timestamp', 'FLOAT DEFAULT 0.0'),
+                    ('cited_timestamp', 'FLOAT'),
+                    ('cited_timestamp_formatted', 'VARCHAR(20)'),
+                    ('cited_book_id', 'INTEGER'),
+                    ('cited_page', 'INTEGER'),
+                    ('micro_quiz_json', 'TEXT'),
+                    ('quiz_answered', 'BOOLEAN DEFAULT 0'),
+                    ('quiz_correct', 'BOOLEAN DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_ai_copilot_institution_id', 'institution_id'),
+                    ('ix_ai_copilot_user_id', 'user_id'),
+                    ('ix_ai_copilot_video_id', 'video_id'),
+                    ('ix_ai_copilot_created_at', 'created_at'),
+                ]
+            },
         }
         
         # Dynamically add institution_id to all tenant tables
@@ -646,7 +823,9 @@ def migrate():
             'leaderboard_entry', 'email_queue', 'student_remark', 'email_delivery_log',
             'conversion_job', 'class_weekly_report', 'video_checkpoint',
             'checkpoint_response', 'video_doubt', 'video_doubt_reply',
-            'video_flashcard', 'academic_certificate', 'parent_access_token'
+            'video_flashcard', 'academic_certificate', 'parent_access_token',
+            'announcement', 'announcement_read', 'timetable_slot', 'reward_item', 'user_reward',
+            'ebook', 'ebook_progress', 'ai_copilot_interaction'
         ]
         for table in tenant_tables:
             if table not in migrations:
@@ -688,6 +867,14 @@ def migrate():
             print("[OK] Achievements seeded successfully")
         except Exception as e:
             print(f"[!] Could not seed achievements: {e}")
+
+        # Seed default rewards
+        print("\n[Rewards] Seeding default XP reward items...")
+        try:
+            RewardItem.seed_defaults()
+            print("[OK] Rewards seeded successfully")
+        except Exception as e:
+            print(f"[!] Could not seed rewards: {e}")
 
         # Seed default daily quest templates
         print("\n[Quests] Seeding default daily quest templates...")
