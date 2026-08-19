@@ -64,8 +64,46 @@ def get_or_create_persistent_secret_key(base_dir):
     return new_key
 
 
+def get_current_institution_id():
+    """Get active institution_id for current authenticated user."""
+    from flask_login import current_user
+    if not current_user or not current_user.is_authenticated:
+        return None
+    if getattr(current_user, 'role', '') == 'system_admin':
+        return None
+    return getattr(current_user, 'institution_id', None)
+
+
+def scope_to_institution(query, model_cls):
+    """
+    Filter SQLAlchemy query by current_user's institution_id.
+    Bypasses filtering for system_admin users.
+    """
+    inst_id = get_current_institution_id()
+    if inst_id is not None and hasattr(model_cls, 'institution_id'):
+        return query.filter(model_cls.institution_id == inst_id)
+    return query
+
+
+def enforce_institution_access(resource, custom_inst_id=None):
+    """
+    Verify that current user has permission to access a resource.
+    Aborts with 403 Forbidden if user belongs to a different institution.
+    """
+    from flask_login import current_user
+    from flask import abort
+    if not current_user or not current_user.is_authenticated:
+        return
+    if getattr(current_user, 'role', '') == 'system_admin':
+        return
+    user_inst_id = getattr(current_user, 'institution_id', None)
+    res_inst_id = custom_inst_id if custom_inst_id is not None else getattr(resource, 'institution_id', None)
+    if res_inst_id is not None and user_inst_id is not None and res_inst_id != user_inst_id:
+        abort(403, description="Access denied: Resource belongs to another institution.")
+
 
 def apply_media_cors_headers(response):
+
     """Attach CORS headers for media responses using an origin allow-list or request origin."""
     origin = request.headers.get('Origin')
     if origin:
@@ -163,9 +201,10 @@ def search_videos(query):
     if not query:
         return []
     term = f"%{query}%"
-    videos = Video.query.filter(
+    q = Video.query.filter(
         (Video.title.ilike(term)) | (Video.description.ilike(term)) | (Video.filename.ilike(term))
-    ).limit(50).all()
+    )
+    videos = scope_to_institution(q, Video).limit(50).all()
     for video in videos:
         video._search_score = rank_results(video, query, 'title', extra_fields=['description'])
     videos.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
@@ -176,9 +215,10 @@ def search_playlists(query):
     if not query:
         return []
     term = f"%{query}%"
-    playlists = Playlist.query.filter(
+    q = Playlist.query.filter(
         (Playlist.title.ilike(term)) | (Playlist.description.ilike(term))
-    ).limit(50).all()
+    )
+    playlists = scope_to_institution(q, Playlist).limit(50).all()
     for playlist in playlists:
         playlist._search_score = rank_results(playlist, query, 'title', extra_fields=['description'])
     playlists.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
@@ -189,9 +229,10 @@ def search_classes(query):
     if not query:
         return []
     term = f"%{query}%"
-    classes = Classroom.query.filter(
+    q = Classroom.query.filter(
         (Classroom.name.ilike(term)) | (Classroom.description.ilike(term))
-    ).limit(50).all()
+    )
+    classes = scope_to_institution(q, Classroom).limit(50).all()
     for cls in classes:
         cls._search_score = rank_results(cls, query, 'name', extra_fields=['description'])
     classes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
@@ -202,9 +243,10 @@ def search_quizzes(query):
     if not query:
         return []
     term = f"%{query}%"
-    quizzes = Quiz.query.filter(
+    q = Quiz.query.filter(
         (Quiz.title.ilike(term)) | (Quiz.description.ilike(term))
-    ).limit(50).all()
+    )
+    quizzes = scope_to_institution(q, Quiz).limit(50).all()
     for quiz in quizzes:
         quiz._search_score = rank_results(quiz, query, 'title', extra_fields=['description'])
     quizzes.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
@@ -218,13 +260,15 @@ def search_users(query, role_filter=None):
     users_q = User.query
     if role_filter:
         users_q = users_q.filter(User.role == role_filter)
-    users = users_q.filter(
+    users_q = users_q.filter(
         (User.username.ilike(term)) | (User.email.ilike(term))
-    ).limit(50).all()
+    )
+    users = scope_to_institution(users_q, User).limit(50).all()
     for user in users:
         user._search_score = rank_results(user, query, 'username')
     users.sort(key=lambda x: getattr(x, '_search_score', 0), reverse=True)
     return users
+
 
 
 def global_search(query):

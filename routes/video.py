@@ -40,6 +40,7 @@ video_bp = Blueprint('video', __name__)
 @login_required
 def watch_video(video_id):
     video = Video.query.get_or_404(video_id)
+    enforce_institution_access(video)
     video.view_count = (video.view_count or 0) + 1
 
     if not video.hls_playlist_path and video.master_playlist_path:
@@ -47,7 +48,8 @@ def watch_video(video_id):
 
     db.session.commit()
 
-    related_videos = Video.query.filter(Video.uploader_id == video.uploader_id, Video.id != video.id).limit(5).all()
+    rel_q = Video.query.filter(Video.uploader_id == video.uploader_id, Video.id != video.id)
+    related_videos = scope_to_institution(rel_q, Video).limit(5).all()
     top_level_comments = Comment.query.filter_by(video_id=video_id, parent_id=None).order_by(Comment.timestamp.desc()).all()
     settings = SiteSettings.query.first()
     user_liked = VideoLike.query.filter_by(user_id=current_user.id, video_id=video_id).first() is not None

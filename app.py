@@ -86,6 +86,8 @@ from services.certificate_engine import (
 from services.ai_assessment_engine import generate_quiz_from_video
 from services.transcript_engine import parse_vtt_or_srt_to_cues
 from services.retention_engine import calculate_video_retention_curve
+from services.utils import get_current_institution_id, scope_to_institution, enforce_institution_access
+
 
 # ── Logging Configuration ──
 logging.basicConfig(
@@ -830,26 +832,37 @@ def search_page():
 @limiter.limit("10000 per minute")
 def search_suggest():
     query = request.args.get('q', '').strip()
-    if not query or len(query) < 1: return jsonify({'suggestions': []})
-    suggestions = []; seen_titles = set()
-    for v in Video.query.filter(Video.title.contains(query)).limit(5).all():
+    if not query or len(query) < 1:
+        return jsonify({'suggestions': []})
+    suggestions = []
+    seen_titles = set()
+
+    v_q = scope_to_institution(Video.query.filter(Video.title.contains(query)), Video).limit(5).all()
+    for v in v_q:
         if v.title not in seen_titles:
             seen_titles.add(v.title)
             suggestions.append({'text': v.title, 'type': 'video', 'icon': 'videocam', 'url': url_for('watch_video', video_id=v.id)})
-    for p in Playlist.query.filter(Playlist.title.contains(query)).limit(3).all():
+
+    p_q = scope_to_institution(Playlist.query.filter(Playlist.title.contains(query)), Playlist).limit(3).all()
+    for p in p_q:
         title = f"[Playlist] {p.title}"
         if title not in seen_titles:
             seen_titles.add(title)
             suggestions.append({'text': p.title, 'type': 'playlist', 'icon': 'playlist_play', 'url': url_for('view_playlist', playlist_id=p.id)})
-    for c in Classroom.query.filter(Classroom.name.contains(query)).limit(3).all():
+
+    c_q = scope_to_institution(Classroom.query.filter(Classroom.name.contains(query)), Classroom).limit(3).all()
+    for c in c_q:
         title = f"[Class] {c.name}"
         if title not in seen_titles:
             seen_titles.add(title)
             suggestions.append({'text': c.name, 'type': 'class', 'icon': 'school', 'url': url_for('chatroom', class_id=c.id) if current_user.role == 'student' else '#'})
-    for u in User.query.filter(User.username.contains(query)).limit(4).all():
+
+    u_q = scope_to_institution(User.query.filter(User.username.contains(query)), User).limit(4).all()
+    for u in u_q:
         if u.username not in seen_titles and u.id != current_user.id:
             seen_titles.add(u.username)
             suggestions.append({'text': f"{u.username} ({u.role})", 'type': 'user', 'icon': 'person', 'url': '#'})
+
     return jsonify({'suggestions': suggestions[:12]})
 
 # ═══════════════════════════════════════════════════════════════
@@ -3327,7 +3340,8 @@ def delete_question(question_id):
 @login_required
 def student_quizzes():
     enrolled_class_ids = [c.id for c in current_user.enrolled_classes]
-    quizzes = Quiz.query.filter((Quiz.classroom_id.in_(enrolled_class_ids)) | (Quiz.classroom_id == None)).all()
+    qz_q = Quiz.query.filter((Quiz.classroom_id.in_(enrolled_class_ids)) | (Quiz.classroom_id == None))
+    quizzes = scope_to_institution(qz_q, Quiz).all()
     taken_ids = [r.quiz_id for r in QuizResult.query.filter_by(student_id=current_user.id).all()]
     return render_template('student_quizzes.html', quizzes=quizzes, taken_ids=taken_ids)
 
@@ -3335,6 +3349,8 @@ def student_quizzes():
 @login_required
 def take_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
+    enforce_institution_access(quiz)
+
     if quiz.classroom_id:
         enrolled_class_ids = [c.id for c in current_user.enrolled_classes]
         if quiz.classroom_id not in enrolled_class_ids:
@@ -3446,11 +3462,15 @@ def take_quiz(quiz_id):
 def student_dashboard():
     query = request.args.get('q')
     if query:
-        playlists = Playlist.query.filter(Playlist.title.contains(query)).all()
-        videos = Video.query.filter(Video.title.contains(query), Video.status.in_(['completed', 'ready']), Video.is_archived==False).all()
+        p_q = Playlist.query.filter(Playlist.title.contains(query))
+        v_q = Video.query.filter(Video.title.contains(query), Video.status.in_(['completed', 'ready']), Video.is_archived == False)
+        playlists = scope_to_institution(p_q, Playlist).all()
+        videos = scope_to_institution(v_q, Video).all()
     else:
-        playlists = Playlist.query.all()
-        videos = Video.query.filter(Video.status.in_(['completed', 'ready']), Video.is_archived==False).order_by(Video.upload_date.desc()).limit(20).all()
+        playlists = scope_to_institution(Playlist.query, Playlist).all()
+        v_q = Video.query.filter(Video.status.in_(['completed', 'ready']), Video.is_archived == False).order_by(Video.upload_date.desc())
+        videos = scope_to_institution(v_q, Video).limit(20).all()
+
     
     unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     settings = SiteSettings.query.first()
@@ -3502,6 +3522,8 @@ def view_playlist(playlist_id):
 @login_required
 def watch_video(video_id):
     video = Video.query.get_or_404(video_id)
+    enforce_institution_access(video)
+
     # Increment view count
     video.view_count = (video.view_count or 0) + 1
 
@@ -3515,7 +3537,9 @@ def watch_video(video_id):
 
     db.session.commit()
     
-    related_videos = Video.query.filter(Video.uploader_id == video.uploader_id, Video.id != video.id).limit(5).all()
+    rel_q = Video.query.filter(Video.uploader_id == video.uploader_id, Video.id != video.id)
+    related_videos = scope_to_institution(rel_q, Video).limit(5).all()
+
     top_level_comments = Comment.query.filter_by(video_id=video_id, parent_id=None).order_by(Comment.timestamp.desc()).all()
     settings = SiteSettings.query.first()
     
@@ -8500,7 +8524,8 @@ def library_hub():
     inst_type_filter = request.args.get('type', '').strip()
     dept_filter = request.args.get('dept', '').strip()
 
-    query = EBook.query
+    query = scope_to_institution(EBook.query, EBook)
+
 
     # Apply multi-level and search filters
     if q:
@@ -8694,6 +8719,7 @@ def upload_ebook():
 def read_ebook(book_id):
     """In-browser Cyber-Glass Interactive PDF Reader."""
     book = EBook.query.get_or_404(book_id)
+    enforce_institution_access(book)
     book.view_count = (book.view_count or 0) + 1
     db.session.commit()
 
@@ -8716,6 +8742,8 @@ def read_ebook(book_id):
 def update_ebook_progress(book_id):
     """Saves student reading page progress and awards milestone XP."""
     book = EBook.query.get_or_404(book_id)
+    enforce_institution_access(book)
+
     data = request.get_json() or {}
     page = int(data.get('page', 1))
     total = int(data.get('total_pages', book.page_count or 1))
