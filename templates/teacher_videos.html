@@ -381,8 +381,9 @@
                         </button>
                     </div>
                 </form>
-                <form id="dv-{{ video.id }}" action="{{ url_for('delete_video', video_id=video.id) }}" method="POST"
-                    style="display:none;"></form>
+                <form id="dv-{{ video.id }}" action="{{ url_for('delete_video', video_id=video.id) }}" method="POST" style="display:none;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                </form>
             </div>
         </div>
         {% endfor %}

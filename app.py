@@ -3045,6 +3045,46 @@ def add_to_playlist():
             flash('Video added to playlist.', 'success')
     return redirect(url_for('teacher_videos_page'))
 
+def purge_video_dependent_records(video_id):
+    """Purge all foreign key dependent records for a video prior to deleting the video row."""
+    try:
+        from models import (
+            VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
+            VideoFlashcard, Comment, VideoNote, VideoBookmark, VideoProgress,
+            VideoLike, ViewAnalytics, Notification, ConversionJob, playlist_videos
+        )
+        # Checkpoints & Responses
+        cp_ids = [cp.id for cp in VideoCheckpoint.query.filter_by(video_id=video_id).all()]
+        if cp_ids:
+            CheckpointResponse.query.filter(CheckpointResponse.checkpoint_id.in_(cp_ids)).delete(synchronize_session=False)
+            VideoCheckpoint.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+
+        # Doubts & Doubt Replies
+        doubt_ids = [d.id for d in VideoDoubt.query.filter_by(video_id=video_id).all()]
+        if doubt_ids:
+            VideoDoubtReply.query.filter(VideoDoubtReply.doubt_id.in_(doubt_ids)).delete(synchronize_session=False)
+            VideoDoubt.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+
+        # Flashcards
+        VideoFlashcard.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+
+        # Comments, Notes, Bookmarks, Progress, Likes, ViewAnalytics, Notifications, ConversionJobs
+        Comment.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        VideoNote.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        VideoBookmark.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        VideoProgress.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        VideoLike.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        ViewAnalytics.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        Notification.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+        ConversionJob.query.filter_by(video_id=video_id).delete(synchronize_session=False)
+
+        # Playlist videos association table
+        db.session.execute(playlist_videos.delete().where(playlist_videos.c.video_id == video_id))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.warning(f"[Purge Video Records Warning] Video #{video_id}: {e}")
+
 @app.route('/teacher/delete_video/<int:video_id>', methods=['POST'])
 @login_required
 @teacher_required
@@ -3059,7 +3099,7 @@ def delete_video(video_id):
         return redirect(url_for('teacher_videos_page'))
     
     # Permission check: ensure teacher owns the video or is admin/system_admin
-    if current_user.role == 'teacher' and video.uploader_id != current_user.id:
+    if current_user.role not in ['admin', 'system_admin'] and video.uploader_id != current_user.id:
         flash('You are not authorized to delete this video.', 'danger')
         return redirect(url_for('teacher_videos_page'))
 
@@ -3071,9 +3111,12 @@ def delete_video(video_id):
     except Exception as e:
         logger.error(f"File deletion error for video {video_id}: {e}")
 
+    # Purge dependent records first to prevent foreign key errors
+    purge_video_dependent_records(video.id)
+
     db.session.delete(video)
     db.session.commit()
-    flash('Video deleted successfully.', 'success')
+    flash(f'Video "{video_title}" deleted successfully.', 'success')
     log_activity('delete_video', f'Deleted video "{video_title}"')
     return redirect(url_for('teacher_videos_page'))
 
