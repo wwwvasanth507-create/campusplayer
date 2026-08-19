@@ -48,12 +48,14 @@ def set_security_headers(response):
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "img-src 'self' data: blob:; "
+            "img-src 'self' data: blob: https://img.youtube.com https://i.ytimg.com https://*.ytimg.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "media-src 'self' blob: data:; "
-            "connect-src 'self' blob: data:; "
+            "media-src 'self' blob: data: https://www.youtube.com; "
+            "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; "
+            "child-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; "
+            "connect-src 'self' blob: data: https://www.youtube.com; "
             "frame-ancestors 'none'; base-uri 'self';"
         )
         from flask import current_app

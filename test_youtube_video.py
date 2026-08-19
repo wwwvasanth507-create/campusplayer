@@ -129,6 +129,11 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertIn('dQw4w9WgXcQ', html)
             self.assertIn('initYouTubeEngine', html)
 
+            # Assert Content-Security-Policy header allows YouTube frame sources
+            csp = res.headers.get('Content-Security-Policy', '')
+            self.assertIn('frame-src', csp)
+            self.assertIn('https://www.youtube.com', csp)
+
 
 if __name__ == '__main__':
     unittest.main()
