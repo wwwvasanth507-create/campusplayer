@@ -1,133 +1,126 @@
-# CampusPlayer
+# Campus Player — Advanced Educational Video Streaming & Campus Management Platform
 
-CampusPlayer is a Flask-based educational video streaming and campus
-management platform: role-based dashboards for administrators, teachers,
-and students, HLS video streaming with adaptive quality, classroom
-workflows, quizzes, assignments, attendance tracking, analytics, and an
-optional AI assistant.
+**Campus Player** is an enterprise-grade, multi-tenant Flask application for educational video streaming, real-time classroom interaction, gamified learning, and campus management. It features role-based access for Students, Teachers, Institution Admins, and System Administrators, adaptive HLS video streaming, automated PDF reporting, real-time Socket.IO chat, and an integrated AI assistant.
 
-© 2026 Vasanth V. — All Rights Reserved. This is proprietary software;
-see [`LICENSE.md`](LICENSE.md), [`COPYRIGHT.md`](COPYRIGHT.md),
-[`TERMS.md`](TERMS.md), [`PRIVACY.md`](PRIVACY.md), and
-[`NOTICE.md`](NOTICE.md) before deploying or distributing it.
+© 2026 Vasanth V. — All Rights Reserved. Proprietary software; see [`LICENSE.md`](LICENSE.md), [`COPYRIGHT.md`](COPYRIGHT.md), [`TERMS.md`](TERMS.md), [`PRIVACY.md`](PRIVACY.md), and [`NOTICE.md`](NOTICE.md).
 
-## Key Features
+---
 
-- **Role-based access** — Admin, Teacher, and Student dashboards with
-  distinct permissions
-- **Adaptive HLS video streaming** — chunked uploads, multi-quality
-  transcoding (144p–1080p+), thumbnails, and subtitles
-- **Classrooms, quizzes & assignments** — full teacher/student workflow
-- **Attendance tracking** — session reports, PDF exports, SMS/email
-  alerts to parents
-- **Analytics & leaderboards** — student progress and engagement
-  reporting
-- **Chatrooms** — real-time messaging via Flask-SocketIO
-- **Optional AI assistant** — powered by the Gemini API
+## 🌟 Key Features
 
-## Project Structure
+- **Profile Identity & Photo Security System**:
+  - Universal privacy protection preventing raw handle/username leaks across public UI touchpoints.
+  - Automatically displays user profile photos (`avatar_url`) and updated profile display names (`user.name`).
+  - Fallback renders avatar badges with updated profile display initials (`name[0].upper()`).
 
-- `app.py` — main Flask application (routes, auth, uploads, chat,
-  analytics, admin) — the entry point used by `python app.py` and by
-  the Dockerfile (`gunicorn app:app`)
-- `factory.py` / `wsgi.py` — an alternative application-factory
-  structure (`create_app()`) with blueprints under `routes/`; kept for
-  modular development, not the default production entry point
-- `models.py` — SQLAlchemy ORM models
-- `routes/` — blueprint route modules (auth, core, search, video) used
-  by the factory pattern
-- `services/` — shared utilities: security helpers, CSRF/session
-  helpers, upload engine, email
-- `extensions.py` — Flask extension initialization
-- `celery_config.py` / `celery_tasks.py` — background task queue
-  configuration
-- `crypto_helper.py` — Fernet-based encryption helpers for sensitive
-  stored values
-- `templates/`, `static/` — Jinja2 templates and frontend assets
-- `marketing/` — standalone presentation/advertisement HTML pages
-- `requirements.txt` — Python dependencies
-- `Dockerfile`, `docker-compose.yml`, `nginx.conf` — containerized
-  deployment
-- `test_app.py`, `test_full.py`, `test_extra.py`, `test_selenium.py` —
-  automated tests
+- **Multi-Tenant Institution Isolation**:
+  - Full data segregation via `institution_id` across models, queries, uploads, and reports.
+  - System Admin master portal for global institution provisioning, domain routing, and feature configuration.
 
-## Getting Started (Local Development)
+- **Adaptive HLS Video Pipeline**:
+  - Resumable chunked video uploads (up to 20 GB).
+  - Crash-safe, multi-bitrate HLS conversion (144p to 16K) powered by FFmpeg.
+  - Sprite sheet hover seek previews, auto-generated thumbnails, and WebVTT subtitle support.
 
-1. **Install Python dependencies:**
+- **Classrooms, Quizzes & Homework Assignments**:
+  - Interactive classroom management with assignment submissions, grading, and automated PDF export.
+  - Quiz creation, attempt limits, passing threshold verification, and XP integration.
+
+- **Gamification Engine**:
+  - XP rewards for video watching (1 XP/tick) and quiz completion (100 XP).
+  - Dynamic level progression formula `(xp // 500) + 1`, login streaks, and daily quests.
+
+- **Real-Time Interactive Chat Hub**:
+  - Classroom live chat powered by Flask-SocketIO with profile photo and display name rendering.
+
+- **Attendance & PDF Reporting**:
+  - Daily attendance tracking, sub-session time bounds, attendance lock enforcement, and ReportLab PDF exports.
+
+- **AI Assistant & Study Kit**:
+  - Integrated Gemini AI helper for automated video summarization, doubt clearing, and study kit generation.
+
+---
+
+## 📁 Project Architecture
+
+- **`app.py`**: Primary Flask application entry point (`python app.py` / `gunicorn app:app`). Contains core routes, auth, sockets, analytics, and admin handlers.
+- **`models.py`**: SQLAlchemy ORM models (`User`, `Institution`, `Video`, `Classroom`, `Quiz`, `ChatMessage`, `AttendanceRecord`, `DailyQuest`).
+- **`services/`**: Modular engine services:
+  - `upload_engine.py`: Resumable chunked upload processor.
+  - `conversion_engine.py` & `ultra_parallel_processor.py`: Multi-bitrate HLS transcoding pipeline.
+  - `report_engine.py`: PDF and weekly report compilation engine.
+  - `certificate_engine.py`: ReportLab PDF certificate generation.
+  - `email.py`: Email delivery and notification service.
+  - `crypto_helper.py`: Fernet AES encryption for sensitive data.
+- **`attendance_utils.py`**: Attendance calculations and native ReportLab PDF export.
+- **`migrate_db.py`**: Zero-loss database schema migration and multi-tenant backfill.
+- **`templates/` & `static/`**: Cyber-Glass UI Jinja2 templates and assets.
+- **`test_*.py`**: Comprehensive 14-module automated test suite.
+
+---
+
+## 🚀 Quick Start (Local Development)
+
+1. **Clone & Setup Virtual Environment**:
+   ```bash
+   git clone https://github.com/wwwvasanth507-create/campusplayer.git
+   cd campusplayer
+   python -m venv venv
+   # On Windows PowerShell:
+   .\venv\Scripts\Activate.ps1
+   # On Linux/macOS:
+   source venv/bin/activate
+   ```
+
+2. **Install Dependencies & FFmpeg**:
    ```bash
    pip install -r requirements.txt
    ```
-2. **Install FFmpeg** (required as a system binary for video
-   transcoding) and make sure it's on your `PATH`.
-3. **Configure environment variables:**
+   *(Ensure system binary `ffmpeg` is installed and added to PATH for video conversion).*
+
+3. **Configure Environment Variables**:
    ```bash
    cp .env.example .env
    ```
-   Then edit `.env` and set at minimum `SECRET_KEY` (generate one with
-   `python -c "import secrets; print(secrets.token_urlsafe(32))"`).
-   Keep `.env` private — don't share it or upload it anywhere public.
-4. **Run the app:**
+   Edit `.env` to set `SECRET_KEY`, `ENCRYPTION_KEY`, and optional `GEMINI_API_KEY`.
+
+4. **Sync Database & Migration**:
+   ```bash
+   python migrate_db.py
+   ```
+
+5. **Run Application**:
    ```bash
    python app.py
    ```
-5. **Open** `http://127.0.0.1:5000` in your browser.
+   Open `http://127.0.0.1:5000` in your browser. Default Admin credentials: `admin` / `admin123`.
 
-On first run, if no admin user exists, an admin account is created
-automatically. If `ADMIN_PASSWORD` is not set in `.env`, a random
-password is generated and printed once to the server log — save it, or
-set `ADMIN_PASSWORD` explicitly for a predictable credential.
+---
 
-## Production Deployment (Docker)
+## 🛡️ Production Deployment (Docker)
 
 ```bash
-cp .env.example .env   # fill in real values
+cp .env.example .env
 docker compose up -d --build
 ```
+This provisions Flask (`gunicorn` with `eventlet`), Celery workers, Redis, PostgreSQL, and Nginx.
 
-This starts the Flask app (via `gunicorn` with the `eventlet` worker
-class for SocketIO support), a Celery worker and beat scheduler, Redis,
-PostgreSQL, and an nginx reverse proxy. Review `docker-compose.yml` and
-`nginx.conf` and adjust ports/volumes for your environment before
-exposing it publicly.
+---
 
-Before going to production:
-- Set a strong, unique `SECRET_KEY` and `ENCRYPTION_KEY`
-- Set `FORCE_HTTPS=True` and `SESSION_COOKIE_SECURE=True` once served
-  over HTTPS
-- Set `ADMIN_PASSWORD` explicitly rather than relying on the
-  auto-generated one
-- Switch `DATABASE_URL` to PostgreSQL (already configured in
-  `docker-compose.yml`)
-- Leave `FLASK_DEBUG` unset/`False`
+## 🧪 Running Automated Test Suite
 
-## Security Notes
-
-A security review was performed on this codebase before packaging. See
-[`SECURITY.md`](SECURITY.md) for a summary of what was checked, what was
-fixed, and recommendations for anyone deploying this publicly.
-
-## Optional Extensions
-
-- `Flask-Mail` — email support for notifications and report delivery
-- `Flasgger` — optional Swagger/OpenAPI documentation
-- `Flask-Assets` — asset bundling
-- `Selenium` + headless Chrome — optional browser automation for bulk
-  SMS workflows (see `SMS_ENABLED`/`SMS_USE_SELENIUM` in `.env`)
-- `google-generativeai` — optional AI assistant (`GEMINI_API_KEY`)
-- `eventlet` — async worker support for `Flask-SocketIO`
-
-## Running Tests
+Run the full project automated test suite (51/51 tests passing):
 
 ```bash
-pip install pytest
-pytest test_app.py test_extra.py test_full.py
+# Discover and run all unittest files:
+python -m unittest discover -s . -p "test_*.py"
+
+# Or run individual test modules:
+python -m unittest test_profile_display_name_security.py test_full.py test_master_e2e.py
 ```
 
-`test_selenium.py` requires a running server and a local Chrome/Chromium
-install and is not part of the default test run.
+---
 
-## License
+## 📄 License & Terms
 
-CampusPlayer is proprietary software. See [`LICENSE.md`](LICENSE.md) for
-full terms. Unauthorized copying, modification, or redistribution is
-prohibited.
+Campus Player is proprietary software. See [`LICENSE.md`](LICENSE.md), [`COPYRIGHT.md`](COPYRIGHT.md), and [`TERMS.md`](TERMS.md) for licensing terms.
