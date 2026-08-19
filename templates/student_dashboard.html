@@ -337,8 +337,10 @@
             <a href="{{ url_for('watch_video', video_id=video.id) }}" class="cp-card" title="{{ video.title }}">
                 <!-- 16:9 Viewport & Media Frame -->
                 <div class="cp-media-frame">
-                    {% if video.thumbnail_path %}
-                    <img src="{{ url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" loading="lazy">
+                    {% if video.video_type == 'youtube' %}
+                    <img src="https://img.youtube.com/vi/{{ video.youtube_id }}/hqdefault.jpg" alt="{{ video.title }}" loading="lazy">
+                    {% elif video.thumbnail_path %}
+                    <img src="{{ video.thumbnail_path if video.thumbnail_path.startswith('http') else url_for('static', filename=video.thumbnail_path) }}" alt="{{ video.title }}" loading="lazy">
                     {% else %}
                     <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--surface2);">
                         <i class="material-icons" style="font-size:2.8rem; color:var(--text-dim); opacity:0.35;">smart_display</i>
@@ -350,7 +352,11 @@
                     <span class="cp-tag-left">
                         <i class="material-icons" style="font-size:0.75rem;">school</i> Lecture
                     </span>
+                    {% if video.video_type == 'youtube' %}
+                    <span class="cp-tag-right" style="background:rgba(255,0,0,0.85); color:#fff;"><i class="fab fa-youtube"></i> YouTube</span>
+                    {% else %}
                     <span class="cp-tag-right">1080p HLS</span>
+                    {% endif %}
 
                     <!-- Duration Pill -->
                     {% if video.duration_seconds and video.duration_seconds > 0 %}

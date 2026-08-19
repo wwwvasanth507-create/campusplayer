@@ -333,6 +333,11 @@ class Video(db.Model):
     uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=True, index=True)
 
+    # YouTube & Source Type Fields
+    video_type = db.Column(db.String(20), default='local', index=True)  # 'local' or 'youtube'
+    youtube_id = db.Column(db.String(100), nullable=True, index=True)
+    youtube_url = db.Column(db.String(500), nullable=True)
+
     # Progress tracking
     status = db.Column(db.String(20), default='pending', index=True)
     processing_progress = db.Column(db.Integer, default=0)

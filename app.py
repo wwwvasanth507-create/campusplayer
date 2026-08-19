@@ -2223,6 +2223,90 @@ def teacher_dashboard():
         students=students, unread_count=unread_count, classes=classes, quizzes=quizzes,
         teacher_stats=teacher_stats, now_date=datetime.utcnow().date(), settings=settings)
 
+def extract_youtube_id(url):
+    """Extract 11-character YouTube video ID from various URL formats or raw ID."""
+    if not url:
+        return None
+    url = url.strip()
+    patterns = [
+        r'(?:v=|\/embed\/|\/shorts\/|\/v\/|https?:\/\/youtu\.be\/|\/e\/)([\w-]{11})',
+        r'^([\w-]{11})$'
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+@app.route('/teacher/add_youtube_video', methods=['POST'])
+@login_required
+@teacher_required
+def add_youtube_video():
+    title = request.form.get('title', '').strip()
+    youtube_url = request.form.get('youtube_url', '').strip()
+    classroom_id = request.form.get('classroom_id', type=int)
+    description = request.form.get('description', '').strip()
+    tags = request.form.get('tags', '').strip()
+    playlist_id = request.form.get('playlist_id', type=int)
+
+    if not title or not youtube_url:
+        flash('Video title and YouTube link are required.', 'danger')
+        return redirect(url_for('teacher_videos_page'))
+
+    yt_id = extract_youtube_id(youtube_url)
+    if not yt_id:
+        flash('Invalid YouTube URL or Video ID. Please enter a valid YouTube link.', 'danger')
+        return redirect(url_for('teacher_videos_page'))
+
+    # Multi-tenant scoping
+    inst_id = current_user.institution_id
+
+    # Create Video record
+    video = Video(
+        institution_id=inst_id,
+        title=title,
+        filename=f"youtube_{yt_id}",
+        uploader_id=current_user.id,
+        classroom_id=classroom_id if classroom_id and classroom_id > 0 else None,
+        video_type='youtube',
+        youtube_id=yt_id,
+        youtube_url=f"https://www.youtube.com/watch?v={yt_id}",
+        status='ready',
+        processing_progress=100,
+        thumbnail_path=f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
+        description=description if description else None,
+        tags=tags if tags else None
+    )
+    db.session.add(video)
+    db.session.commit()
+
+    # Add to playlist if selected
+    if playlist_id and playlist_id > 0:
+        pl = Playlist.query.get(playlist_id)
+        if pl and (pl.creator_id == current_user.id or current_user.role == 'admin'):
+            pl.videos.append(video)
+            db.session.commit()
+
+    # Award XP to teacher for uploading educational content
+    current_user.xp = (current_user.xp or 0) + 50
+
+    # Send notification to classroom students if assigned to classroom
+    if classroom_id:
+        cls = Classroom.query.get(classroom_id)
+        if cls:
+            for s in cls.students:
+                n = Notification(
+                    user_id=s.id,
+                    title=f"New YouTube Lecture: {title}",
+                    message=f"{current_user.name} added a new YouTube lecture '{title}' to {cls.name}.",
+                    link=url_for('video_player', video_id=video.id)
+                )
+                db.session.add(n)
+            db.session.commit()
+
+    flash(f"YouTube video '{title}' added successfully! (+50 XP)", "success")
+    return redirect(url_for('teacher_videos_page'))
+
 @app.route('/teacher/videos')
 @login_required
 @teacher_required
@@ -7087,6 +7171,7 @@ def submit_checkpoint_answer(checkpoint_id):
             xp_awarded = cp.xp_reward or 25
             current_user.xp = (current_user.xp or 0) + xp_awarded
             current_user.update_level()
+            db.session.add(current_user)
 
         db.session.commit()
 

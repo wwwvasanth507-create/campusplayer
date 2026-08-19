@@ -209,6 +209,9 @@ def migrate():
             },
             'video': {
                 'columns': [
+                    ('video_type', 'VARCHAR(20) DEFAULT \'local\''),
+                    ('youtube_id', 'VARCHAR(100)'),
+                    ('youtube_url', 'VARCHAR(500)'),
                     ('chapters_json', 'TEXT'),
                     ('difficulty', 'VARCHAR(20) DEFAULT \'intermediate\''),
                     ('views', 'INTEGER DEFAULT 0'),

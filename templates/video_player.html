@@ -1268,6 +1268,11 @@
                     {% set hls_url = '' %}
                 {% endif %}
             {% endif %}
+            {% if video.video_type == 'youtube' %}
+            <div id="youtube-embed-wrapper" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden;">
+                <div id="youtube-player" style="width:100%; height:100%;"></div>
+            </div>
+            {% else %}
             <video id="video-player" class="video-js" preload="auto" width="100%" height="100%"
                 style="display:block;width:100%;height:100%;object-fit:cover;object-position:center center;background:#000;" playsinline crossorigin="anonymous">
                 {% if hls_source %}
@@ -1278,6 +1283,7 @@
                     srclang="{{ video.subtitle_language or 'en' }}" label="Subtitles" default>
                 {% endif %}
             </video>
+            {% endif %}
 
             <!-- ═══ IN-VIDEO POP-UP CHECKPOINT OVERLAY ═══ -->
             <div id="video-checkpoint-overlay" style="display:none; position:absolute; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(8px); z-index:90; align-items:center; justify-content:center; padding:20px;">
@@ -1310,7 +1316,7 @@
                 </div>
             </div>
 
-            {% if not hls_source %}
+            {% if not hls_source and video.video_type != 'youtube' %}
             <div class="vp-error" style="margin-top:16px;color:#ff6b6b;font-weight:600;">This video is not ready for playback yet.</div>
             {% endif %}
         </div>
@@ -1318,31 +1324,180 @@
         <script>
             (function () {
                 var videoId = {{ video.id | tojson }};
-                var hasAdaptive = {{ 'true' if video.has_adaptive_streams else 'false' }};
-                var renditions = {{ video.get_renditions() | tojson }};
-                var hlsUrl = {{ hls_url | tojson }};
-                console.debug('[Video Player] hls_source:', {{ hls_source | tojson }} , 'hlsUrl:', hlsUrl);
+                var videoType = {{ (video.video_type or 'local') | tojson }};
+                var youtubeId = {{ (video.youtube_id or '') | tojson }};
                 var settingsData = {
                     lock_video_speed: {% if settings %}{{ settings.lock_video_speed | tojson }}{% else %} false{% endif %},
                     lock_video_skipping: {% if settings %}{{ settings.lock_video_skipping | tojson }}{% else %} false{% endif %}
                 };
-                {% set thumbnail_vtt_url = url_for('serve_hls', video_id=video.id, filename='thumbnails.vtt') if video.thumbnails_vtt_path or hls_source else none %}
-                var subtitleUrl = {% if video.subtitle_path %}{{ url_for('static', filename=video.subtitle_path) | tojson }}{% else %}null{% endif %};
-                var thumbnailsVtt = {% if thumbnail_vtt_url %}{{ thumbnail_vtt_url | tojson }}{% else %}null{% endif %};
-                document.addEventListener('DOMContentLoaded', function () {
-                    var player = new CampusPlayer({
-                        videoElement: 'video-player',
-                        videoId: videoId,
-                        hlsUrl: hlsUrl,
-                        hasAdaptive: hasAdaptive,
-                        renditions: renditions,
-                        settings: settingsData,
-                        subtitleUrl: subtitleUrl,
-                        thumbnailsVtt: thumbnailsVtt,
-                        duration: {{ video.duration_seconds }}
+
+                if (videoType === 'youtube') {
+                    // YouTube Player IFrame Integration with Rule & Lock Enforcement
+                    var ytPlayer = null;
+                    var maxWatchedTime = 0;
+                    var tickTimer = null;
+                    var lockInterval = null;
+
+                    window.initYouTubeEngine = function() {
+                        if (!window.YT || !window.YT.Player) return;
+                        ytPlayer = new YT.Player('youtube-player', {
+                            videoId: youtubeId,
+                            playerVars: {
+                                'autoplay': 0,
+                                'controls': 1,
+                                'rel': 0,
+                                'modestbranding': 1,
+                                'enablejsapi': 1
+                            },
+                            events: {
+                                'onReady': onYtReady,
+                                'onStateChange': onYtStateChange,
+                                'onPlaybackRateChange': onYtSpeedChange
+                            }
+                        });
+                    };
+
+                    function onYtReady(event) {
+                        console.log('[YouTube Player] Ready. Lock Settings:', settingsData);
+                        setupYouTubeQualitySelector();
+                        
+                        // Skipping & Speed Lock interval watcher
+                        lockInterval = setInterval(function() {
+                            if (!ytPlayer || typeof ytPlayer.getCurrentTime !== 'function') return;
+                            var cur = ytPlayer.getCurrentTime();
+                            var state = ytPlayer.getPlayerState();
+
+                            // Skipping Lock Enforcement
+                            if (settingsData.lock_video_skipping && state === YT.PlayerState.PLAYING) {
+                                if (cur > maxWatchedTime + 2.5) {
+                                    ytPlayer.seekTo(maxWatchedTime, true);
+                                } else if (cur > maxWatchedTime) {
+                                    maxWatchedTime = cur;
+                                }
+                            }
+                        }, 300);
+                    }
+
+                    function onYtSpeedChange(event) {
+                        if (settingsData.lock_video_speed && event.data !== 1) {
+                            console.warn('[YouTube Player] Speed is locked by Admin. Resetting to 1.0x.');
+                            ytPlayer.setPlaybackRate(1);
+                        }
+                    }
+
+                    function onYtStateChange(event) {
+                        if (typeof YT !== 'undefined') {
+                            if (event.data === YT.PlayerState.PLAYING) {
+                                startWatchTicks();
+                            } else {
+                                stopWatchTicks();
+                            }
+                            if (event.data === YT.PlayerState.ENDED) {
+                                recordWatchTick(true);
+                            }
+                        }
+                    }
+
+                    function startWatchTicks() {
+                        if (tickTimer) return;
+                        tickTimer = setInterval(function() {
+                            recordWatchTick(false);
+                        }, 5000);
+                    }
+
+                    function stopWatchTicks() {
+                        if (tickTimer) {
+                            clearInterval(tickTimer);
+                            tickTimer = null;
+                        }
+                    }
+
+                    function recordWatchTick(isCompleted) {
+                        fetch('/record_watch_tick', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': {{ csrf_token | tojson }}
+                            },
+                            body: JSON.stringify({
+                                video_id: videoId,
+                                duration_seconds: 5,
+                                completed: isCompleted
+                            })
+                        }).then(res => res.json()).then(data => {
+                            if (data && data.xp_gained) {
+                                console.log('[YouTube Player] Watch tick recorded: +1 XP');
+                            }
+                        }).catch(err => console.error('[YouTube Player] Watch tick error:', err));
+                    }
+
+                    function setupYouTubeQualitySelector() {
+                        var container = document.getElementById('vp-quality-options');
+                        if (!container) return;
+                        container.innerHTML = '';
+                        
+                        var qualities = [
+                            { label: 'Auto', value: 'auto' },
+                            { label: '1080p', value: 'hd1080' },
+                            { label: '720p', value: 'hd720' },
+                            { label: '480p', value: 'large' },
+                            { label: '360p', value: 'medium' },
+                            { label: '240p', value: 'small' }
+                        ];
+
+                        qualities.forEach(q => {
+                            var btn = document.createElement('button');
+                            btn.className = 'vp-quality-btn' + (q.value === 'auto' ? ' vp-quality-active' : '');
+                            btn.innerText = q.label;
+                            btn.onclick = function() {
+                                document.querySelectorAll('#vp-quality-options .vp-quality-btn').forEach(b => b.classList.remove('vp-quality-active'));
+                                btn.classList.add('vp-quality-active');
+                                if (ytPlayer && typeof ytPlayer.setPlaybackQuality === 'function') {
+                                    ytPlayer.setPlaybackQuality(q.value);
+                                }
+                            };
+                            container.appendChild(btn);
+                        });
+                    }
+
+                    // Load YouTube API script
+                    document.addEventListener('DOMContentLoaded', function () {
+                        if (!window.YT) {
+                            var tag = document.createElement('script');
+                            tag.src = "https://www.youtube.com/iframe_api";
+                            var firstScriptTag = document.getElementsByTagName('script')[0];
+                            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                        } else {
+                            window.initYouTubeEngine();
+                        }
                     });
-                    window.campusPlayer = player;
-                });
+                    window.onYouTubeIframeAPIReady = function() {
+                        window.initYouTubeEngine();
+                    };
+                } else {
+                    // Standard HLS CampusPlayer initialization
+                    var hasAdaptive = {{ 'true' if video.has_adaptive_streams else 'false' }};
+                    var renditions = {{ video.get_renditions() | tojson }};
+                    var hlsUrl = {{ hls_url | tojson }};
+                    console.debug('[Video Player] hls_source:', {{ hls_source | tojson }} , 'hlsUrl:', hlsUrl);
+                    {% set thumbnail_vtt_url = url_for('serve_hls', video_id=video.id, filename='thumbnails.vtt') if video.thumbnails_vtt_path or hls_source else none %}
+                    var subtitleUrl = {% if video.subtitle_path %}{{ url_for('static', filename=video.subtitle_path) | tojson }}{% else %}null{% endif %};
+                    var thumbnailsVtt = {% if thumbnail_vtt_url %}{{ thumbnail_vtt_url | tojson }}{% else %}null{% endif %};
+                    document.addEventListener('DOMContentLoaded', function () {
+                        var player = new CampusPlayer({
+                            videoElement: 'video-player',
+                            videoId: videoId,
+                            hlsUrl: hlsUrl,
+                            hasAdaptive: hasAdaptive,
+                            renditions: renditions,
+                            settings: settingsData,
+                            subtitleUrl: subtitleUrl,
+                            thumbnailsVtt: thumbnailsVtt,
+                            duration: {{ video.duration_seconds }}
+                        });
+                        window.campusPlayer = player;
+                    });
+                }
             })();
         </script>
     </div>
