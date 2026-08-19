@@ -57,23 +57,23 @@ main() {
         exit 1
     }
 
-    # Step 4: Save pre-migration baseline audit report
-    echo "[4/10] Capturing pre-migration baseline data audit..."
-    $VENV_PYTHON "$APP_DIR/audit_platform.py" --save-baseline || {
-        echo "❌ Pre-migration baseline audit failed! Aborting deployment."
-        exit 1
-    }
-
-    # Step 5: Safe Git fetch and pull (NO git reset --hard)
-    echo "[5/10] Fetching and pulling latest changes from origin/main..."
+    # Step 4: Safe Git fetch and pull (NO git reset --hard)
+    echo "[4/10] Fetching and pulling latest changes from origin/main..."
     git pull origin main || {
         echo "❌ Git pull failed! Resolve conflicts manually before proceeding."
         exit 1
     }
 
-    # Step 6: Dependencies update
-    echo "[6/10] Installing / updating Python dependencies..."
+    # Step 5: Dependencies update
+    echo "[5/10] Installing / updating Python dependencies..."
     $VENV_PIP install -r requirements.txt --quiet
+
+    # Step 6: Save pre-migration baseline audit report
+    echo "[6/10] Capturing pre-migration baseline data audit..."
+    $VENV_PYTHON "$APP_DIR/audit_platform.py" --save-baseline || {
+        echo "❌ Pre-migration baseline audit failed! Aborting deployment."
+        exit 1
+    }
 
     # Step 7: Single-process Database Migration & Schema Sync
     echo "[7/10] Running database migrations..."
@@ -88,6 +88,7 @@ main() {
         echo "❌ Data integrity baseline verification failed! Check audit output."
         exit 1
     }
+
 
     # Step 9: Service restart
     echo "[9/10] Restarting application service..."
