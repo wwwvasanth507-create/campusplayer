@@ -1433,64 +1433,52 @@
 .youtube-player-container .yt-overlay-watch-later,
 .youtube-player-container .yt-overlay-watch-youtube,
 .youtube-player-container .yt-overlay-title,
-.youtube-player-container .yt-overlay-settings,
 .youtube-player-container .youtube-share-btn,
 .youtube-player-container .youtube-clock-btn,
-.youtube-player-container .youtube-settings-btn,
 .youtube-player-container .youtube-watch-on-yt,
 .youtube-player-container .ytp-share-button,
 .youtube-player-container .ytp-watch-later-button,
 .youtube-player-container .ytp-youtube-button,
 .youtube-player-container .ytp-title,
 .youtube-player-container .ytp-chrome-top,
-.youtube-player-container .ytp-settings-button,
 .youtube-video-player .yt-overlay-share,
 .youtube-video-player .yt-overlay-clock,
 .youtube-video-player .yt-overlay-watch-later,
 .youtube-video-player .yt-overlay-watch-youtube,
 .youtube-video-player .yt-overlay-title,
-.youtube-video-player .yt-overlay-settings,
 .youtube-video-player .youtube-share-btn,
 .youtube-video-player .youtube-clock-btn,
-.youtube-video-player .youtube-settings-btn,
 .youtube-video-player .youtube-watch-on-yt,
 .youtube-video-player .ytp-share-button,
 .youtube-video-player .ytp-watch-later-button,
 .youtube-video-player .ytp-youtube-button,
 .youtube-video-player .ytp-title,
 .youtube-video-player .ytp-chrome-top,
-.youtube-video-player .ytp-settings-button,
 .youtube-only-controls .yt-overlay-share,
 .youtube-only-controls .yt-overlay-clock,
 .youtube-only-controls .yt-overlay-watch-later,
 .youtube-only-controls .yt-overlay-watch-youtube,
 .youtube-only-controls .yt-overlay-title,
-.youtube-only-controls .yt-overlay-settings,
 .youtube-only-controls .youtube-share-btn,
 .youtube-only-controls .youtube-clock-btn,
-.youtube-only-controls .youtube-settings-btn,
 .youtube-only-controls .youtube-watch-on-yt,
 .youtube-only-controls .ytp-share-button,
 .youtube-only-controls .ytp-watch-later-button,
 .youtube-only-controls .ytp-youtube-button,
 .youtube-only-controls .ytp-title,
-.youtube-only-controls .ytp-chrome-top,
-.youtube-only-controls .ytp-settings-button {
+.youtube-only-controls .ytp-chrome-top {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
 }
 
-/* Keep Closed Captions, Play/Pause, Seek bar, Fullscreen, and Volume controls fully functional */
+/* Keep Closed Captions (CC), Settings, Play/Pause, Video Playing Bar, Fullscreen, and Volume controls fully functional */
 .youtube-player-container iframe,
 .youtube-video-player iframe,
 .youtube-only-controls iframe {
-    position: absolute;
-    top: -55px;
-    left: 0;
     width: 100%;
-    height: calc(100% + 55px);
+    height: 100%;
     border: 0;
     display: block;
 }
@@ -1528,7 +1516,7 @@
 
                 <iframe id="youtube-player"
                         src="https://www.youtube.com/embed/{{ yt_id }}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=1&playsinline=1&controls=1"
-                        style="position:absolute; top:-55px; left:0; width:100%; height:calc(100% + 55px); border:0; display:block;"
+                        style="width:100%; height:100%; border:0; display:block;"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowfullscreen>
                 </iframe>

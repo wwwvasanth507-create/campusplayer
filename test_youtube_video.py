@@ -174,10 +174,11 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertEqual(res_yt.status_code, 200)
             html_yt = res_yt.get_data(as_text=True)
             self.assertIn('youtube-player-container', html_yt)
+            self.assertIn('cc_load_policy=1', html_yt)
             self.assertIn('.youtube-share-btn', html_yt)
             self.assertIn('.youtube-clock-btn', html_yt)
-            self.assertIn('.youtube-settings-btn', html_yt)
             self.assertIn('.youtube-watch-on-yt', html_yt)
+            self.assertIn('.yt-overlay-title', html_yt)
             self.assertIn('.yt-overlay-title', html_yt)
 
             # Non-YouTube (Local HLS) Video Player Response

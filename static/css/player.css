@@ -1836,62 +1836,53 @@ body.campus-body-fullscreen .vp-hero::after {
     border-radius: 12px;
 }
 
-/* Hide Share button, Watch Later/Clock button, Watch on YouTube overlay, Video title overlay, and Settings button strictly for YouTube videos */
+/* Hide Share button, Watch Later/Clock button, Watch on YouTube overlay, and Video title overlay strictly for YouTube videos */
 .youtube-player-container .yt-overlay-share,
 .youtube-player-container .yt-overlay-clock,
 .youtube-player-container .yt-overlay-watch-later,
 .youtube-player-container .yt-overlay-watch-youtube,
 .youtube-player-container .yt-overlay-title,
-.youtube-player-container .yt-overlay-settings,
 .youtube-player-container .youtube-share-btn,
 .youtube-player-container .youtube-clock-btn,
-.youtube-player-container .youtube-settings-btn,
 .youtube-player-container .youtube-watch-on-yt,
 .youtube-player-container .ytp-share-button,
 .youtube-player-container .ytp-watch-later-button,
 .youtube-player-container .ytp-youtube-button,
 .youtube-player-container .ytp-title,
 .youtube-player-container .ytp-chrome-top,
-.youtube-player-container .ytp-settings-button,
 .youtube-video-player .yt-overlay-share,
 .youtube-video-player .yt-overlay-clock,
 .youtube-video-player .yt-overlay-watch-later,
 .youtube-video-player .yt-overlay-watch-youtube,
 .youtube-video-player .yt-overlay-title,
-.youtube-video-player .yt-overlay-settings,
 .youtube-video-player .youtube-share-btn,
 .youtube-video-player .youtube-clock-btn,
-.youtube-video-player .youtube-settings-btn,
 .youtube-video-player .youtube-watch-on-yt,
 .youtube-video-player .ytp-share-button,
 .youtube-video-player .ytp-watch-later-button,
 .youtube-video-player .ytp-youtube-button,
 .youtube-video-player .ytp-title,
 .youtube-video-player .ytp-chrome-top,
-.youtube-video-player .ytp-settings-button,
 .youtube-only-controls .yt-overlay-share,
 .youtube-only-controls .yt-overlay-clock,
 .youtube-only-controls .yt-overlay-watch-later,
 .youtube-only-controls .yt-overlay-watch-youtube,
 .youtube-only-controls .yt-overlay-title,
-.youtube-only-controls .yt-overlay-settings,
 .youtube-only-controls .youtube-share-btn,
 .youtube-only-controls .youtube-clock-btn,
-.youtube-only-controls .youtube-settings-btn,
 .youtube-only-controls .youtube-watch-on-yt,
 .youtube-only-controls .ytp-share-button,
 .youtube-only-controls .ytp-watch-later-button,
 .youtube-only-controls .ytp-youtube-button,
 .youtube-only-controls .ytp-title,
-.youtube-only-controls .ytp-chrome-top,
-.youtube-only-controls .ytp-settings-button {
+.youtube-only-controls .ytp-chrome-top {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
 }
 
-/* Ensure CC button, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain available */
+/* Ensure CC button, Settings gear icon, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain available */
 .youtube-player-container iframe,
 .youtube-video-player iframe,
 .youtube-only-controls iframe {
