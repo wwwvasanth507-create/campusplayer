@@ -129,10 +129,63 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertIn('dQw4w9WgXcQ', html)
             self.assertIn('initYouTubeEngine', html)
 
+            # Assert YouTube player wrapper contains scoped cleanup classes
+            self.assertIn('youtube-player-container', html)
+            self.assertIn('youtube-video-player', html)
+            self.assertIn('youtube-only-controls', html)
+
+            # Assert YouTube embed iframe has controls=1 and cc_load_policy=1
+            self.assertIn('controls=1', html)
+            self.assertIn('cc_load_policy=1', html)
+
             # Assert Content-Security-Policy header allows YouTube frame sources
             csp = res.headers.get('Content-Security-Policy', '')
             self.assertIn('frame-src', csp)
             self.assertIn('https://www.youtube.com', csp)
+
+    def test_youtube_ui_cleanup_and_hls_isolation(self):
+        """Test YouTube UI cleanup rules strictly apply to YouTube videos and do not affect local HLS videos."""
+        yt_video = Video(
+            title='Physics YT Lecture',
+            filename='youtube_jFWsj_QT0G8',
+            uploader_id=self.teacher.id,
+            institution_id=self.inst.id,
+            video_type='youtube',
+            youtube_id='jFWsj_QT0G8',
+            status='ready'
+        )
+        hls_video = Video(
+            title='Chemistry Local Lecture',
+            filename='local_lecture.mp4',
+            uploader_id=self.teacher.id,
+            institution_id=self.inst.id,
+            video_type='uploaded',
+            status='completed',
+            hls_playlist_path='video_123/master.m3u8'
+        )
+        db.session.add_all([yt_video, hls_video])
+        db.session.commit()
+
+        with self.client:
+            self.client.post('/login', data={'username': 'yt_student_user', 'password': 'pass123', 'role': 'student'}, follow_redirects=True)
+            
+            # YouTube Video Player Response
+            res_yt = self.client.get(f'/video/{yt_video.id}')
+            self.assertEqual(res_yt.status_code, 200)
+            html_yt = res_yt.get_data(as_text=True)
+            self.assertIn('youtube-player-container', html_yt)
+            self.assertIn('.youtube-share-btn', html_yt)
+            self.assertIn('.youtube-clock-btn', html_yt)
+            self.assertIn('.youtube-settings-btn', html_yt)
+            self.assertIn('.youtube-watch-on-yt', html_yt)
+            self.assertIn('.yt-overlay-title', html_yt)
+
+            # Non-YouTube (Local HLS) Video Player Response
+            res_hls = self.client.get(f'/video/{hls_video.id}')
+            self.assertEqual(res_hls.status_code, 200)
+            html_hls = res_hls.get_data(as_text=True)
+            self.assertIn('id="video-player"', html_hls)
+            self.assertNotIn('id="youtube-player"', html_hls)
 
 
 if __name__ == '__main__':
