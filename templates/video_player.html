@@ -1412,8 +1412,65 @@
         padding-top: 0;
     }
 
-    .vp-comment-form {
-        margin-bottom: 16px;
+    /* ═══════════════════════════════════════════════════════════════
+       YouTube-Specific Video Player UI Cleanup (YouTube Videos Only)
+       ═══════════════════════════════════════════════════════════════ */
+    .youtube-player-container,
+    .youtube-video-player,
+    .youtube-only-controls {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #000;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    /* Scoped UI cleanup rules strictly for YouTube videos */
+    .youtube-player-container .yt-overlay-share,
+    .youtube-player-container .yt-overlay-clock,
+    .youtube-player-container .yt-overlay-watch-later,
+    .youtube-player-container .yt-overlay-watch-youtube,
+    .youtube-player-container .yt-overlay-title,
+    .youtube-player-container .yt-overlay-settings,
+    .youtube-player-container .youtube-share-btn,
+    .youtube-player-container .youtube-clock-btn,
+    .youtube-player-container .youtube-settings-btn,
+    .youtube-player-container .youtube-watch-on-yt,
+    .youtube-video-player .yt-overlay-share,
+    .youtube-video-player .yt-overlay-clock,
+    .youtube-video-player .yt-overlay-watch-later,
+    .youtube-video-player .yt-overlay-watch-youtube,
+    .youtube-video-player .yt-overlay-title,
+    .youtube-video-player .yt-overlay-settings,
+    .youtube-video-player .youtube-share-btn,
+    .youtube-video-player .youtube-clock-btn,
+    .youtube-video-player .youtube-settings-btn,
+    .youtube-video-player .youtube-watch-on-yt,
+    .youtube-only-controls .yt-overlay-share,
+    .youtube-only-controls .yt-overlay-clock,
+    .youtube-only-controls .yt-overlay-watch-later,
+    .youtube-only-controls .yt-overlay-watch-youtube,
+    .youtube-only-controls .yt-overlay-title,
+    .youtube-only-controls .yt-overlay-settings,
+    .youtube-only-controls .youtube-share-btn,
+    .youtube-only-controls .youtube-clock-btn,
+    .youtube-only-controls .youtube-settings-btn,
+    .youtube-only-controls .youtube-watch-on-yt {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
+    /* Keep Closed Captions, Play/Pause, Seek bar, Fullscreen, and Volume controls fully functional */
+    .youtube-player-container iframe,
+    .youtube-video-player iframe,
+    .youtube-only-controls iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
     }
 }
 </style>
@@ -1442,9 +1499,9 @@
             {% set is_yt = (video.video_type == 'youtube') or (video.youtube_id) or (video.filename and video.filename.startswith('youtube_')) %}
             {% set yt_id = video.resolved_youtube_id or video.youtube_id or (video.filename.replace('youtube_', '') if video.filename and video.filename.startswith('youtube_') else '') %}
             {% if is_yt or yt_id %}
-            <div id="youtube-embed-wrapper" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; border-radius:12px;">
+            <div id="youtube-embed-wrapper" class="youtube-player-container youtube-video-player youtube-only-controls" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; overflow:hidden; border-radius:12px;">
                 <iframe id="youtube-player"
-                        src="https://www.youtube.com/embed/{{ yt_id }}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1"
+                        src="https://www.youtube.com/embed/{{ yt_id }}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=1&playsinline=1&controls=1"
                         style="width:100%; height:100%; border:0;"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowfullscreen>
@@ -1510,8 +1567,10 @@
                     lock_video_skipping: {% if settings %}{{ settings.lock_video_skipping | tojson }}{% else %} false{% endif %}
                 };
 
-                if (videoType === 'youtube' || isYouTube || youtubeId) {
-                    // YouTube Player IFrame Integration with Rule & Lock Enforcement
+                var is_youtube_video = (videoType === 'youtube' || isYouTube || !!youtubeId);
+
+                if (is_youtube_video) {
+                    // YouTube Player IFrame Integration with Rule & Lock Enforcement & Scoped Controls
                     var ytPlayer = null;
                     var maxWatchedTime = 0;
                     var tickTimer = null;

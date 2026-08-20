@@ -1822,4 +1822,66 @@ body.campus-body-fullscreen .vp-hero::after {
     text-overflow: ellipsis !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   YouTube-Specific Video Player UI Cleanup (YouTube Videos Only)
+   ═══════════════════════════════════════════════════════════════ */
+.youtube-player-container,
+.youtube-video-player,
+.youtube-only-controls {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+/* Hide Share button, Watch Later/Clock button, Watch on YouTube overlay, Video title overlay, and Settings button strictly for YouTube videos */
+.youtube-player-container .yt-overlay-share,
+.youtube-player-container .yt-overlay-clock,
+.youtube-player-container .yt-overlay-watch-later,
+.youtube-player-container .yt-overlay-watch-youtube,
+.youtube-player-container .yt-overlay-title,
+.youtube-player-container .yt-overlay-settings,
+.youtube-player-container .youtube-share-btn,
+.youtube-player-container .youtube-clock-btn,
+.youtube-player-container .youtube-settings-btn,
+.youtube-player-container .youtube-watch-on-yt,
+.youtube-video-player .yt-overlay-share,
+.youtube-video-player .yt-overlay-clock,
+.youtube-video-player .yt-overlay-watch-later,
+.youtube-video-player .yt-overlay-watch-youtube,
+.youtube-video-player .yt-overlay-title,
+.youtube-video-player .yt-overlay-settings,
+.youtube-video-player .youtube-share-btn,
+.youtube-video-player .youtube-clock-btn,
+.youtube-video-player .youtube-settings-btn,
+.youtube-video-player .youtube-watch-on-yt,
+.youtube-only-controls .yt-overlay-share,
+.youtube-only-controls .yt-overlay-clock,
+.youtube-only-controls .yt-overlay-watch-later,
+.youtube-only-controls .yt-overlay-watch-youtube,
+.youtube-only-controls .yt-overlay-title,
+.youtube-only-controls .yt-overlay-settings,
+.youtube-only-controls .youtube-share-btn,
+.youtube-only-controls .youtube-clock-btn,
+.youtube-only-controls .youtube-settings-btn,
+.youtube-only-controls .youtube-watch-on-yt {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Ensure CC button, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain available */
+.youtube-player-container iframe,
+.youtube-video-player iframe,
+.youtube-only-controls iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+
 
