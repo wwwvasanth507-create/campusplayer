@@ -179,7 +179,11 @@ class YouTubeVideoTestCase(unittest.TestCase):
             self.assertIn('.youtube-clock-btn', html_yt)
             self.assertIn('.youtube-watch-on-yt', html_yt)
             self.assertIn('.yt-overlay-title', html_yt)
-            self.assertIn('.yt-overlay-title', html_yt)
+
+            # Assert YouTube page content sections (AI copilot, action buttons, doubts) remain fully accessible and uncollapsed
+            self.assertIn('id="ai-copilot-section"', html_yt)
+            self.assertIn('class="vp-action-buttons"', html_yt)
+            self.assertIn('pointer-events:none', html_yt)
 
             # Non-YouTube (Local HLS) Video Player Response
             res_hls = self.client.get(f'/video/{hls_video.id}')
@@ -191,3 +195,4 @@ class YouTubeVideoTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
