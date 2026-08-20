@@ -1882,17 +1882,27 @@ body.campus-body-fullscreen .vp-hero::after {
     pointer-events: none !important;
 }
 
-/* Ensure CC button, Settings gear icon, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain available while clipping top YouTube overlay bar */
+/* Ensure CC button, Settings gear icon, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain 100% visible and functional */
 .youtube-player-container iframe,
 .youtube-video-player iframe,
 .youtube-only-controls iframe {
+    width: 100% !important;
+    height: 100% !important;
     position: absolute !important;
-    top: -65px !important;
-    left: -2px !important;
-    width: calc(100% + 4px) !important;
-    height: calc(100% + 65px) !important;
+    top: 0 !important;
+    left: 0 !important;
     border: 0 !important;
     display: block !important;
+}
+
+/* Remove all extra option bars & sections below YouTube video playing bar */
+.youtube-player-container ~ .vp-quality-bar,
+.youtube-only-controls ~ .vp-quality-bar,
+.youtube-only-controls ~ .vp-grid .vp-action-buttons,
+.youtube-only-controls ~ .vp-grid #ai-copilot-section,
+.youtube-only-controls ~ .vp-grid .vp-ai-summarizer-card,
+.youtube-only-controls ~ .vp-grid #doubts-section {
+    display: none !important;
 }
 
 
