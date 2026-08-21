@@ -73,12 +73,13 @@ def migrate():
                                 email_enabled BOOLEAN DEFAULT 0,
                                 last_report_sent DATETIME,
                                 display_name VARCHAR(150),
-                                avatar_url VARCHAR(200),
-                                theme_preference VARCHAR(20) DEFAULT 'dark',
+                                avatar_url VARCHAR(500),
+                                theme_preference VARCHAR(10) DEFAULT 'dark',
                                 bio TEXT,
                                 last_login DATETIME,
                                 last_active DATETIME,
                                 login_count INTEGER DEFAULT 0,
+                                session_version INTEGER DEFAULT 1,
                                 level INTEGER DEFAULT 1,
                                 streak_days INTEGER DEFAULT 0,
                                 last_streak_date DATE,
@@ -86,6 +87,9 @@ def migrate():
                                 total_quizzes_taken INTEGER DEFAULT 0,
                                 achievements_json TEXT DEFAULT '[]',
                                 quests_json TEXT DEFAULT '{}',
+                                equipped_avatar_frame VARCHAR(100),
+                                equipped_title VARCHAR(100),
+                                equipped_badge VARCHAR(100),
                                 UNIQUE (username, institution_id),
                                 FOREIGN KEY(institution_id) REFERENCES institution(id)
                             )
@@ -97,7 +101,7 @@ def migrate():
                             print("[Migration] Rebuilt 'user' table successfully!")
                     conn.close()
         except Exception as e:
-            print(f"[Migration] [!] Failed to rebuild user table: {e}")
+            print(f"[Migration] [!] Note rebuilding user table: {e}")
 
         # Create all new tables
         print("\n[Tables] Creating new tables...")
@@ -124,12 +128,33 @@ def migrate():
                     ('max_video_retention_days', 'INTEGER DEFAULT 365'),
                 ],
                 'indexes': [
+                    ('ix_institution_slug', 'slug'),
                     ('ix_institution_status', 'status'),
                     ('ix_institution_owner_admin_id', 'owner_admin_id'),
                 ]
             },
             'user': {
                 'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('is_active_account', 'BOOLEAN DEFAULT 1'),
+                    ('xp', 'INTEGER DEFAULT 0'),
+                    ('phone', 'VARCHAR(20)'),
+                    ('parent_email', 'VARCHAR(150)'),
+                    ('parent_name', 'VARCHAR(150)'),
+                    ('created_at', 'DATETIME'),
+                    ('email', 'VARCHAR(150)'),
+                    ('email_sender_address', 'VARCHAR(150)'),
+                    ('encrypted_app_password', 'VARCHAR(500)'),
+                    ('email_enabled', 'BOOLEAN DEFAULT 0'),
+                    ('last_report_sent', 'DATETIME'),
+                    ('display_name', 'VARCHAR(150)'),
+                    ('avatar_url', 'VARCHAR(500)'),
+                    ('theme_preference', 'VARCHAR(10) DEFAULT \'dark\''),
+                    ('bio', 'TEXT'),
+                    ('last_login', 'DATETIME'),
+                    ('last_active', 'DATETIME'),
+                    ('login_count', 'INTEGER DEFAULT 0'),
+                    ('session_version', 'INTEGER DEFAULT 1'),
                     ('level', 'INTEGER DEFAULT 1'),
                     ('streak_days', 'INTEGER DEFAULT 0'),
                     ('last_streak_date', 'DATE'),
@@ -137,28 +162,9 @@ def migrate():
                     ('total_quizzes_taken', 'INTEGER DEFAULT 0'),
                     ('achievements_json', 'TEXT DEFAULT \'[]\''),
                     ('quests_json', 'TEXT DEFAULT \'{}\''),
-                    ('bio', 'TEXT'),
-                    ('display_name', 'VARCHAR(150)'),
-                    ('avatar_url', 'VARCHAR(500)'),
-                    ('theme_preference', 'VARCHAR(10) DEFAULT \'dark\''),
-                    ('last_login', 'DATETIME'),
-                    ('last_active', 'DATETIME'),
-                    ('login_count', 'INTEGER DEFAULT 0'),
-                    ('email', 'VARCHAR(150)'),
-                    ('phone', 'VARCHAR(20)'),
-                    ('parent_email', 'VARCHAR(150)'),
-                    ('parent_name', 'VARCHAR(150)'),
-                    ('email_sender_address', 'VARCHAR(150)'),
-                    ('encrypted_app_password', 'VARCHAR(500)'),
-                    ('email_enabled', 'BOOLEAN DEFAULT 0'),
-                    ('last_report_sent', 'DATETIME'),
-                    ('institution_id', 'INTEGER'),
-                    ('is_active_account', 'BOOLEAN DEFAULT 1'),
                     ('equipped_avatar_frame', 'VARCHAR(100)'),
                     ('equipped_title', 'VARCHAR(100)'),
                     ('equipped_badge', 'VARCHAR(100)'),
-                    ('session_version', 'INTEGER DEFAULT 1'),
-
                 ],
                 'indexes': [
                     ('ix_user_role', 'role'),
@@ -167,48 +173,326 @@ def migrate():
                     ('ix_user_is_active', 'is_active_account'),
                     ('ix_user_created_at', 'created_at'),
                     ('ix_user_last_active', 'last_active'),
+                    ('ix_user_level', 'level'),
                     ('ix_user_inst_role', 'institution_id, role'),
+                    ('ix_user_institution_role', 'institution_id, role'),
                 ]
             },
-            'assignment': {
+            'video': {
                 'columns': [
-                    ('question_file_path', 'VARCHAR(500)'),
-                    ('question_file_name', 'VARCHAR(300)'),
-                    ('response_mode', 'VARCHAR(20) DEFAULT \'either\''),
-                    ('max_score', 'INTEGER DEFAULT 100'),
+                    ('institution_id', 'INTEGER'),
+                    ('title', 'VARCHAR(200)'),
+                    ('filename', 'VARCHAR(300)'),
+                    ('hls_playlist_path', 'VARCHAR(500)'),
+                    ('thumbnail_path', 'VARCHAR(500)'),
+                    ('upload_date', 'DATETIME'),
+                    ('uploader_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('video_type', 'VARCHAR(20) DEFAULT \'local\''),
+                    ('youtube_id', 'VARCHAR(100)'),
+                    ('youtube_url', 'VARCHAR(500)'),
+                    ('status', 'VARCHAR(20) DEFAULT \'pending\''),
+                    ('processing_progress', 'INTEGER DEFAULT 0'),
+                    ('description', 'TEXT'),
+                    ('duration_seconds', 'INTEGER DEFAULT 0'),
+                    ('tags', 'VARCHAR(500)'),
+                    ('language', 'VARCHAR(10) DEFAULT \'en\''),
+                    ('subtitle_path', 'VARCHAR(500)'),
+                    ('subtitle_language', 'VARCHAR(10) DEFAULT \'en\''),
+                    ('view_count', 'INTEGER DEFAULT 0'),
+                    ('like_count', 'INTEGER DEFAULT 0'),
+                    ('chapters_json', 'TEXT'),
+                    ('difficulty', 'VARCHAR(20) DEFAULT \'intermediate\''),
+                    ('auto_delete_at', 'DATETIME'),
+                    ('retention_days', 'INTEGER'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
+                    ('ai_summary', 'TEXT'),
+                    ('ai_key_takeaways', 'TEXT'),
+                    ('ai_summary_generated_at', 'DATETIME'),
+                    ('master_playlist_path', 'VARCHAR(500)'),
+                    ('available_renditions', 'TEXT DEFAULT \'[]\''),
+                    ('source_width', 'INTEGER DEFAULT 0'),
+                    ('source_height', 'INTEGER DEFAULT 0'),
+                    ('source_bitrate', 'INTEGER DEFAULT 0'),
+                    ('video_codec', 'VARCHAR(50) DEFAULT \'h264\''),
+                    ('audio_codec', 'VARCHAR(50) DEFAULT \'aac\''),
+                    ('fps', 'FLOAT DEFAULT 0.0'),
+                    ('has_adaptive_streams', 'BOOLEAN DEFAULT 0'),
+                    ('sprite_path', 'VARCHAR(500)'),
+                    ('sprite_tile_count', 'INTEGER DEFAULT 0'),
+                    ('thumbnails_vtt_path', 'VARCHAR(500)'),
+                ],
+                'indexes': [
+                    ('ix_video_institution_id', 'institution_id'),
+                    ('ix_video_uploader_id', 'uploader_id'),
+                    ('ix_video_classroom_id', 'classroom_id'),
+                    ('ix_video_status', 'status'),
+                    ('ix_video_upload_date', 'upload_date'),
+                    ('ix_video_video_type', 'video_type'),
+                    ('ix_video_youtube_id', 'youtube_id'),
+                    ('ix_video_auto_delete_at', 'auto_delete_at'),
+                ]
+            },
+            'video_like': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_video_like_institution_id', 'institution_id'),
+                    ('ix_video_like_user_id', 'user_id'),
+                    ('ix_video_like_video_id', 'video_id'),
+                ]
+            },
+            'playlist': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('title', 'VARCHAR(150)'),
+                    ('thumbnail_path', 'VARCHAR(500)'),
+                    ('created_at', 'DATETIME'),
+                    ('creator_id', 'INTEGER'),
+                    ('description', 'TEXT'),
+                ],
+                'indexes': [
+                    ('ix_playlist_institution_id', 'institution_id'),
+                    ('ix_playlist_creator_id', 'creator_id'),
+                    ('ix_playlist_created_at', 'created_at'),
+                ]
+            },
+            'classroom': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('name', 'VARCHAR(100)'),
+                    ('teacher_id', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                    ('start_time', 'VARCHAR(5) DEFAULT \'09:10\''),
+                    ('description', 'TEXT'),
+                    ('class_code', 'VARCHAR(10)'),
+                    ('color_theme', 'VARCHAR(7) DEFAULT \'#4f46e5\''),
+                ],
+                'indexes': [
+                    ('ix_classroom_institution_id', 'institution_id'),
+                    ('ix_classroom_teacher_id', 'teacher_id'),
+                    ('ix_classroom_class_code', 'class_code'),
+                ]
+            },
+            'comment': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('content', 'TEXT'),
+                    ('timestamp', 'DATETIME'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('parent_id', 'INTEGER'),
+                    ('edited', 'BOOLEAN DEFAULT 0'),
+                    ('edited_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_comment_institution_id', 'institution_id'),
+                    ('ix_comment_video_id', 'video_id'),
+                    ('ix_comment_user_id', 'user_id'),
+                    ('ix_comment_parent_id', 'parent_id'),
+                    ('ix_comment_timestamp', 'timestamp'),
+                ]
+            },
+            'view_analytics': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('start_time', 'DATETIME'),
+                    ('end_time', 'DATETIME'),
+                    ('duration_seconds', 'INTEGER DEFAULT 0'),
+                    ('percent_watched', 'FLOAT DEFAULT 0.0'),
+                    ('completed', 'BOOLEAN DEFAULT 0'),
+                    ('ip_address', 'VARCHAR(50)'),
+                    ('user_agent', 'VARCHAR(300)'),
+                    ('quality_selected', 'VARCHAR(20)'),
+                ],
+                'indexes': [
+                    ('ix_view_analytics_institution_id', 'institution_id'),
+                    ('ix_view_analytics_user_id', 'user_id'),
+                    ('ix_view_analytics_video_id', 'video_id'),
+                    ('ix_view_analytics_start_time', 'start_time'),
+                    ('ix_view_analytics_completed', 'completed'),
+                ]
+            },
+            'notification': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('message', 'TEXT'),
+                    ('video_id', 'INTEGER'),
+                    ('comment_id', 'INTEGER'),
+                    ('is_read', 'BOOLEAN DEFAULT 0'),
+                    ('created_at', 'DATETIME'),
+                    ('notification_type', 'VARCHAR(30) DEFAULT \'info\''),
+                    ('action_url', 'VARCHAR(500)'),
+                ],
+                'indexes': [
+                    ('ix_notification_institution_id', 'institution_id'),
+                    ('ix_notification_user_id', 'user_id'),
+                    ('ix_notification_video_id', 'video_id'),
+                    ('ix_notification_is_read', 'is_read'),
+                    ('ix_notification_created_at', 'created_at'),
+                ]
+            },
+            'site_settings': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('institution_name', 'VARCHAR(200) DEFAULT \'Campus Player\''),
+                    ('lock_video_speed', 'BOOLEAN DEFAULT 0'),
+                    ('lock_video_skipping', 'BOOLEAN DEFAULT 0'),
+                    ('global_playlist_thumbnail', 'VARCHAR(500)'),
+                    ('attendance_lock_time', 'VARCHAR(5) DEFAULT \'09:10\''),
+                    ('admin_sms_phone', 'VARCHAR(20)'),
+                    ('gemini_api_key', 'VARCHAR(200)'),
+                    ('allow_self_registration', 'BOOLEAN DEFAULT 0'),
+                    ('max_video_size_mb', 'INTEGER DEFAULT 20480'),
+                    ('default_language', 'VARCHAR(10) DEFAULT \'en\''),
+                    ('enable_notifications', 'BOOLEAN DEFAULT 1'),
+                    ('session_timeout_minutes', 'INTEGER DEFAULT 120'),
+                    ('primary_color', 'VARCHAR(7) DEFAULT \'#d4af37\''),
+                    ('logo_url', 'VARCHAR(500)'),
+                    ('smtp_server', 'VARCHAR(200)'),
+                    ('smtp_port', 'INTEGER DEFAULT 587'),
+                    ('smtp_username', 'VARCHAR(200)'),
+                    ('smtp_password', 'VARCHAR(200)'),
+                    ('email_from', 'VARCHAR(200)'),
+                    ('enable_leaderboard', 'BOOLEAN DEFAULT 1'),
+                    ('enable_achievements', 'BOOLEAN DEFAULT 1'),
+                    ('enable_assignments', 'BOOLEAN DEFAULT 1'),
+                    ('enable_email_alerts', 'BOOLEAN DEFAULT 0'),
+                    ('auto_backup_enabled', 'BOOLEAN DEFAULT 0'),
+                    ('backup_interval_hours', 'INTEGER DEFAULT 24'),
+                    ('enable_adaptive_streaming', 'BOOLEAN DEFAULT 1'),
+                    ('max_rendition_height', 'INTEGER DEFAULT 8640'),
+                    ('hls_segment_duration', 'INTEGER DEFAULT 6'),
+                    ('min_attendance_percentage', 'FLOAT DEFAULT 75.0'),
+                    ('scheduled_academic_year_end_date', 'DATETIME'),
+                    ('academic_year_rollover_processed', 'BOOLEAN DEFAULT 0'),
+                    ('quests_version', 'INTEGER DEFAULT 1'),
+                ],
+                'indexes': [
+                    ('ix_site_settings_institution_id', 'institution_id'),
+                ]
+            },
+            'daily_quest_template': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('quest_key', 'VARCHAR(50)'),
+                    ('title', 'VARCHAR(150)'),
+                    ('desc', 'TEXT'),
+                    ('xp', 'INTEGER DEFAULT 50'),
+                    ('icon', 'VARCHAR(50) DEFAULT \'event_available\''),
+                    ('target', 'INTEGER DEFAULT 1'),
+                    ('is_active', 'BOOLEAN DEFAULT 1'),
+                    ('created_at', 'DATETIME'),
+                    ('updated_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_daily_quest_template_institution_id', 'institution_id'),
+                    ('ix_daily_quest_template_quest_key', 'quest_key'),
+                ]
+            },
+            'quiz': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('title', 'VARCHAR(200)'),
+                    ('description', 'TEXT'),
+                    ('teacher_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                    ('time_limit_minutes', 'INTEGER DEFAULT 0'),
+                    ('shuffle_questions', 'BOOLEAN DEFAULT 0'),
+                    ('passing_percent', 'INTEGER DEFAULT 50'),
+                    ('max_attempts', 'INTEGER DEFAULT 0'),
+                    ('proctoring_enabled', 'BOOLEAN DEFAULT 0'),
+                    ('max_tab_switches', 'INTEGER DEFAULT 3'),
+                    ('block_copy_paste', 'BOOLEAN DEFAULT 1'),
+                    ('due_date', 'DATETIME'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
                 ],
                 'indexes': [
-                    ('ix_assignment_institution_id', 'institution_id'),
-                    ('ix_assignment_classroom_id', 'classroom_id'),
-                    ('ix_assignment_teacher_id', 'teacher_id'),
-                    ('ix_assignment_created_at', 'created_at'),
-                    ('ix_assignment_due_date', 'due_date'),
+                    ('ix_quiz_institution_id', 'institution_id'),
+                    ('ix_quiz_teacher_id', 'teacher_id'),
+                    ('ix_quiz_video_id', 'video_id'),
+                    ('ix_quiz_classroom_id', 'classroom_id'),
+                    ('ix_quiz_created_at', 'created_at'),
                 ]
             },
-            'assignment_submission': {
+            'question': {
                 'columns': [
-                    ('file_name', 'VARCHAR(300)'),
-                    ('score', 'INTEGER'),
-                    ('feedback', 'TEXT'),
-                    ('graded_at', 'DATETIME'),
-                    ('audio_file_path', 'VARCHAR(500)'),
-                    ('submission_type', "VARCHAR(20) DEFAULT 'standard'"),
+                    ('institution_id', 'INTEGER'),
+                    ('quiz_id', 'INTEGER'),
+                    ('text', 'TEXT'),
+                    ('option_a', 'VARCHAR(200)'),
+                    ('option_b', 'VARCHAR(200)'),
+                    ('option_c', 'VARCHAR(200)'),
+                    ('option_d', 'VARCHAR(200)'),
+                    ('correct_option', 'VARCHAR(1)'),
+                    ('explanation', 'TEXT'),
+                    ('points', 'INTEGER DEFAULT 1'),
                 ],
                 'indexes': [
-                    ('ix_assignment_submission_institution_id', 'institution_id'),
-                    ('ix_assignment_submission_assignment_id', 'assignment_id'),
-                    ('ix_assignment_submission_student_id', 'student_id'),
-                    ('ix_assignment_submission_status', 'status'),
-                    ('ix_assignment_submission_submitted_at', 'submitted_at'),
+                    ('ix_question_institution_id', 'institution_id'),
+                    ('ix_question_quiz_id', 'quiz_id'),
+                ]
+            },
+            'quiz_result': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('quiz_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('score', 'INTEGER'),
+                    ('total_questions', 'INTEGER'),
+                    ('timestamp', 'DATETIME'),
+                    ('answers_json', 'TEXT'),
+                    ('time_taken_seconds', 'INTEGER DEFAULT 0'),
+                    ('passed', 'BOOLEAN DEFAULT 0'),
+                    ('proctoring_violations_count', 'INTEGER DEFAULT 0'),
+                    ('proctoring_log_json', 'TEXT DEFAULT \'[]\''),
+                    ('auto_submitted_due_to_cheating', 'BOOLEAN DEFAULT 0'),
+                    ('is_archived', 'BOOLEAN DEFAULT 0'),
+                    ('archived_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_quiz_result_institution_id', 'institution_id'),
+                    ('ix_quiz_result_quiz_id', 'quiz_id'),
+                    ('ix_quiz_result_student_id', 'student_id'),
+                    ('ix_quiz_result_timestamp', 'timestamp'),
+                ]
+            },
+            'chat_message': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('content', 'TEXT'),
+                    ('timestamp', 'DATETIME'),
+                    ('message_type', 'VARCHAR(20) DEFAULT \'text\''),
+                ],
+                'indexes': [
+                    ('ix_chat_message_institution_id', 'institution_id'),
+                    ('ix_chat_message_classroom_id', 'classroom_id'),
+                    ('ix_chat_message_user_id', 'user_id'),
+                    ('ix_chat_message_timestamp', 'timestamp'),
                 ]
             },
             'attendance': {
                 'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('date', 'DATE'),
+                    ('status', 'VARCHAR(20) DEFAULT \'Absent\''),
+                    ('arrival_time', 'DATETIME'),
                     ('session_id', 'INTEGER'),
-                    ('remarks', 'VARCHAR(255)'),
-                    ('marked_by', 'INTEGER'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
                 ],
@@ -224,183 +508,17 @@ def migrate():
                     ('ix_attendance_session_student', 'session_id, student_id'),
                 ]
             },
-            'video': {
-                'columns': [
-                    ('video_type', 'VARCHAR(20) DEFAULT \'local\''),
-                    ('youtube_id', 'VARCHAR(100)'),
-                    ('youtube_url', 'VARCHAR(500)'),
-                    ('chapters_json', 'TEXT'),
-                    ('difficulty', 'VARCHAR(20) DEFAULT \'intermediate\''),
-                    ('views', 'INTEGER DEFAULT 0'),
-                    ('likes_count', 'INTEGER DEFAULT 0'),
-                    ('duration', 'INTEGER DEFAULT 0'),
-                    ('thumbnail_path', 'VARCHAR(500)'),
-                    ('tags', 'VARCHAR(500)'),
-                    ('conversion_progress', 'INTEGER DEFAULT 0'),
-                    ('hls_path', 'VARCHAR(500)'),
-                    ('allow_comments', 'BOOLEAN DEFAULT 1'),
-                    ('is_archived', 'BOOLEAN DEFAULT 0'),
-                    ('archived_at', 'DATETIME'),
-                ],
-                'indexes': [
-                    ('ix_video_institution_id', 'institution_id'),
-                    ('ix_video_uploader_id', 'uploader_id'),
-                    ('ix_video_classroom_id', 'classroom_id'),
-                    ('ix_video_status', 'status'),
-                    ('ix_video_upload_date', 'upload_date'),
-                ]
-            },
-            'video_like': {
-                'columns': [],
-                'indexes': [
-                    ('ix_videolike_institution_id', 'institution_id'),
-                    ('ix_videolike_user_id', 'user_id'),
-                    ('ix_videolike_video_id', 'video_id'),
-                ]
-            },
-            'playlist': {
-                'columns': [
-                    ('description', 'TEXT'),
-                ],
-                'indexes': [
-                    ('ix_playlist_institution_id', 'institution_id'),
-                    ('ix_playlist_creator_id', 'creator_id'),
-                    ('ix_playlist_created_at', 'created_at'),
-                ]
-            },
-            'classroom': {
-                'columns': [
-                    ('description', 'TEXT'),
-                    ('color_theme', 'VARCHAR(7) DEFAULT \'#4f46e5\''),
-                    ('is_archived', 'BOOLEAN DEFAULT 0'),
-                    ('archived_at', 'DATETIME'),
-                ],
-                'indexes': [
-                    ('ix_classroom_institution_id', 'institution_id'),
-                    ('ix_classroom_teacher_id', 'teacher_id'),
-                ]
-            },
-            'comment': {
-                'columns': [
-                    ('parent_id', 'INTEGER'),
-                ],
-                'indexes': [
-                    ('ix_comment_institution_id', 'institution_id'),
-                    ('ix_comment_video_id', 'video_id'),
-                    ('ix_comment_user_id', 'user_id'),
-                    ('ix_comment_parent_id', 'parent_id'),
-                    ('ix_comment_timestamp', 'timestamp'),
-                ]
-            },
-            'view_analytics': {
-                'columns': [
-                    ('watch_duration', 'INTEGER DEFAULT 0'),
-                    ('completed', 'BOOLEAN DEFAULT 0'),
-                    ('ip_address', 'VARCHAR(45)'),
-                ],
-                'indexes': [
-                    ('ix_view_analytics_institution_id', 'institution_id'),
-                    ('ix_view_analytics_user_id', 'user_id'),
-                    ('ix_view_analytics_video_id', 'video_id'),
-                    ('ix_view_analytics_start_time', 'start_time'),
-                    ('ix_view_analytics_completed', 'completed'),
-                ]
-            },
-            'question': {
-                'columns': [
-                    ('points', 'INTEGER DEFAULT 1'),
-                    ('explanation', 'TEXT'),
-                ],
-                'indexes': [
-                    ('ix_question_institution_id', 'institution_id'),
-                    ('ix_question_quiz_id', 'quiz_id'),
-                ]
-            },
-            'quiz_result': {
-                'columns': [
-                    ('time_taken_seconds', 'INTEGER DEFAULT 0'),
-                    ('passed', 'BOOLEAN DEFAULT 0'),
-                    ('is_archived', 'BOOLEAN DEFAULT 0'),
-                    ('archived_at', 'DATETIME'),
-                    ('proctoring_violations_count', 'INTEGER DEFAULT 0'),
-                    ('proctoring_log_json', "TEXT DEFAULT '[]'"),
-                    ('auto_submitted_due_to_cheating', 'BOOLEAN DEFAULT 0'),
-                ],
-                'indexes': [
-                    ('ix_quiz_result_institution_id', 'institution_id'),
-                    ('ix_quiz_result_quiz_id', 'quiz_id'),
-                    ('ix_quiz_result_student_id', 'student_id'),
-                    ('ix_quiz_result_timestamp', 'timestamp'),
-                ]
-            },
-            'notification': {
-                'columns': [
-                    ('action_url', 'VARCHAR(500)'),
-                    ('is_read', 'BOOLEAN DEFAULT 0'),
-                ],
-                'indexes': [
-                    ('ix_notification_institution_id', 'institution_id'),
-                    ('ix_notification_user_id', 'user_id'),
-                    ('ix_notification_video_id', 'video_id'),
-                    ('ix_notification_is_read', 'is_read'),
-                    ('ix_notification_created_at', 'created_at'),
-                ]
-            },
-            'site_settings': {
-                'columns': [
-                    ('smtp_server', 'VARCHAR(200)'),
-                    ('smtp_port', 'INTEGER DEFAULT 587'),
-                    ('smtp_username', 'VARCHAR(200)'),
-                    ('smtp_password', 'VARCHAR(200)'),
-                    ('email_from', 'VARCHAR(200)'),
-                    ('enable_leaderboard', 'BOOLEAN DEFAULT 1'),
-                    ('enable_achievements', 'BOOLEAN DEFAULT 1'),
-                    ('enable_assignments', 'BOOLEAN DEFAULT 1'),
-                    ('enable_email_alerts', 'BOOLEAN DEFAULT 0'),
-                    ('auto_backup_enabled', 'BOOLEAN DEFAULT 0'),
-                    ('backup_interval_hours', 'INTEGER DEFAULT 24'),
-                    ('min_attendance_percentage', 'FLOAT DEFAULT 75.0'),
-                    ('scheduled_academic_year_end_date', 'DATETIME'),
-                    ('academic_year_rollover_processed', 'BOOLEAN DEFAULT 0'),
-                    ('allow_student_chat', 'BOOLEAN DEFAULT 1'),
-                    ('allow_public_registration', 'BOOLEAN DEFAULT 0'),
-                    ('quests_version', 'INTEGER DEFAULT 1'),
-                ],
-                'indexes': [
-                    ('ix_site_settings_institution_id', 'institution_id'),
-                ]
-            },
-            'quiz': {
-                'columns': [
-                    ('due_date', 'DATETIME'),
-                    ('passing_percent', 'INTEGER DEFAULT 50'),
-                    ('max_attempts', 'INTEGER DEFAULT 0'),
-                    ('time_limit_minutes', 'INTEGER DEFAULT 0'),
-                    ('is_archived', 'BOOLEAN DEFAULT 0'),
-                    ('archived_at', 'DATETIME'),
-                    ('proctoring_enabled', 'BOOLEAN DEFAULT 0'),
-                    ('max_tab_switches', 'INTEGER DEFAULT 3'),
-                    ('block_copy_paste', 'BOOLEAN DEFAULT 1'),
-                ],
-                'indexes': [
-                    ('ix_quiz_institution_id', 'institution_id'),
-                    ('ix_quiz_teacher_id', 'teacher_id'),
-                    ('ix_quiz_video_id', 'video_id'),
-                    ('ix_quiz_classroom_id', 'classroom_id'),
-                    ('ix_quiz_created_at', 'created_at'),
-                ]
-            },
-            'chat_message': {
-                'columns': [],
-                'indexes': [
-                    ('ix_chat_message_institution_id', 'institution_id'),
-                    ('ix_chat_message_classroom_id', 'classroom_id'),
-                    ('ix_chat_message_user_id', 'user_id'),
-                    ('ix_chat_message_timestamp', 'timestamp'),
-                ]
-            },
             'attendance_session': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('name', 'VARCHAR(150)'),
+                    ('start_date', 'DATE'),
+                    ('end_date', 'DATE'),
+                    ('created_by', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                    ('is_active', 'BOOLEAN DEFAULT 1'),
+                ],
                 'indexes': [
                     ('ix_attendance_session_institution_id', 'institution_id'),
                     ('ix_attendance_session_classroom_id', 'classroom_id'),
@@ -409,7 +527,14 @@ def migrate():
                 ]
             },
             'attendance_sub_session': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('attendance_session_id', 'INTEGER'),
+                    ('name', 'VARCHAR(150)'),
+                    ('session_date', 'DATE'),
+                    ('created_by', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_attendance_sub_session_institution_id', 'institution_id'),
                     ('ix_attendance_sub_session_parent', 'attendance_session_id'),
@@ -417,7 +542,15 @@ def migrate():
                 ]
             },
             'activity_log': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('username', 'VARCHAR(150)'),
+                    ('action', 'VARCHAR(100)'),
+                    ('details', 'TEXT'),
+                    ('ip_address', 'VARCHAR(50)'),
+                    ('timestamp', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_activity_log_institution_id', 'institution_id'),
                     ('ix_activity_log_user_id', 'user_id'),
@@ -425,23 +558,124 @@ def migrate():
                 ]
             },
             'system_metric': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('metric_name', 'VARCHAR(50)'),
+                    ('metric_value', 'FLOAT'),
+                    ('recorded_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_system_metric_institution_id', 'institution_id'),
                     ('ix_system_metric_name', 'metric_name'),
                     ('ix_system_metric_recorded_at', 'recorded_at'),
                 ]
             },
+            'assignment': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('title', 'VARCHAR(200)'),
+                    ('description', 'TEXT'),
+                    ('classroom_id', 'INTEGER'),
+                    ('teacher_id', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                    ('due_date', 'DATETIME'),
+                    ('total_points', 'INTEGER DEFAULT 100'),
+                    ('assignment_type', 'VARCHAR(20) DEFAULT \'text\''),
+                    ('allow_late_submission', 'BOOLEAN DEFAULT 0'),
+                    ('late_penalty_percent', 'INTEGER DEFAULT 10'),
+                    ('question_file_path', 'VARCHAR(500)'),
+                    ('question_file_name', 'VARCHAR(300)'),
+                    ('response_mode', 'VARCHAR(20) DEFAULT \'either\''),
+                ],
+                'indexes': [
+                    ('ix_assignment_institution_id', 'institution_id'),
+                    ('ix_assignment_classroom_id', 'classroom_id'),
+                    ('ix_assignment_teacher_id', 'teacher_id'),
+                    ('ix_assignment_created_at', 'created_at'),
+                    ('ix_assignment_due_date', 'due_date'),
+                ]
+            },
+            'assignment_submission': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('assignment_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('submitted_at', 'DATETIME'),
+                    ('content', 'TEXT'),
+                    ('file_path', 'VARCHAR(500)'),
+                    ('file_name', 'VARCHAR(300)'),
+                    ('grade', 'FLOAT'),
+                    ('feedback', 'TEXT'),
+                    ('graded_at', 'DATETIME'),
+                    ('is_late', 'BOOLEAN DEFAULT 0'),
+                    ('status', 'VARCHAR(20) DEFAULT \'submitted\''),
+                    ('audio_file_path', 'VARCHAR(500)'),
+                    ('submission_type', 'VARCHAR(20) DEFAULT \'standard\''),
+                ],
+                'indexes': [
+                    ('ix_assignment_submission_institution_id', 'institution_id'),
+                    ('ix_assignment_submission_assignment_id', 'assignment_id'),
+                    ('ix_assignment_submission_student_id', 'student_id'),
+                    ('ix_assignment_submission_status', 'status'),
+                    ('ix_assignment_submission_submitted_at', 'submitted_at'),
+                ]
+            },
             'student_profile': {
                 'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('student_name', 'VARCHAR(200)'),
+                    ('student_id_number', 'VARCHAR(50)'),
+                    ('roll_number', 'VARCHAR(50)'),
+                    ('department', 'VARCHAR(150)'),
+                    ('year', 'VARCHAR(20)'),
+                    ('section', 'VARCHAR(20)'),
                     ('requires_admin_review', 'BOOLEAN DEFAULT 0'),
+                    ('date_of_birth', 'DATE'),
+                    ('gender', 'VARCHAR(20)'),
+                    ('blood_group', 'VARCHAR(10)'),
+                    ('phone_number', 'VARCHAR(20)'),
+                    ('email', 'VARCHAR(150)'),
+                    ('father_name', 'VARCHAR(150)'),
+                    ('mother_name', 'VARCHAR(150)'),
+                    ('father_phone', 'VARCHAR(20)'),
+                    ('mother_phone', 'VARCHAR(20)'),
+                    ('father_email', 'VARCHAR(150)'),
+                    ('mother_email', 'VARCHAR(150)'),
+                    ('guardian_name', 'VARCHAR(150)'),
+                    ('guardian_phone', 'VARCHAR(20)'),
+                    ('communication_address', 'TEXT'),
+                    ('permanent_address', 'TEXT'),
+                    ('nationality', 'VARCHAR(100)'),
+                    ('religion', 'VARCHAR(100)'),
+                    ('category', 'VARCHAR(100)'),
+                    ('emergency_contact', 'VARCHAR(150)'),
+                    ('emergency_phone', 'VARCHAR(20)'),
+                    ('photo_path', 'VARCHAR(500)'),
+                    ('signature_path', 'VARCHAR(500)'),
+                    ('aadhaar_path', 'VARCHAR(500)'),
+                    ('transfer_certificate_path', 'VARCHAR(500)'),
+                    ('community_certificate_path', 'VARCHAR(500)'),
+                    ('other_certificates_json', 'TEXT DEFAULT \'[]\''),
+                    ('created_at', 'DATETIME'),
+                    ('updated_at', 'DATETIME'),
                 ],
                 'indexes': [
                     ('ix_student_profile_institution_id', 'institution_id'),
+                    ('ix_student_profile_user_id', 'user_id'),
                 ]
             },
             'video_note': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('timestamp_seconds', 'FLOAT DEFAULT 0.0'),
+                    ('content', 'TEXT'),
+                    ('color', 'VARCHAR(7) DEFAULT \'#fef08a\''),
+                    ('created_at', 'DATETIME'),
+                    ('updated_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_video_note_institution_id', 'institution_id'),
                     ('ix_video_note_user_id', 'user_id'),
@@ -449,7 +683,14 @@ def migrate():
                 ]
             },
             'video_bookmark': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('timestamp_seconds', 'FLOAT'),
+                    ('label', 'VARCHAR(200)'),
+                    ('created_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_video_bookmark_institution_id', 'institution_id'),
                     ('ix_video_bookmark_user_id', 'user_id'),
@@ -457,7 +698,15 @@ def migrate():
                 ]
             },
             'video_progress': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('video_id', 'INTEGER'),
+                    ('progress_seconds', 'FLOAT DEFAULT 0.0'),
+                    ('percent_complete', 'FLOAT DEFAULT 0.0'),
+                    ('completed', 'BOOLEAN DEFAULT 0'),
+                    ('updated_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_video_progress_institution_id', 'institution_id'),
                     ('ix_video_progress_user_id', 'user_id'),
@@ -465,8 +714,36 @@ def migrate():
                     ('ix_video_progress_completed', 'completed'),
                 ]
             },
+            'achievement': {
+                'columns': [
+                    ('code', 'VARCHAR(50)'),
+                    ('title', 'VARCHAR(100)'),
+                    ('description', 'TEXT'),
+                    ('icon_emoji', 'VARCHAR(10) DEFAULT \'🏆\''),
+                    ('xp_reward', 'INTEGER DEFAULT 50'),
+                    ('category', 'VARCHAR(30) DEFAULT \'general\''),
+                    ('condition_type', 'VARCHAR(50)'),
+                    ('condition_value', 'INTEGER DEFAULT 1'),
+                ],
+                'indexes': [
+                    ('ix_achievement_code', 'code'),
+                    ('ix_achievement_category', 'category'),
+                ]
+            },
             'leaderboard_entry': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('user_id', 'INTEGER'),
+                    ('username', 'VARCHAR(150)'),
+                    ('role', 'VARCHAR(20)'),
+                    ('xp', 'INTEGER DEFAULT 0'),
+                    ('level', 'INTEGER DEFAULT 1'),
+                    ('streak_days', 'INTEGER DEFAULT 0'),
+                    ('quiz_count', 'INTEGER DEFAULT 0'),
+                    ('category', 'VARCHAR(30) DEFAULT \'global\''),
+                    ('rank', 'INTEGER DEFAULT 0'),
+                    ('updated_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_leaderboard_entry_institution_id', 'institution_id'),
                     ('ix_leaderboard_entry_user_id', 'user_id'),
@@ -475,7 +752,18 @@ def migrate():
                 ]
             },
             'email_queue': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('recipient_email', 'VARCHAR(200)'),
+                    ('subject', 'VARCHAR(300)'),
+                    ('body_html', 'TEXT'),
+                    ('body_text', 'TEXT'),
+                    ('status', 'VARCHAR(20) DEFAULT \'pending\''),
+                    ('created_at', 'DATETIME'),
+                    ('sent_at', 'DATETIME'),
+                    ('error_message', 'TEXT'),
+                    ('retry_count', 'INTEGER DEFAULT 0'),
+                ],
                 'indexes': [
                     ('ix_email_queue_institution_id', 'institution_id'),
                     ('ix_email_queue_status', 'status'),
@@ -483,7 +771,13 @@ def migrate():
                 ]
             },
             'student_remark': {
-                'columns': [],
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('remark', 'TEXT'),
+                    ('updated_at', 'DATETIME'),
+                ],
                 'indexes': [
                     ('ix_student_remark_institution_id', 'institution_id'),
                     ('ix_student_remark_student_id', 'student_id'),
@@ -492,6 +786,18 @@ def migrate():
             },
             'email_delivery_log': {
                 'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('execution_id', 'VARCHAR(50)'),
+                    ('class_id', 'INTEGER'),
+                    ('teacher_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('student_email', 'VARCHAR(150)'),
+                    ('subject', 'VARCHAR(256)'),
+                    ('status', 'VARCHAR(20) DEFAULT \'pending\''),
+                    ('error_message', 'TEXT'),
+                    ('sent_at', 'DATETIME'),
+                    ('retry_count', 'INTEGER DEFAULT 0'),
+                    ('report_type', 'VARCHAR(30) DEFAULT \'daily_scheduled\''),
                     ('report_html', 'TEXT'),
                 ],
                 'indexes': [
@@ -504,8 +810,31 @@ def migrate():
                 ]
             },
             'conversion_job': {
-                'columns': [],
+                'columns': [
+                    ('job_id', 'VARCHAR(64)'),
+                    ('video_id', 'INTEGER'),
+                    ('institution_id', 'INTEGER'),
+                    ('input_file', 'VARCHAR(500)'),
+                    ('output_directory', 'VARCHAR(500)'),
+                    ('status', 'VARCHAR(20) DEFAULT \'queued\''),
+                    ('progress', 'INTEGER DEFAULT 0'),
+                    ('current_segment', 'INTEGER DEFAULT 0'),
+                    ('total_segments', 'INTEGER DEFAULT 0'),
+                    ('last_processed_position', 'FLOAT DEFAULT 0.0'),
+                    ('worker_id', 'VARCHAR(50)'),
+                    ('retry_count', 'INTEGER DEFAULT 0'),
+                    ('max_retries', 'INTEGER DEFAULT 3'),
+                    ('error_message', 'TEXT'),
+                    ('renditions_state_json', 'TEXT DEFAULT \'{}\''),
+                    ('created_at', 'DATETIME'),
+                    ('started_at', 'DATETIME'),
+                    ('updated_at', 'DATETIME'),
+                    ('completed_at', 'DATETIME'),
+                ],
                 'indexes': [
+                    ('ix_conversion_job_job_id', 'job_id'),
+                    ('ix_conversion_job_video_id', 'video_id'),
+                    ('ix_conversion_job_status', 'status'),
                     ('ix_conversion_job_institution_id', 'institution_id'),
                 ]
             },
@@ -823,6 +1152,27 @@ def migrate():
                     ('ix_ai_copilot_created_at', 'created_at'),
                 ]
             },
+            'user_session': {
+                'columns': [
+                    ('sid', 'VARCHAR(128)'),
+                    ('user_id', 'INTEGER'),
+                    ('institution_id', 'INTEGER'),
+                    ('data', 'TEXT'),
+                    ('expiry', 'DATETIME'),
+                    ('created_at', 'DATETIME'),
+                    ('last_accessed', 'DATETIME'),
+                    ('user_agent', 'VARCHAR(500)'),
+                    ('ip_address', 'VARCHAR(100)'),
+                    ('is_active', 'BOOLEAN DEFAULT 1'),
+                ],
+                'indexes': [
+                    ('ix_user_session_user_id', 'user_id'),
+                    ('ix_user_session_institution_id', 'institution_id'),
+                    ('ix_user_session_expiry', 'expiry'),
+                    ('ix_user_session_last_accessed', 'last_accessed'),
+                    ('ix_user_session_is_active', 'is_active'),
+                ]
+            },
         }
         
         # Dynamically add institution_id to all tenant tables
@@ -837,7 +1187,7 @@ def migrate():
             'checkpoint_response', 'video_doubt', 'video_doubt_reply',
             'video_flashcard', 'academic_certificate', 'parent_access_token',
             'announcement', 'announcement_read', 'timetable_slot', 'reward_item', 'user_reward',
-            'ebook', 'ebook_progress', 'ai_copilot_interaction', 'daily_quest_template'
+            'ebook', 'ebook_progress', 'ai_copilot_interaction', 'daily_quest_template', 'user_session'
         ]
         for table in tenant_tables:
             if table not in migrations:
@@ -847,26 +1197,32 @@ def migrate():
                 migrations[table]['columns'].append(('institution_id', 'INTEGER'))
 
         for table, config in migrations.items():
-            columns = inspector.get_columns(table)
-            existing_cols = {c['name'] for c in columns}
-            
-            for col_name, col_type in config['columns']:
-                if col_name not in existing_cols:
+            try:
+                columns = inspector.get_columns(table)
+                existing_cols = {c['name'] for c in columns}
+                
+                for col_name, col_type in config['columns']:
+                    if col_name not in existing_cols:
+                        try:
+                            db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {col_name} {col_type}'))
+                            print(f"[OK] Added '{col_name}' to {table}")
+                        except Exception as e:
+                            print(f"[!] Could not add '{col_name}' to {table}: {str(e)[:60]}")
+                
+                # Create indexes
+                for idx_name, idx_col in config.get('indexes', []):
                     try:
-                        db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {col_name} {col_type}'))
-                        print(f"[OK] Added '{col_name}' to {table}")
+                        existing_indexes = [i['name'] for i in inspector.get_indexes(table)]
+                        if idx_name not in existing_indexes:
+                            try:
+                                db.session.execute(db.text(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table} ({idx_col})'))
+                                print(f"[OK] Created index '{idx_name}' on {table}")
+                            except Exception as e:
+                                print(f"[!] Could not create index '{idx_name}': {str(e)[:60]}")
                     except Exception as e:
-                        print(f"[!] Could not add '{col_name}' to {table}: {str(e)[:60]}")
-            
-            # Create indexes
-            for idx_name, idx_col in config.get('indexes', []):
-                existing_indexes = [i['name'] for i in inspector.get_indexes(table)]
-                if idx_name not in existing_indexes:
-                    try:
-                        db.session.execute(db.text(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table} ({idx_col})'))
-                        print(f"[OK] Created index '{idx_name}' on {table}")
-                    except Exception as e:
-                        print(f"[!] Could not create index '{idx_name}': {str(e)[:60]}")
+                        print(f"[!] Could not inspect indexes for {table}: {str(e)[:60]}")
+            except Exception as e:
+                print(f"[!] Table {table} does not exist yet or inspection error: {str(e)[:60]}")
         
         # Backfill default institution for all tables
         print("\n[Institution] Backfilling all tables with Default Institution...")
