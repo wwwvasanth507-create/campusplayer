@@ -243,6 +243,53 @@
     </div>
 </div>
 
+<!-- Danger Zone — Delete Institution -->
+<div class="card" style="border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.02); margin-top:24px;">
+    <div class="card-title font-display" style="color:#ef4444;"><i class="material-icons" style="color:#ef4444;">warning</i> Danger Zone &mdash; Institution Deletion</div>
+    <p style="font-size:0.85rem; color:var(--text-dim); margin-top:-4px; margin-bottom:16px;">
+        Permanently delete this institution (<strong>{{ settings.institution_name or 'Campus Player' }}</strong>) and remove all student accounts, teachers, classrooms, videos, HLS streams, PDFs, quizzes, assignments, and stored server files.
+    </p>
+    <button type="button" class="btn btn-danger" onclick="openAdminDeleteInstModal()" style="width:auto; padding:10px 20px;">
+        <i class="material-icons" style="font-size:1.05rem; vertical-align:middle; margin-right:4px;">delete_forever</i> Delete Institution Permanently
+    </button>
+</div>
+
+<!-- Danger Zone Cyber-Glass Delete Institution Modal (Admin) -->
+<div id="adminDeleteInstModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--surface1, #1e1e2d); border:1px solid rgba(239,68,68,0.4); border-radius:16px; max-width:540px; width:100%; padding:28px; box-shadow:0 24px 48px rgba(0,0,0,0.7); position:relative;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; color:#ef4444;">
+            <i class="material-icons" style="font-size:2.2rem;">warning</i>
+            <h3 style="margin:0; font-size:1.3rem; font-weight:700;">Delete Institution Permanently</h3>
+        </div>
+        
+        <div style="background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; padding:14px 16px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; color:var(--text, #e2e8f0); line-height:1.5;">
+            <strong style="color:#ef4444; display:block; margin-bottom:6px;">WARNING: THIS ACTION IS PERMANENT AND CANNOT BE UNDONE!</strong>
+            Deleting your institution will permanently erase:
+            <ul style="margin:8px 0 0 0; padding-left:20px; font-size:0.8rem; line-height:1.6;">
+                <li>All student, teacher, and staff accounts in your institution</li>
+                <li>All uploaded lectures, raw videos, HLS streams, playlists, and thumbnails</li>
+                <li>All e-books, PDF question papers, certificates, and student bio data files</li>
+                <li>All quizzes, assignments, attendance logs, notes, doubts, and chat messages</li>
+                <li>All server filesystem directories and stored files for your institution</li>
+            </ul>
+        </div>
+
+        <form method="POST" action="{{ url_for('admin_delete_own_institution') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <p style="font-size:0.88rem; color:var(--text-dim, #94a3b8); margin-bottom:12px;">
+                To confirm permanent deletion, type your exact institution name: <br>
+                <strong id="adminTargetInstName" style="color:var(--text, #fff); font-family:'JetBrains Mono',monospace; word-break:break-all; font-size:0.95rem; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; display:inline-block; margin-top:4px;">{{ settings.institution_name or 'Campus Player' }}</strong>
+            </p>
+            <input type="text" id="adminConfirmInstInput" name="confirm_name" placeholder="Type exact institution name to confirm" autocomplete="off" required style="width:100%; padding:12px 14px; border-radius:8px; border:1px solid var(--border, #334155); background:var(--surface2, #0f172a); color:var(--text, #fff); margin-bottom:20px; font-size:0.9rem;">
+            
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" class="btn btn-outline" onclick="closeAdminDeleteInstModal()" style="padding:10px 20px;">Cancel</button>
+                <button type="submit" id="adminSubmitDeleteBtn" class="btn btn-danger" disabled style="padding:10px 20px; opacity:0.5; cursor:not-allowed;">Permanently Delete Institution</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     // Fetch live stats
     fetch('/admin/api/stats')
@@ -391,9 +438,46 @@
         .catch(e => alert('Network error'));
     }
 
+    const adminExpectedInstName = "{{ (settings.institution_name or 'Campus Player')|replace("'", "\\'") }}".trim();
+
+    function openAdminDeleteInstModal() {
+        const input = document.getElementById('adminConfirmInstInput');
+        if (input) input.value = '';
+        const btn = document.getElementById('adminSubmitDeleteBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+        const modal = document.getElementById('adminDeleteInstModal');
+        if (modal) modal.style.display = 'flex';
+        if (input) input.focus();
+    }
+
+    function closeAdminDeleteInstModal() {
+        const modal = document.getElementById('adminDeleteInstModal');
+        if (modal) modal.style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         updateConversionQueue();
         setInterval(updateConversionQueue, 3000);
+
+        const input = document.getElementById('adminConfirmInstInput');
+        const btn = document.getElementById('adminSubmitDeleteBtn');
+        if (input && btn) {
+            input.addEventListener('input', function(e) {
+                if (e.target.value.trim() === adminExpectedInstName) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                } else {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

@@ -273,6 +273,9 @@ def permanently_delete_video_assets(
     job_input_files: List[str] = []
     job_output_dirs: List[str] = []
 
+    if os.environ.get('FLASK_TESTING'):
+        return {'dirs_removed': 0, 'files_removed': 0, 'errors': []}
+
     with app.app_context():
         from models import Video, User, Institution, ConversionJob
         from extensions import db

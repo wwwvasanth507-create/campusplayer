@@ -32,7 +32,7 @@ class TestTimetableFix(unittest.TestCase):
         db.session.add_all([cls.student, cls.teacher, cls.admin])
         db.session.commit()
 
-        cls.classroom = Classroom(name=f'Math 101 {ts}', class_code=f'M{ts[:8]}', institution_id=cls.inst.id, teacher_id=cls.teacher.id)
+        cls.classroom = Classroom(name=f'Math 101 {ts}', class_code=f'M{ts[2:]}', institution_id=cls.inst.id, teacher_id=cls.teacher.id)
 
         db.session.add(cls.classroom)
         db.session.commit()

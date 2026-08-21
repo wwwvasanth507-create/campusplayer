@@ -117,6 +117,9 @@ def serve_hls(video_id, filename):
     (static/uploads/institutions/<slug>/hls/<id>/) storage.
     """
     video = Video.query.get(video_id)
+    if not video:
+        return jsonify({'error': 'Video not found'}), 404
+    enforce_institution_access(video)
     static_dir = os.path.join(current_app.root_path, 'static')
 
     # Try to derive video_dir from the stored hls_playlist_path
@@ -142,7 +145,8 @@ def serve_hls(video_id, filename):
 @login_required
 def view_playlist(playlist_id):
     playlist = Playlist.query.get_or_404(playlist_id)
-    return render_template('view_playlist.html', playlist=playlist)
+    enforce_institution_access(playlist)
+    return render_template('playlist_view.html', playlist=playlist)
 
 
 @video_bp.route('/teacher/upload_chunk', methods=['POST'])
@@ -302,6 +306,7 @@ def upload_video():
 @login_required
 def get_video_status(video_id):
     video = Video.query.get_or_404(video_id)
+    enforce_institution_access(video)
     return jsonify({
         'status': video.status,
         'progress': video.processing_progress,
@@ -314,6 +319,7 @@ def get_video_status(video_id):
 @teacher_required
 def upload_subtitles(video_id):
     video = Video.query.get_or_404(video_id)
+    enforce_institution_access(video)
     file = request.files.get('subtitle_file')
     language = request.form.get('language', 'en')
     

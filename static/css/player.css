@@ -1836,7 +1836,7 @@ body.campus-body-fullscreen .vp-hero::after {
     border-radius: 12px;
 }
 
-/* Hide Share button, Watch Later/Clock button, Watch on YouTube overlay, and Video title overlay strictly for YouTube videos */
+/* Scoped UI cleanup rules strictly for YouTube videos */
 .youtube-player-container .yt-overlay-share,
 .youtube-player-container .yt-overlay-clock,
 .youtube-player-container .yt-overlay-watch-later,
@@ -1845,6 +1845,8 @@ body.campus-body-fullscreen .vp-hero::after {
 .youtube-player-container .youtube-share-btn,
 .youtube-player-container .youtube-clock-btn,
 .youtube-player-container .youtube-watch-on-yt,
+.youtube-player-container .youtube-settings-btn,
+.youtube-player-container .yt-settings-btn,
 .youtube-player-container .ytp-share-button,
 .youtube-player-container .ytp-watch-later-button,
 .youtube-player-container .ytp-youtube-button,
@@ -1858,6 +1860,8 @@ body.campus-body-fullscreen .vp-hero::after {
 .youtube-video-player .youtube-share-btn,
 .youtube-video-player .youtube-clock-btn,
 .youtube-video-player .youtube-watch-on-yt,
+.youtube-video-player .youtube-settings-btn,
+.youtube-video-player .yt-settings-btn,
 .youtube-video-player .ytp-share-button,
 .youtube-video-player .ytp-watch-later-button,
 .youtube-video-player .ytp-youtube-button,
@@ -1871,6 +1875,8 @@ body.campus-body-fullscreen .vp-hero::after {
 .youtube-only-controls .youtube-share-btn,
 .youtube-only-controls .youtube-clock-btn,
 .youtube-only-controls .youtube-watch-on-yt,
+.youtube-only-controls .youtube-settings-btn,
+.youtube-only-controls .yt-settings-btn,
 .youtube-only-controls .ytp-share-button,
 .youtube-only-controls .ytp-watch-later-button,
 .youtube-only-controls .ytp-youtube-button,
@@ -1879,10 +1885,10 @@ body.campus-body-fullscreen .vp-hero::after {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
-    pointer-events: none !important;
+    pointer-events:none !important;
 }
 
-/* Ensure CC button, Settings gear icon, Play/Pause, Progress bar, Quality selector, Fullscreen, and Volume controls remain 100% visible and functional */
+/* YouTube iframe positioning */
 .youtube-player-container iframe,
 .youtube-video-player iframe,
 .youtube-only-controls iframe {
@@ -1895,14 +1901,99 @@ body.campus-body-fullscreen .vp-hero::after {
     display: block !important;
 }
 
-/* Remove all extra option bars & sections below YouTube video playing bar */
-.youtube-player-container ~ .vp-quality-bar,
-.youtube-only-controls ~ .vp-quality-bar,
-.youtube-only-controls ~ .vp-grid .vp-action-buttons,
-.youtube-only-controls ~ .vp-grid #ai-copilot-section,
-.youtube-only-controls ~ .vp-grid .vp-ai-summarizer-card,
-.youtube-only-controls ~ .vp-grid #doubts-section {
-    display: none !important;
+/* Scoped responsive overlay shields for YouTube player */
+.yt-overlay-shield-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    z-index: 10;
+    pointer-events: auto;
+    background: #000;
+}
+
+.yt-overlay-shield-bottom-right {
+    position: absolute;
+    bottom: 0;
+    right: 44px;
+    width: 95px;
+    height: 46px;
+    z-index: 10;
+    pointer-events: auto;
+    background: #000;
+}
+
+@media (max-width: 768px) {
+    .yt-overlay-shield-top {
+        height: 38px;
+    }
+    .yt-overlay-shield-bottom-right {
+        right: 36px;
+        width: 80px;
+        height: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-overlay-shield-top {
+        height: 32px;
+    }
+    .yt-overlay-shield-bottom-right {
+        right: 32px;
+        width: 70px;
+        height: 34px;
+    }
+}
+
+/* ══ Fullscreen Mode Fit for YouTube Video Player ══ */
+.youtube-player-container:fullscreen,
+.youtube-player-container:-webkit-full-screen,
+.youtube-player-container:-moz-full-screen,
+.youtube-player-container:-ms-fullscreen,
+.youtube-player-container.campus-fullscreen,
+.youtube-player-container.campus-fullscreen-fallback {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    aspect-ratio: auto !important;
+    border-radius: 0 !important;
+    background: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.youtube-player-container:fullscreen iframe,
+.youtube-player-container:-webkit-full-screen iframe,
+.youtube-player-container:-moz-full-screen iframe,
+.youtube-player-container:-ms-fullscreen iframe,
+.youtube-player-container.campus-fullscreen iframe,
+.youtube-player-container.campus-fullscreen-fallback iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+.youtube-player-container:fullscreen .yt-overlay-shield-top,
+.youtube-player-container:-webkit-full-screen .yt-overlay-shield-top,
+.youtube-player-container:-moz-full-screen .yt-overlay-shield-top,
+.youtube-player-container:-ms-fullscreen .yt-overlay-shield-top,
+.youtube-player-container.campus-fullscreen .yt-overlay-shield-top,
+.youtube-player-container.campus-fullscreen-fallback .yt-overlay-shield-top {
+    height: 52px !important;
+    z-index: 2147483647 !important;
+}
+
+.youtube-player-container:fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-webkit-full-screen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-moz-full-screen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-ms-fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container.campus-fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container.campus-fullscreen-fallback .yt-overlay-shield-bottom-right {
+    right: 48px !important;
+    width: 100px !important;
+    height: 48px !important;
+    z-index: 2147483647 !important;
 }
 
 

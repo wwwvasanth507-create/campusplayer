@@ -1075,6 +1075,8 @@ def init_conversion_system(app):
     """
     Initialize persistent conversion system, execute startup recovery, and launch worker pool.
     """
+    if app.config.get('TESTING'):
+        return None
     manager = ConversionWorkerManager.get_instance(app)
     recover_unfinished_jobs(app)
     manager.start(app)

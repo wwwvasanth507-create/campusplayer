@@ -295,10 +295,9 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
                     <input type="password" name="new_password" placeholder="New pwd" style="padding:5px 8px; font-size:0.72rem; width:100px; margin-bottom:0; min-height:34px; height:34px; border-radius:8px;">
                     <button type="submit" class="btn btn-outline" style="padding:6px 8px; font-size:0.72rem; min-height:34px;">Reset</button>
                 </form>
-                <form method="POST" action="{{ url_for('delete_admin', admin_id=inst.owner_admin.id) }}" style="margin:0;" onsubmit="return confirm('Delete this admin and their entire institution? This cannot be undone.');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;">Delete</button>
-                </form>
+                <button type="button" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;" onclick="openDeleteInstModal({{ inst.id }}, '{{ inst.name|replace("'", "\\'") }}')">
+                    <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">delete_forever</i> Delete
+                </button>
                 {% endif %}
             </div>
         </div>
@@ -611,5 +610,77 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
         updateSysAdminConversionQueue();
         setInterval(updateSysAdminConversionQueue, 3000);
     });
+</script>
+
+<!-- Cyber-Glass Delete Institution Confirmation Modal (System Admin) -->
+<div id="deleteInstModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:var(--surface1, #1e1e2d); border:1px solid rgba(239,68,68,0.4); border-radius:16px; max-width:540px; width:100%; padding:28px; box-shadow:0 24px 48px rgba(0,0,0,0.7); position:relative;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px; color:#ef4444;">
+            <i class="material-icons" style="font-size:2.2rem;">warning</i>
+            <h3 style="margin:0; font-size:1.3rem; font-weight:700; font-family:'Inter',sans-serif;">Delete Institution Permanently</h3>
+        </div>
+        
+        <div style="background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; padding:14px 16px; border-radius:8px; margin-bottom:20px; font-size:0.85rem; color:var(--text, #e2e8f0); line-height:1.5;">
+            <strong style="color:#ef4444; display:block; margin-bottom:6px;">WARNING: THIS ACTION IS PERMANENT AND CANNOT BE UNDONE!</strong>
+            Deleting this institution will permanently wipe:
+            <ul style="margin:8px 0 0 0; padding-left:20px; font-size:0.8rem; line-height:1.6;">
+                <li>All student, teacher, and admin accounts belonging to this institution</li>
+                <li>All uploaded lectures, raw video files, HLS multi-bitrate chunks, and thumbnails</li>
+                <li>All e-books, PDF question papers, student bio data, and academic certificates</li>
+                <li>All quizzes, assignments, attendance logs, notes, doubts, and chat messages</li>
+                <li>All server filesystem directories and stored files for this institution</li>
+            </ul>
+        </div>
+
+        <form id="deleteInstForm" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <p style="font-size:0.88rem; color:var(--text-dim, #94a3b8); margin-bottom:12px;">
+                Type the exact institution name below to confirm deletion: <br>
+                <strong id="targetInstNameLabel" style="color:var(--text, #fff); font-family:'JetBrains Mono',monospace; word-break:break-all; font-size:0.95rem; background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; display:inline-block; margin-top:4px;"></strong>
+            </p>
+            <input type="text" id="confirmInstNameInput" name="confirm_name" placeholder="Type exact institution name to confirm" autocomplete="off" required style="width:100%; padding:12px 14px; border-radius:8px; border:1px solid var(--border, #334155); background:var(--surface2, #0f172a); color:var(--text, #fff); margin-bottom:20px; font-size:0.9rem;">
+            
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" class="btn btn-outline" onclick="closeDeleteInstModal()" style="padding:10px 20px;">Cancel</button>
+                <button type="submit" id="submitDeleteInstBtn" class="btn btn-danger" disabled style="padding:10px 20px; opacity:0.5; cursor:not-allowed;">Permanently Delete Institution</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let currentTargetInstName = '';
+
+function openDeleteInstModal(instId, instName) {
+    currentTargetInstName = instName.trim();
+    document.getElementById('deleteInstForm').action = '/sysadmin/institutions/' + instId + '/delete';
+    document.getElementById('targetInstNameLabel').textContent = currentTargetInstName;
+    const input = document.getElementById('confirmInstNameInput');
+    input.value = '';
+    const btn = document.getElementById('submitDeleteInstBtn');
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    document.getElementById('deleteInstModal').style.display = 'flex';
+    input.focus();
+}
+
+function closeDeleteInstModal() {
+    document.getElementById('deleteInstModal').style.display = 'none';
+}
+
+document.getElementById('confirmInstNameInput').addEventListener('input', function(e) {
+    const val = e.target.value.trim();
+    const btn = document.getElementById('submitDeleteInstBtn');
+    if (val === currentTargetInstName) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    }
+});
 </script>
 {% endblock %}

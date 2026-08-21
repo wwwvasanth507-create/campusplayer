@@ -83,14 +83,15 @@ class EBookLibraryTestSuite(unittest.TestCase):
 
     def test_02_library_reading_progress_api(self):
         """Verify student reading progress auto-saving and milestone XP."""
+        inst = Institution.query.first()
         student = User.query.filter_by(role='student').first()
         if not student:
-            student = User(username='test_student_reader', role='student', xp=100)
+            student = User(username='test_student_reader', role='student', xp=100, institution_id=inst.id if inst else None)
             student.set_password('pass123')
             db.session.add(student)
             db.session.commit()
 
-        book = EBook.query.first()
+        book = EBook.query.filter_by(title="Calculus Vol 1").first()
         if not book:
             book = EBook(
                 title="Calculus Vol 1",
@@ -98,15 +99,17 @@ class EBookLibraryTestSuite(unittest.TestCase):
                 academic_level="Grade 12",
                 file_path="uploads/ebooks/test_calc.pdf",
                 file_name="calc.pdf",
-                page_count=300
+                page_count=300,
+                institution_id=student.institution_id
             )
             db.session.add(book)
             db.session.commit()
+        else:
+            book.institution_id = student.institution_id
+            db.session.commit()
 
-        # Update progress to page 20
-        with self.client.session_transaction() as sess:
-            sess['_user_id'] = str(student.id)
-            sess['_fresh'] = True
+        with self.client:
+            self.client.post('/login', data={'username': student.username, 'password': 'pass123', 'role': 'student'}, follow_redirects=True)
 
         res = self.client.post(
             f'/api/library/book/{book.id}/progress',
@@ -127,10 +130,12 @@ class EBookLibraryTestSuite(unittest.TestCase):
 
     def test_03_library_hub_filters(self):
         """Verify /library endpoint with search and category filters."""
-        user = User.query.first()
-        with self.client.session_transaction() as sess:
-            sess['_user_id'] = str(user.id)
-            sess['_fresh'] = True
+        user = User.query.filter_by(username='test_student_reader').first() or User.query.first()
+        if user:
+            user.set_password('pass123')
+            db.session.commit()
+            with self.client:
+                self.client.post('/login', data={'username': user.username, 'password': 'pass123'}, follow_redirects=True)
 
         # All books
         res = self.client.get('/library')
@@ -151,10 +156,12 @@ class EBookLibraryTestSuite(unittest.TestCase):
         book = EBook.query.first()
         if book:
             init_views = book.view_count or 0
-            user = User.query.first()
-            with self.client.session_transaction() as sess:
-                sess['_user_id'] = str(user.id)
-                sess['_fresh'] = True
+            user = User.query.filter_by(username='test_student_reader').first() or User.query.first()
+            if user:
+                user.set_password('pass123')
+                db.session.commit()
+                with self.client:
+                    self.client.post('/login', data={'username': user.username, 'password': 'pass123'}, follow_redirects=True)
 
             # Trigger reader view
             self.client.get(f'/library/book/{book.id}/read')
@@ -168,9 +175,9 @@ class EBookLibraryTestSuite(unittest.TestCase):
         admin = User.query.filter_by(role='admin').first()
         if not admin:
             admin = User(username='admin_guide_test', role='admin', institution_id=inst.id if inst else None)
-            admin.set_password('pass123')
             db.session.add(admin)
-            db.session.commit()
+        admin.set_password('pass123')
+        db.session.commit()
 
         # Create Study Guide
         guide = EBook(
@@ -194,9 +201,8 @@ class EBookLibraryTestSuite(unittest.TestCase):
         self.assertEqual(guide.get_resource_type_label(), "Study Guide")
         self.assertEqual(guide.get_resource_type_icon(), "assignment")
 
-        with self.client.session_transaction() as sess:
-            sess['_user_id'] = str(admin.id)
-            sess['_fresh'] = True
+        with self.client:
+            self.client.post('/login', data={'username': admin.username, 'password': 'pass123', 'role': 'admin'}, follow_redirects=True)
 
         # Test filter by resource_type=guide
         res_guide = self.client.get('/library?resource_type=guide')

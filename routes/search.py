@@ -41,14 +41,18 @@ def search_suggest():
     for v in v_q:
         if v.title not in seen_titles:
             seen_titles.add(v.title)
-            suggestions.append({'text': v.title, 'type': 'video', 'icon': 'videocam', 'url': url_for('video.watch_video', video_id=v.id)})
+            from flask import current_app
+            v_url = url_for('watch_video', video_id=v.id) if 'watch_video' in current_app.view_functions else (url_for('video.watch_video', video_id=v.id) if 'video.watch_video' in current_app.view_functions else f"/watch/{v.id}")
+            suggestions.append({'text': v.title, 'type': 'video', 'icon': 'videocam', 'url': v_url})
 
     p_q = scope_to_institution(Playlist.query.filter(Playlist.title.ilike(term)), Playlist).limit(3).all()
     for p in p_q:
         title = f"[Playlist] {p.title}"
         if title not in seen_titles:
             seen_titles.add(title)
-            suggestions.append({'text': p.title, 'type': 'playlist', 'icon': 'playlist_play', 'url': url_for('video.view_playlist', playlist_id=p.id)})
+            from flask import current_app
+            p_url = url_for('playlist_view', playlist_id=p.id) if 'playlist_view' in current_app.view_functions else (url_for('video.view_playlist', playlist_id=p.id) if 'video.view_playlist' in current_app.view_functions else f"/playlist/{p.id}")
+            suggestions.append({'text': p.title, 'type': 'playlist', 'icon': 'playlist_play', 'url': p_url})
 
     c_q = scope_to_institution(Classroom.query.filter(Classroom.name.ilike(term)), Classroom).limit(3).all()
     for c in c_q:

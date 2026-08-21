@@ -152,15 +152,7 @@
     </div>
 </div>
 
-<!-- Mode Toggle -->
-<div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-    <button type="button" id="tab-file-mode" class="btn btn-primary" style="flex:1; border-radius:12px; min-width:200px;" onclick="switchUploadTab('file')">
-        <i class="material-icons" style="font-size:1.1rem;">cloud_upload</i> Direct File Upload (HLS 16K)
-    </button>
-    <button type="button" id="tab-yt-mode" class="btn btn-outline" style="flex:1; border-radius:12px; min-width:200px;" onclick="switchUploadTab('yt')">
-        <i class="fab fa-youtube" style="color:#ff0000; font-size:1.1rem;"></i> Add YouTube Video Link
-    </button>
-</div>
+<!-- Direct Video File Upload -->
 
 <!-- Upload Card (File) -->
 <div id="file-upload-card" class="card card-royal upload-card" style="margin-bottom:24px;">
@@ -252,57 +244,6 @@
                 <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden;">
                     <div id="processing-progress-bar" style="width:0%; height:100%; background:var(--secondary-color); transition:width 0.3s;"></div>
                 </div>
-            </div>
-            <p id="system-status" style="font-size:0.75rem; color:var(--text-dim); margin:10px 0 0; text-align:center;">Preparing upload streams...</p>
-        </div>
-    </form>
-</div>
-
-<!-- Upload Card (YouTube Link) -->
-<div id="youtube-upload-card" class="card card-royal upload-card" style="margin-bottom:24px; display:none;">
-    <div class="card-title font-display" style="color:#ff0000; display:flex; align-items:center; gap:8px; margin-bottom:16px;">
-        <i class="fab fa-youtube" style="color:#ff0000; font-size:1.4rem;"></i> Add YouTube Educational Video Link
-    </div>
-    <form action="{{ url_for('add_youtube_video') }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:14px; margin-bottom:14px;">
-            <div>
-                <label>Video Title *</label>
-                <input type="text" name="title" placeholder="Lecture / Video Title" required style="margin-bottom:0;">
-            </div>
-            <div>
-                <label>YouTube URL or Video ID *</label>
-                <input type="text" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..." required style="margin-bottom:0;">
-            </div>
-            <div>
-                <label>Classroom Association</label>
-                <select name="classroom_id" style="margin-bottom:0;">
-                    <option value="-1">Global Video (Public to Campus)</option>
-                    {% for c in classes %}
-                    <option value="{{ c.id }}">{{ c.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:14px; margin-bottom:14px;">
-            <div>
-                <label>Description</label>
-                <textarea name="description" placeholder="Provide a brief summary of topics covered in this YouTube lecture..." 
-                    style="margin-bottom:0; min-height:80px; resize:vertical;"></textarea>
-            </div>
-            <div style="display:flex; flex-direction:column; justify-content:space-between;">
-                <div>
-                    <label>Tags (Comma separated)</label>
-                    <input type="text" name="tags" placeholder="e.g. math, physics, youtube" style="margin-bottom:8px;">
-                </div>
-                <button type="submit" class="btn btn-primary" style="height:44px; width:100%; background:#ff0000; border-color:#ff0000;">
-                    <i class="fab fa-youtube"></i>
-                    <span>Add YouTube Video (+50 XP)</span>
-                </button>
-            </div>
-        </div>
-    </form>
 </div>
 
 <!-- Search -->
@@ -699,26 +640,7 @@
             }
         });
 
-        function switchUploadTab(mode) {
-            const fileCard = document.getElementById('file-upload-card');
-            const ytCard = document.getElementById('youtube-upload-card');
-            const tabFile = document.getElementById('tab-file-mode');
-            const tabYt = document.getElementById('tab-yt-mode');
-
-            if (mode === 'yt') {
-                fileCard.style.display = 'none';
-                ytCard.style.display = 'block';
-                tabFile.className = 'btn btn-outline';
-                tabYt.className = 'btn btn-primary';
-                tabYt.style.background = '#ff0000';
-                tabYt.style.borderColor = '#ff0000';
-            } else {
-                fileCard.style.display = 'block';
-                ytCard.style.display = 'none';
-                tabFile.className = 'btn btn-primary';
-                tabYt.className = 'btn btn-outline';
-            }
-        }
+        function switchUploadTab(mode) {}
 
         // ── AI Quiz Generator Modal Handlers ──
         let activeAiVideoId = null;

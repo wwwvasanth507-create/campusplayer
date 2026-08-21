@@ -70,9 +70,8 @@ class YouTubeVideoTestCase(unittest.TestCase):
         self.assertEqual(v2.resolved_youtube_id, 'dQw4w9WgXcQ')
         self.assertEqual(v3.resolved_youtube_id, 'jFWsj_QT0G8')
 
-    def test_teacher_add_and_delete_youtube_video_route(self):
-        """Test teacher adding a YouTube share video link and deleting it cleanly."""
-        initial_xp = self.teacher.xp
+    def test_teacher_add_youtube_video_disabled(self):
+        """Test teacher adding a YouTube video link is disabled and returns warning message."""
         with self.client:
             self.client.post('/login', data={'username': 'yt_teacher_user', 'password': 'pass123', 'role': 'teacher'}, follow_redirects=True)
             res = self.client.post('/teacher/add_youtube_video', data={
@@ -83,27 +82,12 @@ class YouTubeVideoTestCase(unittest.TestCase):
             }, follow_redirects=True)
 
             self.assertEqual(res.status_code, 200)
+            html = res.get_data(as_text=True)
+            self.assertIn('YouTube video link addition has been permanently disabled', html)
 
-            # Query created video
+            # Query created video (should be None)
             video = Video.query.filter_by(title='Quantum Physics Share Link Lecture').first()
-            self.assertIsNotNone(video)
-            self.assertEqual(video.video_type, 'youtube')
-            self.assertEqual(video.youtube_id, 'jFWsj_QT0G8')
-            self.assertEqual(video.status, 'completed')
-
-            vid_id = video.id
-            del_res = self.client.post(f'/teacher/delete_video/{vid_id}', follow_redirects=True)
-            self.assertEqual(del_res.status_code, 200)
-
-            # Assert video row is completely removed
-            deleted_video = Video.query.get(vid_id)
-            self.assertIsNone(deleted_video)
-            self.assertEqual(video.thumbnail_path, 'https://img.youtube.com/vi/jFWsj_QT0G8/hqdefault.jpg')
-            self.assertEqual(video.institution_id, self.inst.id)
-
-            # Check teacher gained +50 XP
-            updated_teacher = User.query.get(self.teacher.id)
-            self.assertEqual(updated_teacher.xp, initial_xp + 50)
+            self.assertIsNone(video)
 
     def test_youtube_video_player_rendering(self):
         """Test watching a YouTube video renders the YouTube embed and lock parameters."""

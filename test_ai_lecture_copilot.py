@@ -143,9 +143,8 @@ class AILectureCopilotTestSuite(unittest.TestCase):
 
     def test_06_copilot_rest_api_endpoints(self):
         """Test /api/video/<id>/copilot/ask, /history, /quiz_submit, and /readiness."""
-        with self.client.session_transaction() as sess:
-            sess['_user_id'] = str(self.student.id)
-            sess['_fresh'] = True
+        with self.client:
+            self.client.post('/login', data={'username': self.student.username, 'password': 'pass123', 'role': 'student'}, follow_redirects=True)
 
         # 1. Ask API
         ask_res = self.client.post(

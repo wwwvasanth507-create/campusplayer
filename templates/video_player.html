@@ -1436,6 +1436,8 @@
 .youtube-player-container .youtube-share-btn,
 .youtube-player-container .youtube-clock-btn,
 .youtube-player-container .youtube-watch-on-yt,
+.youtube-player-container .youtube-settings-btn,
+.youtube-player-container .yt-settings-btn,
 .youtube-player-container .ytp-share-button,
 .youtube-player-container .ytp-watch-later-button,
 .youtube-player-container .ytp-youtube-button,
@@ -1449,6 +1451,8 @@
 .youtube-video-player .youtube-share-btn,
 .youtube-video-player .youtube-clock-btn,
 .youtube-video-player .youtube-watch-on-yt,
+.youtube-video-player .youtube-settings-btn,
+.youtube-video-player .yt-settings-btn,
 .youtube-video-player .ytp-share-button,
 .youtube-video-player .ytp-watch-later-button,
 .youtube-video-player .ytp-youtube-button,
@@ -1462,6 +1466,8 @@
 .youtube-only-controls .youtube-share-btn,
 .youtube-only-controls .youtube-clock-btn,
 .youtube-only-controls .youtube-watch-on-yt,
+.youtube-only-controls .youtube-settings-btn,
+.youtube-only-controls .yt-settings-btn,
 .youtube-only-controls .ytp-share-button,
 .youtube-only-controls .ytp-watch-later-button,
 .youtube-only-controls .ytp-youtube-button,
@@ -1470,10 +1476,10 @@
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
-    pointer-events: none !important;
+    pointer-events:none !important;
 }
 
-/* Keep Closed Captions (CC), Settings, Play/Pause, Video Playing Bar, Fullscreen, and Volume controls 100% visible and functional */
+/* YouTube iframe positioning */
 .youtube-player-container iframe,
 .youtube-video-player iframe,
 .youtube-only-controls iframe {
@@ -1486,16 +1492,99 @@
     display: block !important;
 }
 
-/* Ensure shields allow native pass-through clicks to YouTube controls (CC, Settings gear, Play/Pause, Seek) */
-.yt-overlay-shield-top,
-.yt-overlay-shield-bottom-right {
-    pointer-events: none !important;
+/* Scoped responsive overlay shields for YouTube player */
+.yt-overlay-shield-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 48px;
+    z-index: 10;
+    pointer-events: auto;
+    background: #000;
 }
 
-/* Hide only quality bar below YouTube player since YouTube has native quality settings */
-.youtube-player-container ~ .vp-quality-bar,
-.youtube-only-controls ~ .vp-quality-bar {
-    display: none !important;
+.yt-overlay-shield-bottom-right {
+    position: absolute;
+    bottom: 0;
+    right: 44px;
+    width: 95px;
+    height: 46px;
+    z-index: 10;
+    pointer-events: auto;
+    background: #000;
+}
+
+@media (max-width: 768px) {
+    .yt-overlay-shield-top {
+        height: 38px;
+    }
+    .yt-overlay-shield-bottom-right {
+        right: 36px;
+        width: 80px;
+        height: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-overlay-shield-top {
+        height: 32px;
+    }
+    .yt-overlay-shield-bottom-right {
+        right: 32px;
+        width: 70px;
+        height: 34px;
+    }
+}
+
+/* ══ Fullscreen Mode Fit for YouTube Video Player ══ */
+.youtube-player-container:fullscreen,
+.youtube-player-container:-webkit-full-screen,
+.youtube-player-container:-moz-full-screen,
+.youtube-player-container:-ms-fullscreen,
+.youtube-player-container.campus-fullscreen,
+.youtube-player-container.campus-fullscreen-fallback {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    aspect-ratio: auto !important;
+    border-radius: 0 !important;
+    background: #000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.youtube-player-container:fullscreen iframe,
+.youtube-player-container:-webkit-full-screen iframe,
+.youtube-player-container:-moz-full-screen iframe,
+.youtube-player-container:-ms-fullscreen iframe,
+.youtube-player-container.campus-fullscreen iframe,
+.youtube-player-container.campus-fullscreen-fallback iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+.youtube-player-container:fullscreen .yt-overlay-shield-top,
+.youtube-player-container:-webkit-full-screen .yt-overlay-shield-top,
+.youtube-player-container:-moz-full-screen .yt-overlay-shield-top,
+.youtube-player-container:-ms-fullscreen .yt-overlay-shield-top,
+.youtube-player-container.campus-fullscreen .yt-overlay-shield-top,
+.youtube-player-container.campus-fullscreen-fallback .yt-overlay-shield-top {
+    height: 52px !important;
+    z-index: 2147483647 !important;
+}
+
+.youtube-player-container:fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-webkit-full-screen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-moz-full-screen .yt-overlay-shield-bottom-right,
+.youtube-player-container:-ms-fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container.campus-fullscreen .yt-overlay-shield-bottom-right,
+.youtube-player-container.campus-fullscreen-fallback .yt-overlay-shield-bottom-right {
+    right: 48px !important;
+    width: 100px !important;
+    height: 48px !important;
+    z-index: 2147483647 !important;
 }
 </style>
 {% endblock %}
@@ -1524,10 +1613,10 @@
             {% set yt_id = video.resolved_youtube_id or video.youtube_id or (video.filename.replace('youtube_', '') if video.filename and video.filename.startswith('youtube_') else '') %}
             {% if is_yt or yt_id %}
             <div id="youtube-embed-wrapper" class="youtube-player-container youtube-video-player youtube-only-controls" style="position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:12px;">
-                <!-- Top shield element for overlay scoping -->
-                <div id="yt-top-shield" class="yt-overlay-shield-top" style="position:absolute; top:0; left:0; width:100%; height:50px; z-index:10; pointer-events:none; background:transparent;"></div>
-                <!-- Bottom-right shield element for overlay scoping -->
-                <div id="yt-bottom-right-shield" class="yt-overlay-shield-bottom-right" style="position:absolute; bottom:0; right:70px; width:130px; height:40px; z-index:10; pointer-events:none; background:transparent;"></div>
+                <!-- Top shield element to hide YouTube overlay title, share icon, and clock button -->
+                <div id="yt-top-shield" class="yt-overlay-shield-top"></div>
+                <!-- Bottom-right shield element to hide Settings gear icon and Watch on YouTube button while preserving CC and Fullscreen -->
+                <div id="yt-bottom-right-shield" class="yt-overlay-shield-bottom-right"></div>
 
                 <iframe id="youtube-player"
                         src="https://www.youtube.com/embed/{{ yt_id }}?enablejsapi=1&autoplay=0&rel=0&modestbranding=1&iv_load_policy=3&cc_load_policy=1&playsinline=1&controls=1"

@@ -837,7 +837,7 @@ def migrate():
             'checkpoint_response', 'video_doubt', 'video_doubt_reply',
             'video_flashcard', 'academic_certificate', 'parent_access_token',
             'announcement', 'announcement_read', 'timetable_slot', 'reward_item', 'user_reward',
-            'ebook', 'ebook_progress', 'ai_copilot_interaction'
+            'ebook', 'ebook_progress', 'ai_copilot_interaction', 'daily_quest_template'
         ]
         for table in tenant_tables:
             if table not in migrations:

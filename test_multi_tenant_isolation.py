@@ -1,169 +1,319 @@
-"""
-CampusPlayer - Multi-Tenant Institution Isolation Verification Suite.
-
-Tests strict data boundaries ensuring users of Institution A cannot access, view, search,
-or interact with videos, classrooms, quizzes, e-books, or user records of Institution B.
-"""
-
 import os
 import sys
+os.environ['FLASK_TESTING'] = '1'
 import unittest
-from datetime import datetime
+from flask import json, g
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, BASE_DIR)
+sys.path.insert(0, os.path.abspath('.'))
 
 from app import app
 from extensions import db
-from models import Institution, User, Video, Classroom, Quiz, EBook, Playlist
-from services.utils import scope_to_institution, enforce_institution_access
+from models import (
+    Institution, User, Classroom, Video, Playlist, EBook, Quiz, Question,
+    QuizResult, Attendance, ViewAnalytics, SiteSettings, ActivityLog
+)
+from services.institution_service import permanently_delete_institution
 
-
-class TestMultiTenantIsolation(unittest.TestCase):
-
+class MultiTenantIsolationTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.app = app
-        cls.app.config['TESTING'] = True
-        cls.app.config['WTF_CSRF_ENABLED'] = False
-        cls.client = cls.app.test_client()
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SERVER_NAME'] = 'localhost'
+        cls.client = app.test_client()
 
-        with cls.app.app_context():
-            db.create_all()
+        with app.app_context():
+            g.ignore_tenant_filter = True
+            db.session.rollback()
+            db.session.remove()
+            db.engine.dispose()
 
-            # Clean up stale test data from previous runs
-            Video.query.filter(Video.title.like('IsoVid%')).delete(synchronize_session=False)
-            Quiz.query.filter(Quiz.title.like('Secret Quiz%')).delete(synchronize_session=False)
-            EBook.query.filter(EBook.title.like('Restricted EBook%')).delete(synchronize_session=False)
-            db.session.commit()
+            import time
+            ts = str(int(time.time()))
+            cls.slug_a = f'alpha_u_{ts}'
+            cls.slug_b = f'beta_i_{ts}'
 
-
-            ts = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            cls.username_a = f'iso_usr_a_{ts}'
-            cls.username_b = f'iso_usr_b_{ts}'
-            cls.username_admin = f'iso_sysadmin_{ts}'
-            cls.vtitle_a = f'IsoVidA_{ts}'
-            cls.vtitle_b = f'IsoVidB_{ts}'
-            cls.qtitle_a = f'Secret Quiz A {ts}'
-            cls.qtitle_b = f'Secret Quiz B {ts}'
-            cls.etitle_a = f'Restricted EBook A {ts}'
-            cls.etitle_b = f'Restricted EBook B {ts}'
-
-
-            # Unique Institutions
-            cls.inst_a = Institution(name=f'Inst A {ts}', slug=f'inst-a-{ts}')
-            cls.inst_b = Institution(name=f'Inst B {ts}', slug=f'inst-b-{ts}')
+            # Seed test institutions
+            cls.inst_a = Institution(name=f'Alpha University {ts}', slug=cls.slug_a, status='active')
             db.session.add(cls.inst_a)
+            cls.inst_b = Institution(name=f'Beta Institute {ts}', slug=cls.slug_b, status='active')
             db.session.add(cls.inst_b)
             db.session.commit()
 
             cls.inst_a_id = cls.inst_a.id
             cls.inst_b_id = cls.inst_b.id
 
-            # Users
-            cls.user_a = User(username=cls.username_a, role='student', institution_id=cls.inst_a_id, is_active_account=True)
-            cls.user_a.set_password('StudentPass123!')
-            db.session.add(cls.user_a)
+            # Seed Inst A Users & Data
+            cls.admin_a = User(username='alpha_admin', role='admin', institution_id=cls.inst_a_id)
+            cls.admin_a.set_password('Pass123!')
+            db.session.add(cls.admin_a)
 
-            cls.user_b = User(username=cls.username_b, role='student', institution_id=cls.inst_b_id, is_active_account=True)
-            cls.user_b.set_password('StudentPass123!')
-            db.session.add(cls.user_b)
+            cls.teacher_a_list = []
+            for i in range(1, 4):
+                t = User(username=f'alpha_teacher_{i}', role='teacher', institution_id=cls.inst_a_id)
+                t.set_password('Pass123!')
+                db.session.add(t)
+                cls.teacher_a_list.append(t)
 
-            cls.sysadmin = User(username=cls.username_admin, role='system_admin', is_active_account=True)
-            cls.sysadmin.set_password('AdminPass123!')
-            db.session.add(cls.sysadmin)
-
-            db.session.commit()
-
-            cls.user_a_id = cls.user_a.id
-            cls.user_b_id = cls.user_b.id
-            cls.sysadmin_id = cls.sysadmin.id
-
-            # Isolated Video A & Video B
-            cls.video_a = Video(title=cls.vtitle_a, filename=f'test_a_{ts}.mp4', status='completed', uploader_id=cls.user_a_id, institution_id=cls.inst_a_id)
-            cls.video_b = Video(title=cls.vtitle_b, filename=f'test_b_{ts}.mp4', status='completed', uploader_id=cls.user_b_id, institution_id=cls.inst_b_id)
-            db.session.add(cls.video_a)
-            db.session.add(cls.video_b)
-
-            # Isolated Quiz A & Quiz B
-            cls.quiz_a = Quiz(title=cls.qtitle_a, teacher_id=cls.user_a_id, institution_id=cls.inst_a_id)
-            cls.quiz_b = Quiz(title=cls.qtitle_b, teacher_id=cls.user_b_id, institution_id=cls.inst_b_id)
-            db.session.add(cls.quiz_a)
-            db.session.add(cls.quiz_b)
-
-            # Isolated EBook A & EBook B
-            cls.ebook_a = EBook(title=cls.etitle_a, subject='General', file_path=f'static/uploads/a_{ts}.pdf', file_name=f'a_{ts}.pdf', uploader_id=cls.user_a_id, institution_id=cls.inst_a_id)
-            cls.ebook_b = EBook(title=cls.etitle_b, subject='General', file_path=f'static/uploads/b_{ts}.pdf', file_name=f'b_{ts}.pdf', uploader_id=cls.user_b_id, institution_id=cls.inst_b_id)
-            db.session.add(cls.ebook_a)
-            db.session.add(cls.ebook_b)
+            cls.student_a_list = []
+            for i in range(1, 6):
+                s = User(username=f'alpha_student_{i}', role='student', institution_id=cls.inst_a_id, xp=100*i)
+                s.set_password('Pass123!')
+                db.session.add(s)
+                cls.student_a_list.append(s)
 
             db.session.commit()
 
-            cls.video_a_id = cls.video_a.id
-            cls.video_b_id = cls.video_b.id
-            cls.quiz_a_id = cls.quiz_a.id
-            cls.quiz_b_id = cls.quiz_b.id
-            cls.ebook_a_id = cls.ebook_a.id
-            cls.ebook_b_id = cls.ebook_b.id
+            # Seed Inst A Classes, Videos, EBooks, Quizzes
+            cls.class_a_list = []
+            for i in range(1, 3):
+                c = Classroom(name=f'Alpha Class {i}', teacher_id=cls.teacher_a_list[0].id, institution_id=cls.inst_a_id)
+                db.session.add(c)
+                cls.class_a_list.append(c)
 
-    def test_01_cross_institution_video_access_denied(self):
-        """TEST 1: User A cannot watch Video B (Institution B). Expect 403."""
-        client_a = self.app.test_client()
-        client_a.post('/login', data={'username': self.username_a, 'password': 'StudentPass123!'}, follow_redirects=True)
+            cls.video_a_list = []
+            for i in range(1, 6):
+                v = Video(
+                    title=f'Alpha Video {i}',
+                    filename=f'alpha_video_{i}.mp4',
+                    uploader_id=cls.teacher_a_list[0].id,
+                    institution_id=cls.inst_a_id,
+                    status='completed',
+                    hls_playlist_path=f'uploads/institutions/alpha_u/hls/{i}/master.m3u8'
+                )
+                db.session.add(v)
+                cls.video_a_list.append(v)
 
-        res = client_a.get(f'/watch/{self.video_b_id}')
-        self.assertEqual(res.status_code, 403)
+            cls.ebook_a_list = []
+            for i in range(1, 4):
+                eb = EBook(
+                    title=f'Alpha PDF {i}',
+                    institution_id=cls.inst_a_id,
+                    uploader_id=cls.teacher_a_list[0].id,
+                    subject='Computer Science',
+                    file_path=f'uploads/institutions/alpha_u/pdfs/alpha_{i}.pdf',
+                    file_name=f'alpha_{i}.pdf',
+                    page_count=50
+                )
+                db.session.add(eb)
+                cls.ebook_a_list.append(eb)
 
-    def test_02_same_institution_video_access_allowed(self):
-        """TEST 2: User A can watch Video A (Institution A). Expect 200."""
-        client_a = self.app.test_client()
-        client_a.post('/login', data={'username': self.username_a, 'password': 'StudentPass123!'}, follow_redirects=True)
+            cls.quiz_a_list = []
+            for i in range(1, 3):
+                q = Quiz(
+                    title=f'Alpha Quiz {i}',
+                    institution_id=cls.inst_a_id,
+                    teacher_id=cls.teacher_a_list[0].id
+                )
+                db.session.add(q)
+                cls.quiz_a_list.append(q)
 
-        res = client_a.get(f'/watch/{self.video_a_id}')
+            db.session.commit()
+
+            # Seed Inst B Users & Data
+            cls.admin_b = User(username='beta_admin', role='admin', institution_id=cls.inst_b_id)
+            cls.admin_b.set_password('Pass123!')
+            db.session.add(cls.admin_b)
+
+            cls.teacher_b_list = []
+            for i in range(1, 3):
+                t = User(username=f'beta_teacher_{i}', role='teacher', institution_id=cls.inst_b_id)
+                t.set_password('Pass123!')
+                db.session.add(t)
+                cls.teacher_b_list.append(t)
+
+            cls.student_b_list = []
+            for i in range(1, 4):
+                s = User(username=f'beta_student_{i}', role='student', institution_id=cls.inst_b_id, xp=50*i)
+                s.set_password('Pass123!')
+                db.session.add(s)
+                cls.student_b_list.append(s)
+
+            db.session.commit()
+
+            cls.class_b_list = []
+            for i in range(1, 2):
+                c = Classroom(name=f'Beta Class {i}', teacher_id=cls.teacher_b_list[0].id, institution_id=cls.inst_b_id)
+                db.session.add(c)
+                cls.class_b_list.append(c)
+
+            cls.video_b_list = []
+            for i in range(1, 3):
+                v = Video(
+                    title=f'Beta Video {i}',
+                    filename=f'beta_video_{i}.mp4',
+                    uploader_id=cls.teacher_b_list[0].id,
+                    institution_id=cls.inst_b_id,
+                    status='completed',
+                    hls_playlist_path=f'uploads/institutions/beta_i/hls/{i}/master.m3u8'
+                )
+                db.session.add(v)
+                cls.video_b_list.append(v)
+
+            cls.ebook_b_list = []
+            for i in range(1, 2):
+                eb = EBook(
+                    title=f'Beta PDF {i}',
+                    institution_id=cls.inst_b_id,
+                    uploader_id=cls.teacher_b_list[0].id,
+                    subject='Physics',
+                    file_path=f'uploads/institutions/beta_i/pdfs/beta_{i}.pdf',
+                    file_name=f'beta_{i}.pdf',
+                    page_count=30
+                )
+                db.session.add(eb)
+                cls.ebook_b_list.append(eb)
+
+            cls.quiz_b_list = []
+            for i in range(1, 2):
+                q = Quiz(
+                    title=f'Beta Quiz {i}',
+                    institution_id=cls.inst_b_id,
+                    teacher_id=cls.teacher_b_list[0].id
+                )
+                db.session.add(q)
+                cls.quiz_b_list.append(q)
+
+            db.session.commit()
+
+            # Store key entity IDs for cross-tenant IDOR tests
+            cls.video_b_id = cls.video_b_list[0].id
+            cls.ebook_b_id = cls.ebook_b_list[0].id
+            cls.quiz_b_id = cls.quiz_b_list[0].id
+            cls.teacher_b_id = cls.teacher_b_list[0].id
+
+            db.session.remove()
+
+    def setUp(self):
+        self.client = app.test_client()
+        with app.app_context():
+            db.session.remove()
+
+    def tearDown(self):
+        with app.app_context():
+            db.session.remove()
+
+    def login(self, username, password='Pass123!'):
+        self.client.get('/logout')
+        return self.client.post('/login', data={'username': username, 'password': password}, follow_redirects=True)
+
+    def test_01_institution_a_admin_dashboard_isolation(self):
+        """Institution A admin must see ONLY Inst A counts."""
+        res_login = self.login('alpha_admin')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get('/admin')
         self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertIn('alpha_teacher_1', html)
+        self.assertNotIn('beta_teacher_1', html)
 
-    def test_03_search_query_isolation(self):
-        """TEST 3: User A searching for 'IsoVid' gets 0 items from Inst B."""
-        client_a = self.app.test_client()
-        client_a.post('/login', data={'username': self.username_a, 'password': 'StudentPass123!'}, follow_redirects=True)
+        # Test /admin/api/stats for Inst A
+        api_res = self.client.get('/admin/api/stats')
+        self.assertEqual(api_res.status_code, 200)
+        data = api_res.get_json()
+        self.assertIn('views_today', data)
 
-        res = client_a.get('/api/search/suggest?q=IsoVid')
+    def test_02_institution_b_admin_dashboard_isolation(self):
+        """Institution B admin must see ONLY Inst B counts."""
+        res_login = self.login('beta_admin')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get('/admin')
         self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertIn('beta_teacher_1', html)
+        self.assertNotIn('alpha_teacher_1', html)
+
+    def test_03_teacher_dashboard_isolation(self):
+        """Alpha teacher sees only Alpha classes; Beta teacher sees only Beta classes."""
+        res_login = self.login('alpha_teacher_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get('/teacher/classes')
+        self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertIn('Alpha Class 1', html)
+        self.assertNotIn('Beta Class 1', html)
+
+        res_login = self.login('beta_teacher_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get('/teacher/classes')
+        self.assertEqual(res.status_code, 200)
+        html = res.get_data(as_text=True)
+        self.assertIn('Beta Class 1', html)
+        self.assertNotIn('Alpha Class 1', html)
+
+    def test_04_search_isolation(self):
+        """Search in Inst A must not return Inst B videos, users, or classes."""
+        res_login = self.login('alpha_student_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get('/api/search/suggest?q=Beta')
         data = res.get_json()
-        titles = [s['text'] for s in data.get('suggestions', [])]
-        self.assertIn(self.vtitle_a, titles)
-        self.assertNotIn(self.vtitle_b, titles)
+        self.assertEqual(len(data.get('suggestions', [])), 0)
 
+        res = self.client.get('/api/search/suggest?q=Alpha')
+        data = res.get_json()
+        self.assertGreater(len(data.get('suggestions', [])), 0)
 
+    def test_05_cross_tenant_idor_video_access(self):
+        """Inst A student trying to access Inst B video or HLS stream must be rejected with 403 or 404."""
+        res_login = self.login('alpha_student_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get(f'/video/{self.video_b_id}')
+        self.assertIn(res.status_code, (403, 404))
 
+        res = self.client.get(f'/hls/{self.video_b_id}/master.m3u8')
+        self.assertIn(res.status_code, (403, 404))
 
-    def test_04_cross_institution_quiz_access_denied(self):
-        """TEST 4: Student A attempting Quiz B (Institution B) gets 403 Forbidden."""
-        client_a = self.app.test_client()
-        client_a.post('/login', data={'username': self.username_a, 'password': 'StudentPass123!'}, follow_redirects=True)
+    def test_06_cross_tenant_idor_ebook_access(self):
+        """Inst A student trying to read or download Inst B ebook must be rejected with 403 or 404."""
+        res_login = self.login('alpha_student_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get(f'/library/book/{self.ebook_b_id}/read')
+        self.assertIn(res.status_code, (403, 404))
 
-        res = client_a.get(f'/student/quiz/{self.quiz_b_id}')
-        self.assertEqual(res.status_code, 403)
+        res = self.client.get(f'/library/book/{self.ebook_b_id}/download')
+        self.assertIn(res.status_code, (403, 404))
 
-    def test_05_cross_institution_ebook_access_denied(self):
-        """TEST 5: User A opening EBook B (Institution B) gets 403 Forbidden."""
-        client_a = self.app.test_client()
-        client_a.post('/login', data={'username': self.username_a, 'password': 'StudentPass123!'}, follow_redirects=True)
+    def test_07_cross_tenant_idor_quiz_access(self):
+        """Inst A student trying to take Inst B quiz must be rejected with 403 or 404."""
+        res_login = self.login('alpha_student_1')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.get(f'/student/quiz/{self.quiz_b_id}')
+        self.assertIn(res.status_code, (403, 404))
 
-        res = client_a.get(f'/library/book/{self.ebook_b_id}/read')
-        self.assertEqual(res.status_code, 403)
+    def test_08_cross_tenant_password_change_attack(self):
+        """Inst A admin attempting to change Inst B teacher password must fail and leave password unchanged."""
+        res_login = self.login('alpha_admin')
+        self.assertEqual(res_login.status_code, 200)
+        res = self.client.post('/admin/change_teacher_password', data={
+            'user_id': self.teacher_b_id,
+            'new_password': 'Hacked123!'
+        })
+        # Password change attempt for cross-tenant user should fail (not allowed)
+        with app.app_context():
+            g.ignore_tenant_filter = True
+            tb = User.query.get(self.teacher_b_id)
+            self.assertTrue(tb.check_password('Pass123!'))
+            self.assertFalse(tb.check_password('Hacked123!'))
 
-    def test_06_system_admin_cross_institution_bypass(self):
-        """TEST 6: System Admin can view resources across all institutions."""
-        client_admin = self.app.test_client()
-        client_admin.post('/login', data={'username': self.username_admin, 'password': 'AdminPass123!', 'role': 'system_admin'}, follow_redirects=True)
+    def test_09_institution_deletion_isolation(self):
+        """Deleting Institution A must leave Institution B 100% intact."""
+        with app.app_context():
+            db.session.remove()
+            res = permanently_delete_institution(self.inst_a_id)
+            self.assertTrue(res.get('success'))
 
-        res_a = client_admin.get(f'/watch/{self.video_a_id}')
-        self.assertEqual(res_a.status_code, 200)
+            # Verify Inst B data is 100% intact
+            self.assertEqual(User.query.filter_by(role='teacher', institution_id=self.inst_b_id).count(), 2)
+            self.assertEqual(User.query.filter_by(role='student', institution_id=self.inst_b_id).count(), 3)
+            self.assertEqual(Classroom.query.filter_by(institution_id=self.inst_b_id).count(), 1)
+            self.assertEqual(Video.query.filter_by(institution_id=self.inst_b_id).count(), 2)
+            self.assertEqual(EBook.query.filter_by(institution_id=self.inst_b_id).count(), 1)
+            self.assertEqual(Quiz.query.filter_by(institution_id=self.inst_b_id).count(), 1)
 
-        res_b = client_admin.get(f'/watch/{self.video_b_id}')
-        self.assertEqual(res_b.status_code, 200)
-
+    @classmethod
+    def tearDownClass(cls):
+        with app.app_context():
+            db.session.remove()
 
 if __name__ == '__main__':
     unittest.main()

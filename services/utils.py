@@ -74,14 +74,19 @@ def get_current_institution_id():
     return getattr(current_user, 'institution_id', None)
 
 
-def scope_to_institution(query, model_cls):
+def scope_to_institution(query, model_cls=None):
     """
     Filter SQLAlchemy query by current_user's institution_id.
     Bypasses filtering for system_admin users.
     """
     inst_id = get_current_institution_id()
-    if inst_id is not None and hasattr(model_cls, 'institution_id'):
-        return query.filter(model_cls.institution_id == inst_id)
+    if inst_id is not None:
+        if model_cls is not None and hasattr(model_cls, 'institution_id'):
+            return query.filter(model_cls.institution_id == inst_id)
+        for desc in getattr(query, 'column_descriptions', []):
+            entity = desc.get('entity')
+            if entity and hasattr(entity, 'institution_id'):
+                return query.filter(entity.institution_id == inst_id)
     return query
 
 
@@ -100,6 +105,18 @@ def enforce_institution_access(resource, custom_inst_id=None):
     res_inst_id = custom_inst_id if custom_inst_id is not None else getattr(resource, 'institution_id', None)
     if res_inst_id is not None and user_inst_id is not None and res_inst_id != user_inst_id:
         abort(403, description="Access denied: Resource belongs to another institution.")
+
+
+def make_tenant_cache_key(*args, **kwargs):
+    """
+    Generate a tenant-aware cache key for Flask-Caching.
+    Format: "<endpoint_or_path>:inst_<institution_id>"
+    """
+    from flask_login import current_user
+    inst_id = 'global'
+    if current_user and current_user.is_authenticated:
+        inst_id = getattr(current_user, 'institution_id', 'global') or 'global'
+    return f"{request.endpoint or request.path}:inst_{inst_id}"
 
 
 def apply_media_cors_headers(response):

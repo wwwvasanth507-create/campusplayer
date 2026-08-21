@@ -80,13 +80,14 @@ from services.report_engine import (
     generate_or_get_weekly_report, build_weekly_report_pdf,
     get_current_week_bounds, aggregate_class_weekly_data
 )
+from services.institution_service import permanently_delete_institution
 from services.certificate_engine import (
     issue_academic_certificate, build_certificate_pdf
 )
 from services.ai_assessment_engine import generate_quiz_from_video
 from services.transcript_engine import parse_vtt_or_srt_to_cues
 from services.retention_engine import calculate_video_retention_curve
-from services.utils import get_current_institution_id, scope_to_institution, enforce_institution_access
+from services.utils import get_current_institution_id, scope_to_institution, enforce_institution_access, make_tenant_cache_key
 
 
 # ── Logging Configuration ──
@@ -127,7 +128,7 @@ secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'check_same_thread': False}}
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
 app.config['BASE_DIR'] = BASE_DIR
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['HLS_FOLDER'] = HLS_FOLDER
@@ -340,14 +341,15 @@ def update_last_active():
                 login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
                 return redirect(login_url)
                 
-        now = datetime.utcnow()
-        last = getattr(current_user, 'last_active', None)
-        if last is None or (now - last).total_seconds() > 120:
-            try:
-                current_user.last_active = now
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
+        if not app.config.get('TESTING'):
+            now = datetime.utcnow()
+            last = getattr(current_user, 'last_active', None)
+            if last is None or (now - last).total_seconds() > 120:
+                try:
+                    current_user.last_active = now
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
 os.makedirs(HLS_FOLDER, exist_ok=True)
 os.makedirs(SUBTITLE_FOLDER, exist_ok=True)
 
@@ -355,12 +357,14 @@ os.makedirs(SUBTITLE_FOLDER, exist_ok=True)
 from services.upload_engine import init_upload_engine
 init_upload_engine(upload_dir=UPLOAD_FOLDER, hls_dir=HLS_FOLDER)
 
-# Initialize persistent, resumable, parallel conversion system
 from services.conversion_engine import (
     init_conversion_system, enqueue_conversion_job,
     get_active_conversion_jobs, retry_conversion_job, cancel_conversion_job,
     retry_all_failed_conversion_jobs, ConversionWorkerManager
 )
+
+if not os.environ.get('FLASK_TESTING'):
+    init_conversion_system(app)
 def auto_sync_youtube_thumbnails():
     """Ensure all YouTube video records have valid thumbnail_path, youtube_id, and youtube_url set."""
     try:
@@ -392,13 +396,12 @@ def auto_sync_youtube_thumbnails():
         db.session.rollback()
         logger.warning(f"[YouTube Sync Warning] {e}")
 
-with app.app_context():
-    try:
-        db.create_all()
-        auto_sync_youtube_thumbnails()
-    except Exception:
-        pass
-init_conversion_system(app)
+if not os.environ.get('FLASK_TESTING'):
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception:
+            pass
 
 # ── Context Processor ──
 @app.context_processor
@@ -1304,6 +1307,7 @@ def bio_data_pdf(student_id):
     if not _bio_data_can_view(current_user):
         abort(403)
     student = User.query.filter_by(id=student_id, role='student').first_or_404()
+    enforce_institution_access(student)
     prof = StudentProfile.query.filter_by(user_id=student_id).first()
     filename = f'bio_data_{student.username}.pdf'
     if student.institution_id:
@@ -1559,153 +1563,22 @@ def create_institution():
 
 
 def delete_institution_data(institution_id):
-    institution = Institution.query.get(institution_id)
-    if not institution:
-        return
-    
-    # 1. Nullify owner_admin_id on institution to avoid circular foreign key issues
-    institution.owner_admin_id = None
-    db.session.commit()
-    
-    # Bypass tenant filters by setting g.ignore_tenant_filter = True
-    if has_request_context():
-        from flask import g
-        g.ignore_tenant_filter = True
-    try:
-        # 2. Get all users belonging to this institution
-        users = User.query.filter_by(institution_id=institution_id).all()
-        user_ids = [u.id for u in users]
-        
-        # 3. Clean up database records in order of dependency
-        classrooms = Classroom.query.filter(Classroom.teacher_id.in_(user_ids)).all() if user_ids else []
-        classroom_ids = [c.id for c in classrooms]
-        
-        # Activity logs
-        ActivityLog.query.filter(ActivityLog.user_id.in_(user_ids)).delete(synchronize_session=False) if user_ids else None
-        
-        # Student profiles
-        StudentProfile.query.filter(StudentProfile.user_id.in_(user_ids)).delete(synchronize_session=False) if user_ids else None
-        
-        # Email delivery logs
-        if user_ids:
-            EmailDeliveryLog.query.filter(
-                (EmailDeliveryLog.teacher_id.in_(user_ids)) | 
-                (EmailDeliveryLog.student_id.in_(user_ids))
-            ).delete(synchronize_session=False)
-            
-        # StudentRemarks
-        if user_ids:
-            StudentRemark.query.filter(StudentRemark.student_id.in_(user_ids)).delete(synchronize_session=False)
-        if classroom_ids:
-            StudentRemark.query.filter(StudentRemark.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
-            
-        # Leaderboard entries
-        if user_ids:
-            LeaderboardEntry.query.filter(LeaderboardEntry.user_id.in_(user_ids)).delete(synchronize_session=False)
-            
-        # Chat messages
-        if classroom_ids:
-            ChatMessage.query.filter(ChatMessage.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
-        if user_ids:
-            ChatMessage.query.filter(ChatMessage.user_id.in_(user_ids)).delete(synchronize_session=False)
-            
-        # Attendance records
-        if classroom_ids:
-            Attendance.query.filter(Attendance.classroom_id.in_(classroom_ids)).delete(synchronize_session=False)
-        if user_ids:
-            Attendance.query.filter(Attendance.student_id.in_(user_ids)).delete(synchronize_session=False)
-            
-        # Attendance sessions & sub sessions
-        sessions = AttendanceSession.query.filter(AttendanceSession.classroom_id.in_(classroom_ids)).all() if classroom_ids else []
-        session_ids = [s.id for s in sessions]
-        if session_ids:
-            AttendanceSubSession.query.filter(AttendanceSubSession.attendance_session_id.in_(session_ids)).delete(synchronize_session=False)
-            AttendanceSession.query.filter(AttendanceSession.id.in_(session_ids)).delete(synchronize_session=False)
-            
-        # Quizzes, Questions, and Quiz Results
-        if user_ids:
-            QuizResult.query.filter(QuizResult.student_id.in_(user_ids)).delete(synchronize_session=False)
-        quizzes = Quiz.query.filter(Quiz.teacher_id.in_(user_ids)).all() if user_ids else []
-        quiz_ids = [q.id for q in quizzes]
-        if quiz_ids:
-            QuizResult.query.filter(QuizResult.quiz_id.in_(quiz_ids)).delete(synchronize_session=False)
-            Question.query.filter(Question.quiz_id.in_(quiz_ids)).delete(synchronize_session=False)
-            Quiz.query.filter(Quiz.id.in_(quiz_ids)).delete(synchronize_session=False)
-            
-        # Assignment submissions
-        if user_ids:
-            AssignmentSubmission.query.filter(AssignmentSubmission.student_id.in_(user_ids)).delete(synchronize_session=False)
-        assignments = Assignment.query.filter(Assignment.teacher_id.in_(user_ids)).all() if user_ids else []
-        assignment_ids = [a.id for a in assignments]
-        if assignment_ids:
-            AssignmentSubmission.query.filter(AssignmentSubmission.assignment_id.in_(assignment_ids)).delete(synchronize_session=False)
-            Assignment.query.filter(Assignment.id.in_(assignment_ids)).delete(synchronize_session=False)
-            
-        # Videos, Playlists, Comments, Likes, Notes, Bookmarks, Progress
-        if user_ids:
-            Comment.query.filter(Comment.user_id.in_(user_ids)).delete(synchronize_session=False)
-            Notification.query.filter(Notification.user_id.in_(user_ids)).delete(synchronize_session=False)
-            
-        videos = Video.query.filter(Video.uploader_id.in_(user_ids)).all() if user_ids else []
-        video_ids = [v.id for v in videos]
-        if video_ids:
-            Comment.query.filter(Comment.video_id.in_(video_ids)).delete(synchronize_session=False)
-            VideoNote.query.filter(VideoNote.video_id.in_(video_ids)).delete(synchronize_session=False)
-            VideoBookmark.query.filter(VideoBookmark.video_id.in_(video_ids)).delete(synchronize_session=False)
-            VideoProgress.query.filter(VideoProgress.video_id.in_(video_ids)).delete(synchronize_session=False)
-            VideoLike.query.filter(VideoLike.video_id.in_(video_ids)).delete(synchronize_session=False)
-            Notification.query.filter(Notification.video_id.in_(video_ids)).delete(synchronize_session=False)
-            db.session.execute(playlist_videos.delete().where(playlist_videos.c.video_id.in_(video_ids)))
-            
-        if user_ids:
-            VideoNote.query.filter(VideoNote.user_id.in_(user_ids)).delete(synchronize_session=False)
-            VideoBookmark.query.filter(VideoBookmark.user_id.in_(user_ids)).delete(synchronize_session=False)
-            VideoProgress.query.filter(VideoProgress.user_id.in_(user_ids)).delete(synchronize_session=False)
-            VideoLike.query.filter(VideoLike.user_id.in_(user_ids)).delete(synchronize_session=False)
-            
-        playlists = Playlist.query.filter(Playlist.creator_id.in_(user_ids)).all() if user_ids else []
-        playlist_ids = [p.id for p in playlists]
-        if playlist_ids:
-            db.session.execute(playlist_videos.delete().where(playlist_videos.c.playlist_id.in_(playlist_ids)))
-            Playlist.query.filter(Playlist.id.in_(playlist_ids)).delete(synchronize_session=False)
-            
-        if video_ids:
-            for v in videos:
-                try:
-                    from services.video_cleanup import permanently_delete_video_assets
-                    permanently_delete_video_assets(v)
-                except Exception:
-                    pass
-            Video.query.filter(Video.id.in_(video_ids)).delete(synchronize_session=False)
-            
-        if classroom_ids:
-            db.session.execute(student_classes.delete().where(student_classes.c.classroom_id.in_(classroom_ids)))
-            Classroom.query.filter(Classroom.id.in_(classroom_ids)).delete(synchronize_session=False)
-        if user_ids:
-            db.session.execute(student_classes.delete().where(student_classes.c.student_id.in_(user_ids)))
-            
-        SiteSettings.query.filter(SiteSettings.institution_id == institution_id).delete(synchronize_session=False)
-        
-        for u in users:
-            db.session.delete(u)
-        db.session.commit()
-        
-        db.session.delete(institution)
-        db.session.commit()
-    finally:
-        if has_request_context():
-            from flask import g
-            g.ignore_tenant_filter = False
-        
-    # Delete storage directory on disk
-    slug = institution.slug
-    storage_root = os.path.join(BASE_DIR, 'static', 'uploads', 'institutions', slug)
-    if os.path.exists(storage_root):
-        import shutil
-        try:
-            shutil.rmtree(storage_root)
-        except Exception as e:
-            logger.error(f"Error removing storage root {storage_root}: {e}")
+    """Backwards-compatible helper delegating to permanently_delete_institution."""
+    return permanently_delete_institution(institution_id, actor_user=current_user if has_request_context() and current_user.is_authenticated else None)
+
+
+@app.route('/sysadmin/institutions/<int:institution_id>/delete', methods=['POST'])
+@login_required
+@system_admin_required
+def sysadmin_delete_institution(institution_id):
+    confirm_name = request.form.get('confirm_name', '')
+    res = permanently_delete_institution(institution_id, actor_user=current_user, confirm_name=confirm_name)
+    if res['success']:
+        flash(res['message'], 'success')
+        log_activity('delete_institution', f"System admin deleted institution #{institution_id} ({res.get('institution_name')})")
+    else:
+        flash(res['message'], 'danger')
+    return redirect(url_for('system_admin_dashboard'))
 
 
 @app.route('/sysadmin/admins/<int:admin_id>/delete', methods=['POST'])
@@ -1714,14 +1587,76 @@ def delete_institution_data(institution_id):
 def delete_admin(admin_id):
     admin_user = User.query.filter_by(id=admin_id, role='admin').first_or_404()
     institution = Institution.query.filter_by(owner_admin_id=admin_user.id).first()
+    confirm_name = request.form.get('confirm_name')
     if institution:
-        delete_institution_data(institution.id)
+        if confirm_name is None:
+            confirm_name = institution.name
+        res = permanently_delete_institution(institution.id, actor_user=current_user, confirm_name=confirm_name)
+        if res['success']:
+            flash('Admin and their institution deleted successfully.', 'success')
+            log_activity('delete_admin', f'System admin deleted admin #{admin_id} and institution #{institution.id}')
+        else:
+            flash(res['message'], 'danger')
     else:
         db.session.delete(admin_user)
         db.session.commit()
-    flash('Admin (and their institution) deleted.', 'success')
-    log_activity('delete_admin', f'System admin deleted admin #{admin_id}')
+        flash('Admin account deleted.', 'success')
+        log_activity('delete_admin', f'System admin deleted admin #{admin_id}')
     return redirect(url_for('system_admin_dashboard'))
+
+
+@app.route('/admin/institution/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_own_institution():
+    institution_id = getattr(current_user, 'institution_id', None)
+    if not institution_id and current_user.role in ('admin', 'system_admin'):
+        inst = Institution.query.filter_by(owner_admin_id=current_user.id).first()
+        if inst:
+            institution_id = inst.id
+
+    if not institution_id:
+        flash('No institution associated with your admin account.', 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+    confirm_name = request.form.get('confirm_name', '')
+    res = permanently_delete_institution(institution_id, actor_user=current_user, confirm_name=confirm_name)
+    if res['success']:
+        log_activity('delete_institution', f"Admin {current_user.username} deleted their institution #{institution_id}")
+        logout_user()
+        flash(res['message'], 'success')
+        return redirect(url_for('login'))
+    else:
+        flash(res['message'], 'danger')
+        return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/api/institutions/<int:institution_id>', methods=['DELETE', 'POST'])
+@login_required
+def api_delete_institution(institution_id):
+    if current_user.role not in ('system_admin', 'admin'):
+        return jsonify({'success': False, 'error': 'Forbidden: Insufficient privileges.'}), 403
+
+    confirm_name = None
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        confirm_name = data.get('confirm_name')
+    else:
+        confirm_name = request.form.get('confirm_name')
+
+    res = permanently_delete_institution(institution_id, actor_user=current_user, confirm_name=confirm_name)
+    if res['success']:
+        log_activity('api_delete_institution', f"API user {current_user.username} deleted institution #{institution_id}")
+        return jsonify({
+            'success': True,
+            'message': res['message'],
+            'institution_id': institution_id
+        }), 200
+    else:
+        return jsonify({
+            'success': False,
+            'error': res['message']
+        }), res['status_code']
 
 
 @app.route('/sysadmin/institutions/<int:institution_id>/suspend', methods=['POST'])
@@ -1942,21 +1877,30 @@ def institutions_export_excel():
 @login_required
 @admin_required
 def admin_dashboard():
-    teachers = User.query.filter_by(role='teacher').all()
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
+    if is_sysadmin or inst_id is None:
+        teachers = User.query.filter_by(role='teacher').all()
+        student_count = User.query.filter_by(role='student').count()
+        settings = SiteSettings.query.first()
+        all_classes = Classroom.query.all()
+        video_count = Video.query.count()
+        quiz_count = Quiz.query.count()
+        total_views = ViewAnalytics.query.count()
+        total_xp = db.session.query(db.func.sum(User.xp)).scalar() or 0
+        recent_activity = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    else:
+        teachers = User.query.filter_by(role='teacher', institution_id=inst_id).all()
+        student_count = User.query.filter_by(role='student', institution_id=inst_id).count()
+        settings = SiteSettings.query.filter_by(institution_id=inst_id).first() or SiteSettings.query.first()
+        all_classes = Classroom.query.filter_by(institution_id=inst_id).all()
+        video_count = Video.query.filter_by(institution_id=inst_id).count()
+        quiz_count = Quiz.query.filter_by(institution_id=inst_id).count()
+        total_views = ViewAnalytics.query.filter_by(institution_id=inst_id).count()
+        total_xp = db.session.query(db.func.sum(User.xp)).filter(User.institution_id == inst_id).scalar() or 0
+        recent_activity = ActivityLog.query.filter_by(institution_id=inst_id).order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    
     teacher_count = len(teachers)
-    student_count = User.query.filter_by(role='student').count()
-    settings = SiteSettings.query.first()
-    all_classes = Classroom.query.all()
-    
-    # Advanced stats
-    video_count = Video.query.count()
-    quiz_count = Quiz.query.count()
-    total_views = ViewAnalytics.query.count()
-    total_xp = db.session.query(db.func.sum(User.xp)).scalar() or 0
-    
-    # Recent activity
-    recent_activity = ActivityLog.query.order_by(ActivityLog.timestamp.desc()).limit(10).all()
-    
     return render_template('admin_dashboard.html', 
         teachers=teachers, teacher_count=teacher_count, student_count=student_count,
         settings=settings, all_classes=all_classes, video_count=video_count,
@@ -1997,7 +1941,8 @@ def change_teacher_password():
     user_id = request.form.get('user_id')
     new_password = request.form.get('new_password')
     teacher = User.query.get(user_id)
-    if teacher and teacher.role == 'teacher':
+    curr_inst = get_current_institution_id()
+    if teacher and teacher.role == 'teacher' and (curr_inst is None or teacher.institution_id == curr_inst):
         teacher.set_password(new_password)
         db.session.commit()
         flash('Password updated successfully.', 'success')
@@ -2011,6 +1956,7 @@ def change_teacher_password():
 @admin_required
 def delete_teacher(user_id):
     teacher = User.query.get_or_404(user_id)
+    enforce_institution_access(teacher)
     if teacher.role == 'teacher':
         db.session.delete(teacher)
         db.session.commit()
@@ -2282,30 +2228,26 @@ def admin_update_teacher_phone(teacher_id):
 @app.route('/admin/api/stats')
 @login_required
 @admin_required
-@cache.cached(timeout=60)
+@cache.cached(timeout=60, make_cache_key=make_tenant_cache_key)
 def admin_api_stats():
     """JSON endpoint for admin dashboard charts."""
     now = datetime.utcnow()
     today = now.date()
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
     
-    # Views today
-    views_today = ViewAnalytics.query.filter(db.func.date(ViewAnalytics.start_time) == today).count()
-    
-    # Users registered today
-    users_today = User.query.filter(db.func.date(User.created_at) == today).count()
-    
-    # Attendance today
-    attendance_today = Attendance.query.filter(Attendance.date == today).count()
-    
-    # XP distribution
-    xp_data = db.session.query(
-        User.role, db.func.avg(User.xp)
-    ).group_by(User.role).all()
-    
-    # Quiz completion stats
-    quiz_stats = db.session.query(
-        db.func.avg(QuizResult.score * 1.0 / QuizResult.total_questions * 100)
-    ).scalar() or 0
+    if is_sysadmin or inst_id is None:
+        views_today = ViewAnalytics.query.filter(db.func.date(ViewAnalytics.start_time) == today).count()
+        users_today = User.query.filter(db.func.date(User.created_at) == today).count()
+        attendance_today = Attendance.query.filter(Attendance.date == today).count()
+        xp_data = db.session.query(User.role, db.func.avg(User.xp)).group_by(User.role).all()
+        quiz_stats = db.session.query(db.func.avg(QuizResult.score * 1.0 / QuizResult.total_questions * 100)).scalar() or 0
+    else:
+        views_today = ViewAnalytics.query.filter(ViewAnalytics.institution_id == inst_id, db.func.date(ViewAnalytics.start_time) == today).count()
+        users_today = User.query.filter(User.institution_id == inst_id, db.func.date(User.created_at) == today).count()
+        attendance_today = Attendance.query.filter(Attendance.institution_id == inst_id, Attendance.date == today).count()
+        xp_data = db.session.query(User.role, db.func.avg(User.xp)).filter(User.institution_id == inst_id).group_by(User.role).all()
+        quiz_stats = db.session.query(db.func.avg(QuizResult.score * 1.0 / QuizResult.total_questions * 100)).filter(QuizResult.institution_id == inst_id).scalar() or 0
     
     return jsonify({
         'views_today': views_today,
@@ -2323,10 +2265,18 @@ def admin_api_stats():
 @login_required
 @teacher_required
 def teacher_dashboard():
-    videos = Video.query.all()
-    playlists = Playlist.query.all()
-    assignments = Assignment.query.filter_by(teacher_id=current_user.id).all()
-    students = User.query.filter_by(role='student').all()
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
+    if is_sysadmin or inst_id is None:
+        videos = Video.query.all()
+        playlists = Playlist.query.all()
+        assignments = Assignment.query.filter_by(teacher_id=current_user.id).all()
+        students = User.query.filter_by(role='student').all()
+    else:
+        videos = Video.query.filter_by(institution_id=inst_id).all()
+        playlists = Playlist.query.filter_by(institution_id=inst_id).all()
+        assignments = Assignment.query.filter_by(teacher_id=current_user.id, institution_id=inst_id).all()
+        students = User.query.filter_by(role='student', institution_id=inst_id).all()
     unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
     classes = Classroom.query.all()
     quizzes = Quiz.query.all()
@@ -2368,69 +2318,7 @@ def extract_youtube_id(url):
 @login_required
 @teacher_required
 def add_youtube_video():
-    title = request.form.get('title', '').strip()
-    youtube_url = request.form.get('youtube_url', '').strip()
-    classroom_id = request.form.get('classroom_id', type=int)
-    description = request.form.get('description', '').strip()
-    tags = request.form.get('tags', '').strip()
-    playlist_id = request.form.get('playlist_id', type=int)
-
-    if not title or not youtube_url:
-        flash('Video title and YouTube link are required.', 'danger')
-        return redirect(url_for('teacher_videos_page'))
-
-    yt_id = extract_youtube_id(youtube_url)
-    if not yt_id:
-        flash('Invalid YouTube URL or Video ID. Please enter a valid YouTube link.', 'danger')
-        return redirect(url_for('teacher_videos_page'))
-
-    # Multi-tenant scoping
-    inst_id = current_user.institution_id
-
-    # Create Video record
-    video = Video(
-        institution_id=inst_id,
-        title=title,
-        filename=f"youtube_{yt_id}",
-        uploader_id=current_user.id,
-        classroom_id=classroom_id if classroom_id and classroom_id > 0 else None,
-        video_type='youtube',
-        youtube_id=yt_id,
-        youtube_url=f"https://www.youtube.com/watch?v={yt_id}",
-        status='completed',
-        processing_progress=100,
-        thumbnail_path=f"https://img.youtube.com/vi/{yt_id}/hqdefault.jpg",
-        description=description if description else None,
-        tags=tags if tags else None
-    )
-    db.session.add(video)
-    db.session.commit()
-
-    # Add to playlist if selected
-    if playlist_id and playlist_id > 0:
-        pl = Playlist.query.get(playlist_id)
-        if pl and (pl.creator_id == current_user.id or current_user.role == 'admin'):
-            pl.videos.append(video)
-            db.session.commit()
-
-    # Award XP to teacher for uploading educational content
-    current_user.xp = (current_user.xp or 0) + 50
-
-    # Send notification to classroom students if assigned to classroom
-    if classroom_id:
-        cls = Classroom.query.get(classroom_id)
-        if cls:
-            for s in cls.students:
-                n = Notification(
-                    user_id=s.id,
-                    title=f"New YouTube Lecture: {title}",
-                    message=f"{current_user.name} added a new YouTube lecture '{title}' to {cls.name}.",
-                    link=url_for('video_player', video_id=video.id)
-                )
-                db.session.add(n)
-            db.session.commit()
-
-    flash(f"YouTube video '{title}' added successfully! (+50 XP)", "success")
+    flash('YouTube video link addition has been permanently disabled. Please upload video files directly.', 'warning')
     return redirect(url_for('teacher_videos_page'))
 
 @app.route('/teacher/videos')
@@ -2460,7 +2348,7 @@ def teacher_playlists_page():
 @teacher_required
 def teacher_classes_page():
     q = request.args.get('q', '').strip()
-    query = Classroom.query
+    query = scope_to_institution(Classroom.query)
     if q: query = query.filter(Classroom.name.contains(q))
     classes = query.order_by(Classroom.created_at.desc()).all()
     
@@ -2472,8 +2360,8 @@ def teacher_classes_page():
         for s in cls.students:
             student_map[s.id] = s
     
-    all_students = User.query.filter_by(role='student').order_by(User.username).all()
-    teachers = User.query.filter_by(role='teacher').all()
+    all_students = scope_to_institution(User.query.filter_by(role='student')).order_by(User.username).all()
+    teachers = scope_to_institution(User.query.filter_by(role='teacher')).all()
     return render_template('teacher_classes.html', 
         classes=classes, students=all_students, teachers=teachers, 
         search_query=q, enrolled_ids_by_class=enrolled_ids_by_class)
@@ -3092,10 +2980,11 @@ def like_video(video_id):
 def add_student():
     username = request.form.get('username')
     password = request.form.get('password')
-    if User.query.filter_by(username=username).first():
+    inst_id = getattr(current_user, 'institution_id', None)
+    if User.query.filter_by(username=username, institution_id=inst_id).first():
         flash('Username already exists.', 'error')
     else:
-        new_student = User(username=username, role='student')
+        new_student = User(username=username, role='student', institution_id=inst_id)
         new_student.set_password(password)
         db.session.add(new_student)
         current_user.xp += 20
@@ -3111,12 +3000,14 @@ def change_student_password():
     student_id = request.form.get('student_id')
     new_password = request.form.get('new_password')
     student = User.query.get(student_id)
-    if student and student.role == 'student':
-        student.set_password(new_password)
-        db.session.commit()
-        flash('Student password updated successfully.', 'success')
-    else:
-        flash('Error updating student password.', 'error')
+    if student:
+        enforce_institution_access(student)
+        if student.role == 'student':
+            student.set_password(new_password)
+            db.session.commit()
+            flash('Student password updated successfully.', 'success')
+            return redirect(url_for('teacher_enrolled_students_page'))
+    flash('Error updating student password.', 'error')
     return redirect(url_for('teacher_enrolled_students_page'))
 
 @app.route('/teacher/create_playlist', methods=['POST'])
@@ -3124,7 +3015,8 @@ def change_student_password():
 @teacher_required
 def create_playlist():
     title = request.form.get('title')
-    new_playlist = Playlist(title=title, creator_id=current_user.id)
+    inst_id = getattr(current_user, 'institution_id', None)
+    new_playlist = Playlist(title=title, creator_id=current_user.id, institution_id=inst_id)
     db.session.add(new_playlist)
     current_user.xp += 30
     db.session.commit()
@@ -3140,6 +3032,8 @@ def add_to_playlist():
     playlist = Playlist.query.get(playlist_id)
     video = Video.query.get(video_id)
     if playlist and video:
+        enforce_institution_access(playlist)
+        enforce_institution_access(video)
         if video not in playlist.videos:
             playlist.videos.append(video)
             db.session.commit()
@@ -3665,6 +3559,8 @@ def add_student_to_class():
     student = User.query.get(student_id)
     classroom = Classroom.query.get(class_id)
     if student and classroom:
+        enforce_institution_access(student)
+        enforce_institution_access(classroom)
         if student not in classroom.students:
             classroom.students.append(student)
             current_user.xp += 15
@@ -3686,11 +3582,12 @@ def add_multiple_students_to_class():
     if not classroom:
         flash('Invalid class.', 'error')
         return redirect(url_for('teacher_classes_page'))
+    enforce_institution_access(classroom)
     
     added_count = 0
     for sid in student_ids:
         student = User.query.get(int(sid))
-        if student and student.role == 'student' and student not in classroom.students:
+        if student and student.role == 'student' and getattr(student, 'institution_id', None) == classroom.institution_id and student not in classroom.students:
             classroom.students.append(student)
             added_count += 1
     
@@ -3712,10 +3609,12 @@ def remove_student_from_class():
     student = User.query.get(student_id)
     classroom = Classroom.query.get(class_id)
     if student and classroom:
+        enforce_institution_access(student)
+        enforce_institution_access(classroom)
         if student in classroom.students:
             classroom.students.remove(student)
             db.session.commit()
-            flash(f'Removed {student.username} from class {classroom.name}.', 'success')
+            flash(f'Removed {student.username} from {classroom.name}.', 'success')
     return redirect(url_for('teacher_classes_page'))
 
 @app.route('/teacher/delete_student/<int:student_id>', methods=['POST'])
@@ -3723,6 +3622,7 @@ def remove_student_from_class():
 @teacher_required
 def delete_student(student_id):
     student = User.query.get_or_404(student_id)
+    enforce_institution_access(student)
     if student.role == 'student':
         # Delete dependent records first to avoid FK constraint violations
         EmailDeliveryLog.query.filter_by(student_id=student.id).delete()
@@ -3740,6 +3640,7 @@ def delete_student(student_id):
 @teacher_required
 def delete_class(class_id):
     classroom = Classroom.query.get_or_404(class_id)
+    enforce_institution_access(classroom)
 
     # Permanently remove any assignment question papers / student submission
     # files on disk before the DB rows cascade-delete, so nothing is orphaned.
@@ -6693,6 +6594,9 @@ def serve_hls(video_id, filename):
     (static/uploads/institutions/<slug>/hls/<id>/) storage.
     """
     video = Video.query.get(video_id)
+    if not video:
+        abort(404)
+    enforce_institution_access(video)
     static_dir = os.path.join(app.root_path, 'static')
 
     # Try to derive video_dir from the stored hls_playlist_path/master_playlist_path
@@ -8566,7 +8470,7 @@ def library_hub():
     books = query.order_by(EBook.created_at.desc()).all()
 
     # Get distinct subjects, levels, and departments for quick filtering
-    all_books = EBook.query.all()
+    all_books = scope_to_institution(EBook.query, EBook).all()
     distinct_subjects = sorted(list({b.subject for b in all_books if b.subject}))
     distinct_levels = sorted(list({b.academic_level for b in all_books if b.academic_level}))
     distinct_depts = sorted(list({b.department for b in all_books if b.department}))
@@ -8794,6 +8698,7 @@ def update_ebook_progress(book_id):
 def download_ebook(book_id):
     """Download the original PDF file."""
     book = EBook.query.get_or_404(book_id)
+    enforce_institution_access(book)
     if not book.allow_download and current_user.role not in ['admin', 'system_admin']:
         flash('Direct file downloads are disabled for this protected textbook. You can read it online.', 'info')
         return redirect(url_for('read_ebook', book_id=book.id))

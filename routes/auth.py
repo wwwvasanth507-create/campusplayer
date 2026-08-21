@@ -13,7 +13,9 @@ auth_bp = Blueprint('auth', __name__)
 @limiter.limit('10 per minute')
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('core.index'))
+        from flask import current_app
+        target = url_for('index') if 'index' in current_app.view_functions else (url_for('core.index') if 'core.index' in current_app.view_functions else '/')
+        return redirect(target)
     if request.method == 'POST':
         from flask import current_app
         if not current_app.config.get('TESTING') and not validate_csrf_token(request.form.get('csrf_token')):
@@ -66,5 +68,6 @@ def login():
 def logout():
     log_activity('logout', f'User {current_user.username} logged out')
     logout_user()
-    session.pop('theme', None)
-    return redirect(url_for('core.index'))
+    from flask import current_app
+    target = url_for('index') if 'index' in current_app.view_functions else (url_for('core.index') if 'core.index' in current_app.view_functions else '/')
+    return redirect(target)

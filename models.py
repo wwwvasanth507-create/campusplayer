@@ -619,7 +619,8 @@ class SiteSettings(db.Model):
 
 class DailyQuestTemplate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    quest_key = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    quest_key = db.Column(db.String(50), nullable=False, index=True)
     title = db.Column(db.String(150), nullable=False)
     desc = db.Column(db.Text, nullable=False)
     xp = db.Column(db.Integer, default=50)
@@ -1622,17 +1623,26 @@ def before_compile_listener(query):
         is_auth, role, inst_id = _get_request_tenant_context()
             
         if is_auth and role != 'system_admin' and inst_id is not None:
+            entities_to_filter = set()
             for desc in query.column_descriptions:
-                entity = desc['entity']
+                entity = desc.get('entity')
+                if not entity and 'expr' in desc:
+                    expr = desc['expr']
+                    entity = getattr(expr, 'entity', None)
+                    if not entity and hasattr(expr, 'table'):
+                        entity = getattr(expr.table, 'entity', None)
                 if entity and hasattr(entity, 'institution_id'):
-                    orig_limit = query._limit_clause
-                    orig_offset = query._offset_clause
-                    query = query._clone()
-                    query._limit_clause = None
-                    query._offset_clause = None
-                    query = query.filter(entity.institution_id == inst_id)
-                    query._limit_clause = orig_limit
-                    query._offset_clause = orig_offset
+                    entities_to_filter.add(entity)
+            
+            for entity in entities_to_filter:
+                orig_limit = query._limit_clause
+                orig_offset = query._offset_clause
+                query = query._clone()
+                query._limit_clause = None
+                query._offset_clause = None
+                query = query.filter(entity.institution_id == inst_id)
+                query._limit_clause = orig_limit
+                query._offset_clause = orig_offset
     return query
 
 @listens_for(db.Model, 'before_insert', propagate=True)
@@ -1688,7 +1698,7 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
             VideoFlashcard, AcademicCertificate, ParentAccessToken,
             Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
-            EBook, EBookProgress, AICopilotInteraction, UserSession
+            EBook, EBookProgress, AICopilotInteraction, UserSession, DailyQuestTemplate
         ]
         
         # Bypass before_compile filter by setting ignore flag on g
