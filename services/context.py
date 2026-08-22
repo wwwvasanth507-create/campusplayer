@@ -2,6 +2,7 @@ from extensions import cache
 from models import SiteSettings
 from flask_login import current_user
 from flask import g
+from services.utils import generate_csrf_token
 
 
 def inject_settings():
@@ -25,4 +26,7 @@ def inject_settings():
             
         if settings:
             cache.set(cache_key, settings, timeout=60)
-    return dict(settings=settings)
+
+    token = generate_csrf_token()
+    return dict(settings=settings, csrf_token=token)
+
