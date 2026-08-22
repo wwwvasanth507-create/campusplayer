@@ -1945,8 +1945,13 @@ def admin_dashboard():
 @admin_required
 def admin_teachers_page():
     q = request.args.get('q', '').strip()
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
     query = User.query.filter_by(role='teacher')
-    if q: query = query.filter(User.username.contains(q))
+    if not is_sysadmin and inst_id:
+        query = query.filter_by(institution_id=inst_id)
+    if q:
+        query = query.filter(User.username.contains(q))
     teachers = query.order_by(User.created_at.desc()).all()
     return render_template('admin_teachers.html', teachers=teachers, search_query=q)
 

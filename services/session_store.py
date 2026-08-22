@@ -182,6 +182,21 @@ def revoke_user_sessions(user_id):
         return False
 
 
+def invalidate_institution_sessions(institution_id):
+    """Deactivate and purge all active sessions for users belonging to a specific institution."""
+    from models import UserSession, User
+    try:
+        user_ids = [u.id for u in User.query.filter_by(institution_id=institution_id).all()]
+        if user_ids:
+            UserSession.query.filter(UserSession.user_id.in_(user_ids)).update({'is_active': False}, synchronize_session=False)
+        UserSession.query.filter_by(institution_id=institution_id).update({'is_active': False}, synchronize_session=False)
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        return False
+
+
 def cleanup_expired_sessions():
     """Delete expired and inactive session records from the database."""
     from models import UserSession

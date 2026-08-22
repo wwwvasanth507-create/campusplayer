@@ -19,35 +19,6 @@
     </div>
 </div>
 
-<!-- Daily Quiz & Quests Telemetry for Teachers -->
-<div class="card mb-16" style="background:rgba(37,65,178,0.05); border:1px solid rgba(37,65,178,0.2);">
-    <div class="flex-between mb-12" style="flex-wrap:wrap; gap:8px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <i class="material-icons" style="color:var(--primary); font-size:1.4rem;">military_tech</i>
-            <h2 class="font-display" style="margin:0; font-size:1.15rem; color:var(--text);">Daily Quiz &amp; Quest Systems</h2>
-        </div>
-        <span class="badge" style="background:rgba(37,65,178,0.15); color:var(--secondary-color); font-family:'JetBrains Mono',monospace;">Institution-Scoped Telemetry</span>
-    </div>
-    <p style="font-size:0.85rem; color:var(--text-dim); margin-top:-4px; margin-bottom:14px;">
-        Overview of daily quizzes and automated quest tracking active for students in your institution today.
-    </p>
-    {% if daily_quests %}
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-        {% for q_key, q_item in daily_quests.items() %}
-        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; gap:10px; align-items:center;">
-            <div style="width:36px; height:36px; border-radius:8px; background:rgba(37,65,178,0.12); display:flex; align-items:center; justify-content:center; color:var(--primary);">
-                <i class="material-icons" style="font-size:1.2rem;">{{ q_item.icon or 'quiz' }}</i>
-            </div>
-            <div style="flex:1; overflow:hidden;">
-                <div class="font-display" style="font-weight:700; font-size:0.85rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ q_item.title }}</div>
-                <div style="font-size:0.72rem; color:var(--text-dim);">+{{ q_item.xp }} XP reward &bull; Target: {{ q_item.target }}</div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-
 <div class="mb-16" style="position:relative;">
     <form method="GET" style="margin:0; position:relative;">
         <i class="material-icons" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-dim);">search</i>

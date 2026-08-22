@@ -35,14 +35,18 @@ _institution_deletion_lock = threading.Lock()
 def ensure_institution_storage_directories(slug_or_id: str, base_dir: Optional[str] = None) -> str:
     """
     Creates and verifies the dedicated isolated storage directory structure for an institution.
-    Subfolders: videos, pdfs, assignments, quizzes, thumbnails, other, temp, subtitles, global.
+    Subfolders: videos, hls, pdfs, documents, assignments, assignment_questions, thumbnails, avatars, bio_data, certificates, other, quizzes, temp, subtitles, global.
     """
     import re
     if not base_dir:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__))))
-    clean_identifier = re.sub(r'[^a-zA-Z0-9_\-]', '', str(slug_or_id)) or 'default'
+    clean_identifier = re.sub(r'[^a-zA-Z0-9_\-]', '', str(slug_or_id)).strip('_') or 'default'
     target_dir = os.path.join(base_dir, 'static', 'uploads', 'institutions', clean_identifier)
-    subdirectories = ['videos', 'pdfs', 'assignments', 'quizzes', 'thumbnails', 'other', 'temp', 'subtitles', 'global']
+    subdirectories = [
+        'videos', 'hls', 'pdfs', 'documents', 'assignments', 'assignment_questions',
+        'thumbnails', 'avatars', 'bio_data', 'certificates', 'other', 'quizzes',
+        'temp', 'subtitles', 'global'
+    ]
     for sub in subdirectories:
         os.makedirs(os.path.join(target_dir, sub), exist_ok=True)
     return target_dir

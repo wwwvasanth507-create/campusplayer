@@ -16,6 +16,22 @@ def enforce_https():
             return redirect(url, code=301)
 
 
+def enforce_institution_access(resource):
+    """
+    Validates that current_user has access to resource based on institution_id.
+    Sysadmin bypasses tenant restrictions. Other roles must match current_user.institution_id.
+    """
+    from flask_login import current_user
+    from flask import abort
+    if not current_user or not current_user.is_authenticated:
+        abort(401)
+    if getattr(current_user, 'role', None) == 'system_admin':
+        return
+    res_inst_id = getattr(resource, 'institution_id', None)
+    if res_inst_id is not None and res_inst_id != getattr(current_user, 'institution_id', None):
+        abort(403, description="Access denied. Resource belongs to another institution.")
+
+
 def csrf_protect_request():
     """CSRF protection for state-changing requests."""
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
@@ -124,7 +140,9 @@ def update_last_active():
                 if cache:
                     cache.set(cache_key, inst_status, timeout=60)
             if inst_status == 'suspended':
+                from flask import flash
                 logout_user()
+                flash("Your institution has been suspended.", "danger")
                 login_url = url_for('auth.login') if 'auth.login' in current_app.view_functions else url_for('login')
                 return redirect(login_url)
                 

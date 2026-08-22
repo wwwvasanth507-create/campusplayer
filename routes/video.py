@@ -206,18 +206,6 @@ def upload_chunk():
                 })
             return jsonify({'success': True, 'message': 'Chunks uploaded successfully.'})
 
-        save_name = f"{uuid_str}_{orig_filename}"
-        assembled_path = os.path.join(current_app.config['UPLOAD_FOLDER'], save_name)
-
-        with open(assembled_path, 'wb') as assembled_file:
-            for i in range(total_chunks):
-                part_path = os.path.join(chunks_dir, f"chunk_{i:06d}.part")
-                if os.path.exists(part_path):
-                    with open(part_path, 'rb') as pf:
-                        shutil.copyfileobj(pf, assembled_file, length=16*1024*1024)
-
-        shutil.rmtree(chunks_dir, ignore_errors=True)
-
         uploader_id = getattr(current_user, 'id', None) if current_user and current_user.is_authenticated else None
         if not uploader_id:
             teacher = User.query.filter_by(role='teacher').first()
@@ -242,6 +230,8 @@ def upload_chunk():
         video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_id, app=app_obj)
 
         assembled_path = os.path.join(video_dir, 'source.mp4')
+        os.makedirs(video_dir, exist_ok=True)
+
         with open(assembled_path, 'wb') as assembled_file:
             for i in range(total_chunks):
                 part_path = os.path.join(chunks_dir, f"chunk_{i:06d}.part")
@@ -251,8 +241,22 @@ def upload_chunk():
 
         shutil.rmtree(chunks_dir, ignore_errors=True)
 
+        if not os.path.exists(assembled_path) or os.path.getsize(assembled_path) == 0:
+            logger.error(f"[Upload] Chunk assembly failed for video {vid}: 0-byte output file.")
+            video.status = 'failed'
+            video.processing_error = 'Chunk assembly failed: empty file produced.'
+            db.session.commit()
+            return jsonify({'success': False, 'message': 'Chunk assembly failed: empty file.'}), 500
+
         video.filename = f"institutions/{slug}/{vid}/source.mp4"
         db.session.commit()
+
+        logger.info(f"[Upload] Video {vid} assembled successfully ({os.path.getsize(assembled_path)} bytes). Enqueuing conversion...")
+        try:
+            from services.conversion_engine import enqueue_conversion_job
+            enqueue_conversion_job(vid, assembled_path, uploader_id=uploader_id)
+        except Exception as e_enq:
+            logger.error(f"[Upload] Error enqueuing conversion job for video {vid}: {e_enq}")
 
         def _mark_video_failed(v_id: int, err_msg: str):
             try:

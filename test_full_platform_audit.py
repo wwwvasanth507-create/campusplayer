@@ -124,7 +124,7 @@ class FullPlatformAudit(unittest.TestCase):
 
             vid = Video.query.first()
             if not vid:
-                vid = Video(title="Audit Test Video", duration_seconds=120)
+                vid = Video(title="Audit Test Video", filename="audit_test.mp4", uploader_id=user.id, duration_seconds=120)
                 db.session.add(vid)
                 db.session.commit()
 
