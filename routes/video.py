@@ -149,18 +149,122 @@ def view_playlist(playlist_id):
     return render_template('playlist_view.html', playlist=playlist)
 
 
+_chunk_assembly_lock = threading.Lock()
+
 @video_bp.route('/teacher/upload_chunk', methods=['POST'])
 def upload_chunk():
-    uuid_str = request.form.get('uuid')
-    total_chunks = int(request.form.get('total_chunks', 0))
-    chunk = request.files.get('file')
-    if not uuid_str or not chunk:
-        return jsonify({'success': False, 'message': 'Missing upload chunk.'}), 400
+    uuid_str = request.form.get('uuid') or request.form.get('upload_uuid')
+    chunk_index_raw = request.form.get('chunkIndex') if request.form.get('chunkIndex') is not None else request.form.get('chunk_index')
+    total_chunks_raw = request.form.get('totalChunks') if request.form.get('totalChunks') is not None else request.form.get('total_chunks')
+    chunk = request.files.get('chunk') or request.files.get('file') or request.files.get('chunk_data')
+
+    if not uuid_str or chunk_index_raw is None or total_chunks_raw is None or not chunk:
+        return jsonify({'success': False, 'message': 'Missing required fields: uuid, chunkIndex, totalChunks, chunk file.'}), 400
+
+    chunk_index = int(chunk_index_raw)
+    total_chunks = int(total_chunks_raw)
+
+    orig_filename = secure_filename(request.form.get('filename') or chunk.filename or 'video.mp4')
+    title = sanitize_input(request.form.get('title') or orig_filename, 200)
+    try:
+        classroom_id = int(request.form.get('classroom_id', -1))
+    except (ValueError, TypeError):
+        classroom_id = -1
+    description = sanitize_input(request.form.get('description', ''), 1000)
+    tags = sanitize_input(request.form.get('tags', ''), 250)
+
     chunks_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'chunks', uuid_str)
     os.makedirs(chunks_dir, exist_ok=True)
-    chunk_path = os.path.join(chunks_dir, secure_filename(chunk.filename))
+
+    part_filename = f"chunk_{chunk_index:06d}.part"
+    chunk_path = os.path.join(chunks_dir, part_filename)
     chunk.save(chunk_path)
-    return jsonify({'success': True})
+
+    saved_parts = [f for f in os.listdir(chunks_dir) if f.startswith('chunk_') and f.endswith('.part')]
+
+    if len(saved_parts) < total_chunks:
+        return jsonify({
+            'success': True,
+            'chunk_index': chunk_index,
+            'saved': len(saved_parts),
+            'total_chunks': total_chunks
+        })
+
+    with _chunk_assembly_lock:
+        if not os.path.exists(chunks_dir):
+            video = Video.query.filter_by(filename=f"{uuid_str}_{orig_filename}").first()
+            if video:
+                return jsonify({
+                    'success': True,
+                    'video_id': video.id,
+                    'status': video.status,
+                    'message': 'Video assembled and processing started'
+                })
+            return jsonify({'success': True, 'message': 'Chunks uploaded successfully.'})
+
+        save_name = f"{uuid_str}_{orig_filename}"
+        assembled_path = os.path.join(current_app.config['UPLOAD_FOLDER'], save_name)
+
+        with open(assembled_path, 'wb') as assembled_file:
+            for i in range(total_chunks):
+                part_path = os.path.join(chunks_dir, f"chunk_{i:06d}.part")
+                if os.path.exists(part_path):
+                    with open(part_path, 'rb') as pf:
+                        shutil.copyfileobj(pf, assembled_file, length=16*1024*1024)
+
+        shutil.rmtree(chunks_dir, ignore_errors=True)
+
+        uploader_id = getattr(current_user, 'id', None) if current_user and current_user.is_authenticated else None
+        if not uploader_id:
+            teacher = User.query.filter_by(role='teacher').first()
+            uploader_id = teacher.id if teacher else 1
+
+        video = Video(
+            title=title,
+            filename=save_name,
+            uploader_id=uploader_id,
+            classroom_id=classroom_id if classroom_id > 0 else None,
+            description=description,
+            tags=tags,
+            status='processing',
+            processing_progress=10
+        )
+        db.session.add(video)
+        db.session.commit()
+
+        app_obj = current_app._get_current_object()
+        vid = video.id
+
+        def background_hls(app_ctx, video_id, input_file, uploader_uid):
+            with app_ctx.app_context():
+                user = User.query.get(uploader_uid)
+                hls_dir = None
+                if user and user.institution_id:
+                    inst = Institution.query.get(user.institution_id)
+                    if inst:
+                        hls_dir = os.path.join(app_ctx.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(video_id))
+
+                result = process_video_ultra(
+                    input_path=input_file,
+                    video_id=video_id,
+                    output_dir=hls_dir,
+                    progress_callback=lambda p: _update_video_progress(video_id, p)
+                )
+                if result.get('success'):
+                    _update_video_record(video_id, result)
+
+        threading.Thread(
+            target=background_hls,
+            args=(app_obj, vid, assembled_path, uploader_id),
+            daemon=True
+        ).start()
+
+        return jsonify({
+            'success': True,
+            'video_id': vid,
+            'status': 'processing',
+            'message': 'Video assembled successfully and parallel HLS processing started'
+        })
 
 
 def _update_video_progress(video_id: int, progress: float):

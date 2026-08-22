@@ -93,7 +93,7 @@ After=network.target
 [Service]
 User=$USER
 WorkingDirectory=$WORK_DIR
-ExecStart=$WORK_DIR/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
+ExecStart=$WORK_DIR/venv/bin/gunicorn --workers 4 --threads 4 --timeout 3600 --bind 0.0.0.0:5000 app:app
 Restart=always
 RestartSec=5
 Environment=PATH=$WORK_DIR/venv/bin:\$PATH
