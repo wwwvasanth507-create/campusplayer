@@ -30,6 +30,25 @@ else
     echo -e "${RED}⚠️  Warning: apt-get not found. Ensure Python 3, venv, ffmpeg, and postgresql are installed.${NC}"
 fi
 
+# Step 1.5: Automatic PostgreSQL Database & User Provisioning
+echo -e "\n${YELLOW}[1.5/7] Provisioning PostgreSQL Database & User...${NC}"
+if command -v systemctl >/dev/null 2>&1; then
+    sudo systemctl start postgresql || true
+    sudo systemctl enable postgresql || true
+fi
+
+if command -v psql >/dev/null 2>&1 || sudo -u postgres command -v psql >/dev/null 2>&1; then
+    sudo -u postgres psql -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'campususer') THEN CREATE ROLE campususer WITH LOGIN PASSWORD 'campuspass'; END IF; END \$\$;" || true
+    sudo -u postgres psql -c "ALTER USER campususer WITH LOGIN PASSWORD 'campuspass';" || true
+    sudo -u postgres psql -c "ALTER USER campususer CREATEDB;" || true
+    sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw campusplayer_db || sudo -u postgres createdb -O campususer campusplayer_db || true
+    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE campusplayer_db TO campususer;" || true
+    sudo -u postgres psql -d campusplayer_db -c "GRANT ALL ON SCHEMA public TO campususer;" || true
+    echo -e "${GREEN}✓ PostgreSQL user 'campususer' and database 'campusplayer_db' provisioned successfully.${NC}"
+else
+    echo -e "${YELLOW}ℹ️  psql CLI not available, skipping auto-provisioning.${NC}"
+fi
+
 # Step 2: Virtual Environment Setup
 echo -e "\n${YELLOW}[2/7] Setting up Python Virtual Environment...${NC}"
 if [ ! -d "venv" ]; then

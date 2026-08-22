@@ -84,8 +84,14 @@ def create_backup(app=None, prefix="campusplayer"):
         if pg_dump_bin:
             try:
                 import subprocess
+                import urllib.parse
+                env = os.environ.copy()
+                parsed = urllib.parse.urlparse(db_uri)
+                if parsed.password:
+                    env['PGPASSWORD'] = parsed.password
+
                 cmd = [pg_dump_bin, db_uri, '-f', backup_path]
-                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120, env=env)
                 if res.returncode == 0 and os.path.exists(backup_path) and os.path.getsize(backup_path) > 0:
                     print(f"[Backup] Successfully created PostgreSQL dump: {backup_path}")
                     return True, backup_path
