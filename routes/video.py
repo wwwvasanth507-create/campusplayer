@@ -235,13 +235,37 @@ def upload_chunk():
         assembled_path = os.path.join(video_dir, 'source.mp4')
         os.makedirs(video_dir, exist_ok=True)
 
-        with open(assembled_path, 'wb') as assembled_file:
-            for i in range(total_chunks):
-                part_path = os.path.join(chunks_dir, f"chunk_{i:06d}.part")
-                if os.path.exists(part_path):
-                    with open(part_path, 'rb') as pf:
-                        shutil.copyfileobj(pf, assembled_file, length=16*1024*1024)
+        def fast_zero_copy_assembly(c_dir, n_chunks, out_path):
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            out_fd = os.open(out_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)
+            try:
+                for i in range(n_chunks):
+                    part_path = os.path.join(c_dir, f"chunk_{i:06d}.part")
+                    if not os.path.exists(part_path):
+                        continue
+                    in_fd = os.open(part_path, os.O_RDONLY)
+                    try:
+                        size = os.path.getsize(part_path)
+                        if hasattr(os, 'sendfile'):
+                            offset = 0
+                            while offset < size:
+                                sent = os.sendfile(out_fd, in_fd, offset, size - offset)
+                                if sent == 0:
+                                    break
+                                offset += sent
+                        else:
+                            buf_size = 64 * 1024 * 1024
+                            while True:
+                                chunk_bytes = os.read(in_fd, buf_size)
+                                if not chunk_bytes:
+                                    break
+                                os.write(out_fd, chunk_bytes)
+                    finally:
+                        os.close(in_fd)
+            finally:
+                os.close(out_fd)
 
+        fast_zero_copy_assembly(chunks_dir, total_chunks, assembled_path)
         shutil.rmtree(chunks_dir, ignore_errors=True)
 
         if not os.path.exists(assembled_path) or os.path.getsize(assembled_path) == 0:

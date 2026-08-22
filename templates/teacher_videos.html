@@ -229,11 +229,15 @@
             </div>
 
             <!-- Active Parallel Streams Bar -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(100px, 1fr)); gap:6px; margin-bottom:12px;" id="parallel-streams-container">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:6px; margin-bottom:12px;" id="parallel-streams-container">
                 <div id="stream-1-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 1: Ready</div>
                 <div id="stream-2-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 2: Ready</div>
                 <div id="stream-3-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 3: Ready</div>
                 <div id="stream-4-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 4: Ready</div>
+                <div id="stream-5-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 5: Ready</div>
+                <div id="stream-6-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 6: Ready</div>
+                <div id="stream-7-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 7: Ready</div>
+                <div id="stream-8-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 8: Ready</div>
             </div>
 
             <div>
@@ -417,19 +421,19 @@
             const description = document.getElementById('video-desc') ? document.getElementById('video-desc').value : '';
             const tags = document.getElementById('video-tags') ? document.getElementById('video-tags').value : '';
             
-            // Dynamic adaptive chunk sizing (4MB to 16MB) for universal network & proxy compatibility
+            // High-speed adaptive chunk sizing (8MB to 32MB) for maximum network throughput
             function getOptimalChunkSize(fileSize) {
-                if (fileSize < 32 * 1024 * 1024) return 4 * 1024 * 1024;      // 4 MB for < 32 MB
-                if (fileSize < 256 * 1024 * 1024) return 8 * 1024 * 1024;     // 8 MB for < 256 MB
-                return 16 * 1024 * 1024;                                     // 16 MB for >= 256 MB
+                if (fileSize < 64 * 1024 * 1024) return 8 * 1024 * 1024;       // 8 MB for < 64 MB
+                if (fileSize < 1024 * 1024 * 1024) return 16 * 1024 * 1024;    // 16 MB for < 1 GB
+                return 32 * 1024 * 1024;                                      // 32 MB for >= 1 GB
             }
 
             const CHUNK_SIZE = getOptimalChunkSize(file.size);
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
             const uploadUuid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Date.now();
             
-            // Parallel worker pool (up to 4 concurrent upload streams)
-            const CONCURRENCY = Math.min(4, Math.max(1, totalChunks));
+            // Ultra-fast parallel worker pool (up to 8 concurrent upload streams)
+            const CONCURRENCY = Math.min(8, Math.max(1, totalChunks));
             
             if (pc) pc.style.display = 'block';
             if (btn) { btn.disabled = true; btn.innerText = 'Uploading...'; }
