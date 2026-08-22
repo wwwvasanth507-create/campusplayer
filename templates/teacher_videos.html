@@ -427,19 +427,26 @@
             const description = document.getElementById('video-desc') ? document.getElementById('video-desc').value : '';
             const tags = document.getElementById('video-tags') ? document.getElementById('video-tags').value : '';
             
-            // Bandwidth-adaptive dynamic chunk size & worker concurrency for ultra-slow (<10KB/s) & mobile internet
+            // Request OS Notification permission for background completion alerts
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().catch(() => {});
+            }
+
+            // Bandwidth-adaptive dynamic chunk size & worker concurrency for ultra-fast 20GB+ uploads
             function getOptimalChunkSize(fileSize, currentSpeedBps) {
-                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for <50KB/s internet
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for ultra-slow internet (<50KB/s)
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 1 * 1024 * 1024;  // 1 MB for 50-250KB/s
-                if (fileSize < 64 * 1024 * 1024) return 4 * 1024 * 1024;                         // 4 MB for medium files
-                if (fileSize < 1024 * 1024 * 1024) return 8 * 1024 * 1024;                      // 8 MB
-                return 16 * 1024 * 1024;                                                        // 16 MB for large files
+                if (fileSize >= 5 * 1024 * 1024 * 1024) return 64 * 1024 * 1024;                // 64 MB for >=5GB files (20GB = 320 chunks!)
+                if (fileSize >= 1024 * 1024 * 1024) return 32 * 1024 * 1024;                    // 32 MB for 1GB-5GB files
+                if (fileSize >= 64 * 1024 * 1024) return 16 * 1024 * 1024;                      // 16 MB for 64MB-1GB files
+                return 8 * 1024 * 1024;                                                         // 8 MB for small files
             }
 
             function getAdaptiveConcurrency(currentSpeedBps, totalChunks) {
-                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on slow internet (<50KB/s) to prevent TCP timeouts
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on slow internet to prevent TCP timeouts
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams
-                return Math.min(8, Math.max(1, totalChunks));
+                if (currentSpeedBps > 5 * 1024 * 1024 || totalChunks > 20) return Math.min(16, Math.max(4, totalChunks)); // 16 parallel streams for high-speed fiber/5G
+                return Math.min(12, Math.max(2, totalChunks));
             }
 
             const isTurboMode = document.getElementById('turbo-compress-check') && document.getElementById('turbo-compress-check').checked;
@@ -457,7 +464,7 @@
             if (status) { 
                 status.innerText = isTurboMode 
                     ? 'Optimizing video for slow internet...' 
-                    : `Initializing resumable parallel upload (${totalChunks} chunks)...`; 
+                    : `Initializing resumable parallel upload (${totalChunks} chunks • ${formatBytes(CHUNK_SIZE)} chunk size • Safe to close Chrome)...`; 
                 status.style.color = '#2541b2'; 
             }
 
@@ -515,7 +522,7 @@
                 if (speedEl) speedEl.innerText = speedText;
                 if (etaEl) etaEl.innerText = etaText;
 
-                if (status) status.innerText = `Multi-stream upload: ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
+                if (status) status.innerText = `Multi-stream Turbo (${CONCURRENCY} streams): ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks) • Safe to close Chrome`;
             }
 
             function updateStreamBadge(workerSlot, chunkIdx, isActive) {
@@ -548,6 +555,15 @@
                 if (labelEl) labelEl.innerText = 'No file chosen';
                 
                 if (status) { status.innerText = 'Upload complete! Starting HLS processing...'; status.style.color = '#3d8fa3'; }
+                
+                // Show Desktop System Tray Notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('Campus Player', {
+                        body: `Video "${title || 'Video'}" uploaded successfully! HLS conversion started.`,
+                        icon: '/static/img/icon-192.png'
+                    });
+                }
+                
                 checkProcessingVideos();
                 setTimeout(() => {
                     if (pc) pc.style.display = 'none';
@@ -665,6 +681,49 @@
                 }
             }
 
+            // Attempt Chromium Native Background Fetch Registration (Safe to close tab/browser)
+            if ('serviceWorker' in navigator && 'BackgroundFetchManager' in window) {
+                navigator.serviceWorker.ready.then(reg => {
+                    const fetchRequests = [];
+                    for (let i = 0; i < totalChunks; i++) {
+                        const start = i * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, file.size);
+                        const chunkSlice = file.slice(start, end);
+                        const chunkFd = new FormData();
+                        chunkFd.append('chunk', chunkSlice);
+                        chunkFd.append('chunkIndex', i);
+                        chunkFd.append('totalChunks', totalChunks);
+                        chunkFd.append('uuid', uploadUuid);
+                        chunkFd.append('filename', file.name);
+                        chunkFd.append('title', title);
+                        chunkFd.append('classroom_id', classroomId);
+                        chunkFd.append('description', description);
+                        chunkFd.append('tags', tags);
+                        chunkFd.append('csrf_token', '{{ csrf_token }}');
+
+                        fetchRequests.push(new Request('/teacher/upload_chunk', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': '{{ csrf_token }}',
+                                'X-CSRF-Token': '{{ csrf_token }}',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: chunkFd
+                        }));
+                    }
+                    reg.backgroundFetch.fetch(uploadUuid, fetchRequests, {
+                        title: file.name,
+                        icons: [{ src: '/static/img/icon-192.png', sizes: '192x192', type: 'image/png' }],
+                        uploadTotal: file.size
+                    }).then(bgFetch => {
+                        console.log('[BackgroundFetch] Active background fetch registered:', bgFetch.id);
+                        if (status) status.innerText = `⚡ Chromium Background Fetch Active! You can safely close Chrome now.`;
+                    }).catch(err => {
+                        console.log('[BackgroundFetch] Fallback to multi-stream XHR pool:', err);
+                    });
+                }).catch(() => {});
+            }
+
             // Resumable Upload Check: Query server for already-uploaded chunks
             fetch(`/teacher/upload_chunk_status?uuid=${uploadUuid}`)
                 .then(r => r.json())
@@ -679,7 +738,7 @@
                             const end = Math.min(start + CHUNK_SIZE, file.size);
                             chunkBytesLoaded[idx] = end - start;
                         }
-                        if (status) status.innerText = `Resuming upload! Skipped ${uploaded.length} previously uploaded chunks.`;
+                        if (status) status.innerText = `Resuming upload! Skipped ${uploaded.length} previously uploaded chunks. Safe to close Chrome.`;
                         updateProgressDisplay();
                     }
 

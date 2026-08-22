@@ -60,7 +60,7 @@ def get_ffprobe_bin():
 # Performance targets — effectively unlimited
 MAX_CHUNK_RATE_PER_MINUTE = 10_000_000_000_000_000  # 10 quadrillion req/min (unlimited)
 MAX_CHUNK_RATE_PER_SECOND = MAX_CHUNK_RATE_PER_MINUTE // 60  # ~166 trillion req/s
-DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024  # 10 MB default chunk size
+DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB default chunk size for ultra-fast 20GB+ ingestion
 MAX_CONCURRENT_CHUNK_WRITES = 1000000  # 1M concurrent writes (practically unlimited)
 CHUNK_WRITE_BACKLOG = 50000000  # 50M in-memory backlog before flushing
 
