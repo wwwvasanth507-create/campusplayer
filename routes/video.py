@@ -13,7 +13,7 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from extensions import db, limiter
 from models import Video, Playlist, Comment, SiteSettings, VideoLike, User, Institution
-from services.utils import sanitize_input, allowed_file, allowed_subtitle_file, apply_media_cors_headers
+from services.utils import sanitize_input, allowed_file, allowed_subtitle_file, apply_media_cors_headers, enforce_institution_access, scope_to_institution
 from services.auth import teacher_required, log_activity
 from services.upload_engine import (
     init_upload_engine, handle_chunk_upload, handle_chunk_upload_direct,
@@ -606,10 +606,11 @@ def complete_upload():
     video.status = 'assembling'
     db.session.commit()
 
-    uploader_id = video.uploader_id  # Capture uploader_id before thread starts
+    uploader_id = video.uploader_id
+    app_obj = current_app._get_current_object()
 
-    def assembly_job(uid, vid, tchunks, fname, uploader_id):
-        with current_app.app_context():
+    def assembly_job(app_ctx, uid, vid, tchunks, fname, uploader_uid):
+        with app_ctx.app_context():
             from services.upload_engine import _chunk_buffer
             if _chunk_buffer:
                 _chunk_buffer._flush_to_disk()
@@ -624,12 +625,12 @@ def complete_upload():
                     db.session.commit()
 
                 # Determine output directory based on tenant
-                user = User.query.get(uploader_id)
+                user = User.query.get(uploader_uid)
                 hls_dir = None
                 if user and user.institution_id:
                     inst = Institution.query.get(user.institution_id)
                     if inst:
-                        hls_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(vid))
+                        hls_dir = os.path.join(app_ctx.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(vid))
 
                 # Use ULTRA PARALLEL processing for FULL video with ALL qualities
                 logger.info(f"Starting ultra-parallel HLS for video {vid} (full video, all qualities)")
@@ -689,7 +690,7 @@ def complete_upload():
 
     thread = threading.Thread(
         target=assembly_job,
-        args=(upload_uuid, video_id, total_chunks, original_filename, uploader_id),
+        args=(app_obj, upload_uuid, video_id, total_chunks, original_filename, uploader_id),
         daemon=True
     )
     thread.start()

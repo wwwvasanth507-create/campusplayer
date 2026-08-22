@@ -68,6 +68,8 @@ def run_master_verification():
         with client.session_transaction() as sess:
             sess.clear()
             sess['csrf_token'] = 'test_master_csrf_token_12345'
+        from extensions import limiter
+        limiter.reset()
         res = client.post('/login', data={
             'username': uname,
             'password': pw,

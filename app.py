@@ -201,6 +201,17 @@ cache.init_app(app)
 limiter.init_app(app)
 socketio.init_app(app)
 
+# Register modular blueprints
+from routes.video import video_bp
+from routes.auth import auth_bp
+from routes.core import core_bp
+from routes.search import search_bp
+
+app.register_blueprint(video_bp)
+app.register_blueprint(auth_bp)
+app.register_blueprint(core_bp)
+app.register_blueprint(search_bp)
+
 # Initialize optional extensions
 if mail:
     mail.init_app(app)
