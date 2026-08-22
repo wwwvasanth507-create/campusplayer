@@ -568,6 +568,7 @@
                 fd.append('classroom_id', classroomId);
                 fd.append('description', description);
                 fd.append('tags', tags);
+                fd.append('csrf_token', '{{ csrf_token }}');
 
                 const xhr = new XMLHttpRequest();
 
@@ -616,6 +617,8 @@
                 };
 
                 xhr.open('POST', '/teacher/upload_chunk', true);
+                xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.send(fd);
             }
 

@@ -152,6 +152,7 @@ def view_playlist(playlist_id):
 _chunk_assembly_lock = threading.Lock()
 
 @video_bp.route('/teacher/upload_chunk', methods=['POST'])
+@limiter.exempt
 def upload_chunk():
     uuid_str = request.form.get('uuid') or request.form.get('upload_uuid')
     chunk_index_raw = request.form.get('chunkIndex') if request.form.get('chunkIndex') is not None else request.form.get('chunk_index')
