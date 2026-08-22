@@ -24,84 +24,71 @@ def migrate():
         print("=" * 60)
 
         # Automated Pre-Migration Backup
-        from services.backup_engine import create_backup
-        ok, backup_res = create_backup(app)
-        if not ok:
-            print(f"❌ [Migration Error] Pre-migration database backup failed: {backup_res}")
-            print("Aborting migration to preserve database integrity.")
-            sys.exit(1)
-        print(f"[Backup] Pre-migration database backup verified: {backup_res}\n")
+        is_testing = app.config.get('TESTING') or os.getenv('TESTING') or os.getenv('FLASK_TESTING')
+        if not is_testing:
+            from services.backup_engine import create_backup
+            ok, backup_res = create_backup(app)
+            if not ok:
+                print(f"❌ [Migration Error] Pre-migration database backup failed: {backup_res}")
+                print("Aborting migration to preserve database integrity.")
+                sys.exit(1)
+            print(f"[Backup] Pre-migration database backup verified: {backup_res}\n")
+        else:
+            print("[Backup] Skipping pre-migration database backup in testing mode.\n")
 
         
-        # Rebuild user table to scope unique username to institution_id
         try:
-            import sqlite3
-            if db.engine.dialect.name == 'sqlite':
-                db_uri = str(app.config.get('SQLALCHEMY_DATABASE_URI', ''))
-                db_path = db_uri.replace('sqlite:///', '')
-                if not os.path.isabs(db_path):
-                    db_path = os.path.abspath(db_path)
-                if os.path.exists(db_path):
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='user'")
-                    row = cursor.fetchone()
-                    if row:
-                        sql = row[0]
-                        if 'unique' in sql.lower() and 'uq_user_username_institution' not in sql.lower() and 'unique(username)' not in sql.lower().replace(' ', ''):
-                            print("[Migration] Rebuilding 'user' table to remove single UNIQUE constraint on username...")
-                            cursor.execute("PRAGMA table_info(user)")
-                            columns = [r[1] for r in cursor.fetchall()]
-                            cols_str = ", ".join(columns)
-                            cursor.execute("ALTER TABLE user RENAME TO old_user")
-                            new_table_sql = """
-                            CREATE TABLE user (
-                                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                username VARCHAR(150) NOT NULL,
-                                password_hash VARCHAR(256) NOT NULL,
-                                role VARCHAR(20) NOT NULL,
-                                institution_id INTEGER,
-                                is_active_account BOOLEAN DEFAULT 1,
-                                xp INTEGER DEFAULT 0,
-                                phone VARCHAR(20),
-                                parent_email VARCHAR(150),
-                                parent_name VARCHAR(150),
-                                created_at DATETIME,
-                                email VARCHAR(150),
-                                email_sender_address VARCHAR(150),
-                                encrypted_app_password VARCHAR(500),
-                                email_enabled BOOLEAN DEFAULT 0,
-                                last_report_sent DATETIME,
-                                display_name VARCHAR(150),
-                                avatar_url VARCHAR(500),
-                                theme_preference VARCHAR(10) DEFAULT 'dark',
-                                bio TEXT,
-                                last_login DATETIME,
-                                last_active DATETIME,
-                                login_count INTEGER DEFAULT 0,
-                                session_version INTEGER DEFAULT 1,
-                                level INTEGER DEFAULT 1,
-                                streak_days INTEGER DEFAULT 0,
-                                last_streak_date DATE,
-                                total_quiz_score INTEGER DEFAULT 0,
-                                total_quizzes_taken INTEGER DEFAULT 0,
-                                achievements_json TEXT DEFAULT '[]',
-                                quests_json TEXT DEFAULT '{}',
-                                equipped_avatar_frame VARCHAR(100),
-                                equipped_title VARCHAR(100),
-                                equipped_badge VARCHAR(100),
-                                UNIQUE (username, institution_id),
-                                FOREIGN KEY(institution_id) REFERENCES institution(id)
-                            )
-                            """
-                            cursor.execute(new_table_sql)
-                            cursor.execute(f"INSERT INTO user ({cols_str}) SELECT {cols_str} FROM old_user")
-                            cursor.execute("DROP TABLE old_user")
-                            conn.commit()
-                            print("[Migration] Rebuilt 'user' table successfully!")
-                    conn.close()
+            if db.engine.dialect.name == 'postgresql':
+                existing_uq = db.session.execute(db.text("""
+                    SELECT conname FROM pg_constraint
+                    WHERE conrelid = '\"user\"'::regclass
+                      AND contype = 'u'
+                      AND conname = 'uq_user_username_institution'
+                """)).scalar()
+
+                if not existing_uq:
+                    # Find any legacy single-column unique constraint on username only
+                    legacy_rows = db.session.execute(db.text("""
+                        SELECT c.conname
+                        FROM pg_constraint c
+                        WHERE c.conrelid = '\"user\"'::regclass
+                          AND c.contype = 'u'
+                          AND array_length(c.conkey, 1) = 1
+                          AND c.conkey[1] = (
+                              SELECT attnum FROM pg_attribute
+                              WHERE attrelid = '\"user\"'::regclass
+                                AND attname = 'username'
+                          )
+                    """)).fetchall()
+
+                    for row in legacy_rows:
+                        cname = row[0]
+                        try:
+                            db.session.execute(db.text(
+                                f'ALTER TABLE "user" DROP CONSTRAINT IF EXISTS "{cname}"'
+                            ))
+                            db.session.commit()
+                            print(f"[Migration] Dropped legacy unique constraint on username: {cname}")
+                        except Exception as drop_err:
+                            db.session.rollback()
+                            print(f"[Migration] Could not drop {cname}: {drop_err}")
+
+                    try:
+                        db.session.execute(db.text("""
+                            ALTER TABLE "user"
+                            ADD CONSTRAINT uq_user_username_institution
+                            UNIQUE (username, institution_id)
+                        """))
+                        db.session.commit()
+                        print("[Migration] Added composite unique constraint uq_user_username_institution on (username, institution_id)")
+                    except Exception as add_err:
+                        db.session.rollback()
+                        print(f"[Migration] Note adding uq_user_username_institution: {add_err}")
+                else:
+                    print("[Migration] Constraint uq_user_username_institution already exists — skipping.")
         except Exception as e:
-            print(f"[Migration] [!] Note rebuilding user table: {e}")
+            db.session.rollback()
+            print(f"[Migration] [!] Note during username constraint migration: {e}")
 
         # Create all new tables
         print("\n[Tables] Creating new tables...")

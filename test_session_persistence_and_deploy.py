@@ -27,7 +27,7 @@ sys.path.insert(0, BASE_DIR)
 from app import app
 from extensions import db
 from models import Institution, User, Video, Classroom, UserSession
-from services.backup_engine import create_backup, verify_sqlite_file
+from services.backup_engine import create_backup
 from services.audit_engine import run_platform_audit
 from migrate_db import migrate
 
@@ -233,8 +233,10 @@ class TestSessionPersistenceAndDeploy(unittest.TestCase):
         self.assertTrue(ok)
         self.assertTrue(os.path.exists(backup_path))
 
-        valid, err = verify_sqlite_file(backup_path)
-        self.assertTrue(valid, f"Backup verification failed: {err}")
+        # PostgreSQL backups are verified by pg_dump exit code and file size > 0
+        self.assertTrue(ok, f'Backup should succeed: {backup_path}')
+        self.assertTrue(os.path.exists(backup_path))
+        self.assertGreater(os.path.getsize(backup_path), 0)
 
         # Clean up test backup
         if os.path.exists(backup_path):
@@ -247,18 +249,10 @@ class TestSessionPersistenceAndDeploy(unittest.TestCase):
         self.assertTrue(os.path.exists(backup_path))
 
         # Verify integrity of backup file before restore simulation
-        valid, err = verify_sqlite_file(backup_path)
-        self.assertTrue(valid, f"Rollback backup integrity check failed: {err}")
-
-        # Simulate atomic restore using copy
-        db_path = self.app.config.get('SQLALCHEMY_DATABASE_URI', '').replace('sqlite:///', '')
-        if db_path and os.path.exists(db_path):
-            temp_restore_target = backup_path + ".restored"
-            shutil.copy2(backup_path, temp_restore_target)
-            self.assertTrue(os.path.exists(temp_restore_target))
-            valid_restored, _ = verify_sqlite_file(temp_restore_target)
-            self.assertTrue(valid_restored)
-            os.remove(temp_restore_target)
+        # pg_dump-based backup is verified by exit code, not sqlite3.connect()
+        ok2, backup_path2 = create_backup(self.app)
+        self.assertTrue(ok2, f'Second backup should succeed: {backup_path2}')
+        self.assertGreater(os.path.getsize(backup_path2), 0, 'Backup file should be non-empty')
 
         if os.path.exists(backup_path):
             os.remove(backup_path)
@@ -266,4 +260,3 @@ class TestSessionPersistenceAndDeploy(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -1,11 +1,15 @@
 // Campus Player - High-Performance PWA & Background Upload Service Worker
-const CACHE_NAME = 'campusplayer-cache-v2';
+const CACHE_NAME = 'campusplayer-cache-v3';
 const STATIC_ASSETS = [
   '/',
   '/static/css/style.css',
   '/static/js/main.js',
   '/static/manifest.json'
 ];
+
+// In-memory map of active upload sessions registered by the page
+// uuid -> { uuid, title, totalChunks }
+const activeUploads = new Map();
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -74,7 +78,42 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  BACKGROUND FETCH API & DESKTOP NOTIFICATIONS FOR 20GB+ UPLOADS
+//  MESSAGE HANDLER — Register active upload sessions from the page
+// ═══════════════════════════════════════════════════════════════
+
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+
+  if (event.data.type === 'PING_BACKGROUND_SW') {
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ status: 'ACTIVE' });
+    }
+    return;
+  }
+
+  if (event.data.type === 'REGISTER_ACTIVE_UPLOAD') {
+    // Track the active upload so we can notify clients on background fetch completion
+    const { uuid, title, totalChunks } = event.data;
+    if (uuid) {
+      activeUploads.set(uuid, { uuid, title: title || 'Video', totalChunks });
+      console.log(`[SW] Registered active upload: ${uuid} — ${title}`);
+    }
+    return;
+  }
+
+  if (event.data.type === 'UPLOAD_COMPLETE') {
+    // Page signals that an upload completed normally — remove from tracking
+    const { uuid } = event.data;
+    if (uuid) activeUploads.delete(uuid);
+    return;
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  BACKGROUND FETCH API — Handles uploads registered with
+//  registration.backgroundFetch.fetch(...)
+//  Supported in Chromium-based browsers only (progressive enhancement).
+//  Firefox and Safari fall back to normal XHR-based chunked upload.
 // ═══════════════════════════════════════════════════════════════
 
 self.addEventListener('backgroundfetchsuccess', (event) => {
@@ -82,7 +121,7 @@ self.addEventListener('backgroundfetchsuccess', (event) => {
   console.log(`[SW] Background Fetch Succeeded: ${bgFetch.id}`);
 
   event.waitUntil((async () => {
-    // Notify all open window clients
+    // Notify all open window clients so they can refresh the video list
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of clients) {
       client.postMessage({
@@ -92,10 +131,14 @@ self.addEventListener('backgroundfetchsuccess', (event) => {
       });
     }
 
+    // Remove from activeUploads tracking
+    const uuid = bgFetch.id.replace(/^upload-/, '');
+    activeUploads.delete(uuid);
+
     // Show OS system tray desktop notification if permission granted
     if (self.Notification && self.Notification.permission === 'granted') {
-      self.registration.showNotification('Campus Player — Upload Complete', {
-        body: `Video "${bgFetch.title || 'Video Upload'}" uploaded successfully in background!`,
+      await self.registration.showNotification('Campus Player — Upload Complete', {
+        body: `"${bgFetch.title || 'Video Upload'}" uploaded successfully in background!`,
         icon: '/static/img/icon-192.png',
         badge: '/static/img/icon-192.png',
         tag: `upload-${bgFetch.id}`
@@ -116,6 +159,14 @@ self.addEventListener('backgroundfetchfail', (event) => {
         id: bgFetch.id
       });
     }
+
+    if (self.Notification && self.Notification.permission === 'granted') {
+      await self.registration.showNotification('Campus Player — Upload Failed', {
+        body: `Upload "${bgFetch.title || 'Video'}" failed. Please retry.`,
+        icon: '/static/img/icon-192.png',
+        tag: `upload-fail-${bgFetch.id}`
+      });
+    }
   })());
 });
 
@@ -128,10 +179,4 @@ self.addEventListener('backgroundfetchclick', (event) => {
       self.clients.openWindow('/teacher/videos');
     }
   })());
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'PING_BACKGROUND_SW') {
-    event.ports[0].postMessage({ status: 'ACTIVE' });
-  }
 });

@@ -402,6 +402,62 @@
         document.addEventListener('DOMContentLoaded', function () {
             checkProcessingVideos();
             setInterval(checkProcessingVideos, 6000);
+
+            // ── Detect & offer to resume any incomplete upload sessions from IndexedDB ──
+            (async () => {
+                try {
+                    const IDB_NAME = 'cp_uploads', IDB_STORE = 'sessions';
+                    const idb = await new Promise((res, rej) => {
+                        const r = indexedDB.open(IDB_NAME, 1);
+                        r.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE, { keyPath: 'uuid' });
+                        r.onsuccess = e => res(e.target.result);
+                        r.onerror = e => rej(e.target.error);
+                    });
+                    const sessions = await new Promise(res => {
+                        const tx = idb.transaction(IDB_STORE, 'readonly');
+                        const req = tx.objectStore(IDB_STORE).getAll();
+                        req.onsuccess = () => res(req.result || []);
+                        req.onerror = () => res([]);
+                    });
+
+                    sessions.forEach(sess => {
+                        if (!sess.uuid || !sess.filename) return;
+                        const banner = document.createElement('div');
+                        banner.id = `resume-banner-${sess.uuid}`;
+                        banner.style.cssText = `
+                            background: rgba(37,65,178,0.15); border: 1px solid rgba(37,65,178,0.4);
+                            border-radius: 10px; padding: 14px 18px; margin-bottom: 14px;
+                            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+                        `;
+                        const confirmed = (sess.confirmedChunks || []).length;
+                        const total = sess.totalChunks || '?';
+                        const pct = total !== '?' && total > 0 ? Math.round((confirmed / total) * 100) : '?';
+                        banner.innerHTML = `
+                            <i class="material-icons" style="color:#2541b2;font-size:1.4rem;">cloud_upload</i>
+                            <div style="flex:1;">
+                                <strong style="color:var(--primary);">Incomplete Upload Detected</strong>
+                                <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:2px;">
+                                    <em>${sess.filename}</em> — ${confirmed}/${total} chunks uploaded (${pct}%)
+                                </div>
+                            </div>
+                            <button type="button" class="btn" style="margin:0;padding:8px 14px;min-height:36px;font-size:0.8rem;"
+                                onclick="document.getElementById('video-file').click(); document.getElementById('resume-banner-${sess.uuid}').style.opacity=0.5;">
+                                <i class="material-icons" style="font-size:1rem;">replay</i> Resume Upload
+                            </button>
+                            <button type="button" class="btn btn-outline" style="margin:0;padding:8px 12px;min-height:36px;font-size:0.8rem;"
+                                onclick="
+                                    const tx = (function(){const r=indexedDB.open('cp_uploads',1);return new Promise(res=>{r.onsuccess=e=>res(e.target.result);})})();
+                                    tx.then(db=>{const t=db.transaction('sessions','readwrite');t.objectStore('sessions').delete('${sess.uuid}');});
+                                    this.closest('[id^=resume-banner]').remove();
+                                ">
+                                Dismiss
+                            </button>
+                        `;
+                        const uploadCard = document.getElementById('file-upload-card');
+                        if (uploadCard) uploadCard.insertAdjacentElement('beforebegin', banner);
+                    });
+                } catch (e) { /* IndexedDB unavailable */ }
+            })();
         });
         async function checkProcessingVideos() {
             try {
@@ -447,14 +503,13 @@
                 Notification.requestPermission().catch(() => {});
             }
 
-            // Bandwidth-adaptive dynamic chunk size & worker concurrency for ultra-fast 20GB+ uploads
+            // Bandwidth-adaptive chunk size — capped at 16MB for Cloudflare Free/Pro safety
+            // (Cloudflare limits each request to 100MB; 16MB leaves ample headroom)
             function getOptimalChunkSize(fileSize, currentSpeedBps) {
-                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for ultra-slow internet (<50KB/s)
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for ultra-slow (<50KB/s)
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 1 * 1024 * 1024;  // 1 MB for 50-250KB/s
-                if (fileSize >= 5 * 1024 * 1024 * 1024) return 128 * 1024 * 1024;               // 128 MB for >=5GB files (20GB = 160 chunks!)
-                if (fileSize >= 1024 * 1024 * 1024) return 64 * 1024 * 1024;                    // 64 MB for 1GB-5GB files
-                if (fileSize >= 64 * 1024 * 1024) return 32 * 1024 * 1024;                      // 32 MB for 64MB-1GB files
-                return 16 * 1024 * 1024;                                                        // 16 MB for small files
+                // Hard cap at 16 MB — safe under the Cloudflare 100MB per-request body limit
+                return 16 * 1024 * 1024;
             }
 
             function initStreamBadges(count) {
@@ -471,10 +526,11 @@
             }
 
             function getAdaptiveConcurrency(currentSpeedBps, totalChunks) {
-                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on ultra-slow internet (<50KB/s)
-                if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams
-                // Ultra-turbo concurrency pool: up to 128 active parallel worker channels
-                return Math.min(128, Math.max(8, totalChunks));
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on ultra-slow (<50KB/s)
+                if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams on slow
+                // Cap at 4-6 parallel streams — enough for high throughput without exhausting browser memory
+                // (1280 chunks for 20GB@16MB; 6 streams completes this without OOM)
+                return Math.min(6, Math.max(4, Math.ceil(totalChunks / 200)));
             }
 
             const isTurboMode = document.getElementById('turbo-compress-check') && document.getElementById('turbo-compress-check').checked;
@@ -574,6 +630,9 @@
                 if (ub) ub.style.width = '100%';
                 if (up) up.innerText = '100%';
                 
+                // Clean up the IndexedDB session — upload is complete
+                if (_idb) deleteUploadSession(_idb, uploadUuid).catch(() => {});
+
                 if (ti) ti.value = '';
                 if (fi) fi.value = '';
                 const descEl = document.getElementById('video-desc');
@@ -656,6 +715,7 @@
                             const resp = JSON.parse(xhr.responseText);
                             chunkBytesLoaded[chunkIndex] = chunk.size;
                             completedChunks++;
+                            markChunkConfirmed(chunkIndex);
                             updateProgressDisplay();
                             updateStreamBadge(workerSlot, chunkIndex, false);
 
@@ -693,27 +753,153 @@
                 xhr.send(fd);
             }
 
+            // ── IndexedDB Upload Session Persistence ──
+            const IDB_NAME = 'cp_uploads';
+            const IDB_STORE = 'sessions';
+
+            function openUploadDB() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(IDB_NAME, 1);
+                    req.onupgradeneeded = e => {
+                        e.target.result.createObjectStore(IDB_STORE, { keyPath: 'uuid' });
+                    };
+                    req.onsuccess = e => resolve(e.target.result);
+                    req.onerror = e => reject(e.target.error);
+                });
+            }
+
+            async function saveUploadSession(db, data) {
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(IDB_STORE, 'readwrite');
+                    tx.objectStore(IDB_STORE).put(data);
+                    tx.oncomplete = resolve;
+                    tx.onerror = e => reject(e.target.error);
+                });
+            }
+
+            async function deleteUploadSession(idb, uuid) {
+                return new Promise((resolve) => {
+                    const tx = idb.transaction(IDB_STORE, 'readwrite');
+                    tx.objectStore(IDB_STORE).delete(uuid);
+                    tx.oncomplete = resolve;
+                    tx.onerror = resolve; // non-fatal
+                });
+            }
+
+            let _idb = null;
+            openUploadDB().then(db => {
+                _idb = db;
+                // Persist session metadata on upload start
+                saveUploadSession(_idb, {
+                    uuid: uploadUuid,
+                    filename: file.name,
+                    fileSize: file.size,
+                    lastModified: file.lastModified,
+                    title: title,
+                    description: description,
+                    classroomId: classroomId,
+                    tags: tags,
+                    totalChunks: totalChunks,
+                    chunkSize: CHUNK_SIZE,
+                    confirmedChunks: [],
+                    startedAt: Date.now()
+                }).catch(() => {});
+            }).catch(() => {});
+
+            function markChunkConfirmed(chunkIdx) {
+                if (!_idb) return;
+                const tx = _idb.transaction(IDB_STORE, 'readwrite');
+                const store = tx.objectStore(IDB_STORE);
+                const req = store.get(uploadUuid);
+                req.onsuccess = () => {
+                    const sess = req.result;
+                    if (sess) {
+                        if (!sess.confirmedChunks) sess.confirmedChunks = [];
+                        if (!sess.confirmedChunks.includes(chunkIdx)) {
+                            sess.confirmedChunks.push(chunkIdx);
+                        }
+                        store.put(sess);
+                    }
+                };
+            }
+
+            // ── Background Fetch API (Chromium only — progressive enhancement) ──
+            // Registers remaining chunks with the browser's Background Fetch manager so
+            // the upload continues even if the tab is minimized or suspended.
+            async function tryRegisterBackgroundFetch(remainingIndices) {
+                try {
+                    const reg = await navigator.serviceWorker.ready;
+                    if (!('backgroundFetch' in reg)) return; // not supported (Firefox/Safari)
+
+                    const requests = remainingIndices.slice(0, 200).map(idx => {
+                        const start = idx * CHUNK_SIZE;
+                        const end = Math.min(start + CHUNK_SIZE, file.size);
+                        const blob = file.slice(start, end);
+                        const fd = new FormData();
+                        fd.append('chunk', blob);
+                        fd.append('chunkIndex', idx);
+                        fd.append('totalChunks', totalChunks);
+                        fd.append('uuid', uploadUuid);
+                        fd.append('filename', file.name);
+                        fd.append('title', title);
+                        fd.append('classroom_id', classroomId);
+                        fd.append('description', description);
+                        fd.append('tags', tags);
+                        fd.append('csrf_token', '{{ csrf_token }}');
+                        return new Request('/teacher/upload_chunk', { method: 'POST', body: fd });
+                    });
+
+                    if (requests.length === 0) return;
+
+                    await reg.backgroundFetch.fetch(
+                        `upload-${uploadUuid}`,
+                        requests,
+                        {
+                            title: `Campus Player: Uploading ${file.name}`,
+                            uploadTotal: file.size,
+                            icons: [{ src: '/static/img/icon-192.png', sizes: '192x192', type: 'image/png' }]
+                        }
+                    );
+                    if (status) status.innerText = '📱 Upload registered with browser — safe to minimize tab.';
+                } catch (e) {
+                    // Background Fetch unavailable or failed — continue normal XHR upload
+                }
+            }
+
+            // Register with service worker for REGISTER_ACTIVE_UPLOAD message
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    if (reg.active) {
+                        reg.active.postMessage({
+                            type: 'REGISTER_ACTIVE_UPLOAD',
+                            uuid: uploadUuid,
+                            title: file.name,
+                            totalChunks: totalChunks
+                        });
+                    }
+                }).catch(() => {});
+            }
+
+            const MAX_CHUNK_RETRIES = 8;
+
             function handleChunkFailure(chunkIndex, reason, workerSlot = 0) {
                 if (isAborted) return;
                 chunkRetries[chunkIndex] = (chunkRetries[chunkIndex] || 0) + 1;
-                const delay = 0; // Instant 0ms retry — zero waiting/catch period!
-                console.warn(`[Upload] Instant retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}): ${reason}`);
-                if (status) status.innerText = `Network fluctuation detected. Instant auto-resuming chunk #${chunkIndex + 1}...`;
+                if (chunkRetries[chunkIndex] > MAX_CHUNK_RETRIES) {
+                    handleUploadError(`Chunk #${chunkIndex + 1} failed after ${MAX_CHUNK_RETRIES} retries: ${reason}`);
+                    return;
+                }
+                // Exponential backoff: 1s, 2s, 4s, 8s … capped at 30s
+                const backoffMs = Math.min(30000, 1000 * Math.pow(2, chunkRetries[chunkIndex] - 1));
+                console.warn(`[Upload] Retrying chunk ${chunkIndex + 1} (attempt ${chunkRetries[chunkIndex]}/${MAX_CHUNK_RETRIES}) in ${backoffMs}ms: ${reason}`);
+                if (status) status.innerText = `Retrying chunk #${chunkIndex + 1} in ${(backoffMs / 1000).toFixed(1)}s (attempt ${chunkRetries[chunkIndex]})…`;
                 chunkBytesLoaded[chunkIndex] = 0;
                 setTimeout(() => {
                     chunkQueue.push(chunkIndex);
                     processNextQueueItem(workerSlot);
-                }, delay);
+                }, backoffMs);
             }
 
-            // Lightweight Service Worker & PWA Session Registration
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then(reg => {
-                    if (reg.active) {
-                        reg.active.postMessage({ type: 'REGISTER_ACTIVE_UPLOAD', uuid: uploadUuid, title: file.name });
-                    }
-                }).catch(() => {});
-            }
 
             // Resumable Upload Check: Query server for already-uploaded chunks (Zero Cache)
             fetch(`/teacher/upload_chunk_status?uuid=${uploadUuid}`, { cache: 'no-store' })

@@ -411,7 +411,17 @@ def upload_chunk():
 
 
 def _execute_db_retry(fn, max_retries=5, initial_delay=0.05):
-    """Execute a database operation with automatic rollback and exponential backoff retry on SQLite locks."""
+    """Execute a database operation with automatic rollback and exponential backoff retry.
+
+    Useful for handling transient PostgreSQL errors such as:
+      - Serialization failures (ERROR 40001: could not serialize access)
+      - Deadlock detection (ERROR 40P01: deadlock detected)
+      - Transient connection drops from the pool
+
+    Note: PostgreSQL uses MVCC, so write lock contention is far less common than
+    SQLite's single-writer model. These retries target genuine transient failures,
+    not normal multi-writer concurrency (which Postgres handles natively).
+    """
     for attempt in range(1, max_retries + 1):
         try:
             return fn()

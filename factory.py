@@ -22,13 +22,30 @@ def create_app(test_config=None):
 
     secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 
-    raw_db_url = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/campusplayer')
+    # Detect test environment
+    is_testing = (
+        (test_config and test_config.get('TESTING')) or
+        os.getenv('TESTING') or
+        os.getenv('FLASK_TESTING')
+    )
+
+    raw_db_url = os.getenv('DATABASE_URL')
     if test_config and 'SQLALCHEMY_DATABASE_URI' in test_config:
         raw_db_url = test_config['SQLALCHEMY_DATABASE_URI']
+
+    if not raw_db_url:
+        if is_testing:
+            raw_db_url = 'sqlite:///:memory:'
+        else:
+            raise RuntimeError("DATABASE_URL environment variable is not set. cp1 requires PostgreSQL.")
 
     if raw_db_url.startswith('postgres://'):
         raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
 
+    if not is_testing and not raw_db_url.startswith('postgresql'):
+        raise RuntimeError("cp1 requires PostgreSQL; SQLite is not supported.")
+
+    engine_options = {}
     if raw_db_url.startswith('postgresql'):
         engine_options = {
             'pool_size': int(os.getenv('DB_POOL_SIZE', 30)),
@@ -37,8 +54,6 @@ def create_app(test_config=None):
             'pool_pre_ping': True,
             'pool_recycle': 1800
         }
-    else:
-        engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
 
     app.config.update(
         SECRET_KEY=secret_key,
@@ -81,30 +96,9 @@ def create_app(test_config=None):
     return app
 
 
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import sqlite3
-
 def register_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
-
-    @event.listens_for(Engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
-        if isinstance(dbapi_connection, sqlite3.Connection):
-            cursor = dbapi_connection.cursor()
-            try:
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-                cursor.execute("PRAGMA busy_timeout=30000")
-                cursor.execute("PRAGMA cache_size=-64000")
-                cursor.execute("PRAGMA temp_store=MEMORY")
-                cursor.execute("PRAGMA mmap_size=268435456")
-                cursor.execute("PRAGMA foreign_keys=ON")
-            except Exception:
-                pass
-            finally:
-                cursor.close()
 
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

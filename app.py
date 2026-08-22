@@ -8471,70 +8471,9 @@ if __name__ == '__main__':
         # tables that already exist. Without this, an old app.db crashes with
         # "no such column: user.institution_id" the moment app.py starts.)
         def _ensure_new_columns():
-            try:
-                import sqlite3
-                db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-                if 'sqlite:///' in db_uri:
-                    db_path = db_uri.replace('sqlite:///', '')
-                    if not os.path.isabs(db_path):
-                        db_path = os.path.abspath(db_path)
-                    if os.path.exists(db_path):
-                        conn = sqlite3.connect(db_path)
-                        cursor = conn.cursor()
-                        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='user'")
-                        row = cursor.fetchone()
-                        if row:
-                            sql = row[0]
-                            if 'unique' in sql.lower() and 'uq_user_username_institution' not in sql.lower() and 'unique(username)' not in sql.lower().replace(' ', ''):
-                                logger.info("[auto-migrate] Rebuilding 'user' table to remove single UNIQUE constraint on username...")
-                                cursor.execute("PRAGMA table_info(user)")
-                                columns = [r[1] for r in cursor.fetchall()]
-                                cols_str = ", ".join(columns)
-                                cursor.execute("ALTER TABLE user RENAME TO old_user")
-                                new_table_sql = """
-                                CREATE TABLE user (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    username VARCHAR(150) NOT NULL,
-                                    password_hash VARCHAR(256) NOT NULL,
-                                    role VARCHAR(20) NOT NULL,
-                                    institution_id INTEGER,
-                                    is_active_account BOOLEAN DEFAULT 1,
-                                    xp INTEGER DEFAULT 0,
-                                    phone VARCHAR(20),
-                                    parent_email VARCHAR(150),
-                                    parent_name VARCHAR(150),
-                                    created_at DATETIME,
-                                    email VARCHAR(150),
-                                    email_sender_address VARCHAR(150),
-                                    encrypted_app_password VARCHAR(500),
-                                    email_enabled BOOLEAN DEFAULT 0,
-                                    last_report_sent DATETIME,
-                                    display_name VARCHAR(150),
-                                    avatar_url VARCHAR(200),
-                                    theme_preference VARCHAR(20) DEFAULT 'dark',
-                                    bio TEXT,
-                                    last_login DATETIME,
-                                    last_active DATETIME,
-                                    login_count INTEGER DEFAULT 0,
-                                    level INTEGER DEFAULT 1,
-                                    streak_days INTEGER DEFAULT 0,
-                                    last_streak_date DATE,
-                                    total_quiz_score INTEGER DEFAULT 0,
-                                    total_quizzes_taken INTEGER DEFAULT 0,
-                                    achievements_json TEXT DEFAULT '[]',
-                                    UNIQUE (username, institution_id),
-                                    FOREIGN KEY(institution_id) REFERENCES institution(id)
-                                )
-                                """
-                                cursor.execute(new_table_sql)
-                                cursor.execute(f"INSERT INTO user ({cols_str}) SELECT {cols_str} FROM old_user")
-                                cursor.execute("DROP TABLE old_user")
-                                conn.commit()
-                                logger.info("[auto-migrate] Rebuilt 'user' table successfully!")
-                        conn.close()
-            except Exception as e:
-                logger.warning(f"[auto-migrate] Failed to rebuild user table: {e}")
-
+            # Ensure any missing columns are added to existing tables.
+            # db.create_all() only creates missing TABLES, not missing COLUMNS.
+            # This loop adds missing columns via ALTER TABLE which works on PostgreSQL.
             inspector = db.inspect(db.engine)
             existing_tables = set(inspector.get_table_names())
             column_specs = {

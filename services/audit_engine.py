@@ -1,14 +1,14 @@
 """
 CampusPlayer - Data Integrity & Platform Audit Engine.
 
-Calculates database record counts, verifies foreign key relationships, detects orphaned records,
-and verifies file reference integrity on disk.
+PostgreSQL-only. Calculates database record counts, verifies foreign key
+relationships, detects orphaned records, and verifies file reference integrity
+on disk. Uses PostgreSQL-native connectivity checks instead of SQLite pragmas.
 """
 
 import os
 import sys
 import json
-import sqlite3
 from datetime import datetime
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -80,37 +80,45 @@ def run_platform_audit(app=None):
                 'timetable_slots': safe_scalar('SELECT count(*) FROM timetable_slot'),
                 'reward_items': safe_scalar('SELECT count(*) FROM reward_item'),
                 'ebooks': safe_scalar('SELECT count(*) FROM ebook'),
-                'active_user_sessions': safe_scalar('SELECT count(*) FROM user_session WHERE is_active = 1')
+                'active_user_sessions': safe_scalar('SELECT count(*) FROM user_session WHERE is_active = TRUE')
             }
             report['counts'] = counts
 
-            # 2. SQLite Foreign Key & Quick Integrity Check
-            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            if 'sqlite:///' in db_uri:
-                db_path = db_uri.replace('sqlite:///', '')
-                if not os.path.isabs(db_path):
-                    db_path = os.path.abspath(os.path.join(BASE_DIR, db_path))
+            # 2. Database connectivity and sanity check (PostgreSQL-native with SQLite fallback in testing)
+            try:
+                core_tables = ['institution', 'user', 'video', 'classroom', 'quiz', 'site_settings']
+                missing_tables = []
+                is_sqlite = (db.engine.dialect.name == 'sqlite')
 
-                if os.path.exists(db_path):
-                    conn = sqlite3.connect(db_path)
-                    cursor = conn.cursor()
+                for tbl in core_tables:
+                    if is_sqlite:
+                        exists = db.session.execute(
+                            db.text(
+                                "SELECT 1 FROM sqlite_master "
+                                "WHERE type='table' AND name = :tbl"
+                            ),
+                            {'tbl': tbl}
+                        ).scalar()
+                    else:
+                        exists = db.session.execute(
+                            db.text(
+                                "SELECT 1 FROM information_schema.tables "
+                                "WHERE table_schema = 'public' AND table_name = :tbl"
+                            ),
+                            {'tbl': tbl}
+                        ).scalar()
+                    if not exists:
+                        missing_tables.append(tbl)
 
-                    # Quick check
-                    cursor.execute("PRAGMA quick_check;")
-                    row = cursor.fetchone()
-                    if row and row[0] != 'ok':
-                        report['integrity'] = {'status': 'error', 'message': str(row[0])}
-
-                    # FK check
-                    cursor.execute("PRAGMA foreign_key_check;")
-                    fk_rows = cursor.fetchall()
-                    if fk_rows:
-                        report['foreign_keys'] = {
-                            'status': 'error',
-                            'violations': [f"Table {r[0]} rowid {r[1]} references {r[2]}" for r in fk_rows[:20]]
-                        }
-
-                    conn.close()
+                if missing_tables:
+                    report['integrity'] = {
+                        'status': 'error',
+                        'message': f"Missing core tables: {missing_tables}"
+                    }
+                else:
+                    report['integrity'] = {'status': 'ok', 'message': 'All core tables present'}
+            except Exception as pg_err:
+                report['integrity'] = {'status': 'error', 'message': str(pg_err)}
 
             # 3. Check video file references on disk (raw SQL columns)
             video_rows = safe_rows('SELECT id, title, filename, hls_playlist_path, video_type FROM video')
@@ -150,4 +158,3 @@ def run_platform_audit(app=None):
     except Exception as e:
         report['integrity'] = {'status': 'error', 'message': str(e)}
         return False, report
-

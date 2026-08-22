@@ -8,13 +8,47 @@ set -e
 APP_DIR="/opt/campusplayer/cp1"
 VENV="$APP_DIR/venv"
 APP_USER="vasanth-v"
-DB_NAME="campusplayer_cp1"
-DB_USER="cp1user"
-DB_PASS="Cp1Secure@2026"
 
 echo "============================================"
 echo " CampusPlayer CP1 — Deploy Script"
 echo "============================================"
+
+# ---- Step 0: Ensure .env exists with a secure password ----
+echo ""
+echo "[0/6] Checking .env configuration..."
+
+if [ ! -f "$APP_DIR/.env" ]; then
+    echo "  -> .env not found. Initializing from .env.example..."
+    cp "$APP_DIR/.env.example" "$APP_DIR/.env"
+    # Generate a secure random DB password and inject it into .env
+    GENERATED_PASS="$(openssl rand -hex 16)"
+    sed -i "s|DATABASE_URL=postgresql://cp1user:CHANGE_ME@localhost:5432/campusplayer_cp1|DATABASE_URL=postgresql://cp1user:${GENERATED_PASS}@localhost:5432/campusplayer_cp1|" "$APP_DIR/.env"
+    echo "  -> Generated secure DB password and written to .env"
+    echo "  -> IMPORTANT: Save this password from .env — it will be used to create the DB user."
+fi
+
+# Pre-flight: Verify DATABASE_URL is set and is PostgreSQL
+DB_URL=$(grep -E '^DATABASE_URL=' "$APP_DIR/.env" | head -1 | cut -d= -f2-)
+if [ -z "$DB_URL" ]; then
+    echo "❌ ABORT: DATABASE_URL is not set in $APP_DIR/.env"
+    echo "   Edit .env and set: DATABASE_URL=postgresql://cp1user:YOUR_PASS@localhost:5432/campusplayer_cp1"
+    exit 1
+fi
+if [[ "$DB_URL" != postgresql://* ]]; then
+    echo "❌ ABORT: DATABASE_URL does not start with postgresql://"
+    echo "   Current value: $DB_URL"
+    echo "   cp1 requires PostgreSQL. SQLite is not supported."
+    exit 1
+fi
+echo "  -> DATABASE_URL verified as PostgreSQL ✓"
+
+# Parse DB credentials from DATABASE_URL
+# Format: postgresql://user:pass@host:port/dbname
+DB_USER=$(echo "$DB_URL" | sed -E 's|postgresql://([^:]+):.*|\1|')
+DB_PASS=$(echo "$DB_URL" | sed -E 's|postgresql://[^:]+:([^@]+)@.*|\1|')
+DB_NAME=$(echo "$DB_URL" | sed -E 's|.*/([^?]+).*|\1|')
+
+echo "  -> DB_USER: $DB_USER  DB_NAME: $DB_NAME"
 
 # ---- Step 1: Create PostgreSQL user & database ----
 echo ""
@@ -165,7 +199,7 @@ sleep 5
 
 echo ""
 echo " Service Status:"
-systemctl is-active campusplayer.service       && echo "  ✅ campusplayer.service        → RUNNING" || echo "  ❌ campusplayer.service        → FAILED"
+systemctl is-active campusplayer.service        && echo "  ✅ campusplayer.service        → RUNNING" || echo "  ❌ campusplayer.service        → FAILED"
 systemctl is-active campusplayer-worker.service && echo "  ✅ campusplayer-worker.service → RUNNING" || echo "  ❌ campusplayer-worker.service → FAILED"
 systemctl is-active campusplayer-beat.service   && echo "  ✅ campusplayer-beat.service   → RUNNING" || echo "  ❌ campusplayer-beat.service   → FAILED"
 

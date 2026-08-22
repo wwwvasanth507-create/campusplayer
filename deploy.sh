@@ -40,6 +40,21 @@ main() {
         cp "$APP_DIR/.env.example" "$APP_DIR/.env"
     fi
 
+    # Pre-flight: Verify DATABASE_URL is PostgreSQL — abort if not set or SQLite
+    DB_URL_CHECK=$(grep -E '^DATABASE_URL=' "$APP_DIR/.env" | head -1 | cut -d= -f2-)
+    if [ -z "$DB_URL_CHECK" ]; then
+        echo "❌ ABORT: DATABASE_URL is not set in $APP_DIR/.env"
+        echo "   Set it to a postgresql:// URI matching your cp1 database."
+        exit 1
+    fi
+    if [[ "$DB_URL_CHECK" != postgresql://* ]]; then
+        echo "❌ ABORT: DATABASE_URL does not start with postgresql://"
+        echo "   Current value: $DB_URL_CHECK"
+        echo "   cp1 requires PostgreSQL. SQLite is not supported."
+        exit 1
+    fi
+    echo "[Pre-flight] DATABASE_URL verified as PostgreSQL ✓"
+
     # Step 2: Storage directory verification
     echo "[2/10] Verifying storage directories..."
     mkdir -p "$APP_DIR/backups"
