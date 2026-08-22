@@ -18,20 +18,3 @@ def index():
     return render_template('ads.html')
 
 
-@core_bp.route('/student', endpoint='student_dashboard')
-@login_required
-def student_dashboard():
-    return render_template('student_dashboard.html')
-
-
-@core_bp.route('/teacher', endpoint='teacher_dashboard')
-@login_required
-def teacher_dashboard():
-    return render_template('teacher_dashboard.html')
-
-
-@core_bp.route('/admin', endpoint='admin_dashboard')
-@login_required
-def admin_dashboard():
-    return render_template('admin_dashboard.html')
-
