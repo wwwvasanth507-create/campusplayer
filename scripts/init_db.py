@@ -104,8 +104,7 @@ def init_database():
         if not site_settings:
             site_settings = SiteSettings(
                 institution_id=default_inst.id,
-                site_name='Campus Player',
-                contact_email='admin@campusplayer.internal'
+                institution_name='Campus Player'
             )
             db.session.add(site_settings)
             db.session.commit()

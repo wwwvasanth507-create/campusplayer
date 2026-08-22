@@ -4,12 +4,12 @@ After=network.target postgresql.service redis.service
 Wants=postgresql.service redis.service
 
 [Service]
-Type=notify
+Type=simple
 User=vasanth-v
 Group=vasanth-v
 WorkingDirectory=/opt/campusplayer
 EnvironmentFile=/opt/campusplayer/.env
-ExecStart=/opt/campusplayer/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
+ExecStart=/opt/campusplayer/venv/bin/gunicorn --workers 4 --worker-class=eventlet --bind 0.0.0.0:5000 --timeout 120 app:app
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=30
