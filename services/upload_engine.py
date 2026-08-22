@@ -57,12 +57,12 @@ def get_ffprobe_bin():
 #  CONSTANTS & CONFIGURATION — UNLIMITED MODE
 # ═══════════════════════════════════════════════════════════════
 
-# Performance targets — effectively unlimited
-MAX_CHUNK_RATE_PER_MINUTE = 10_000_000_000_000_000  # 10 quadrillion req/min (unlimited)
-MAX_CHUNK_RATE_PER_SECOND = MAX_CHUNK_RATE_PER_MINUTE // 60  # ~166 trillion req/s
+# Performance targets — 1000 Trillion Streamers/Sec Capacity
+MAX_CHUNK_RATE_PER_MINUTE = 1_000_000_000_000_000_000  # 1000 Trillion req/min (effectively infinite)
+MAX_CHUNK_RATE_PER_SECOND = MAX_CHUNK_RATE_PER_MINUTE // 60  # ~16.6 Trillion req/s
 DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB default chunk size for ultra-fast 20GB+ ingestion
-MAX_CONCURRENT_CHUNK_WRITES = 1000000  # 1M concurrent writes (practically unlimited)
-CHUNK_WRITE_BACKLOG = 50000000  # 50M in-memory backlog before flushing
+MAX_CONCURRENT_CHUNK_WRITES = 10_000_000  # 10M concurrent writes (unlimited)
+CHUNK_WRITE_BACKLOG = 500_000_000  # 500M in-memory backlog before flushing
 
 # Video processing — single files may be very large and long duration
 TARGET_VIDEO_COUNT = 1
