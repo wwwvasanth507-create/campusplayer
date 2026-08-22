@@ -18,8 +18,13 @@ def login():
         return redirect(target)
     if request.method == 'POST':
         from flask import current_app
-        if not current_app.config.get('TESTING') and not validate_csrf_token(request.form.get('csrf_token')):
-            abort(400, description='Invalid CSRF token')
+        token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken') or request.headers.get('X-CSRF-Token')
+        if not current_app.config.get('TESTING') and not validate_csrf_token(token):
+            session.clear()
+            from app import generate_csrf_token
+            new_token = generate_csrf_token()
+            flash('Your session expired or security token was reset. Please try signing in again.', 'warning')
+            return render_template('login.html', csrf_token=new_token)
 
         username = sanitize_input(request.form.get('username'), 150)
         password = request.form.get('password') or ''

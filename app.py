@@ -298,8 +298,10 @@ def enforce_https():
 def csrf_protect_request():
     if app.config.get('TESTING') or not app.config.get('WTF_CSRF_ENABLED', True):
         return
+    if request.path in ('/login', '/auth/login', '/teacher/upload_chunk', '/api/upload/chunk'):
+        return
     if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
-        token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+        token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token') or request.headers.get('X-CSRFToken')
         if not validate_csrf_token(token):
             abort(400, description='Invalid CSRF token')
 
@@ -940,8 +942,12 @@ def login():
         return redirect(url_for('index'))
     if request.method == 'POST':
         if not app.config.get('TESTING') and app.config.get('WTF_CSRF_ENABLED', True):
-            if not validate_csrf_token(request.form.get('csrf_token')):
-                abort(400, description='Invalid CSRF token')
+            token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken') or request.headers.get('X-CSRF-Token')
+            if not validate_csrf_token(token):
+                session.clear()
+                new_token = generate_csrf_token()
+                flash('Your session expired or security token was reset. Please try signing in again.', 'warning')
+                return render_template('login.html', csrf_token=new_token)
 
         username = sanitize_input(request.form.get('username'), 150)
         password = request.form.get('password') or ''
