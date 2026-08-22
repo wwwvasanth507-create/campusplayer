@@ -22,11 +22,25 @@ def create_app(test_config=None):
 
     secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 
+    raw_db_url = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
+    if raw_db_url.startswith('postgres://'):
+        raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+
+    if raw_db_url.startswith('postgresql'):
+        engine_options = {
+            'pool_size': int(os.getenv('DB_POOL_SIZE', 10)),
+            'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 20)),
+            'pool_pre_ping': True,
+            'pool_recycle': 1800
+        }
+    else:
+        engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
+
     app.config.update(
         SECRET_KEY=secret_key,
-        SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}'),
+        SQLALCHEMY_DATABASE_URI=raw_db_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        SQLALCHEMY_ENGINE_OPTIONS={'connect_args': {'check_same_thread': False}},
+        SQLALCHEMY_ENGINE_OPTIONS=engine_options,
         UPLOAD_FOLDER=UPLOAD_FOLDER,
         HLS_FOLDER=HLS_FOLDER,
         SUBTITLE_FOLDER=SUBTITLE_FOLDER,

@@ -36,8 +36,8 @@ def migrate():
         # Rebuild user table to scope unique username to institution_id
         try:
             import sqlite3
-            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-            if 'sqlite:///' in db_uri:
+            if db.engine.dialect.name == 'sqlite':
+                db_uri = str(app.config.get('SQLALCHEMY_DATABASE_URI', ''))
                 db_path = db_uri.replace('sqlite:///', '')
                 if not os.path.isabs(db_path):
                     db_path = os.path.abspath(db_path)

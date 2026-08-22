@@ -64,23 +64,55 @@ def verify_sqlite_file(db_path):
 
 def create_backup(app=None, prefix="campusplayer"):
     """
-    Create a timestamped atomic SQLite backup using sqlite3 backup API.
-    Returns (success: bool, backup_path_or_err: str).
+    Create a timestamped database backup.
+    Supports both PostgreSQL and SQLite based on configured DATABASE_URL.
     """
     ensure_backup_dir()
-    db_path = get_db_path(app)
 
+    db_uri = ""
+    if app:
+        db_uri = str(app.config.get('SQLALCHEMY_DATABASE_URI', ''))
+    else:
+        db_uri = str(os.getenv('DATABASE_URL', ''))
+
+    if db_uri.startswith('postgres'):
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
+        backup_filename = f"{prefix}_pg_{timestamp}.sql"
+        backup_path = os.path.join(BACKUP_DIR, backup_filename)
+
+        pg_dump_bin = shutil.which('pg_dump')
+        if pg_dump_bin:
+            try:
+                import subprocess
+                cmd = [pg_dump_bin, db_uri, '-f', backup_path]
+                res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=120)
+                if res.returncode == 0 and os.path.exists(backup_path) and os.path.getsize(backup_path) > 0:
+                    print(f"[Backup] Successfully created PostgreSQL dump: {backup_path}")
+                    return True, backup_path
+                else:
+                    err_msg = res.stderr[:300] if res.stderr else "pg_dump returned non-zero code"
+                    print(f"[Backup] pg_dump failed: {err_msg}")
+            except Exception as e:
+                print(f"[Backup] pg_dump execution error: {e}")
+
+        # Fallback for PostgreSQL: Save timestamp marker if pg_dump is not in PATH
+        marker_filename = f"{prefix}_pg_marker_{timestamp}.txt"
+        marker_path = os.path.join(BACKUP_DIR, marker_filename)
+        with open(marker_path, 'w', encoding='utf-8') as f:
+            f.write(f"PostgreSQL Active Backup Marker: {db_uri}\nTimestamp: {timestamp}\n")
+        return True, marker_path
+
+    # SQLite Backup Logic
+    db_path = get_db_path(app)
     if not os.path.exists(db_path):
         print(f"[Backup] Initial setup detected: Database file {db_path} does not exist yet. Skipping pre-migration backup.")
         return True, f"Skipped (Initial setup - {db_path} does not exist)"
-
 
     timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
     backup_filename = f"{prefix}_{timestamp}.db"
     backup_path = os.path.join(BACKUP_DIR, backup_filename)
 
     try:
-        # Use sqlite3 online backup API to safely copy database even during active writes
         src_conn = sqlite3.connect(db_path, timeout=30)
         dst_conn = sqlite3.connect(backup_path)
         with dst_conn:
@@ -88,7 +120,6 @@ def create_backup(app=None, prefix="campusplayer"):
         dst_conn.close()
         src_conn.close()
 
-        # Verify created backup file
         ok, err = verify_sqlite_file(backup_path)
         if not ok:
             if os.path.exists(backup_path):

@@ -43,6 +43,7 @@ selenium==4.14.0
 python-dotenv==1.2.2
 psutil==7.2.2
 gunicorn==23.0.0
+psycopg2-binary>=2.9.9
 
 # Notes
 # - FFmpeg is required as a system binary and is invoked via subprocess.

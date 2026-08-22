@@ -126,9 +126,24 @@ app = Flask(__name__)
 # ── Configuration ──
 secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 app.config['SECRET_KEY'] = secret_key
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
+
+raw_db_url = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
+if raw_db_url.startswith('postgres://'):
+    raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+
+if raw_db_url.startswith('postgresql'):
+    engine_options = {
+        'pool_size': int(os.getenv('DB_POOL_SIZE', 10)),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 20)),
+        'pool_pre_ping': True,
+        'pool_recycle': 1800
+    }
+else:
+    engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
+
+app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
 app.config['BASE_DIR'] = BASE_DIR
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['HLS_FOLDER'] = HLS_FOLDER
