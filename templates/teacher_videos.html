@@ -234,16 +234,12 @@
                 </div>
             </div>
 
-            <!-- Active Parallel Streams Bar -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(90px, 1fr)); gap:6px; margin-bottom:12px;" id="parallel-streams-container">
+            <!-- Active Parallel Streamers Bar (Dynamic 32-64 Channels) -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(95px, 1fr)); gap:6px; max-height:160px; overflow-y:auto; padding:6px; margin-bottom:12px; background:rgba(0,0,0,0.2); border-radius:10px; border:1px solid rgba(255,255,255,0.06);" id="parallel-streams-container">
                 <div id="stream-1-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 1: Ready</div>
                 <div id="stream-2-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 2: Ready</div>
                 <div id="stream-3-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 3: Ready</div>
                 <div id="stream-4-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 4: Ready</div>
-                <div id="stream-5-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 5: Ready</div>
-                <div id="stream-6-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 6: Ready</div>
-                <div id="stream-7-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 7: Ready</div>
-                <div id="stream-8-badge" style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:4px 8px; font-size:0.68rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim);">Stream 8: Ready</div>
             </div>
 
             <div>
@@ -461,11 +457,24 @@
                 return 8 * 1024 * 1024;                                                         // 8 MB for small files
             }
 
+            function initStreamBadges(count) {
+                const container = document.getElementById('parallel-streams-container');
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i = 1; i <= count; i++) {
+                    const div = document.createElement('div');
+                    div.id = `stream-${i}-badge`;
+                    div.style.cssText = "background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:4px 6px; font-size:0.65rem; font-family:'JetBrains Mono',monospace; text-align:center; color:var(--text-dim); transition:all 0.2s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;";
+                    div.innerText = `Stream ${i}: Idle`;
+                    container.appendChild(div);
+                }
+            }
+
             function getAdaptiveConcurrency(currentSpeedBps, totalChunks) {
-                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on slow internet to prevent TCP timeouts
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on ultra-slow internet (<50KB/s)
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams
-                if (currentSpeedBps > 5 * 1024 * 1024 || totalChunks > 20) return Math.min(16, Math.max(4, totalChunks)); // 16 parallel streams for high-speed fiber/5G
-                return Math.min(12, Math.max(2, totalChunks));
+                // Ultra-high concurrency pool: up to 32 active streamer channels
+                return Math.min(32, Math.max(4, totalChunks));
             }
 
             const isTurboMode = document.getElementById('turbo-compress-check') && document.getElementById('turbo-compress-check').checked;
@@ -477,13 +486,14 @@
             let CHUNK_SIZE = getOptimalChunkSize(file.size, 0);
             let totalChunks = Math.ceil(file.size / CHUNK_SIZE);
             let CONCURRENCY = getAdaptiveConcurrency(0, totalChunks);
+            initStreamBadges(CONCURRENCY);
             
             if (pc) pc.style.display = 'block';
             if (btn) { btn.disabled = true; btn.innerText = isTurboMode ? 'Turbo-Compressing...' : 'Uploading...'; }
             if (status) { 
                 status.innerText = isTurboMode 
                     ? 'Optimizing video for slow internet...' 
-                    : `Initializing resumable parallel upload (${totalChunks} chunks • ${formatBytes(CHUNK_SIZE)} chunk size • Safe to close Chrome)...`; 
+                    : `Initializing parallel streaming (${totalChunks} chunks • ${CONCURRENCY} active streamers • 1000 Trillion Cap)...`; 
                 status.style.color = '#2541b2'; 
             }
 
@@ -541,21 +551,21 @@
                 if (speedEl) speedEl.innerText = speedText;
                 if (etaEl) etaEl.innerText = etaText;
 
-                if (status) status.innerText = `⚡ Multi-Stream Turbo (${CONCURRENCY} Active Streams • 1000 Trillion Req Cap): ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
+                if (status) status.innerText = `⚡ Multi-Stream Turbo (${CONCURRENCY} Active Streamers • 1000 Trillion Req Cap): ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
             }
 
             function updateStreamBadge(workerSlot, chunkIdx, isActive) {
                 const badge = document.getElementById(`stream-${workerSlot + 1}-badge`);
                 if (!badge) return;
                 if (isActive) {
-                    badge.style.background = 'rgba(37, 65, 178, 0.15)';
-                    badge.style.borderColor = 'rgba(37, 65, 178, 0.4)';
-                    badge.style.color = '#2541b2';
-                    badge.innerText = `Stream ${workerSlot + 1}: Chunk #${chunkIdx + 1} (Active)`;
+                    badge.style.background = 'rgba(37, 65, 178, 0.2)';
+                    badge.style.borderColor = '#2541b2';
+                    badge.style.color = '#38bdf8';
+                    badge.innerText = `Stream ${workerSlot + 1}: #${chunkIdx + 1}`;
                 } else {
-                    badge.style.background = 'rgba(255, 255, 255, 0.04)';
+                    badge.style.background = 'rgba(255, 255, 255, 0.03)';
                     badge.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                    badge.style.color = 'var(--text-secondary)';
+                    badge.style.color = 'var(--text-dim)';
                     badge.innerText = `Stream ${workerSlot + 1}: Done`;
                 }
             }
