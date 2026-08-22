@@ -244,7 +244,10 @@
                 <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden;">
                     <div id="processing-progress-bar" style="width:0%; height:100%; background:var(--secondary-color); transition:width 0.3s;"></div>
                 </div>
-</div>
+            </div>
+
+            <div id="system-status" style="font-size:0.8rem; font-weight:600; color:var(--secondary-color); margin-top:10px; text-align:center; font-family:'JetBrains Mono',monospace;">Initializing upload...</div>
+        </div>
 
 <!-- Search -->
 <div class="search-wrap" style="margin-bottom:20px;">
@@ -411,8 +414,8 @@
             const title = ti.value;
             const classroomSelect = document.getElementById('video-classroom');
             const classroomId = classroomSelect ? classroomSelect.value : '-1';
-            const description = document.getElementById('video-desc').value;
-            const tags = document.getElementById('video-tags').value;
+            const description = document.getElementById('video-desc') ? document.getElementById('video-desc').value : '';
+            const tags = document.getElementById('video-tags') ? document.getElementById('video-tags').value : '';
             
             // Dynamic adaptive chunk sizing (4MB to 16MB) for universal network & proxy compatibility
             function getOptimalChunkSize(fileSize) {
@@ -428,11 +431,9 @@
             // Parallel worker pool (up to 4 concurrent upload streams)
             const CONCURRENCY = Math.min(4, Math.max(1, totalChunks));
             
-            pc.style.display = 'block';
-            btn.disabled = true;
-            btn.innerText = 'Uploading...';
-            status.innerText = `Initializing high-speed parallel upload (${CONCURRENCY} streams)...`;
-            status.style.color = '#2541b2';
+            if (pc) pc.style.display = 'block';
+            if (btn) { btn.disabled = true; btn.innerText = 'Uploading...'; }
+            if (status) { status.innerText = `Initializing high-speed parallel upload (${CONCURRENCY} streams)...`; status.style.color = '#2541b2'; }
 
             let chunkQueue = Array.from({ length: totalChunks }, (_, i) => i);
             let activeWorkers = 0;
@@ -488,7 +489,7 @@
                 if (speedEl) speedEl.innerText = speedText;
                 if (etaEl) etaEl.innerText = etaText;
 
-                status.innerText = `Multi-stream upload: ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
+                if (status) status.innerText = `Multi-stream upload: ${overallProgress}% • ${speedText} • ETA: ${etaText} (${completedChunks}/${totalChunks} chunks)`;
             }
 
             function updateStreamBadge(workerSlot, chunkIdx, isActive) {
@@ -508,24 +509,25 @@
             }
 
             function handleUploadSuccess(resp) {
-                ub.style.width = '100%';
-                up.innerText = '100%';
+                if (ub) ub.style.width = '100%';
+                if (up) up.innerText = '100%';
                 
-                ti.value = '';
-                fi.value = '';
-                document.getElementById('video-desc').value = '';
-                document.getElementById('video-tags').value = '';
-                document.getElementById('file-chosen-label').innerText = 'No file chosen';
+                if (ti) ti.value = '';
+                if (fi) fi.value = '';
+                const descEl = document.getElementById('video-desc');
+                if (descEl) descEl.value = '';
+                const tagsEl = document.getElementById('video-tags');
+                if (tagsEl) tagsEl.value = '';
+                const labelEl = document.getElementById('file-chosen-label');
+                if (labelEl) labelEl.innerText = 'No file chosen';
                 
-                status.innerText = 'Upload complete! Starting HLS processing...';
-                status.style.color = '#3d8fa3';
+                if (status) { status.innerText = 'Upload complete! Starting HLS processing...'; status.style.color = '#3d8fa3'; }
                 checkProcessingVideos();
                 setTimeout(() => {
-                    pc.style.display = 'none';
-                    btn.disabled = false;
-                    btn.innerText = 'Upload Video';
-                    ub.style.width = '0%';
-                    up.innerText = '0%';
+                    if (pc) pc.style.display = 'none';
+                    if (btn) { btn.disabled = false; btn.innerText = 'Upload Video'; }
+                    if (ub) ub.style.width = '0%';
+                    if (up) up.innerText = '0%';
                 }, 3000);
             }
 
@@ -533,10 +535,8 @@
                 if (isAborted) return;
                 isAborted = true;
                 alert('Upload failed: ' + errMsg);
-                btn.disabled = false;
-                btn.innerText = 'Upload Video';
-                status.innerText = 'Upload failed: ' + errMsg;
-                status.style.color = '#d9822b';
+                if (btn) { btn.disabled = false; btn.innerText = 'Upload Video'; }
+                if (status) { status.innerText = 'Upload failed: ' + errMsg; status.style.color = '#d9822b'; }
             }
 
             function processNextQueueItem(workerSlot = 0) {
