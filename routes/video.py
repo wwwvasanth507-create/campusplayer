@@ -154,6 +154,32 @@ def view_playlist(playlist_id):
 
 _chunk_assembly_lock = threading.Lock()
 
+@video_bp.route('/teacher/upload_chunk_status', methods=['GET'])
+@limiter.exempt
+def upload_chunk_status():
+    uuid_str = request.args.get('uuid') or request.args.get('upload_uuid')
+    if not uuid_str:
+        return jsonify({'success': False, 'message': 'Missing uuid parameter.'}), 400
+    
+    chunks_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'chunks', uuid_str)
+    if not os.path.exists(chunks_dir):
+        return jsonify({'success': True, 'uploaded_chunks': [], 'count': 0})
+    
+    saved_files = [f for f in os.listdir(chunks_dir) if f.startswith('chunk_') and f.endswith('.part')]
+    uploaded_indices = []
+    for f in saved_files:
+        try:
+            idx = int(f.replace('chunk_', '').replace('.part', ''))
+            uploaded_indices.append(idx)
+        except ValueError:
+            pass
+            
+    return jsonify({
+        'success': True,
+        'uploaded_chunks': uploaded_indices,
+        'count': len(uploaded_indices)
+    })
+
 @video_bp.route('/teacher/upload_chunk', methods=['POST'])
 @limiter.exempt
 def upload_chunk():

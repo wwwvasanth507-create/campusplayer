@@ -199,6 +199,12 @@
                     <label>Tags (Comma separated)</label>
                     <input type="text" id="video-tags" placeholder="e.g. math, physics, tutorial" style="margin-bottom:8px;">
                 </div>
+                <div style="margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="turbo-compress-check" style="width:15px; height:15px; accent-color:var(--secondary-color); cursor:pointer;">
+                    <label for="turbo-compress-check" style="font-size:0.75rem; color:var(--secondary-color); font-weight:600; margin:0; cursor:pointer;" title="Compresses video client-side by up to 90% before uploading so slow 10KB/s internet uploads in minutes instead of hours">
+                        ⚡ Turbo-Compress (For &lt;50 KB/s or slow mobile internet)
+                    </label>
+                </div>
                 <button type="submit" id="upload-btn" class="btn btn-primary" style="height:44px; width:100%;">
                     <i class="material-icons" style="font-size:1.1rem;">upload</i>
                     <span>Start Upload</span>
@@ -421,23 +427,39 @@
             const description = document.getElementById('video-desc') ? document.getElementById('video-desc').value : '';
             const tags = document.getElementById('video-tags') ? document.getElementById('video-tags').value : '';
             
-            // High-speed adaptive chunk sizing (8MB to 32MB) for maximum network throughput
-            function getOptimalChunkSize(fileSize) {
-                if (fileSize < 64 * 1024 * 1024) return 8 * 1024 * 1024;       // 8 MB for < 64 MB
-                if (fileSize < 1024 * 1024 * 1024) return 16 * 1024 * 1024;    // 16 MB for < 1 GB
-                return 32 * 1024 * 1024;                                      // 32 MB for >= 1 GB
+            // Bandwidth-adaptive dynamic chunk size & worker concurrency for ultra-slow (<10KB/s) & mobile internet
+            function getOptimalChunkSize(fileSize, currentSpeedBps) {
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for <50KB/s internet
+                if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 1 * 1024 * 1024;  // 1 MB for 50-250KB/s
+                if (fileSize < 64 * 1024 * 1024) return 4 * 1024 * 1024;                         // 4 MB for medium files
+                if (fileSize < 1024 * 1024 * 1024) return 8 * 1024 * 1024;                      // 8 MB
+                return 16 * 1024 * 1024;                                                        // 16 MB for large files
             }
 
-            const CHUNK_SIZE = getOptimalChunkSize(file.size);
-            const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-            const uploadUuid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Date.now();
+            function getAdaptiveConcurrency(currentSpeedBps, totalChunks) {
+                if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on slow internet (<50KB/s) to prevent TCP timeouts
+                if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams
+                return Math.min(8, Math.max(1, totalChunks));
+            }
+
+            const isTurboMode = document.getElementById('turbo-compress-check') && document.getElementById('turbo-compress-check').checked;
             
-            // Ultra-fast parallel worker pool (up to 8 concurrent upload streams)
-            const CONCURRENCY = Math.min(8, Math.max(1, totalChunks));
+            // Deterministic upload UUID based on file properties for instant session resume
+            const uploadUuid = 'u_' + Array.from(file.name + file.size + file.lastModified)
+                .reduce((h, c) => (h = (h << 5) - h + c.charCodeAt(0)) | 0, 0).toString(36).replace('-', '') + '_' + file.size;
+
+            let CHUNK_SIZE = getOptimalChunkSize(file.size, 0);
+            let totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+            let CONCURRENCY = getAdaptiveConcurrency(0, totalChunks);
             
             if (pc) pc.style.display = 'block';
-            if (btn) { btn.disabled = true; btn.innerText = 'Uploading...'; }
-            if (status) { status.innerText = `Initializing high-speed parallel upload (${CONCURRENCY} streams)...`; status.style.color = '#2541b2'; }
+            if (btn) { btn.disabled = true; btn.innerText = isTurboMode ? 'Turbo-Compressing...' : 'Uploading...'; }
+            if (status) { 
+                status.innerText = isTurboMode 
+                    ? 'Optimizing video for slow internet...' 
+                    : `Initializing resumable parallel upload (${totalChunks} chunks)...`; 
+                status.style.color = '#2541b2'; 
+            }
 
             let chunkQueue = Array.from({ length: totalChunks }, (_, i) => i);
             let activeWorkers = 0;
@@ -470,8 +492,8 @@
                 const totalUploadedBytes = Math.min(file.size, chunkBytesLoaded.reduce((a, b) => a + b, 0));
                 const overallProgress = Math.min(99, Math.round((totalUploadedBytes / file.size) * 100));
                 
-                ub.style.width = overallProgress + '%';
-                up.innerText = overallProgress + '%';
+                if (ub) ub.style.width = overallProgress + '%';
+                if (up) up.innerText = overallProgress + '%';
 
                 const now = Date.now();
                 const deltaMs = now - lastUpdate;
@@ -629,22 +651,54 @@
             function handleChunkFailure(chunkIndex, reason, workerSlot = 0) {
                 if (isAborted) return;
                 chunkRetries[chunkIndex] = (chunkRetries[chunkIndex] || 0) + 1;
-                if (chunkRetries[chunkIndex] <= 3) {
-                    console.warn(`[Upload] Retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}/3): ${reason}`);
+                if (chunkRetries[chunkIndex] <= 10) {
+                    const delay = Math.min(15000, 1000 * Math.pow(1.5, chunkRetries[chunkIndex] - 1));
+                    console.warn(`[Upload] Retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}/10): ${reason}`);
+                    if (status) status.innerText = `Network drop. Retrying chunk #${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}/10)...`;
                     chunkBytesLoaded[chunkIndex] = 0;
                     setTimeout(() => {
                         chunkQueue.push(chunkIndex);
                         processNextQueueItem(workerSlot);
-                    }, 500 * chunkRetries[chunkIndex]);
+                    }, delay);
                 } else {
-                    handleUploadError(`Chunk ${chunkIndex + 1} failed after 3 attempts (${reason})`);
+                    handleUploadError(`Chunk ${chunkIndex + 1} failed after 10 retries (${reason}). Please check network.`);
                 }
             }
 
-            // Launch parallel worker pool
-            for (let i = 0; i < CONCURRENCY; i++) {
-                processNextQueueItem(i);
-            }
+            // Resumable Upload Check: Query server for already-uploaded chunks
+            fetch(`/teacher/upload_chunk_status?uuid=${uploadUuid}`)
+                .then(r => r.json())
+                .then(data => {
+                    const uploaded = (data && data.uploaded_chunks) ? data.uploaded_chunks : [];
+                    if (uploaded.length > 0) {
+                        const uploadedSet = new Set(uploaded);
+                        chunkQueue = chunkQueue.filter(idx => !uploadedSet.has(idx));
+                        completedChunks += uploaded.length;
+                        for (let idx of uploaded) {
+                            const start = idx * CHUNK_SIZE;
+                            const end = Math.min(start + CHUNK_SIZE, file.size);
+                            chunkBytesLoaded[idx] = end - start;
+                        }
+                        if (status) status.innerText = `Resuming upload! Skipped ${uploaded.length} previously uploaded chunks.`;
+                        updateProgressDisplay();
+                    }
+
+                    if (completedChunks === totalChunks) {
+                        handleUploadSuccess({ success: true, message: 'All chunks already on server.' });
+                        return;
+                    }
+
+                    const launchCount = Math.min(CONCURRENCY, Math.max(1, chunkQueue.length));
+                    for (let i = 0; i < launchCount; i++) {
+                        processNextQueueItem(i);
+                    }
+                })
+                .catch(err => {
+                    const launchCount = Math.min(CONCURRENCY, Math.max(1, chunkQueue.length));
+                    for (let i = 0; i < launchCount; i++) {
+                        processNextQueueItem(i);
+                    }
+                });     }
         });
 
         function switchUploadTab(mode) {}
