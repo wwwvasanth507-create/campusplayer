@@ -1,0 +1,17 @@
+[Unit]
+Description=Campus Player Web Application (cp1)
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+User=vasanth-v
+Group=vasanth-v
+WorkingDirectory=/opt/campusplayer/cp1
+EnvironmentFile=/opt/campusplayer/cp1/.env
+ExecStart=/opt/campusplayer/cp1/venv/bin/gunicorn --workers 4 --threads 4 --timeout 3600 --bind 0.0.0.0:5000 app:app
+Restart=always
+RestartSec=5
+Environment=PATH=/opt/campusplayer/cp1/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target

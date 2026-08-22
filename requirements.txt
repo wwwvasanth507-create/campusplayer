@@ -53,3 +53,4 @@ psycopg2-binary>=2.9.9
 # - `python-engineio` and `python-socketio` are installed transitively by Flask-SocketIO.
 # - `python-dotenv` is used by `app.py` and `celery_config.py` to load environment variables.
 openpyxl==3.1.5
+Flask-Migrate
