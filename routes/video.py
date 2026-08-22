@@ -13,7 +13,10 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from extensions import db, limiter
 from models import Video, Playlist, Comment, SiteSettings, VideoLike, User, Institution
-from services.utils import sanitize_input, allowed_file, allowed_subtitle_file, apply_media_cors_headers, enforce_institution_access, scope_to_institution
+from services.utils import (
+    sanitize_input, allowed_file, allowed_subtitle_file, apply_media_cors_headers,
+    enforce_institution_access, scope_to_institution, get_institution_slug, get_video_storage_dir
+)
 from services.auth import teacher_required, log_activity
 from services.upload_engine import (
     init_upload_engine, handle_chunk_upload, handle_chunk_upload_direct,
@@ -220,9 +223,10 @@ def upload_chunk():
             teacher = User.query.filter_by(role='teacher').first()
             uploader_id = teacher.id if teacher else 1
 
+        slug = get_institution_slug(uploader_id=uploader_id)
         video = Video(
             title=title,
-            filename=save_name,
+            filename=f"institutions/{slug}/temp/{uuid_str}_{orig_filename}",
             uploader_id=uploader_id,
             classroom_id=classroom_id if classroom_id > 0 else None,
             description=description,
@@ -235,20 +239,27 @@ def upload_chunk():
 
         app_obj = current_app._get_current_object()
         vid = video.id
+        video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_id, app=app_obj)
 
-        def background_hls(app_ctx, video_id, input_file, uploader_uid):
+        assembled_path = os.path.join(video_dir, 'source.mp4')
+        with open(assembled_path, 'wb') as assembled_file:
+            for i in range(total_chunks):
+                part_path = os.path.join(chunks_dir, f"chunk_{i:06d}.part")
+                if os.path.exists(part_path):
+                    with open(part_path, 'rb') as pf:
+                        shutil.copyfileobj(pf, assembled_file, length=16*1024*1024)
+
+        shutil.rmtree(chunks_dir, ignore_errors=True)
+
+        video.filename = f"institutions/{slug}/{vid}/source.mp4"
+        db.session.commit()
+
+        def background_hls(app_ctx, video_id, input_file, v_dir):
             with app_ctx.app_context():
-                user = User.query.get(uploader_uid)
-                hls_dir = None
-                if user and user.institution_id:
-                    inst = Institution.query.get(user.institution_id)
-                    if inst:
-                        hls_dir = os.path.join(app_ctx.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(video_id))
-
                 result = process_video_ultra(
                     input_path=input_file,
                     video_id=video_id,
-                    output_dir=hls_dir,
+                    output_dir=v_dir,
                     progress_callback=lambda p: _update_video_progress(video_id, p)
                 )
                 if result.get('success'):
@@ -256,7 +267,7 @@ def upload_chunk():
 
         threading.Thread(
             target=background_hls,
-            args=(app_obj, vid, assembled_path, uploader_id),
+            args=(app_obj, vid, assembled_path, video_dir),
             daemon=True
         ).start()
 
@@ -294,15 +305,8 @@ def _update_video_record(video_id: int, result: dict):
         thumbnail = result.get('thumbnail', '')
         renditions = result.get('renditions', [])
 
-        uploader = User.query.get(video.uploader_id)
-        if uploader and uploader.institution_id:
-            inst = Institution.query.get(uploader.institution_id)
-            if inst:
-                rel_base = f"uploads/institutions/{inst.slug}/hls/{video_id}"
-            else:
-                rel_base = f"hls/{video_id}"
-        else:
-            rel_base = f"hls/{video_id}"
+        slug = get_institution_slug(uploader_id=video.uploader_id)
+        rel_base = f"uploads/institutions/{slug}/{video_id}"
 
         video.hls_playlist_path = f"{rel_base}/{master_playlist}"
         video.master_playlist_path = f"{rel_base}/{master_playlist}"
@@ -345,43 +349,45 @@ def upload_video():
     file = request.files.get('video_file')
     if not file or not allowed_file(file.filename):
         return jsonify({'success': False, 'message': 'Invalid file type.'}), 400
-    filename = secure_filename(file.filename)
-    save_name = f"{uuid.uuid4().hex}_{filename}"
-    input_path = os.path.join(current_app.config['UPLOAD_FOLDER'], save_name)
-    file.save(input_path)
+    orig_filename = secure_filename(file.filename)
 
-    video = Video(title=filename, filename=save_name, uploader_id=current_user.id, status='processing')
+    slug = get_institution_slug(user=current_user)
+    video = Video(
+        title=orig_filename,
+        filename=f"institutions/{slug}/temp/{orig_filename}",
+        uploader_id=current_user.id,
+        status='processing'
+    )
     db.session.add(video)
     db.session.commit()
 
-    uploader_id = current_user.id  # Capture user_id before thread starts
+    uploader_id = current_user.id
+    app_obj = current_app._get_current_object()
+    video_dir, slug = get_video_storage_dir(video.id, uploader_id=uploader_id, app=app_obj)
 
-    def background_processing(app, video_id, input_path, uploader_id):
+    input_path = os.path.join(video_dir, 'source.mp4')
+    file.save(input_path)
+
+    video.filename = f"institutions/{slug}/{video.id}/source.mp4"
+    db.session.commit()
+
+    def background_processing(app_ctx, video_id, in_path, v_dir):
         """Use ultra-parallel processing for FULL video with ALL qualities."""
         try:
-            with app.app_context():
-                logger.info(f"Starting ultra-parallel processing for video {video_id}: {input_path}")
-                
-                # Retrieve output directory based on tenant
-                user = User.query.get(uploader_id)
-                hls_dir = None
-                if user and user.institution_id:
-                    inst = Institution.query.get(user.institution_id)
-                    if inst:
-                        hls_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(video_id))
-                
+            with app_ctx.app_context():
+                logger.info(f"Starting ultra-parallel processing for video {video_id}: {in_path}")
                 result = process_video_ultra(
-                    input_path=input_path,
+                    input_path=in_path,
                     video_id=video_id,
-                    output_dir=hls_dir,
+                    output_dir=v_dir,
                     progress_callback=lambda p: _update_video_progress(video_id, p)
                 )
-                if result['success']:
+                if result.get('success'):
                     _update_video_record(video_id, result)
                     logger.info(f"Video {video_id} processed via ultra-parallel: "
-                               f"{result['qualities_completed']} qualities, "
+                               f"{result.get('qualities_completed', 0)} qualities, "
                                f"full video {result.get('full_video_duration_hours', 0):.1f}h, "
-                               f"in {result['processing_time']:.1f}s")
+                               f"in {result.get('processing_time', 0):.1f}s")
                 else:
                     logger.error(f"Ultra-parallel failed for video {video_id}: {result.get('error')}")
                     try:
@@ -395,7 +401,7 @@ def upload_video():
             logger.error(f"Background processing failed for video {video_id}: {e}")
 
     threading.Thread(target=background_processing, args=(
-        current_app._get_current_object(), video.id, input_path, uploader_id
+        app_obj, video.id, input_path, video_dir
     ), daemon=True).start()
 
     return jsonify({
@@ -625,20 +631,24 @@ def complete_upload():
                     video_obj.processing_progress = 50
                     db.session.commit()
 
-                # Determine output directory based on tenant
-                user = User.query.get(uploader_uid)
-                hls_dir = None
-                if user and user.institution_id:
-                    inst = Institution.query.get(user.institution_id)
-                    if inst:
-                        hls_dir = os.path.join(app_ctx.config['UPLOAD_FOLDER'], 'institutions', inst.slug, 'hls', str(vid))
+                video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_uid, app=app_ctx)
+                dest_source_path = os.path.join(video_dir, 'source.mp4')
+                try:
+                    if os.path.exists(result['file_path']):
+                        shutil.move(result['file_path'], dest_source_path)
+                except Exception:
+                    dest_source_path = result['file_path']
+
+                if video_obj:
+                    video_obj.filename = f"institutions/{slug}/{vid}/source.mp4"
+                    db.session.commit()
 
                 # Use ULTRA PARALLEL processing for FULL video with ALL qualities
                 logger.info(f"Starting ultra-parallel HLS for video {vid} (full video, all qualities)")
                 hls_result = process_video_ultra(
-                    result['file_path'],
+                    dest_source_path,
                     vid,
-                    output_dir=hls_dir,
+                    output_dir=video_dir,
                     progress_callback=lambda p: _update_video_progress(vid, p)
                 )
 

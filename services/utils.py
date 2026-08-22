@@ -146,6 +146,38 @@ def validate_csrf_token(token):
     return bool(token and expected and secrets.compare_digest(token, expected))
 
 
+def get_institution_slug(user=None, uploader_id=None):
+    """Resolve institution slug for directory scoping. Defaults to 'default'."""
+    from models import User, Institution
+    if not user and uploader_id:
+        try:
+            user = User.query.get(uploader_id)
+        except Exception:
+            pass
+    if user and getattr(user, 'institution_id', None):
+        try:
+            inst = Institution.query.get(user.institution_id)
+            if inst and inst.slug:
+                return inst.slug
+        except Exception:
+            pass
+    return 'default'
+
+
+def get_video_storage_dir(video_id, user=None, uploader_id=None, app=None):
+    """
+    Returns absolute folder path:
+    /opt/campusplayer/static/uploads/institutions/<institution_slug>/<video_id>
+    """
+    from flask import current_app
+    slug = get_institution_slug(user=user, uploader_id=uploader_id)
+    target_app = app or (current_app._get_current_object() if current_app else None)
+    base_upload = target_app.config['UPLOAD_FOLDER'] if target_app else os.path.join(BASE_DIR, 'static', 'uploads')
+    video_dir = os.path.abspath(os.path.join(base_upload, 'institutions', slug, str(video_id)))
+    os.makedirs(video_dir, exist_ok=True)
+    return video_dir, slug
+
+
 def sanitize_input(value, max_length=200):
     if value is None:
         return ''
