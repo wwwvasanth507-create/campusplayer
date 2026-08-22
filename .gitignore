@@ -105,6 +105,8 @@ static/subtitles/*
 !static/subtitles/.gitkeep
 static/hls/*
 !static/hls/.gitkeep
+storage/*
+!storage/.gitkeep
 
 # Transcoded Video Segments & Playlists (HLS)
 *.m3u8

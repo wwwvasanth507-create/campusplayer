@@ -1,79 +1,26 @@
 version: '3.8'
 
 services:
-  # Main Flask Application
-  web:
-    build: .
-    container_name: campusplayer-web
+  # PostgreSQL Database (Canonical Storage)
+  db:
+    image: postgres:15-alpine
+    container_name: campusplayer-db
     restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-campusplayer}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
-      - MAIL_SERVER=${MAIL_SERVER:-smtp.gmail.com}
-      - MAIL_USERNAME=${MAIL_USERNAME:-}
-      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
-    env_file:
-      - .env
-    volumes:
-      - static_volume:/app/static
-      - uploads_volume:/app/static/uploads
-      - hls_volume:/app/static/hls
-      - pdf_volume:/app/generated_pdfs
-      - ./instance:/app/instance
-    depends_on:
-      - redis
-    command: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 app:app
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-campusplayer}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Celery Worker for background tasks
-  celery-worker:
-    build: .
-    container_name: campusplayer-celery
-    restart: unless-stopped
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
-    env_file:
-      - .env
-    volumes:
-      - static_volume:/app/static
-      - uploads_volume:/app/static/uploads
-      - hls_volume:/app/static/hls
-      - pdf_volume:/app/generated_pdfs
-      - ./instance:/app/instance
-    depends_on:
-      - redis
-    command: celery -A celery_config.celery worker --loglevel=info --concurrency=2
-
-  # Celery Beat for periodic tasks
-  celery-beat:
-    build: .
-    container_name: campusplayer-beat
-    restart: unless-stopped
-    environment:
-      - FLASK_ENV=production
-      - DATABASE_URL=postgresql://campusplayer:campusplayer@db:5432/campusplayer
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    env_file:
-      - .env
-    volumes:
-      - ./instance:/app/instance
-    depends_on:
-      - redis
-    command: celery -A celery_config.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule
-
-  # Redis (Cache & Message Broker)
+  # Redis (Cache, Sessions & Message Broker)
   redis:
     image: redis:7-alpine
     container_name: campusplayer-redis
@@ -83,20 +30,84 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  # PostgreSQL Database (Production alternative)
-  db:
-    image: postgres:15-alpine
-    container_name: campusplayer-db
+  # Main Flask Application
+  web:
+    build: .
+    container_name: campusplayer-web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-campusplayer}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+    volumes:
+      - static_volume:/app/static
+      - uploads_volume:/app/static/uploads
+      - hls_volume:/app/static/hls
+      - storage_volume:/app/storage
+      - pdf_volume:/app/generated_pdfs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: gunicorn --bind 0.0.0.0:5000 app:app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Celery Worker for background jobs
+  celery-worker:
+    build: .
+    container_name: campusplayer-celery
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=campusplayer
-      - POSTGRES_PASSWORD=campusplayer
-      - POSTGRES_DB=campusplayer
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-campusplayer}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - static_volume:/app/static
+      - uploads_volume:/app/static/uploads
+      - hls_volume:/app/static/hls
+      - storage_volume:/app/storage
+      - pdf_volume:/app/generated_pdfs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A celery_tasks.celery worker --loglevel=info --concurrency=4
+
+  # Celery Beat for periodic tasks
+  celery-beat:
+    build: .
+    container_name: campusplayer-beat
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-campusplayer}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A celery_config.celery beat --loglevel=info
 
   # Nginx reverse proxy
   nginx:
@@ -110,13 +121,16 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/app/static:ro
       - hls_volume:/app/static/hls:ro
+      - storage_volume:/app/storage:ro
     depends_on:
-      - web
+      web:
+        condition: service_healthy
 
 volumes:
   static_volume:
   uploads_volume:
   hls_volume:
+  storage_volume:
   pdf_volume:
   redis_data:
   postgres_data:

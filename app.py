@@ -121,105 +121,10 @@ from services.session_store import SqlAlchemySessionInterface
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 ALLOWED_SUBTITLE_EXTENSIONS = {'vtt', 'srt'}
 
-app = Flask(__name__)
+from factory import create_app
 
-# ── Configuration ──
-secret_key = get_or_create_persistent_secret_key(BASE_DIR)
-app.config['SECRET_KEY'] = secret_key
-
-raw_db_url = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
-if raw_db_url.startswith('postgres://'):
-    raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
-
-if raw_db_url.startswith('postgresql'):
-    engine_options = {
-        'pool_size': int(os.getenv('DB_POOL_SIZE', 30)),
-        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 50)),
-        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', 30)),
-        'pool_pre_ping': True,
-        'pool_recycle': 1800
-    }
-else:
-    engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
-
-app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
-app.config['BASE_DIR'] = BASE_DIR
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['HLS_FOLDER'] = HLS_FOLDER
-app.config['SUBTITLE_FOLDER'] = SUBTITLE_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024 * 1024 * 10  # 10TB effectively unlimited
-
-# Cache configuration
-app.config['CACHE_TYPE'] = 'SimpleCache'
-app.config['CACHE_DEFAULT_TIMEOUT'] = 300
-
-# Session configuration
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-session_cookie_secure_env = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() in ('1', 'true', 'yes')
-app.config['FORCE_HTTPS'] = os.getenv('FORCE_HTTPS', 'False').lower() in ('1', 'true', 'yes')
-app.config['SESSION_COOKIE_SECURE'] = app.config['FORCE_HTTPS'] or session_cookie_secure_env
-app.config['REMEMBER_COOKIE_HTTPONLY'] = True
-app.config['REMEMBER_COOKIE_SECURE'] = app.config['SESSION_COOKIE_SECURE']
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_REFRESH_EACH_REQUEST'] = True
-app.config['PREFERRED_URL_SCHEME'] = 'https'
-app.config['JSON_AS_ASCII'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.session_interface = SqlAlchemySessionInterface()
-
-
-# ── Initialize Extensions ──
-db.init_app(app)
-
-# ── SQLite Concurrency & WAL Configuration ──
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import sqlite3
-
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, sqlite3.Connection):
-        cursor = dbapi_connection.cursor()
-        try:
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA busy_timeout=30000")
-            cursor.execute("PRAGMA cache_size=-64000")
-            cursor.execute("PRAGMA temp_store=MEMORY")
-            cursor.execute("PRAGMA mmap_size=268435456")
-            cursor.execute("PRAGMA foreign_keys=ON")
-        except Exception:
-            pass
-        finally:
-            cursor.close()
-
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-login_manager.session_protection = 'basic'
-cache.init_app(app)
-limiter.init_app(app)
-socketio.init_app(app)
-
-# Register modular blueprints
-from routes.video import video_bp
-from routes.auth import auth_bp
-from routes.core import core_bp
-from routes.search import search_bp
-
-app.register_blueprint(video_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(core_bp)
-app.register_blueprint(search_bp)
-
-# Initialize optional extensions
-if mail:
-    mail.init_app(app)
-if swagger:
-    swagger.init_app(app)
-if assets_env:
-    assets_env.init_app(app)
+app = create_app()
+# Extensions & blueprints registered via create_app() in factory.py
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -408,9 +313,8 @@ def update_last_active():
 os.makedirs(HLS_FOLDER, exist_ok=True)
 os.makedirs(SUBTITLE_FOLDER, exist_ok=True)
 
-# Initialize high-performance upload engine (10M req/min capable)
-from services.upload_engine import init_upload_engine
-init_upload_engine(upload_dir=UPLOAD_FOLDER, hls_dir=HLS_FOLDER)
+# Upload engine directories initialized
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 from services.conversion_engine import (
     init_conversion_system, enqueue_conversion_job,
@@ -927,87 +831,7 @@ def search_suggest():
 #  AUTHENTICATION & USER ROUTES
 # ═══════════════════════════════════════════════════════════════
 
-@app.route('/')
-def index():
-    if current_user.is_authenticated:
-        if current_user.role == 'system_admin': return redirect(url_for('system_admin_dashboard'))
-        elif current_user.role == 'admin': return redirect(url_for('admin_dashboard'))
-        elif current_user.role == 'teacher': return redirect(url_for('teacher_dashboard'))
-        elif current_user.role == 'student': return redirect(url_for('student_dashboard'))
-    return render_template('ads.html')
-
-@app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("1000 per minute")
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    if request.method == 'POST':
-        if not app.config.get('TESTING') and app.config.get('WTF_CSRF_ENABLED', True):
-            token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken') or request.headers.get('X-CSRF-Token')
-            if not validate_csrf_token(token):
-                session.clear()
-                new_token = generate_csrf_token()
-                flash('Your session expired or security token was reset. Please try signing in again.', 'warning')
-                return render_template('login.html', csrf_token=new_token)
-
-        username = sanitize_input(request.form.get('username'), 150)
-        password = request.form.get('password') or ''
-        role = sanitize_input(request.form.get('role'), 20)
-
-        if not username or not password:
-            flash('Please provide username and password.', 'error')
-            return render_template('login.html')
-
-
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            if role and user.role != role.lower():
-                flash('Invalid role selected for this user.', 'error')
-                return render_template('login.html')
-
-            if not getattr(user, 'is_active_account', True):
-                flash('Your account has been suspended.', 'error')
-                return render_template('login.html')
-
-            if user.institution_id:
-                inst = Institution.query.get(user.institution_id)
-                if inst and inst.status == 'suspended':
-                    flash('Your institution has been suspended.', 'error')
-                    return render_template('login.html')
-
-            session.permanent = True
-            login_user(user, remember=True)
-            user.last_login = datetime.utcnow()
-            user.login_count = (user.login_count or 0) + 1
-            db.session.commit()
-            
-            # Apply user theme preference & session tracking metadata
-            session['theme'] = user.theme_preference or 'dark'
-            session['session_version'] = getattr(user, 'session_version', 1)
-            session['institution_id'] = getattr(user, 'institution_id', None)
-
-            
-            log_activity('login', f'User {user.username} logged in')
-            
-            if user.role == 'system_admin':
-                return redirect(url_for('system_admin_dashboard'))
-            elif user.role == 'admin':
-                return redirect(url_for('admin_dashboard'))
-            elif user.role == 'teacher':
-                return redirect(url_for('teacher_dashboard'))
-            elif user.role == 'student':
-                return redirect(url_for('student_dashboard'))
-        else:
-            flash('Invalid username or password.', 'error')
-    return render_template('login.html')
-
-@app.route('/logout')
-@login_required
-def logout():
-    log_activity('logout', f'User {current_user.username} logged out')
-    logout_user()
-    session.pop('theme', None)
-    return redirect(url_for('index'))
+# Note: index, login, and logout routes are handled by routes.auth and routes.core blueprints
 
 # ── Health & Diagnostics Endpoints ──
 @app.route('/health')

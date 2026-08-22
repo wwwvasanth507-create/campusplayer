@@ -1,0 +1,20 @@
+[Unit]
+Description=CampusPlayer Web Application Service (Gunicorn)
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=notify
+User=campusplayer
+Group=campusplayer
+WorkingDirectory=/opt/campusplayer
+EnvironmentFile=/opt/campusplayer/.env
+ExecStart=/opt/campusplayer/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -7,7 +7,7 @@ from flask import request
 
 def enforce_https():
     """Redirect HTTP to HTTPS if FORCE_HTTPS is enabled."""
-    from app import app
+    from flask import current_app as app
     if app.config.get('FORCE_HTTPS'):
         proto = request.headers.get('X-Forwarded-Proto', 'http')
         if proto != 'https' and not request.is_secure:

@@ -1677,6 +1677,116 @@ class UserSession(db.Model):
     is_active = db.Column(db.Boolean, default=True, index=True)
 
 
+# ═══════════════════════════════════════════════════════════════
+# HIGH-SCALE RESUMABLE MULTIPART UPLOAD & PROCESSING MODELS
+# ═══════════════════════════════════════════════════════════════
+
+class UploadSession(db.Model):
+    """Tracks a resumable multipart upload session."""
+    __tablename__ = 'upload_session'
+    id = db.Column(db.Integer, primary_key=True)
+    upload_id = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='CASCADE'), nullable=False, index=True)
+    uploader_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
+    original_filename = db.Column(db.String(300), nullable=False)
+    title = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    subject = db.Column(db.String(100), nullable=True)
+    grade_level = db.Column(db.String(50), nullable=True)
+    content_type = db.Column(db.String(100), default='video/mp4')
+    total_bytes = db.Column(db.BigInteger, nullable=False)
+    part_size = db.Column(db.Integer, default=33554432)  # 32 MB default
+    total_parts = db.Column(db.Integer, nullable=False)
+    received_parts = db.Column(db.Integer, default=0)
+    status = db.Column(db.String(30), default='initialized', index=True)  # initialized, uploading, completing, completed, aborted, expired
+    storage_provider = db.Column(db.String(30), default='local')  # local, s3
+    storage_path = db.Column(db.String(500), nullable=False)
+    checksum = db.Column(db.String(128), nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+    parts = db.relationship('UploadPart', backref='session', lazy=True, cascade='all, delete-orphan')
+
+
+class UploadPart(db.Model):
+    """Tracks individual uploaded chunks of a multipart upload session."""
+    __tablename__ = 'upload_part'
+    __table_args__ = (
+        db.UniqueConstraint('upload_id', 'part_number', name='uq_upload_part_number'),
+        db.Index('ix_upload_part_lookup', 'upload_id', 'part_number'),
+    )
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    upload_id = db.Column(db.String(64), db.ForeignKey('upload_session.upload_id', ondelete='CASCADE'), nullable=False, index=True)
+    part_number = db.Column(db.Integer, nullable=False)
+    part_size = db.Column(db.BigInteger, nullable=False)
+    etag_checksum = db.Column(db.String(128), nullable=True)
+    storage_path = db.Column(db.String(500), nullable=False)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class VideoProcessingJob(db.Model):
+    """Tracks background FFmpeg probing, transcoding, thumbnail & HLS publication."""
+    __tablename__ = 'video_processing_job'
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    upload_id = db.Column(db.String(64), db.ForeignKey('upload_session.upload_id', ondelete='SET NULL'), nullable=True, index=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id', ondelete='SET NULL'), nullable=True, index=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='CASCADE'), nullable=False, index=True)
+    status = db.Column(db.String(30), default='queued', index=True)  # queued, probing, transcoding, publishing, completed, failed
+    progress_pct = db.Column(db.Integer, default=0)
+    current_step = db.Column(db.String(100), default='queued')
+    error_log = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+
+class VideoAsset(db.Model):
+    """Tracks individual physical assets (originals, HLS renditions, thumbnails, subtitles) generated for a video."""
+    __tablename__ = 'video_asset'
+    id = db.Column(db.Integer, primary_key=True)
+    video_id = db.Column(db.Integer, db.ForeignKey('video.id', ondelete='CASCADE'), nullable=False, index=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='CASCADE'), nullable=False, index=True)
+    asset_type = db.Column(db.String(30), nullable=False)  # original, hls_master, hls_variant, thumbnail, subtitle
+    resolution = db.Column(db.String(20), nullable=True)   # 144p, 240p, 360p, 480p, 720p, 1080p, original
+    bitrate = db.Column(db.Integer, nullable=True)
+    storage_provider = db.Column(db.String(30), default='local')
+    storage_path = db.Column(db.String(500), nullable=False)
+    file_size_bytes = db.Column(db.BigInteger, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class StorageObject(db.Model):
+    """Canonical registry of storage keys mapped to physical storage paths and tenant ownership."""
+    __tablename__ = 'storage_object'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='CASCADE'), nullable=False, index=True)
+    object_key = db.Column(db.String(500), unique=True, index=True, nullable=False)
+    storage_provider = db.Column(db.String(30), default='local')
+    file_size_bytes = db.Column(db.BigInteger, default=0)
+    mime_type = db.Column(db.String(100), default='application/octet-stream')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DeletionJob(db.Model):
+    """Asynchronous state-machine job tracking multi-tenant institution & video hard deletions."""
+    __tablename__ = 'deletion_job'
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.String(64), unique=True, index=True, nullable=False)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id', ondelete='SET NULL'), nullable=True, index=True)
+    target_type = db.Column(db.String(30), nullable=False)  # institution, video
+    target_id = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(30), default='requested', index=True)  # requested, validating, database_cleanup, storage_cleanup, cache_cleanup, jobs_cleanup, verification, completed, failed
+    retry_count = db.Column(db.Integer, default=0)
+    error_message = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+
+
+
 def backfill_all_tables_with_default_institution(db, logger=None):
     try:
         default_inst = Institution.query.filter_by(slug='default').first()

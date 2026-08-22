@@ -3,7 +3,7 @@ import secrets
 from datetime import timedelta
 from flask import Flask
 from dotenv import load_dotenv
-from extensions import db, login_manager, cache, limiter, socketio, mail, swagger, assets_env
+from extensions import db, login_manager, cache, limiter, socketio, mail, swagger, assets_env, migrate
 
 load_dotenv()
 
@@ -22,7 +22,10 @@ def create_app(test_config=None):
 
     secret_key = get_or_create_persistent_secret_key(BASE_DIR)
 
-    raw_db_url = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}')
+    raw_db_url = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/campusplayer')
+    if test_config and 'SQLALCHEMY_DATABASE_URI' in test_config:
+        raw_db_url = test_config['SQLALCHEMY_DATABASE_URI']
+
     if raw_db_url.startswith('postgres://'):
         raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
 
@@ -84,6 +87,7 @@ import sqlite3
 
 def register_extensions(app):
     db.init_app(app)
+    migrate.init_app(app, db)
 
     @event.listens_for(Engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -103,7 +107,7 @@ def register_extensions(app):
                 cursor.close()
 
     login_manager.init_app(app)
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth.login'
     login_manager.session_protection = 'basic'
 
     cache.init_app(app)
@@ -122,16 +126,15 @@ def register_blueprints(app):
     from routes.core import core_bp
     from routes.search import search_bp
     from routes.video import video_bp
-    from services.upload_engine import init_upload_engine
+    from routes.upload import upload_bp
+    from routes.api import api_bp
 
-    app.register_blueprint(core_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(core_bp)
     app.register_blueprint(search_bp)
     app.register_blueprint(video_bp)
-
-    # Initialize high-performance upload engine (10M req/min capable)
-    init_upload_engine(upload_dir=app.config['UPLOAD_FOLDER'], hls_dir=app.config['HLS_FOLDER'])
-
+    app.register_blueprint(upload_bp)
+    app.register_blueprint(api_bp)
 
 def register_request_handlers(app):
     from services.security import enforce_https, csrf_protect_request, set_security_headers, update_last_active
@@ -144,3 +147,19 @@ def register_request_handlers(app):
 def register_context_processors(app):
     from services.context import inject_settings
     app.context_processor(inject_settings)
+
+    @app.context_processor
+    def inject_smart_url_for():
+        from flask import url_for as flask_url_for
+        def url_for(endpoint, **values):
+            try:
+                return flask_url_for(endpoint, **values)
+            except Exception:
+                if f'auth.{endpoint}' in app.view_functions:
+                    return flask_url_for(f'auth.{endpoint}', **values)
+                if f'core.{endpoint}' in app.view_functions:
+                    return flask_url_for(f'core.{endpoint}', **values)
+                if f'video.{endpoint}' in app.view_functions:
+                    return flask_url_for(f'video.{endpoint}', **values)
+                return f"/{endpoint.lstrip('/')}"
+        return dict(url_for=url_for)

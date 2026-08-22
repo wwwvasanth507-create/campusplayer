@@ -4,17 +4,39 @@ from flask_login import current_user, login_required
 core_bp = Blueprint('core', __name__)
 
 
-@core_bp.route('/')
+@core_bp.route('/', endpoint='index')
 def index():
     if current_user.is_authenticated:
-        from flask import current_app
-        if current_user.role == 'admin':
-            target = url_for('admin_dashboard') if 'admin_dashboard' in current_app.view_functions else (url_for('admin.admin_dashboard') if 'admin.admin_dashboard' in current_app.view_functions else '/admin')
-            return redirect(target)
+        if current_user.role == 'system_admin':
+            return redirect(url_for('system_admin_dashboard'))
+        elif current_user.role == 'admin':
+            return redirect(url_for('admin_dashboard'))
         elif current_user.role == 'teacher':
-            target = url_for('teacher_dashboard') if 'teacher_dashboard' in current_app.view_functions else (url_for('teacher.teacher_dashboard') if 'teacher.teacher_dashboard' in current_app.view_functions else '/teacher')
-            return redirect(target)
+            return redirect(url_for('teacher_dashboard'))
         elif current_user.role == 'student':
-            target = url_for('student_dashboard') if 'student_dashboard' in current_app.view_functions else (url_for('student.student_dashboard') if 'student.student_dashboard' in current_app.view_functions else '/student')
-            return redirect(target)
+            return redirect(url_for('student_dashboard'))
     return render_template('ads.html')
+
+
+@core_bp.route('/student', endpoint='student_dashboard')
+@login_required
+def student_dashboard():
+    return render_template('student_dashboard.html')
+
+
+@core_bp.route('/teacher', endpoint='teacher_dashboard')
+@login_required
+def teacher_dashboard():
+    return render_template('teacher_dashboard.html')
+
+
+@core_bp.route('/admin', endpoint='admin_dashboard')
+@login_required
+def admin_dashboard():
+    return render_template('admin_dashboard.html')
+
+
+@core_bp.route('/sysadmin', endpoint='system_admin_dashboard')
+@login_required
+def system_admin_dashboard():
+    return render_template('sysadmin_dashboard.html')

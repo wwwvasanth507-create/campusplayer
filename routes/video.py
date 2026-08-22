@@ -19,12 +19,8 @@ from services.utils import (
 )
 from services.auth import teacher_required, log_activity
 from services.upload_engine import (
-    init_upload_engine, handle_chunk_upload, handle_chunk_upload_direct,
-    assemble_chunks, create_batch_video_jobs, process_batch_videos,
-    get_upload_job, get_all_upload_jobs, get_batch_progress,
-    get_chunk_writer_stats, get_overall_stats, process_video_to_hls,
-    VideoJob, VideoJobStatus, _job_registry, _job_registry_lock,
-    UPLOAD_CHUNKS_DIR, _chunk_buffer
+    init_upload_session, save_upload_part, get_upload_status,
+    complete_upload_session, abort_upload_session
 )
 from services.ultra_parallel_processor import (
     process_video_ultra, process_video_ultra_async,
@@ -735,12 +731,16 @@ def upload_chunk_high_perf():
     else:
         return jsonify({'success': False, 'message': 'No data provided (JSON or multipart)'}), 400
 
-    result = handle_chunk_upload(upload_uuid, chunk_index, total_chunks, chunk_data)
-
-    if isinstance(result, tuple):
-        return jsonify(result[0]), result[1]
-
-    return jsonify(result)
+    try:
+        part = save_upload_part(
+            upload_id=upload_uuid,
+            part_number=chunk_index + 1,
+            part_stream=io.BytesIO(chunk_data) if isinstance(chunk_data, bytes) else chunk_data,
+            part_size=len(chunk_data) if isinstance(chunk_data, bytes) else None
+        )
+        return jsonify({'success': True, 'upload_uuid': upload_uuid, 'chunk_index': chunk_index, 'received': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 
 @video_bp.route('/api/upload/chunk/direct', methods=['POST'])
@@ -754,116 +754,41 @@ def upload_chunk_direct():
     if not upload_uuid or chunk_index < 0 or not chunk_file:
         return jsonify({'success': False, 'message': 'Missing required fields'}), 400
 
-    chunk_data = chunk_file.read()
-    result = handle_chunk_upload_direct(upload_uuid, chunk_index, total_chunks, chunk_data)
-
-    if isinstance(result, tuple):
-        return jsonify(result[0]), result[1]
-
-    return jsonify(result)
+    try:
+        part = save_upload_part(
+            upload_id=upload_uuid,
+            part_number=chunk_index + 1,
+            part_stream=chunk_file.stream
+        )
+        return jsonify({'success': True, 'upload_uuid': upload_uuid, 'chunk_index': chunk_index, 'received': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 
 @video_bp.route('/api/upload/complete', methods=['POST'])
 @login_required
 def complete_upload():
     """
-    Finalize a chunk upload: assemble chunks and process with ultra-parallel engine.
-    Processes the FULL video with ALL quality levels.
+    Finalize a chunk upload session.
     """
     data = request.get_json(silent=True) or request.form
     upload_uuid = data.get('upload_uuid', '')
-    video_id = int(data.get('video_id', 0))
-    original_filename = data.get('original_filename', 'video.mp4')
-    total_chunks = int(data.get('total_chunks', 0))
+    video_id = data.get('video_id')
 
-    if not upload_uuid or not video_id:
-        return jsonify({'success': False, 'message': 'Missing upload_uuid or video_id'}), 400
+    if not upload_uuid:
+        return jsonify({'success': False, 'message': 'Missing upload_uuid'}), 400
 
-    video = Video.query.get(video_id)
-    if not video:
-        return jsonify({'success': False, 'message': 'Video not found'}), 404
-
-    video.status = 'assembling'
-    db.session.commit()
-
-    uploader_id = video.uploader_id
-    app_obj = current_app._get_current_object()
-
-    def assembly_job(app_ctx, uid, vid, tchunks, fname, uploader_uid):
-        with app_ctx.app_context():
-            try:
-                from services.upload_engine import _chunk_buffer
-                if _chunk_buffer:
-                    _chunk_buffer._flush_to_disk()
-
-                result = assemble_chunks(uid, tchunks, fname)
-
-                if result.get('success'):
-                    video_obj = Video.query.get(vid)
-                    if video_obj:
-                        video_obj.status = 'processing'
-                        video_obj.processing_progress = 50
-                        db.session.commit()
-
-                    video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_uid, app=app_ctx)
-                    dest_source_path = os.path.join(video_dir, 'source.mp4')
-                    try:
-                        if os.path.exists(result['file_path']):
-                            shutil.move(result['file_path'], dest_source_path)
-                    except Exception:
-                        dest_source_path = result['file_path']
-
-                    if video_obj:
-                        video_obj.filename = f"institutions/{slug}/{vid}/source.mp4"
-                        db.session.commit()
-
-                    # Use ULTRA PARALLEL processing for FULL video with ALL qualities
-                    logger.info(f"Starting ultra-parallel HLS for video {vid} (full video, all qualities)")
-                    hls_result = process_video_ultra(
-                        dest_source_path,
-                        vid,
-                        output_dir=video_dir,
-                        progress_callback=lambda p: _update_video_progress(vid, p)
-                    )
-
-                    if hls_result.get('success'):
-                        _update_video_record(vid, hls_result)
-                        logger.info(f"Video {vid} completed via ultra-parallel: "
-                                   f"{hls_result.get('qualities_completed', 0)} qualities, "
-                                   f"{hls_result.get('total_hls_segments', 0)} HLS segments")
-                    else:
-                        # Fallback to standard transcoder
-                        logger.warning(f"Ultra-parallel failed for {vid}, falling back to standard")
-                        hls_result = process_video_to_hls(
-                            vid,
-                            dest_source_path,
-                            max_height=8640
-                        )
-                        if hls_result.get('success'):
-                            _update_video_record(vid, hls_result)
-                        else:
-                            err_msg = ', '.join(hls_result.get('errors', ['Transcoding failed']))
-                            _mark_video_failed(vid, err_msg)
-                else:
-                    _mark_video_failed(vid, result.get('error', 'Chunk assembly failed.'))
-            except Exception as exc:
-                logger.error(f"Unhandled exception during video {vid} assembly job: {exc}")
-                _mark_video_failed(vid, str(exc))
-
-    thread = threading.Thread(
-        target=assembly_job,
-        args=(app_obj, upload_uuid, video_id, total_chunks, original_filename, uploader_id),
-        daemon=True
-    )
-    thread.start()
-
-    return jsonify({
-        'success': True,
-        'message': 'Upload finalized, ultra-parallel processing started',
-        'video_id': video_id,
-        'upload_uuid': upload_uuid,
-        'processor': 'ultra_parallel_nvenc'
-    })
+    try:
+        res = complete_upload_session(upload_uuid)
+        vid = res.get('video_id') or video_id
+        return jsonify({
+            'success': True,
+            'message': 'Upload completed successfully',
+            'video_id': vid,
+            'job_id': res.get('job_id')
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 
 # ═══════════════════════════════════════════════════════════════

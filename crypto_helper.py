@@ -22,6 +22,16 @@ def _get_fernet() -> Fernet:
         candidates.append(('ENCRYPTION_KEY', raw_key))
 
     secret = os.getenv('SECRET_KEY')
+    if not secret:
+        try:
+            from flask import current_app, has_app_context
+            if has_app_context() and current_app:
+                secret = current_app.config.get('SECRET_KEY')
+        except Exception:
+            pass
+    if not secret:
+        secret = 'campusplayer-default-secret-key-fallback-2026'
+
     if secret:
         # Derive a valid 32-byte key from the secret
         hashed = hashlib.sha256(secret.encode()).digest()

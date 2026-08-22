@@ -9,7 +9,7 @@ from services.auth import log_activity
 auth_bp = Blueprint('auth', __name__)
 
 
-@auth_bp.route('/login', methods=['GET', 'POST'])
+@auth_bp.route('/login', methods=['GET', 'POST'], endpoint='login')
 @limiter.limit('10 per minute')
 def login():
     if current_user.is_authenticated:
@@ -52,13 +52,13 @@ def login():
 
 
             if user.role == 'system_admin':
-                target = url_for('system_admin_dashboard') if 'system_admin_dashboard' in current_app.view_functions else '/system_admin'
+                target = '/sysadmin'
             elif user.role == 'admin':
-                target = url_for('admin_dashboard') if 'admin_dashboard' in current_app.view_functions else '/admin'
+                target = '/admin'
             elif user.role == 'teacher':
-                target = url_for('teacher_dashboard') if 'teacher_dashboard' in current_app.view_functions else '/teacher'
+                target = '/teacher'
             else:
-                target = url_for('student_dashboard') if 'student_dashboard' in current_app.view_functions else '/student'
+                target = '/student'
 
             return redirect(target)
         else:
@@ -68,7 +68,7 @@ def login():
 
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', endpoint='logout')
 @login_required
 def logout():
     log_activity('logout', f'User {current_user.username} logged out')

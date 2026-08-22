@@ -1,0 +1,19 @@
+[Unit]
+Description=CampusPlayer Celery Beat Scheduler Service
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=campusplayer
+Group=campusplayer
+WorkingDirectory=/opt/campusplayer
+EnvironmentFile=/opt/campusplayer/.env
+ExecStart=/opt/campusplayer/venv/bin/celery -A celery_config.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+KillMode=mixed
+TimeoutStopSec=30
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

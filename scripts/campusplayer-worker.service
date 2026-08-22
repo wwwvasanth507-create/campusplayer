@@ -1,0 +1,19 @@
+[Unit]
+Description=CampusPlayer Celery Background Worker Service
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=campusplayer
+Group=campusplayer
+WorkingDirectory=/opt/campusplayer
+EnvironmentFile=/opt/campusplayer/.env
+ExecStart=/opt/campusplayer/venv/bin/celery -A celery_tasks.celery worker --loglevel=info --concurrency=4
+KillMode=mixed
+TimeoutStopSec=60
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

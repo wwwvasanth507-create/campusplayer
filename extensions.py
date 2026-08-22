@@ -4,12 +4,14 @@ from flask_caching import Cache
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_socketio import SocketIO
+from flask_migrate import Migrate
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 cache = Cache()
 limiter = Limiter(key_func=get_remote_address)
 socketio = SocketIO(cors_allowed_origins="*")
+migrate = Migrate()
 
 # Optional: Email support (install flask-mail)
 try:
