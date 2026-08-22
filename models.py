@@ -1724,8 +1724,16 @@ def backfill_all_tables_with_default_institution(db, logger=None):
                             first_settings = SiteSettings.query.filter_by(institution_id=None).first()
                             if first_settings:
                                 first_settings.institution_id = default_inst.id
-                            else:
-                                db.session.add(SiteSettings(institution_id=default_inst.id))
+                    elif model in (Video, Classroom, Quiz, Assignment):
+                        unattached = model.query.filter(model.institution_id == None).all()
+                        for item in unattached:
+                            creator_id = getattr(item, 'uploader_id', None) or getattr(item, 'teacher_id', None)
+                            if creator_id:
+                                creator = User.query.get(creator_id)
+                                if creator and creator.institution_id:
+                                    item.institution_id = creator.institution_id
+                                    continue
+                            item.institution_id = default_inst.id
                     else:
                         model.query.filter(model.institution_id == None).update(
                             {model.institution_id: default_inst.id},

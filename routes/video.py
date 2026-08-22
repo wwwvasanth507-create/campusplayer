@@ -206,16 +206,14 @@ def upload_chunk():
                 })
             return jsonify({'success': True, 'message': 'Chunks uploaded successfully.'})
 
-        uploader_id = getattr(current_user, 'id', None) if current_user and current_user.is_authenticated else None
-        if not uploader_id:
-            teacher = User.query.filter_by(role='teacher').first()
-            uploader_id = teacher.id if teacher else 1
-
+        uploader_user = current_user if current_user and current_user.is_authenticated else User.query.get(uploader_id)
+        inst_id = getattr(uploader_user, 'institution_id', None)
         slug = get_institution_slug(uploader_id=uploader_id)
         video = Video(
             title=title,
             filename=f"institutions/{slug}/temp/{uuid_str}_{orig_filename}",
             uploader_id=uploader_id,
+            institution_id=inst_id,
             classroom_id=classroom_id if classroom_id > 0 else None,
             description=description,
             tags=tags,
@@ -390,10 +388,12 @@ def upload_video():
     orig_filename = secure_filename(file.filename)
 
     slug = get_institution_slug(user=current_user)
+    inst_id = getattr(current_user, 'institution_id', None)
     video = Video(
         title=orig_filename,
         filename=f"institutions/{slug}/temp/{orig_filename}",
         uploader_id=current_user.id,
+        institution_id=inst_id,
         status='processing'
     )
     db.session.add(video)
@@ -531,10 +531,12 @@ def init_upload():
 
     upload_uuid = str(uuid.uuid4())
 
+    inst_id = getattr(current_user, 'institution_id', None)
     video = Video(
         title=filename,
         filename=filename,
         uploader_id=current_user.id,
+        institution_id=inst_id,
         status='uploading',
         processing_progress=0
     )

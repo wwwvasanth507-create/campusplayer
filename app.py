@@ -3030,9 +3030,11 @@ def create_quiz():
         max_tabs = request.form.get('max_tab_switches', 3, type=int)
         block_cp = request.form.get('block_copy_paste') == 'on'
         
+        inst_id = getattr(current_user, 'institution_id', None)
         quiz = Quiz(
             title=title,
             teacher_id=current_user.id,
+            institution_id=inst_id,
             time_limit_minutes=time_limit,
             shuffle_questions=shuffle,
             proctoring_enabled=proctoring,
@@ -3385,8 +3387,15 @@ def create_class():
     name = request.form.get('name')
     description = request.form.get('description', '')
     if name:
+        inst_id = getattr(current_user, 'institution_id', None)
         class_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-        new_class = Classroom(name=name, teacher_id=current_user.id, description=description, class_code=class_code)
+        new_class = Classroom(
+            name=name,
+            teacher_id=current_user.id,
+            institution_id=inst_id,
+            description=description,
+            class_code=class_code
+        )
         db.session.add(new_class)
         current_user.xp += 40
         db.session.commit()
@@ -5601,9 +5610,11 @@ def create_assignment():
             except:
                 pass
 
+    inst_id = getattr(current_user, 'institution_id', None)
     assignment = Assignment(
         title=title, description=description,
         classroom_id=classroom_id, teacher_id=current_user.id,
+        institution_id=inst_id,
         due_date=due_date, total_points=total_points,
         assignment_type=assignment_type,
         allow_late_submission=allow_late, late_penalty_percent=late_penalty,
