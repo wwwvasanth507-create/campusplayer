@@ -1965,12 +1965,24 @@ def admin_teachers_page():
 @login_required
 @admin_required
 def add_teacher():
-    username = request.form.get('username')
+    username = sanitize_input(request.form.get('username'), 150)
     password = request.form.get('password')
+    display_name = sanitize_input(request.form.get('display_name') or request.form.get('name') or username, 150)
+    inst_id = getattr(current_user, 'institution_id', None)
+
+    if not username or not password:
+        flash('Please provide username and password.', 'error')
+        return redirect(url_for('admin_teachers_page'))
+
     if User.query.filter_by(username=username).first():
         flash('Username already exists.', 'error')
     else:
-        new_teacher = User(username=username, role='teacher')
+        new_teacher = User(
+            username=username,
+            role='teacher',
+            display_name=display_name,
+            institution_id=inst_id
+        )
         new_teacher.set_password(password)
         db.session.add(new_teacher)
         db.session.commit()
