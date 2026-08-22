@@ -133,8 +133,9 @@ if raw_db_url.startswith('postgres://'):
 
 if raw_db_url.startswith('postgresql'):
     engine_options = {
-        'pool_size': int(os.getenv('DB_POOL_SIZE', 10)),
-        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 20)),
+        'pool_size': int(os.getenv('DB_POOL_SIZE', 30)),
+        'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 50)),
+        'pool_timeout': int(os.getenv('DB_POOL_TIMEOUT', 30)),
         'pool_pre_ping': True,
         'pool_recycle': 1800
     }
