@@ -206,8 +206,13 @@ def upload_chunk():
                 })
             return jsonify({'success': True, 'message': 'Chunks uploaded successfully.'})
 
+        uploader_id = getattr(current_user, 'id', None) if current_user and current_user.is_authenticated else None
+        if not uploader_id:
+            teacher = User.query.filter_by(role='teacher').first()
+            uploader_id = teacher.id if teacher else 1
+
         uploader_user = current_user if current_user and current_user.is_authenticated else User.query.get(uploader_id)
-        inst_id = getattr(uploader_user, 'institution_id', None)
+        inst_id = getattr(uploader_user, 'institution_id', None) if uploader_user else None
         slug = get_institution_slug(uploader_id=uploader_id)
         video = Video(
             title=title,
