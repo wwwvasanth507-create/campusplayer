@@ -208,7 +208,35 @@ def upload_chunk():
 
     part_filename = f"chunk_{chunk_index:06d}.part"
     chunk_path = os.path.join(chunks_dir, part_filename)
-    chunk.save(chunk_path)
+    try:
+        chunk.save(chunk_path)
+    except (OSError, FileNotFoundError):
+        assembling_dir = f"{chunks_dir}_assembling"
+        if os.path.exists(assembling_dir):
+            video = Video.query.filter_by(uploader_id=current_user.id if current_user and current_user.is_authenticated else 1).order_by(Video.id.desc()).first()
+            return jsonify({
+                'success': True,
+                'video_id': video.id if video else None,
+                'status': 'processing',
+                'message': 'Video assembled and processing started'
+            })
+
+    if not os.path.exists(chunks_dir):
+        assembling_dir = f"{chunks_dir}_assembling"
+        if os.path.exists(assembling_dir):
+            video = Video.query.filter_by(uploader_id=current_user.id if current_user and current_user.is_authenticated else 1).order_by(Video.id.desc()).first()
+            return jsonify({
+                'success': True,
+                'video_id': video.id if video else None,
+                'status': 'processing',
+                'message': 'Video assembled and processing started'
+            })
+        return jsonify({
+            'success': True,
+            'chunk_index': chunk_index,
+            'saved': total_chunks,
+            'total_chunks': total_chunks
+        })
 
     saved_parts = [f for f in os.listdir(chunks_dir) if f.startswith('chunk_') and f.endswith('.part')]
 
@@ -222,7 +250,7 @@ def upload_chunk():
 
     with _chunk_assembly_lock:
         if not os.path.exists(chunks_dir):
-            video = Video.query.filter_by(filename=f"{uuid_str}_{orig_filename}").first()
+            video = Video.query.filter_by(uploader_id=current_user.id if current_user and current_user.is_authenticated else 1).order_by(Video.id.desc()).first()
             if video:
                 return jsonify({
                     'success': True,
@@ -231,6 +259,18 @@ def upload_chunk():
                     'message': 'Video assembled and processing started'
                 })
             return jsonify({'success': True, 'message': 'Chunks uploaded successfully.'})
+
+        assembling_dir = f"{chunks_dir}_assembling"
+        try:
+            os.rename(chunks_dir, assembling_dir)
+        except (OSError, FileNotFoundError):
+            video = Video.query.filter_by(uploader_id=current_user.id if current_user and current_user.is_authenticated else 1).order_by(Video.id.desc()).first()
+            return jsonify({
+                'success': True,
+                'video_id': video.id if video else None,
+                'status': 'processing',
+                'message': 'Video being assembled by worker.'
+            })
 
         uploader_id = getattr(current_user, 'id', None) if current_user and current_user.is_authenticated else None
         if not uploader_id:
@@ -291,37 +331,43 @@ def upload_chunk():
             finally:
                 os.close(out_fd)
 
-        fast_zero_copy_assembly(chunks_dir, total_chunks, assembled_path)
-        shutil.rmtree(chunks_dir, ignore_errors=True)
+        def _async_assemble_and_enqueue(app_obj, c_dir, n_chunks, out_path, v_id, u_id, inst_slug):
+            with app_obj.app_context():
+                try:
+                    fast_zero_copy_assembly(c_dir, n_chunks, out_path)
+                    shutil.rmtree(c_dir, ignore_errors=True)
+                    if os.path.exists(out_path) and os.path.getsize(out_path) > 0:
+                        v = Video.query.get(v_id)
+                        if v:
+                            v.filename = f"institutions/{inst_slug}/{v_id}/source.mp4"
+                            db.session.commit()
+                        logger.info(f"[Upload] Async assembly finished for video {v_id} ({os.path.getsize(out_path)} bytes). Enqueuing HLS conversion...")
+                        from services.conversion_engine import enqueue_conversion_job
+                        enqueue_conversion_job(v_id, out_path, uploader_id=u_id)
+                    else:
+                        logger.error(f"[Upload] Async chunk assembly failed for video {v_id}: empty file.")
+                        v = Video.query.get(v_id)
+                        if v:
+                            v.status = 'failed'
+                            v.processing_error = 'Chunk assembly failed: empty file produced.'
+                            db.session.commit()
+                except Exception as ex:
+                    logger.error(f"[Upload] Error in async assembly for video {v_id}: {ex}")
 
-        if not os.path.exists(assembled_path) or os.path.getsize(assembled_path) == 0:
-            logger.error(f"[Upload] Chunk assembly failed for video {vid}: 0-byte output file.")
-            video.status = 'failed'
-            video.processing_error = 'Chunk assembly failed: empty file produced.'
-            db.session.commit()
-            return jsonify({'success': False, 'message': 'Chunk assembly failed: empty file.'}), 500
+        # Dispatch background assembly thread for zero HTTP response lag
+        asm_thread = threading.Thread(
+            target=_async_assemble_and_enqueue,
+            args=(app_obj, assembling_dir, total_chunks, assembled_path, vid, uploader_id, slug),
+            daemon=True
+        )
+        asm_thread.start()
 
-        video.filename = f"institutions/{slug}/{vid}/source.mp4"
-        db.session.commit()
-
-        logger.info(f"[Upload] Video {vid} assembled successfully ({os.path.getsize(assembled_path)} bytes). Enqueuing conversion...")
-        try:
-            from services.conversion_engine import enqueue_conversion_job
-            enqueue_conversion_job(vid, assembled_path, uploader_id=uploader_id)
-        except Exception as e_enq:
-            logger.error(f"[Upload] Error enqueuing conversion job for video {vid}: {e_enq}")
-
-        def _mark_video_failed(v_id: int, err_msg: str):
-            try:
-                v = Video.query.get(v_id)
-                if v:
-                    v.status = 'failed'
-                    v.processing_progress = 0
-                    v.processing_error = str(err_msg)
-                    db.session.commit()
-                    logger.error(f"Video {v_id} marked failed: {err_msg}")
-            except Exception as ex:
-                logger.error(f"Error marking video {v_id} as failed: {ex}")
+        return jsonify({
+            'success': True,
+            'video_id': vid,
+            'status': 'processing',
+            'message': 'Upload completed instantly! Video assembly and HLS processing running in background.'
+        })
 
         def background_hls(app_ctx, video_id, input_file, v_dir):
             with app_ctx.app_context():

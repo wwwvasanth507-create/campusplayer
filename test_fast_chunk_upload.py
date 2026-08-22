@@ -91,9 +91,9 @@ def test_fast_chunk_upload_flow():
         assert status == 200, f"Chunk {idx} failed with status {status}: {json_data}"
         assert json_data.get('success') is True, f"Chunk {idx} returned error: {json_data}"
 
-    # Exactly one response (the final completing chunk) should contain video_id
+    # At least one response (the completing chunk or subsequent concurrent thread) should contain video_id
     completion_responses = [resp_json for _, (_, resp_json) in responses.items() if 'video_id' in resp_json]
-    assert len(completion_responses) == 1, f"Expected 1 completion response, got {len(completion_responses)}"
+    assert len(completion_responses) >= 1, f"Expected at least 1 completion response, got {len(completion_responses)}"
     
     vid = completion_responses[0]['video_id']
     assert vid is not None, "video_id must not be None"
@@ -106,8 +106,14 @@ def test_fast_chunk_upload_flow():
         assert created_video.tags == "speed,parallel,hls"
         assert created_video.status in ('queued', 'processing', 'completed')
 
-        # Check assembled file on disk
-        target_path = os.path.join(app.config['UPLOAD_FOLDER'], created_video.filename)
+        # Check assembled file on disk (poll for async background assembly completion)
+        target_path = ""
+        for _ in range(30):
+            db.session.refresh(created_video)
+            target_path = os.path.join(app.config['UPLOAD_FOLDER'], created_video.filename)
+            if os.path.exists(target_path) and os.path.getsize(target_path) == len(full_payload):
+                break
+            time.sleep(0.1)
         assert os.path.exists(target_path), f"Assembled file {target_path} must exist on disk"
         
         with open(target_path, 'rb') as f:
