@@ -35,8 +35,3 @@ def teacher_dashboard():
 def admin_dashboard():
     return render_template('admin_dashboard.html')
 
-
-@core_bp.route('/sysadmin', endpoint='system_admin_dashboard')
-@login_required
-def system_admin_dashboard():
-    return render_template('sysadmin_dashboard.html')
