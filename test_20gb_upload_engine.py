@@ -28,20 +28,20 @@ def test_upload_engine_features():
     # 1. Test Chunk Sizing Calculations for 20GB
     file_size_20gb = 20 * 1024 * 1024 * 1024  # 20 GB
     
-    # 64 MB chunk size for >=5GB
+    # 128 MB chunk size for >=5GB
     def get_chunk_size(size):
         if size >= 5 * 1024 * 1024 * 1024:
-            return 64 * 1024 * 1024
+            return 128 * 1024 * 1024
         if size >= 1024 * 1024 * 1024:
-            return 32 * 1024 * 1024
-        return 8 * 1024 * 1024
+            return 64 * 1024 * 1024
+        return 16 * 1024 * 1024
 
     chunk_size = get_chunk_size(file_size_20gb)
     total_chunks = (file_size_20gb + chunk_size - 1) // chunk_size
 
-    assert chunk_size == 64 * 1024 * 1024, f"Expected 64MB chunks for 20GB file, got {chunk_size}"
-    assert total_chunks == 320, f"Expected 320 total chunks for 20GB video, got {total_chunks}"
-    print(f"  [PASS] 20 GB Video calculated: Chunk size = {chunk_size // (1024*1024)} MB, Total Chunks = {total_chunks} (Drastically reduced from 4000+ chunks!)")
+    assert chunk_size == 128 * 1024 * 1024, f"Expected 128MB chunks for 20GB file, got {chunk_size}"
+    assert total_chunks == 160, f"Expected 160 total chunks for 20GB video, got {total_chunks}"
+    print(f"  [PASS] 20 GB Video calculated: Chunk size = {chunk_size // (1024*1024)} MB, Total Chunks = {total_chunks} (Drastically reduced to only 160 chunks!)")
 
     # 2. Test Concurrency Scaling
     def get_concurrency(speed, chunks):

@@ -60,7 +60,7 @@ def get_ffprobe_bin():
 # Performance targets — 1000 Trillion Streamers/Sec Capacity
 MAX_CHUNK_RATE_PER_MINUTE = 1_000_000_000_000_000_000  # 1000 Trillion req/min (effectively infinite)
 MAX_CHUNK_RATE_PER_SECOND = MAX_CHUNK_RATE_PER_MINUTE // 60  # ~16.6 Trillion req/s
-DEFAULT_CHUNK_SIZE = 64 * 1024 * 1024  # 64 MB default chunk size for ultra-fast 20GB+ ingestion
+DEFAULT_CHUNK_SIZE = 128 * 1024 * 1024  # 128 MB default chunk size for ultra-fast 20GB+ ingestion
 MAX_CONCURRENT_CHUNK_WRITES = 10_000_000  # 10M concurrent writes (unlimited)
 CHUNK_WRITE_BACKLOG = 500_000_000  # 500M in-memory backlog before flushing
 

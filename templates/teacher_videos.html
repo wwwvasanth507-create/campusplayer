@@ -451,10 +451,10 @@
             function getOptimalChunkSize(fileSize, currentSpeedBps) {
                 if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 512 * 1024;      // 512 KB for ultra-slow internet (<50KB/s)
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 1 * 1024 * 1024;  // 1 MB for 50-250KB/s
-                if (fileSize >= 5 * 1024 * 1024 * 1024) return 64 * 1024 * 1024;                // 64 MB for >=5GB files (20GB = 320 chunks!)
-                if (fileSize >= 1024 * 1024 * 1024) return 32 * 1024 * 1024;                    // 32 MB for 1GB-5GB files
-                if (fileSize >= 64 * 1024 * 1024) return 16 * 1024 * 1024;                      // 16 MB for 64MB-1GB files
-                return 8 * 1024 * 1024;                                                         // 8 MB for small files
+                if (fileSize >= 5 * 1024 * 1024 * 1024) return 128 * 1024 * 1024;               // 128 MB for >=5GB files (20GB = 160 chunks!)
+                if (fileSize >= 1024 * 1024 * 1024) return 64 * 1024 * 1024;                    // 64 MB for 1GB-5GB files
+                if (fileSize >= 64 * 1024 * 1024) return 32 * 1024 * 1024;                      // 32 MB for 64MB-1GB files
+                return 16 * 1024 * 1024;                                                        // 16 MB for small files
             }
 
             function initStreamBadges(count) {
@@ -473,8 +473,8 @@
             function getAdaptiveConcurrency(currentSpeedBps, totalChunks) {
                 if (currentSpeedBps > 0 && currentSpeedBps < 50 * 1024) return 1;               // 1 stream on ultra-slow internet (<50KB/s)
                 if (currentSpeedBps > 0 && currentSpeedBps < 250 * 1024) return 2;              // 2 streams
-                // High-concurrency pool: up to 64 active parallel worker channels
-                return Math.min(64, Math.max(4, totalChunks));
+                // Ultra-turbo concurrency pool: up to 128 active parallel worker channels
+                return Math.min(128, Math.max(8, totalChunks));
             }
 
             const isTurboMode = document.getElementById('turbo-compress-check') && document.getElementById('turbo-compress-check').checked;
