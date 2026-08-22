@@ -928,6 +928,7 @@ class ConversionWorkerManager:
                     video = Video.query.get(job.video_id)
                     if video:
                         video.status = 'failed'
+                        video.processing_error = error_msg
                     logger.error(f"Job {job_id} permanently failed after {job.retry_count} retries.")
 
                 db.session.commit()

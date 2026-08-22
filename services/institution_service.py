@@ -32,6 +32,52 @@ logger = logging.getLogger(__name__)
 _institution_deletion_lock = threading.Lock()
 
 
+def ensure_institution_storage_directories(slug_or_id: str, base_dir: Optional[str] = None) -> str:
+    """
+    Creates and verifies the dedicated isolated storage directory structure for an institution.
+    Subfolders: videos, pdfs, assignments, quizzes, thumbnails, other, temp, subtitles, global.
+    """
+    import re
+    if not base_dir:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__))))
+    clean_identifier = re.sub(r'[^a-zA-Z0-9_\-]', '', str(slug_or_id)) or 'default'
+    target_dir = os.path.join(base_dir, 'static', 'uploads', 'institutions', clean_identifier)
+    subdirectories = ['videos', 'pdfs', 'assignments', 'quizzes', 'thumbnails', 'other', 'temp', 'subtitles', 'global']
+    for sub in subdirectories:
+        os.makedirs(os.path.join(target_dir, sub), exist_ok=True)
+    return target_dir
+
+
+def get_tenant_upload_dir(institution_id_or_user: Any, subfolder: str = 'other') -> Tuple[str, str, str]:
+    """
+    Resolves isolated tenant upload directory and relative base path.
+    Returns: (absolute_dir: str, rel_prefix: str, slug: str)
+    """
+    import re
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__))))
+    inst = None
+    if isinstance(institution_id_or_user, User):
+        inst_id = getattr(institution_id_or_user, 'institution_id', None)
+    elif isinstance(institution_id_or_user, int):
+        inst_id = institution_id_or_user
+    else:
+        inst_id = None
+
+    if inst_id:
+        inst = Institution.query.get(inst_id)
+
+    if not inst:
+        inst = Institution.query.filter_by(slug='default').first()
+
+    slug = inst.slug if inst else 'default'
+    clean_subfolder = re.sub(r'[^a-zA-Z0-9_\-]', '', subfolder) or 'other'
+
+    abs_dir = os.path.join(base_dir, 'static', 'uploads', 'institutions', slug, clean_subfolder)
+    os.makedirs(abs_dir, exist_ok=True)
+    rel_prefix = f'uploads/institutions/{slug}/{clean_subfolder}'
+    return abs_dir, rel_prefix, slug
+
+
 def validate_storage_path_security(target_path: Optional[str], slug: str, base_dir: Optional[str] = None) -> Tuple[bool, str]:
     """
     Validates that a filesystem path is safe for deletion and strictly contained
@@ -149,32 +195,17 @@ def permanently_delete_institution(
                         'status_code': 400
                     }
 
-            # 3. Authorization Check
+            # 3. Authorization Check (System Admin Only per Requirement 7 & 10)
             if actor_user:
                 try:
                     actor_role = getattr(actor_user, 'role', None)
-                    actor_id = getattr(actor_user, 'id', None)
-                    actor_inst_id = getattr(actor_user, 'institution_id', None)
                 except Exception:
                     actor_role = None
-                    actor_id = None
-                    actor_inst_id = None
 
-                if actor_role == 'system_admin':
-                    pass  # System Admin can delete any institution
-                elif actor_role == 'admin':
-                    is_owner = (institution.owner_admin_id and actor_id and institution.owner_admin_id == actor_id)
-                    is_member = (actor_inst_id and actor_inst_id == institution.id)
-                    if not (is_owner or is_member):
-                        return {
-                            'success': False,
-                            'message': 'Forbidden: You do not have authorization to delete this institution.',
-                            'status_code': 403
-                        }
-                else:
+                if actor_role != 'system_admin':
                     return {
                         'success': False,
-                        'message': 'Forbidden: Only an authorized Institution System Admin or System Admin may delete an institution.',
+                        'message': 'Forbidden: Only System Admin may permanently delete an institution.',
                         'status_code': 403
                     }
 

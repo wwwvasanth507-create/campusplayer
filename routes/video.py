@@ -254,16 +254,35 @@ def upload_chunk():
         video.filename = f"institutions/{slug}/{vid}/source.mp4"
         db.session.commit()
 
+        def _mark_video_failed(v_id: int, err_msg: str):
+            try:
+                v = Video.query.get(v_id)
+                if v:
+                    v.status = 'failed'
+                    v.processing_progress = 0
+                    v.processing_error = str(err_msg)
+                    db.session.commit()
+                    logger.error(f"Video {v_id} marked failed: {err_msg}")
+            except Exception as ex:
+                logger.error(f"Error marking video {v_id} as failed: {ex}")
+
         def background_hls(app_ctx, video_id, input_file, v_dir):
             with app_ctx.app_context():
-                result = process_video_ultra(
-                    input_path=input_file,
-                    video_id=video_id,
-                    output_dir=v_dir,
-                    progress_callback=lambda p: _update_video_progress(video_id, p)
-                )
-                if result.get('success'):
-                    _update_video_record(video_id, result)
+                try:
+                    result = process_video_ultra(
+                        input_path=input_file,
+                        video_id=video_id,
+                        output_dir=v_dir,
+                        progress_callback=lambda p: _update_video_progress(video_id, p)
+                    )
+                    if result.get('success'):
+                        _update_video_record(video_id, result)
+                    else:
+                        err_msg = result.get('error', 'Video processing failed.')
+                        _mark_video_failed(video_id, err_msg)
+                except Exception as exc:
+                    logger.error(f"Unhandled exception in background_hls for video {video_id}: {exc}")
+                    _mark_video_failed(video_id, str(exc))
 
         threading.Thread(
             target=background_hls,
@@ -290,6 +309,20 @@ def _update_video_progress(video_id: int, progress: float):
         logger.warning(f"Progress update failed: {e}")
 
 
+def _mark_video_failed(v_id: int, err_msg: str):
+    """Mark video status as failed and record exact error message."""
+    try:
+        v = Video.query.get(v_id)
+        if v:
+            v.status = 'failed'
+            v.processing_progress = 0
+            v.processing_error = str(err_msg)
+            db.session.commit()
+            logger.error(f"Video {v_id} marked failed: {err_msg}")
+    except Exception as ex:
+        logger.error(f"Error marking video {v_id} as failed: {ex}")
+
+
 def _update_video_record(video_id: int, result: dict):
     """Update video record with complete HLS processing results."""
     try:
@@ -299,6 +332,7 @@ def _update_video_record(video_id: int, result: dict):
 
         video.status = 'completed'
         video.processing_progress = 100
+        video.processing_error = None
         video.has_adaptive_streams = True
 
         master_playlist = result.get('master_playlist', 'master.m3u8')
@@ -389,16 +423,13 @@ def upload_video():
                                f"full video {result.get('full_video_duration_hours', 0):.1f}h, "
                                f"in {result.get('processing_time', 0):.1f}s")
                 else:
-                    logger.error(f"Ultra-parallel failed for video {video_id}: {result.get('error')}")
-                    try:
-                        v = Video.query.get(video_id)
-                        if v:
-                            v.status = 'failed'
-                            db.session.commit()
-                    except:
-                        pass
+                    err_msg = result.get('error', 'Ultra-parallel video processing failed.')
+                    logger.error(f"Ultra-parallel failed for video {video_id}: {err_msg}")
+                    _mark_video_failed(video_id, err_msg)
         except Exception as e:
             logger.error(f"Background processing failed for video {video_id}: {e}")
+            with app_ctx.app_context():
+                _mark_video_failed(video_id, str(e))
 
     threading.Thread(target=background_processing, args=(
         app_obj, video.id, input_path, video_dir
@@ -420,7 +451,10 @@ def get_video_status(video_id):
     enforce_institution_access(video)
     return jsonify({
         'status': video.status,
-        'progress': video.processing_progress,
+        'progress': video.processing_progress or 0,
+        'processing_error': video.processing_error or None,
+        'hls_playlist_path': video.hls_playlist_path or video.master_playlist_path,
+        'thumbnail_path': video.thumbnail_path,
         'processor': 'ultra_parallel'
     })
 
@@ -618,86 +652,64 @@ def complete_upload():
 
     def assembly_job(app_ctx, uid, vid, tchunks, fname, uploader_uid):
         with app_ctx.app_context():
-            from services.upload_engine import _chunk_buffer
-            if _chunk_buffer:
-                _chunk_buffer._flush_to_disk()
+            try:
+                from services.upload_engine import _chunk_buffer
+                if _chunk_buffer:
+                    _chunk_buffer._flush_to_disk()
 
-            result = assemble_chunks(uid, tchunks, fname)
+                result = assemble_chunks(uid, tchunks, fname)
 
-            if result.get('success'):
-                video_obj = Video.query.get(vid)
-                if video_obj:
-                    video_obj.status = 'processing'
-                    video_obj.processing_progress = 50
-                    db.session.commit()
-
-                video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_uid, app=app_ctx)
-                dest_source_path = os.path.join(video_dir, 'source.mp4')
-                try:
-                    if os.path.exists(result['file_path']):
-                        shutil.move(result['file_path'], dest_source_path)
-                except Exception:
-                    dest_source_path = result['file_path']
-
-                if video_obj:
-                    video_obj.filename = f"institutions/{slug}/{vid}/source.mp4"
-                    db.session.commit()
-
-                # Use ULTRA PARALLEL processing for FULL video with ALL qualities
-                logger.info(f"Starting ultra-parallel HLS for video {vid} (full video, all qualities)")
-                hls_result = process_video_ultra(
-                    dest_source_path,
-                    vid,
-                    output_dir=video_dir,
-                    progress_callback=lambda p: _update_video_progress(vid, p)
-                )
-
-                if hls_result.get('success'):
+                if result.get('success'):
                     video_obj = Video.query.get(vid)
                     if video_obj:
+                        video_obj.status = 'processing'
+                        video_obj.processing_progress = 50
+                        db.session.commit()
+
+                    video_dir, slug = get_video_storage_dir(vid, uploader_id=uploader_uid, app=app_ctx)
+                    dest_source_path = os.path.join(video_dir, 'source.mp4')
+                    try:
+                        if os.path.exists(result['file_path']):
+                            shutil.move(result['file_path'], dest_source_path)
+                    except Exception:
+                        dest_source_path = result['file_path']
+
+                    if video_obj:
+                        video_obj.filename = f"institutions/{slug}/{vid}/source.mp4"
+                        db.session.commit()
+
+                    # Use ULTRA PARALLEL processing for FULL video with ALL qualities
+                    logger.info(f"Starting ultra-parallel HLS for video {vid} (full video, all qualities)")
+                    hls_result = process_video_ultra(
+                        dest_source_path,
+                        vid,
+                        output_dir=video_dir,
+                        progress_callback=lambda p: _update_video_progress(vid, p)
+                    )
+
+                    if hls_result.get('success'):
                         _update_video_record(vid, hls_result)
                         logger.info(f"Video {vid} completed via ultra-parallel: "
                                    f"{hls_result.get('qualities_completed', 0)} qualities, "
                                    f"{hls_result.get('total_hls_segments', 0)} HLS segments")
-                else:
-                    # Fallback to standard transcoder
-                    logger.warning(f"Ultra-parallel failed for {vid}, falling back to standard")
-                    hls_result = process_video_to_hls(
-                        vid,
-                        result['file_path'],
-                        max_height=8640  # Max height for full quality ladder (up to 16K)
-                    )
-                    if hls_result.get('success'):
-                        video_obj = Video.query.get(vid)
-                        if video_obj:
-                            master_playlist = hls_result.get('master_playlist', 'master.m3u8')
-                            thumbnail = hls_result.get('thumbnail', '')
-                            video_obj.status = 'completed'
-                            video_obj.processing_progress = 100
-                            video_obj.hls_playlist_path = f"hls/{vid}/{master_playlist}"
-                            video_obj.master_playlist_path = f"hls/{vid}/{master_playlist}"
-                            video_obj.has_adaptive_streams = True
-                            renditions = hls_result.get('renditions', [])
-                            video_obj.set_renditions(renditions)
-                            if renditions:
-                                video_obj.source_width = renditions[0].get('width', 1920)
-                                video_obj.source_height = renditions[0].get('height', 1080)
-                            if thumbnail:
-                                video_obj.thumbnail_path = f"hls/{vid}/{thumbnail}"
-                            db.session.commit()
                     else:
-                        if video_obj:
-                            video_obj.status = 'failed'
-                            video_obj.processing_progress = 0
-                            errors = hls_result.get('errors', ['Transcoding failed'])
-                            logger.error(f"Video {vid} HLS processing failed: {errors}")
-                            db.session.commit()
-            else:
-                video_obj = Video.query.get(vid)
-                if video_obj:
-                    video_obj.status = 'failed'
-                    video_obj.processing_progress = 0
-                    db.session.commit()
+                        # Fallback to standard transcoder
+                        logger.warning(f"Ultra-parallel failed for {vid}, falling back to standard")
+                        hls_result = process_video_to_hls(
+                            vid,
+                            dest_source_path,
+                            max_height=8640
+                        )
+                        if hls_result.get('success'):
+                            _update_video_record(vid, hls_result)
+                        else:
+                            err_msg = ', '.join(hls_result.get('errors', ['Transcoding failed']))
+                            _mark_video_failed(vid, err_msg)
+                else:
+                    _mark_video_failed(vid, result.get('error', 'Chunk assembly failed.'))
+            except Exception as exc:
+                logger.error(f"Unhandled exception during video {vid} assembly job: {exc}")
+                _mark_video_failed(vid, str(exc))
 
     thread = threading.Thread(
         target=assembly_job,

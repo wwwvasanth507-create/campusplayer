@@ -347,6 +347,7 @@ class Video(db.Model):
     # Progress tracking
     status = db.Column(db.String(20), default='pending', index=True)
     processing_progress = db.Column(db.Integer, default=0)
+    processing_error = db.Column(db.Text, nullable=True)
 
     # === ADVANCED FIELDS ===
     description = db.Column(db.Text, nullable=True)

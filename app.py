@@ -359,33 +359,39 @@ def update_last_active():
     if current_user.is_authenticated:
         endpoint = request.endpoint or ''
         path = request.path or ''
-        if endpoint in ('static', 'logout', 'serve_hls', 'video.serve_hls') or \
-           path.startswith('/static/') or path.startswith('/hls/') or \
-           path.startswith('/api/video/progress') or path.startswith('/api/chatroom/') or \
-           path.startswith('/api/video_status') or path.startswith('/api/notifications') or \
-           path.startswith('/api/teacher/processing_videos'):
+        if endpoint in ('static', 'logout'):
             return
-            
-        if not getattr(current_user, 'is_active_account', True):
-            logout_user()
-            flash('Your account has been suspended.', 'error')
-            login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
-            return redirect(login_url)
-            
-        inst_id = getattr(current_user, 'institution_id', None)
-        if inst_id:
-            cache_key = f'inst_status_{inst_id}'
-            inst_status = cache.get(cache_key) if cache else None
-            if inst_status is None:
-                inst = Institution.query.get(inst_id)
-                inst_status = inst.status if inst else 'active'
-                if cache:
-                    cache.set(cache_key, inst_status, timeout=60)
-            if inst_status == 'suspended':
+
+        if current_user and current_user.is_authenticated:
+            # 1. Account active check
+            if not getattr(current_user, 'is_active_account', True):
                 logout_user()
-                flash('Your institution has been suspended.', 'error')
+                session.clear()
+                if request.is_json or path.startswith('/api/'):
+                    return jsonify({'success': False, 'message': 'Your account has been suspended.', 'error': 'Your account has been suspended.'}), 403
+                flash('Your account has been suspended.', 'error')
                 login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
                 return redirect(login_url)
+
+            # 2. Institution suspension check
+            inst_id = getattr(current_user, 'institution_id', None)
+            if inst_id and current_user.role != 'system_admin':
+                cache_key = f'inst_status_{inst_id}'
+                inst_status = cache.get(cache_key) if cache else None
+                if inst_status is None:
+                    inst = Institution.query.get(inst_id)
+                    inst_status = inst.status if inst else 'active'
+                    if cache:
+                        cache.set(cache_key, inst_status, timeout=10)
+                if inst_status == 'suspended':
+                    logout_user()
+                    session.clear()
+                    susp_msg = 'Your institution has been suspended. Please contact the System Administrator.'
+                    if request.is_json or path.startswith('/api/'):
+                        return jsonify({'success': False, 'message': susp_msg, 'error': susp_msg}), 403
+                    flash(susp_msg, 'error')
+                    login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
+                    return redirect(login_url)
                 
         if not app.config.get('TESTING'):
             now = datetime.utcnow()
@@ -1592,6 +1598,9 @@ def create_institution():
     db.session.add(institution)
     db.session.flush()
 
+    from services.institution_service import ensure_institution_storage_directories
+    ensure_institution_storage_directories(slug)
+
     admin_user = User(username=admin_username, role='admin', institution_id=institution.id)
     admin_user.set_password(admin_password)
     db.session.add(admin_user)
@@ -1653,36 +1662,16 @@ def delete_admin(admin_id):
 
 @app.route('/admin/institution/delete', methods=['POST'])
 @login_required
-@admin_required
+@system_admin_required
 def admin_delete_own_institution():
-    institution_id = getattr(current_user, 'institution_id', None)
-    if not institution_id and current_user.role in ('admin', 'system_admin'):
-        inst = Institution.query.filter_by(owner_admin_id=current_user.id).first()
-        if inst:
-            institution_id = inst.id
-
-    if not institution_id:
-        flash('No institution associated with your admin account.', 'danger')
-        return redirect(url_for('admin_dashboard'))
-
-    confirm_name = request.form.get('confirm_name', '')
-    res = permanently_delete_institution(institution_id, actor_user=current_user, confirm_name=confirm_name)
-    if res['success']:
-        log_activity('delete_institution', f"Admin {current_user.username} deleted their institution #{institution_id}")
-        logout_user()
-        flash(res['message'], 'success')
-        return redirect(url_for('login'))
-    else:
-        flash(res['message'], 'danger')
-        return redirect(url_for('admin_dashboard'))
+    flash('Forbidden: Institution Admins cannot delete institutions. Contact System Administrator.', 'danger')
+    return redirect(url_for('admin_dashboard'))
 
 
 @app.route('/api/institutions/<int:institution_id>', methods=['DELETE', 'POST'])
 @login_required
+@system_admin_required
 def api_delete_institution(institution_id):
-    if current_user.role not in ('system_admin', 'admin'):
-        return jsonify({'success': False, 'error': 'Forbidden: Insufficient privileges.'}), 403
-
     confirm_name = None
     if request.is_json:
         data = request.get_json(silent=True) or {}
@@ -1691,18 +1680,8 @@ def api_delete_institution(institution_id):
         confirm_name = request.form.get('confirm_name')
 
     res = permanently_delete_institution(institution_id, actor_user=current_user, confirm_name=confirm_name)
-    if res['success']:
-        log_activity('api_delete_institution', f"API user {current_user.username} deleted institution #{institution_id}")
-        return jsonify({
-            'success': True,
-            'message': res['message'],
-            'institution_id': institution_id
-        }), 200
-    else:
-        return jsonify({
-            'success': False,
-            'error': res['message']
-        }), res['status_code']
+    status_code = res.get('status_code', 200 if res['success'] else 400)
+    return jsonify(res), status_code
 
 
 @app.route('/sysadmin/institutions/<int:institution_id>/suspend', methods=['POST'])
@@ -1711,9 +1690,18 @@ def api_delete_institution(institution_id):
 def suspend_institution(institution_id):
     institution = Institution.query.get_or_404(institution_id)
     institution.status = 'suspended'
-    if institution.owner_admin_id:
-        admin_user = User.query.get(institution.owner_admin_id)
-        if admin_user: admin_user.is_active_account = False
+    
+    inst_users = User.query.filter_by(institution_id=institution_id).all()
+    user_ids = [u.id for u in inst_users]
+    if user_ids:
+        try:
+            UserSession.query.filter(UserSession.user_id.in_(user_ids)).delete(synchronize_session=False)
+        except Exception as e:
+            logger.warning(f"Failed to clear UserSessions on suspension: {e}")
+            
+    if cache:
+        cache.delete(f'inst_status_{institution_id}')
+        
     db.session.commit()
     flash(f'Institution "{institution.name}" suspended.', 'success')
     log_activity('suspend_institution', f'Suspended institution #{institution_id}')
@@ -1726,9 +1714,8 @@ def suspend_institution(institution_id):
 def activate_institution(institution_id):
     institution = Institution.query.get_or_404(institution_id)
     institution.status = 'active'
-    if institution.owner_admin_id:
-        admin_user = User.query.get(institution.owner_admin_id)
-        if admin_user: admin_user.is_active_account = True
+    if cache:
+        cache.delete(f'inst_status_{institution_id}')
     db.session.commit()
     flash(f'Institution "{institution.name}" activated.', 'success')
     log_activity('activate_institution', f'Activated institution #{institution_id}')
@@ -2338,9 +2325,11 @@ def teacher_dashboard():
         'students_added': len(students), 'chat_messages': chat_count,
         'total_xp': current_user.xp, 'total_views': total_views
     }
+    daily_quests = current_user.get_daily_quests() if hasattr(current_user, 'get_daily_quests') else {}
     return render_template('teacher_dashboard.html', videos=videos, playlists=playlists,
         students=students, unread_count=unread_count, classes=classes, quizzes=quizzes,
-        teacher_stats=teacher_stats, now_date=datetime.utcnow().date(), settings=settings)
+        teacher_stats=teacher_stats, now_date=datetime.utcnow().date(), settings=settings,
+        daily_quests=daily_quests)
 
 def extract_youtube_id(url):
     """Extract 11-character YouTube video ID from various URL formats, share links, or raw ID."""

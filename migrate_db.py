@@ -193,6 +193,7 @@ def migrate():
                     ('youtube_url', 'VARCHAR(500)'),
                     ('status', 'VARCHAR(20) DEFAULT \'pending\''),
                     ('processing_progress', 'INTEGER DEFAULT 0'),
+                    ('processing_error', 'TEXT'),
                     ('description', 'TEXT'),
                     ('duration_seconds', 'INTEGER DEFAULT 0'),
                     ('tags', 'VARCHAR(500)'),
