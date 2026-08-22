@@ -2384,12 +2384,16 @@ def add_youtube_video():
 @teacher_required
 def teacher_videos_page():
     q = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 24
     query = Video.query.filter_by(uploader_id=current_user.id)
-    if q: query = query.filter(Video.title.contains(q))
-    videos = query.order_by(Video.upload_date.desc()).all()
+    if q:
+        query = query.filter(Video.title.contains(q))
+    pagination = query.order_by(Video.upload_date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    videos = pagination.items
     playlists = Playlist.query.filter_by(creator_id=current_user.id).all()
     classes = Classroom.query.filter_by(teacher_id=current_user.id).all()
-    return render_template('teacher_videos.html', videos=videos, playlists=playlists, classes=classes, search_query=q)
+    return render_template('teacher_videos.html', videos=videos, pagination=pagination, playlists=playlists, classes=classes, search_query=q)
 
 @app.route('/teacher/playlists')
 @login_required
@@ -2713,8 +2717,10 @@ def get_video_status(video_id):
 @login_required
 @teacher_required
 def get_processing_videos():
-    videos = Video.query.filter(Video.status.in_(['pending', 'processing', 'queued', 'interrupted'])).all()
-    return jsonify([{'id': v.id, 'title': v.title, 'status': v.status, 'progress': v.processing_progress} for v in videos])
+    # Scoped scalar query to prevent DB lock contention & limit load on large N video libraries
+    rows = db.session.query(Video.id, Video.title, Video.status, Video.processing_progress)\
+        .filter(Video.uploader_id == current_user.id, Video.status.in_(['pending', 'processing', 'queued', 'interrupted'])).all()
+    return jsonify([{'id': r[0], 'title': r[1], 'status': r[2], 'progress': r[3]} for r in rows])
 
 # ═══════════════════════════════════════════════════════════════
 #  ADMIN VIDEO CONVERSION QUEUE & WORKER APIS

@@ -401,35 +401,52 @@ def upload_chunk():
         })
 
 
+def _execute_db_retry(fn, max_retries=5, initial_delay=0.05):
+    """Execute a database operation with automatic rollback and exponential backoff retry on SQLite locks."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            return fn()
+        except Exception as ex:
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            if attempt == max_retries:
+                logger.error(f"[DB Retry] Failed after {max_retries} attempts: {ex}")
+                raise ex
+            time.sleep(initial_delay * (1.5 ** (attempt - 1)))
+
 def _update_video_progress(video_id: int, progress: float):
-    """Update video processing progress in database."""
-    try:
-        video = Video.query.get(video_id)
+    """Update video processing progress in database with lock resilience."""
+    def _op():
+        video = db.session.get(Video, video_id)
         if video:
             video.processing_progress = min(99, int(progress))
             db.session.commit()
+    try:
+        _execute_db_retry(_op, max_retries=3, initial_delay=0.05)
     except Exception as e:
-        logger.warning(f"Progress update failed: {e}")
-
+        logger.warning(f"Progress update failed for video {video_id}: {e}")
 
 def _mark_video_failed(v_id: int, err_msg: str):
-    """Mark video status as failed and record exact error message."""
-    try:
-        v = Video.query.get(v_id)
+    """Mark video status as failed and record exact error message with lock resilience."""
+    def _op():
+        v = db.session.get(Video, v_id)
         if v:
             v.status = 'failed'
             v.processing_progress = 0
             v.processing_error = str(err_msg)
             db.session.commit()
             logger.error(f"Video {v_id} marked failed: {err_msg}")
+    try:
+        _execute_db_retry(_op, max_retries=3, initial_delay=0.05)
     except Exception as ex:
         logger.error(f"Error marking video {v_id} as failed: {ex}")
 
-
 def _update_video_record(video_id: int, result: dict):
-    """Update video record with complete HLS processing results."""
-    try:
-        video = Video.query.get(video_id)
+    """Update video record with complete HLS processing results with lock resilience."""
+    def _op():
+        video = db.session.get(Video, video_id)
         if not video:
             return
 
@@ -475,6 +492,8 @@ def _update_video_record(video_id: int, result: dict):
         db.session.commit()
         logger.info(f"Video {video_id} updated with ALL {len(renditions)} quality renditions "
                    f"(ultra-parallel: {result.get('total_parallel_tasks', 0)} tasks)")
+    try:
+        _execute_db_retry(_op, max_retries=5, initial_delay=0.1)
     except Exception as e:
         logger.error(f"Failed to update video record {video_id}: {e}")
 

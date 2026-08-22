@@ -355,6 +355,25 @@
         </div>
         {% endfor %}
     </div>
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination-container" style="display:flex; justify-content:center; align-items:center; gap:16px; margin:32px 0 16px;">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('teacher_videos_page', page=pagination.prev_num, q=search_query) }}" class="btn btn-outline" style="padding:8px 18px; font-size:0.85rem; font-weight:600; border-radius:10px;">&laquo; Previous</a>
+        {% else %}
+        <span class="btn btn-outline" style="padding:8px 18px; font-size:0.85rem; font-weight:600; border-radius:10px; opacity:0.4; pointer-events:none;">&laquo; Previous</span>
+        {% endif %}
+        
+        <span style="font-size:0.88rem; color:var(--text-secondary); font-weight:700; font-family:'JetBrains Mono',monospace;">
+            Page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} Videos)
+        </span>
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('teacher_videos_page', page=pagination.next_num, q=search_query) }}" class="btn btn-outline" style="padding:8px 18px; font-size:0.85rem; font-weight:600; border-radius:10px;">Next &raquo;</a>
+        {% else %}
+        <span class="btn btn-outline" style="padding:8px 18px; font-size:0.85rem; font-weight:600; border-radius:10px; opacity:0.4; pointer-events:none;">Next &raquo;</span>
+        {% endif %}
+    </div>
+    {% endif %}
     {% else %}
     <div class="card" style="text-align:center; padding:50px; color:var(--text-secondary);">
         <i class="material-icons" style="font-size:3.5rem; opacity:0.2;">video_call</i>
@@ -386,7 +405,7 @@
         const processingTasks = new Set();
         document.addEventListener('DOMContentLoaded', function () {
             checkProcessingVideos();
-            setInterval(checkProcessingVideos, 3000);
+            setInterval(checkProcessingVideos, 6000);
         });
         async function checkProcessingVideos() {
             try {
