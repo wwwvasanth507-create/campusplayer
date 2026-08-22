@@ -24,7 +24,7 @@ echo -e "${CYAN}============================================================${NC
 # Step 1: System Dependencies
 echo -e "\n${YELLOW}[1/7] Installing System Dependencies (apt)...${NC}"
 if command -v apt-get >/dev/null 2>&1; then
-    sudo apt-get update -qq
+    sudo apt-get update -qq || true
     sudo apt-get install -y -qq python3-full python3-pip python3-venv ffmpeg git curl build-essential libssl-dev libffi-dev
 else
     echo -e "${RED}⚠️  Warning: apt-get not found. Ensure Python 3, venv, and ffmpeg are installed.${NC}"
