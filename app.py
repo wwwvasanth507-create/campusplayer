@@ -245,11 +245,31 @@ def validate_csrf_token(token):
     expected = session.get('csrf_token', '')
     return bool(token and expected and secrets.compare_digest(token, expected))
 
+def get_request_csrf_token():
+    token = request.form.get('csrf_token')
+    if not token and request.is_json:
+        try:
+            json_data = request.get_json(silent=True)
+            if isinstance(json_data, dict):
+                token = json_data.get('csrf_token')
+        except Exception:
+            pass
+    if not token:
+        token = (
+            request.headers.get('X-CSRF-Token') or
+            request.headers.get('X-CSRFToken') or
+            request.headers.get('X-Csrf-Token') or
+            request.headers.get('X-Csrftoken') or
+            request.headers.get('X-CSRF_TOKEN') or
+            request.args.get('csrf_token')
+        )
+    return token
+
 def csrf_protect(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
-            token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+            token = get_request_csrf_token()
             if not validate_csrf_token(token):
                 abort(400, description='Invalid CSRF token')
         return f(*args, **kwargs)
@@ -2665,206 +2685,9 @@ def _release_chunk_upload_lock(upload_uuid):
     with _CHUNK_UPLOAD_LOCKS_GUARD:
         _CHUNK_UPLOAD_LOCKS.pop(upload_uuid, None)
 
-@app.route('/teacher/upload_chunk', methods=['POST'])
-@login_required
-@teacher_required
-@limiter.exempt
-@csrf_protect
-def upload_chunk():
-    file = request.files.get('chunk')
-    chunk_index = request.form.get('chunkIndex', type=int)
-    total_chunks = request.form.get('totalChunks', type=int)
-    upload_uuid = request.form.get('uuid')
-    filename = request.form.get('filename')
-
-    if not file or chunk_index is None or not upload_uuid or total_chunks is None or not filename:
-        return jsonify({'error': 'Missing upload parameters'}), 400
-
-    if not is_safe_uuid(upload_uuid):
-        return jsonify({'error': 'Invalid upload identifier'}), 400
-
-    if total_chunks <= 0 or chunk_index < 0 or chunk_index >= total_chunks:
-        return jsonify({'error': 'Invalid chunk index/count'}), 400
-
-    filename = secure_filename(filename)
-    if not allowed_file(filename):
-        return jsonify({'error': 'Invalid file type'}), 400
-
-    chunks_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'chunks', upload_uuid)
-    os.makedirs(chunks_dir, exist_ok=True)
-
-    # Persist metadata on first arrival so any out-of-order final chunk has complete info
-    meta_path = os.path.join(chunks_dir, 'meta.json')
-    title_in = request.form.get('title')
-    if title_in and not os.path.exists(meta_path):
-        try:
-            meta_payload = {
-                'title': sanitize_input(title_in, 200),
-                'description': sanitize_input(request.form.get('description', ''), 500),
-                'tags': sanitize_input(request.form.get('tags', ''), 200),
-                'classroom_id': request.form.get('classroom_id', type=int),
-                'expiration_type': request.form.get('expiration_type', 'none'),
-                'retention_days_input': request.form.get('retention_days_input', type=int),
-                'fixed_expiration_date': request.form.get('fixed_expiration_date', '')
-            }
-            with open(meta_path, 'w', encoding='utf-8') as mf:
-                json.dump(meta_payload, mf)
-        except Exception:
-            pass
-
-    chunk_path = os.path.join(chunks_dir, str(chunk_index))
-    # Write atomically (temp file + rename) so a half-written chunk is never mistaken
-    # for a complete one by the completeness check below.
-    tmp_chunk_path = chunk_path + '.part'
-    file.save(tmp_chunk_path, buffer_size=1024 * 1024)
-    os.replace(tmp_chunk_path, chunk_path)
-
-    # Determine whether every chunk has now actually arrived on disk (order-independent).
-    # This correctly handles parallel/out-of-order chunk delivery instead of assuming
-    # the chunk with the highest index is always the last one to finish.
-    lock = _get_chunk_upload_lock(upload_uuid)
-    with lock:
-        # Re-check inside the lock to avoid two concurrent requests both deciding
-        # they're the one to assemble.
-        if not os.path.isdir(chunks_dir):
-            # Another request already assembled and cleaned this upload up.
-            return jsonify({'success': True, 'message': f'Chunk {chunk_index} received'})
-
-        received = {
-            int(name) for name in os.listdir(chunks_dir)
-            if name.isdigit()
-        }
-        is_complete = len(received) == total_chunks and received == set(range(total_chunks))
-
-        if not is_complete:
-            return jsonify({
-                'success': True,
-                'message': f'Chunk {chunk_index} received',
-                'received_chunks': len(received),
-                'total_chunks': total_chunks
-            })
-
-        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        save_name = f"{timestamp}_{filename}"
-        target_path = os.path.join(app.config['UPLOAD_FOLDER'], save_name)
-
-        try:
-            assemble_chunks(upload_uuid, total_chunks, target_path)
-
-            saved_meta = {}
-            if os.path.exists(meta_path):
-                try:
-                    with open(meta_path, 'r', encoding='utf-8') as mf:
-                        saved_meta = json.load(mf)
-                except Exception:
-                    pass
-
-            title = saved_meta.get('title') or sanitize_input(request.form.get('title') or filename.rsplit('.', 1)[0], 200)
-            description = saved_meta.get('description') or sanitize_input(request.form.get('description', ''), 500)
-            tags = saved_meta.get('tags') or sanitize_input(request.form.get('tags', ''), 200)
-            classroom_id = saved_meta.get('classroom_id') if 'classroom_id' in saved_meta else request.form.get('classroom_id', type=int)
-            if classroom_id in (0, -1):
-                classroom_id = None
-
-            # Process fixed deletion date / retention period
-            expiration_type = saved_meta.get('expiration_type') or request.form.get('expiration_type', 'none')  # 'none', 'days', 'date'
-            auto_delete_at = None
-            retention_days = None
-
-            if expiration_type == 'days':
-                days_val = saved_meta.get('retention_days_input') if 'retention_days_input' in saved_meta else request.form.get('retention_days_input', type=int)
-                if days_val and days_val > 0:
-                    retention_days = days_val
-                    auto_delete_at = datetime.utcnow() + timedelta(days=days_val)
-            elif expiration_type == 'date':
-                fixed_date_str = saved_meta.get('fixed_expiration_date') or request.form.get('fixed_expiration_date')  # e.g. "2026-12-31T23:59"
-                if fixed_date_str:
-                    try:
-                        auto_delete_at = datetime.strptime(fixed_date_str, '%Y-%m-%dT%H:%M')
-                    except ValueError:
-                        pass
-
-            new_video = Video(
-                title=title, filename=save_name, uploader_id=current_user.id,
-                status='queued', processing_progress=0,
-                description=description, tags=tags,
-                classroom_id=classroom_id,
-                auto_delete_at=auto_delete_at,
-                retention_days=retention_days
-            )
-            db.session.add(new_video)
-            db.session.commit()
-
-            enqueue_conversion_job(video_id=new_video.id, input_path=target_path, uploader_id=current_user.id)
-
-            log_activity('upload_video', f'Uploaded video "{title}" (Chunked)')
-            return jsonify({'success': True, 'video_id': new_video.id, 'message': 'Upload successful. Conversion queued.'})
-
-        except Exception as e:
-            logger.error(f"Chunked assembly error: {e}")
-            import shutil
-            shutil.rmtree(chunks_dir, ignore_errors=True)
-            return jsonify({'error': 'Assembly failed. Please retry the upload.'}), 500
-        finally:
-            _release_chunk_upload_lock(upload_uuid)
-
-@app.route('/teacher/upload', methods=['POST'])
-@login_required
-@teacher_required
-@limiter.limit("10000 per minute")
-@csrf_protect
-def upload_video():
-    file = request.files.get('video_file')
-    title = sanitize_input(request.form.get('title') or '', 200)
-    description = sanitize_input(request.form.get('description', ''), 500)
-    tags = sanitize_input(request.form.get('tags', ''), 200)
-    classroom_id = request.form.get('classroom_id', type=int)
-
-    if not file or not file.filename:
-        return jsonify({'error': 'No file uploaded'}), 400
-
-    filename = secure_filename(file.filename)
-    if not allowed_file(filename):
-        return jsonify({'error': 'Invalid file type'}), 400
-
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    save_name = f"{timestamp}_{filename}"
-    input_path = os.path.join(app.config['UPLOAD_FOLDER'], save_name)
-    file.save(input_path)
-
-    # Process fixed deletion date / retention period
-    expiration_type = request.form.get('expiration_type', 'none')  # 'none', 'days', 'date'
-    auto_delete_at = None
-    retention_days = None
-
-    if expiration_type == 'days':
-        days_val = request.form.get('retention_days_input', type=int)
-        if days_val and days_val > 0:
-            retention_days = days_val
-            auto_delete_at = datetime.utcnow() + timedelta(days=days_val)
-    elif expiration_type == 'date':
-        fixed_date_str = request.form.get('fixed_expiration_date')  # e.g. "2026-12-31T23:59"
-        if fixed_date_str:
-            try:
-                auto_delete_at = datetime.strptime(fixed_date_str, '%Y-%m-%dT%H:%M')
-            except ValueError:
-                pass
-
-    new_video = Video(
-        title=title or filename.rsplit('.', 1)[0], filename=save_name, uploader_id=current_user.id,
-        status='queued', processing_progress=0,
-        description=description, tags=tags,
-        classroom_id=classroom_id,
-        auto_delete_at=auto_delete_at,
-        retention_days=retention_days
-    )
-    db.session.add(new_video)
-    db.session.commit()
-
-    enqueue_conversion_job(video_id=new_video.id, input_path=input_path, uploader_id=current_user.id)
-
-    log_activity('upload_video', f'Uploaded video "{title or filename}"')
-    return jsonify({'success': True, 'video_id': new_video.id, 'message': 'Upload successful. Conversion queued.'})
+# Note: /teacher/upload_chunk and /teacher/upload are handled by routes.video blueprint (video_bp)
+# to support multi-tenant institution storage (/static/uploads/institutions/<slug>/<video_id>/)
+# and ultra-parallel GPU HLS conversion.
 
 @app.route('/api/video_status/<int:video_id>')
 @login_required

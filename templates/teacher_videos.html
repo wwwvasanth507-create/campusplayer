@@ -414,12 +414,11 @@
             const description = document.getElementById('video-desc').value;
             const tags = document.getElementById('video-tags').value;
             
-            // Dynamic adaptive chunk sizing (8MB to 32MB) for optimal network throughput
+            // Dynamic adaptive chunk sizing (4MB to 16MB) for universal network & proxy compatibility
             function getOptimalChunkSize(fileSize) {
-                if (fileSize < 64 * 1024 * 1024) return 8 * 1024 * 1024;      // 8 MB for < 64 MB
-                if (fileSize < 512 * 1024 * 1024) return 16 * 1024 * 1024;   // 16 MB for < 512 MB
-                if (fileSize < 2 * 1024 * 1024 * 1024) return 24 * 1024 * 1024; // 24 MB for < 2 GB
-                return 32 * 1024 * 1024;                                      // 32 MB for >= 2 GB
+                if (fileSize < 32 * 1024 * 1024) return 4 * 1024 * 1024;      // 4 MB for < 32 MB
+                if (fileSize < 256 * 1024 * 1024) return 8 * 1024 * 1024;     // 8 MB for < 256 MB
+                return 16 * 1024 * 1024;                                     // 16 MB for >= 256 MB
             }
 
             const CHUNK_SIZE = getOptimalChunkSize(file.size);
@@ -618,6 +617,7 @@
 
                 xhr.open('POST', '/teacher/upload_chunk', true);
                 xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                xhr.setRequestHeader('X-CSRF-Token', '{{ csrf_token }}');
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.send(fd);
             }

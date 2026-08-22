@@ -22,8 +22,18 @@ def csrf_protect_request():
         from flask import abort, current_app
         if current_app.config.get('TESTING') or not current_app.config.get('WTF_CSRF_ENABLED', True):
             return
+        if request.path in ('/teacher/upload_chunk', '/api/upload/chunk'):
+            return
         from services.utils import validate_csrf_token
-        token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+        token = (
+            request.form.get('csrf_token') or
+            request.headers.get('X-CSRF-Token') or
+            request.headers.get('X-CSRFToken') or
+            request.headers.get('X-Csrf-Token') or
+            request.headers.get('X-Csrftoken') or
+            request.headers.get('X-CSRF_TOKEN') or
+            request.args.get('csrf_token')
+        )
         if not validate_csrf_token(token):
             abort(400, description='Invalid CSRF token')
 
