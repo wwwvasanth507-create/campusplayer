@@ -38,6 +38,10 @@ MAX_CONVERSION_RETRIES = int(os.getenv('MAX_CONVERSION_RETRIES', '3'))
 CONVERSION_PROGRESS_INTERVAL = float(os.getenv('CONVERSION_PROGRESS_INTERVAL', '3.0'))
 DEFAULT_SEGMENT_DURATION = int(os.getenv('CONVERSION_SEGMENT_DURATION', '6'))
 FFMPEG_PRESET = os.getenv('FFMPEG_PRESET', 'ultrafast')
+# When True (default), the original uploaded source file and any leftover chunk
+# temp directory are deleted after a confirmed successful HLS conversion.  Set to
+# False to keep source files on disk (e.g. for re-processing or archival).
+DELETE_SOURCE_AFTER_CONVERSION = os.getenv('DELETE_SOURCE_AFTER_CONVERSION', 'true').lower() not in ('false', '0', 'no')
 
 # Standard Rendition Ladder (144p to 16K)
 RENDITIONS_LADDER = [
@@ -589,6 +593,69 @@ def transcode_rendition_resumable(
 
 
 # ═══════════════════════════════════════════════════════════════
+# SOURCE FILE CLEANUP HELPER
+# ═══════════════════════════════════════════════════════════════
+
+def _delete_source_files(input_path: str, worker_id: str, video_id: int) -> None:
+    """
+    Delete the original uploaded source file and, if present, the sibling
+    ``_chunks/`` temporary directory left by the chunked-upload assembler.
+
+    Logs the amount of disk space freed.  All errors are caught and logged as
+    warnings so a deletion failure never rolls back an otherwise-successful job.
+    """
+    freed_bytes = 0
+
+    # 1. Remove the assembled source file
+    if os.path.exists(input_path):
+        try:
+            size = os.path.getsize(input_path)
+            os.remove(input_path)
+            freed_bytes += size
+            logger.info(
+                f"[{worker_id}][Video {video_id}] Deleted source file "
+                f"({size / (1024 ** 2):.1f} MB): {input_path}"
+            )
+        except Exception as exc:
+            logger.warning(
+                f"[{worker_id}][Video {video_id}] Could not delete source file "
+                f"{input_path}: {exc}"
+            )
+
+    # 2. Remove any leftover chunks temp directory (e.g. uploads/<upload_id>_chunks/)
+    #    The chunked-upload assembler stores partial chunks in a sibling dir whose
+    #    name is derived from the filename: <stem>_chunks/ or <stem>.tmp/
+    source_dir = os.path.dirname(input_path)
+    stem = os.path.splitext(os.path.basename(input_path))[0]
+    for suffix in ('_chunks', '.tmp', '_tmp'):
+        candidate = os.path.join(source_dir, f"{stem}{suffix}")
+        if os.path.isdir(candidate):
+            try:
+                dir_size = sum(
+                    os.path.getsize(os.path.join(dp, f))
+                    for dp, _, files in os.walk(candidate)
+                    for f in files
+                )
+                shutil.rmtree(candidate, ignore_errors=True)
+                freed_bytes += dir_size
+                logger.info(
+                    f"[{worker_id}][Video {video_id}] Deleted chunk temp dir "
+                    f"({dir_size / (1024 ** 2):.1f} MB): {candidate}"
+                )
+            except Exception as exc:
+                logger.warning(
+                    f"[{worker_id}][Video {video_id}] Could not delete chunk dir "
+                    f"{candidate}: {exc}"
+                )
+
+    if freed_bytes > 0:
+        logger.info(
+            f"[{worker_id}][Video {video_id}] Total disk space freed: "
+            f"{freed_bytes / (1024 ** 2):.2f} MB"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════
 # FULL JOB PROCESSING LOGIC
 # ═══════════════════════════════════════════════════════════════
 
@@ -769,13 +836,14 @@ def execute_conversion_job(app, job_id: int, worker_id: str, stop_event: threadi
         db.session.commit()
         logger.info(f"[{worker_id}] SUCCESS: Video {video.id} ({video.title}) conversion completed.")
 
-        # Clean up raw source file upon confirmed completion
-        try:
-            if os.path.exists(input_path):
-                os.remove(input_path)
-                logger.info(f"Cleaned up original raw upload: {input_path}")
-        except Exception as e:
-            logger.warning(f"Could not remove original upload {input_path}: {e}")
+        # ── Source cleanup (gated by DELETE_SOURCE_AFTER_CONVERSION) ─────────
+        if DELETE_SOURCE_AFTER_CONVERSION:
+            _delete_source_files(input_path, worker_id, video.id)
+        else:
+            logger.info(
+                f"[{worker_id}] DELETE_SOURCE_AFTER_CONVERSION=False — "
+                f"keeping source file: {input_path}"
+            )
 
         return True
 

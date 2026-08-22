@@ -622,8 +622,10 @@ def process_video_background(app, video_id, input_path):
                     logger.info(f"Video {video_id} processed successfully with fallback single-stream HLS.")
 
                     try:
-                        if os.path.exists(input_path):
+                        if os.path.exists(input_path) and os.getenv('DELETE_SOURCE_AFTER_CONVERSION', 'true').lower() not in ('false', '0', 'no'):
+                            freed = os.path.getsize(input_path)
                             os.remove(input_path)
+                            logger.info(f"Deleted source file after fallback HLS conversion ({freed / (1024**2):.1f} MB): {input_path}")
                     except Exception as e:
                         logger.error(f"Error deleting original video: {e}")
                 else:
@@ -665,8 +667,10 @@ def process_video_background(app, video_id, input_path):
                 logger.info(f"Video {video_id} processed with adaptive HLS streams successfully.")
                 
                 try:
-                    if os.path.exists(input_path):
+                    if os.path.exists(input_path) and os.getenv('DELETE_SOURCE_AFTER_CONVERSION', 'true').lower() not in ('false', '0', 'no'):
+                        freed = os.path.getsize(input_path)
                         os.remove(input_path)
+                        logger.info(f"Deleted source file after adaptive HLS conversion ({freed / (1024**2):.1f} MB): {input_path}")
                 except Exception as e:
                     logger.error(f"Error deleting original video: {e}")
 
