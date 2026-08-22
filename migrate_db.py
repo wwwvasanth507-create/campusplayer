@@ -1197,6 +1197,8 @@ def migrate():
             if 'institution_id' not in col_names:
                 migrations[table]['columns'].append(('institution_id', 'INTEGER'))
 
+        is_postgres = (db.engine.dialect.name == 'postgresql')
+
         for table, config in migrations.items():
             try:
                 columns = inspector.get_columns(table)
@@ -1204,11 +1206,18 @@ def migrate():
                 
                 for col_name, col_type in config['columns']:
                     if col_name not in existing_cols:
+                        exec_type = col_type
+                        if is_postgres:
+                            exec_type = exec_type.replace('DATETIME', 'TIMESTAMP')
+                            exec_type = exec_type.replace('BOOLEAN DEFAULT 1', 'BOOLEAN DEFAULT TRUE')
+                            exec_type = exec_type.replace('BOOLEAN DEFAULT 0', 'BOOLEAN DEFAULT FALSE')
                         try:
-                            db.session.execute(db.text(f'ALTER TABLE {table} ADD COLUMN {col_name} {col_type}'))
+                            db.session.execute(db.text(f'ALTER TABLE "{table}" ADD COLUMN {col_name} {exec_type}'))
+                            db.session.commit()
                             print(f"[OK] Added '{col_name}' to {table}")
                         except Exception as e:
-                            print(f"[!] Could not add '{col_name}' to {table}: {str(e)[:60]}")
+                            db.session.rollback()
+                            print(f"[!] Could not add '{col_name}' to {table}: {str(e)[:100]}")
                 
                 # Create indexes
                 for idx_name, idx_col in config.get('indexes', []):
@@ -1216,14 +1225,18 @@ def migrate():
                         existing_indexes = [i['name'] for i in inspector.get_indexes(table)]
                         if idx_name not in existing_indexes:
                             try:
-                                db.session.execute(db.text(f'CREATE INDEX IF NOT EXISTS {idx_name} ON {table} ({idx_col})'))
+                                db.session.execute(db.text(f'CREATE INDEX IF NOT EXISTS {idx_name} ON "{table}" ({idx_col})'))
+                                db.session.commit()
                                 print(f"[OK] Created index '{idx_name}' on {table}")
                             except Exception as e:
-                                print(f"[!] Could not create index '{idx_name}': {str(e)[:60]}")
+                                db.session.rollback()
+                                print(f"[!] Could not create index '{idx_name}': {str(e)[:100]}")
                     except Exception as e:
-                        print(f"[!] Could not inspect indexes for {table}: {str(e)[:60]}")
+                        db.session.rollback()
+                        print(f"[!] Could not inspect indexes for {table}: {str(e)[:100]}")
             except Exception as e:
-                print(f"[!] Table {table} does not exist yet or inspection error: {str(e)[:60]}")
+                db.session.rollback()
+                print(f"[!] Table {table} does not exist yet or inspection error: {str(e)[:100]}")
         
         # Backfill default institution for all tables
         print("\n[Institution] Backfilling all tables with Default Institution...")
