@@ -696,9 +696,9 @@
             function handleChunkFailure(chunkIndex, reason, workerSlot = 0) {
                 if (isAborted) return;
                 chunkRetries[chunkIndex] = (chunkRetries[chunkIndex] || 0) + 1;
-                const delay = Math.min(10000, 800 * Math.pow(1.3, Math.min(chunkRetries[chunkIndex], 10)));
-                console.warn(`[Upload] Retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}): ${reason}`);
-                if (status) status.innerText = `Network fluctuation detected. Auto-resuming chunk #${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]})...`;
+                const delay = 0; // Instant 0ms retry — zero waiting/catch period!
+                console.warn(`[Upload] Instant retrying chunk ${chunkIndex + 1} (Attempt ${chunkRetries[chunkIndex]}): ${reason}`);
+                if (status) status.innerText = `Network fluctuation detected. Instant auto-resuming chunk #${chunkIndex + 1}...`;
                 chunkBytesLoaded[chunkIndex] = 0;
                 setTimeout(() => {
                     chunkQueue.push(chunkIndex);
@@ -715,8 +715,8 @@
                 }).catch(() => {});
             }
 
-            // Resumable Upload Check: Query server for already-uploaded chunks
-            fetch(`/teacher/upload_chunk_status?uuid=${uploadUuid}`)
+            // Resumable Upload Check: Query server for already-uploaded chunks (Zero Cache)
+            fetch(`/teacher/upload_chunk_status?uuid=${uploadUuid}`, { cache: 'no-store' })
                 .then(r => r.json())
                 .then(data => {
                     const uploaded = (data && data.uploaded_chunks) ? data.uploaded_chunks : [];

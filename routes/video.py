@@ -8,7 +8,7 @@ import shutil
 import logging
 from datetime import datetime
 from functools import wraps
-from flask import Blueprint, render_template, request, jsonify, url_for, abort, current_app, flash, redirect, send_file, make_response
+from flask import Blueprint, render_template, request, jsonify, url_for, abort, current_app, flash, redirect, send_file, make_response, after_this_request
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from extensions import db, limiter
@@ -154,9 +154,19 @@ def view_playlist(playlist_id):
 
 _chunk_assembly_lock = threading.Lock()
 
+def _add_no_cache_headers(resp):
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
+
 @video_bp.route('/teacher/upload_chunk_status', methods=['GET'])
 @limiter.exempt
 def upload_chunk_status():
+    @after_this_request
+    def add_headers(response):
+        return _add_no_cache_headers(response)
+
     uuid_str = request.args.get('uuid') or request.args.get('upload_uuid')
     if not uuid_str:
         return jsonify({'success': False, 'message': 'Missing uuid parameter.'}), 400
@@ -183,6 +193,9 @@ def upload_chunk_status():
 @video_bp.route('/teacher/upload_chunk', methods=['POST'])
 @limiter.exempt
 def upload_chunk():
+    @after_this_request
+    def add_headers(response):
+        return _add_no_cache_headers(response)
     uuid_str = request.form.get('uuid') or request.form.get('upload_uuid')
     chunk_index_raw = request.form.get('chunkIndex') if request.form.get('chunkIndex') is not None else request.form.get('chunk_index')
     total_chunks_raw = request.form.get('totalChunks') if request.form.get('totalChunks') is not None else request.form.get('total_chunks')

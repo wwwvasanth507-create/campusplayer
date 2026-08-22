@@ -163,7 +163,7 @@ class ChunkBuffer:
     UNLIMITED MODE: Gigantic buffer, no size restrictions.
     """
     
-    def __init__(self, flush_interval: float = 0.1, max_buffer_size: int = 1024 * 1024 * 1024 * 100):  # 100GB buffer
+    def __init__(self, flush_interval: float = 0.01, max_buffer_size: int = 1024 * 1024 * 1024 * 100):  # 100GB buffer instant 10ms flush
         self._buffers: Dict[str, Dict[int, bytes]] = {}
         self._flush_interval = flush_interval
         self._max_buffer_size = max_buffer_size
