@@ -38,15 +38,26 @@ def init_database():
             logger.error(f"Failed to connect to PostgreSQL database: {e}")
             sys.exit(1)
 
-        logger.info("Applying database migrations / schema synchronization...")
+        logger.info("Applying database schema synchronization...")
         try:
-            from flask_migrate import upgrade
-            upgrade()
-            logger.info("Database migration upgrade completed successfully.")
-        except Exception as e:
-            logger.warning(f"Flask-Migrate upgrade warning/fallback: {e}")
+            # Always create tables first — this is idempotent and safe on
+            # both fresh databases and existing ones.  SQLAlchemy will only
+            # CREATE TABLE IF NOT EXISTS effectively, so no data is lost.
             db.create_all()
-            logger.info("db.create_all() executed.")
+            logger.info("db.create_all() executed successfully (all tables present).")
+        except Exception as e:
+            logger.error(f"db.create_all() failed: {e}")
+            sys.exit(1)
+
+        # Now stamp Alembic so it knows the current schema is 'head'.
+        # This prevents flask-migrate from trying to re-run migrations that
+        # were already applied via create_all().
+        try:
+            from flask_migrate import stamp
+            stamp()
+            logger.info("Alembic revision stamped to head.")
+        except Exception as e:
+            logger.warning(f"Alembic stamp skipped (non-fatal): {e}")
 
         logger.info("Ensuring Default Institution exists...")
         default_inst = Institution.query.filter_by(slug='default').first()

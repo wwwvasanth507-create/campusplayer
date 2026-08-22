@@ -5,8 +5,8 @@ Wants=postgresql.service redis.service
 
 [Service]
 Type=simple
-User=campusplayer
-Group=campusplayer
+User=vasanth-v
+Group=vasanth-v
 WorkingDirectory=/opt/campusplayer
 EnvironmentFile=/opt/campusplayer/.env
 ExecStart=/opt/campusplayer/venv/bin/celery -A celery_config.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule

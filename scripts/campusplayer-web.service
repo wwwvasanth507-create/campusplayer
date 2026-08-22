@@ -5,8 +5,8 @@ Wants=postgresql.service redis.service
 
 [Service]
 Type=notify
-User=campusplayer
-Group=campusplayer
+User=vasanth-v
+Group=vasanth-v
 WorkingDirectory=/opt/campusplayer
 EnvironmentFile=/opt/campusplayer/.env
 ExecStart=/opt/campusplayer/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 app:app
