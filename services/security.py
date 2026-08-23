@@ -109,7 +109,7 @@ def update_last_active():
     """Update user's last_active timestamp with throttling and check suspension status."""
     from flask_login import current_user, logout_user
     from flask import request, redirect, url_for, current_app
-    from app import db
+    from extensions import db
     from models import Institution
     import datetime
     

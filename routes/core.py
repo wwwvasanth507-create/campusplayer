@@ -11,7 +11,7 @@ def index():
             return redirect(url_for('system_admin_dashboard'))
         elif current_user.role == 'admin':
             return redirect(url_for('admin_dashboard'))
-        elif current_user.role == 'teacher':
+        elif current_user.role in ('teacher', 'hod'):
             return redirect(url_for('teacher_dashboard'))
         elif current_user.role == 'student':
             return redirect(url_for('student_dashboard'))

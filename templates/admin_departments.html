@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+{% block title %}Department & Subject Management — Campus Player{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Department &amp; Master Subject Registry</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Define institutional departments, appoint HODs, and configure master subject catalogues</p>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:320px 1fr; gap:20px; align-items:flex-start;">
+    <!-- Left: Create Department & Stats -->
+    <div>
+        <div class="card mb-16" style="padding:18px;">
+            <div class="card-title font-display" style="margin-bottom:12px; font-size:1rem;">
+                <i class="material-icons" style="color:var(--primary);">account_balance</i> Create Department
+            </div>
+            <form method="POST" action="{{ url_for('admin_create_department') }}" style="display:flex; flex-direction:column; gap:10px; margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div>
+                    <label>Department Name *</label>
+                    <input type="text" name="name" placeholder="e.g. Dept of Artificial Intelligence & ML" required style="margin-bottom:0; height:38px;">
+                </div>
+                <div>
+                    <label>Department Code / Short Name *</label>
+                    <input type="text" name="code" placeholder="e.g. AI & ML or CSE" required style="margin-bottom:0; height:38px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:6px; height:40px; min-height:40px; font-size:0.82rem;">
+                    <i class="material-icons" style="font-size:0.95rem;">add_circle</i> Add Department
+                </button>
+            </form>
+        </div>
+
+        <!-- Create Subject Card -->
+        <div class="card mb-16" style="padding:18px;">
+            <div class="card-title font-display" style="margin-bottom:12px; font-size:1rem;">
+                <i class="material-icons" style="color:var(--primary);">menu_book</i> Add Master Subject
+            </div>
+            {% if departments %}
+            <form method="POST" action="{{ url_for('admin_create_subject') }}" style="display:flex; flex-direction:column; gap:10px; margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div>
+                    <label>Select Parent Department *</label>
+                    <select name="department_id" required style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Subject Name *</label>
+                    <input type="text" name="name" placeholder="e.g. Deep Learning" required style="margin-bottom:0; height:38px;">
+                </div>
+                <div>
+                    <label>Subject Code *</label>
+                    <input type="text" name="code" placeholder="e.g. CS301" required style="margin-bottom:0; height:38px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:6px; height:40px; min-height:40px; font-size:0.82rem;">
+                    <i class="material-icons" style="font-size:0.95rem;">library_add</i> Register Subject
+                </button>
+            </form>
+            {% else %}
+            <p style="font-size:0.78rem; color:var(--text-dim); margin:0;">Please create a Department first before adding subjects.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Department Cards Matrix -->
+    <div>
+        {% if departments %}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            {% for dept in departments %}
+            <div class="card" style="margin-bottom:0; padding:20px; border-color:rgba(138,106,58,0.3);">
+                <div class="flex-between mb-12" style="flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-weight:800; font-family:'JetBrains Mono',monospace;">{{ dept.code }}</span>
+                            <h2 class="font-display" style="margin:0; font-size:1.15rem; color:var(--text);">{{ dept.name }}</h2>
+                        </div>
+                    </div>
+
+                    <!-- HOD Assignment Form -->
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <form method="POST" action="{{ url_for('admin_assign_hod', department_id=dept.id) }}" style="margin:0; display:flex; gap:6px; align-items:center;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <select name="hod_id" style="height:34px; font-size:0.75rem; margin-bottom:0; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; max-width:180px;">
+                                <option value="">-- No HOD Appointed --</option>
+                                {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}" {% if dept.hod_id == teacher.id %}selected{% endif %}>
+                                    {{ teacher.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline" style="padding:4px 8px; font-size:0.72rem; min-height:34px; border-color:var(--primary); color:var(--primary);" title="Appoint HOD">
+                                <i class="material-icons" style="font-size:0.9rem; vertical-align:middle;">military_tech</i> Assign HOD
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Department Details & Registered Master Subjects -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+                    <div>
+                        <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">
+                            Head of Department (HOD)
+                        </div>
+                        {% if dept.hod %}
+                        <div style="display:flex; align-items:center; gap:8px; background:rgba(217,130,43,0.1); border:1px solid rgba(217,130,43,0.25); padding:8px 12px; border-radius:8px;">
+                            <i class="material-icons" style="color:var(--gold); font-size:1.1rem;">workspace_premium</i>
+                            <div>
+                                <div style="font-weight:700; font-size:0.85rem; color:var(--text);">{{ dept.hod.name }}</div>
+                                <div style="font-size:0.68rem; color:var(--text-dim);">HOD &bull; {{ dept.code }}</div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.78rem; color:var(--text-dim); font-style:italic;">No Head of Department appointed yet.</div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; font-weight:700; margin-bottom:6px; letter-spacing:0.5px;">
+                            Registered Master Subjects ({{ dept.subjects|length }})
+                        </div>
+                        {% if dept.subjects %}
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            {% for sub in dept.subjects %}
+                            <span class="badge" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); font-size:0.73rem; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                <b style="color:var(--primary); font-family:'JetBrains Mono',monospace;">{{ sub.code }}</b> {{ sub.name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div style="font-size:0.78rem; color:var(--text-dim); font-style:italic;">No subjects registered in this department yet.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card text-center" style="padding:40px;">
+            <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">account_balance</i>
+            <p style="color:var(--text-dim); font-size:0.9rem;">No departments created yet. Add your first department on the left panel to build the master subject registry!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

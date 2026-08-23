@@ -56,6 +56,13 @@
             <input type="password" name="admin_password" required minlength="4" placeholder="password" style="margin-bottom:0;">
         </div>
         <div>
+            <label>Institution Mode</label>
+            <select name="institution_type" required style="margin-bottom:0; height:44px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:0 10px;">
+                <option value="college" selected>🏛️ College Mode (Period 1-8 Matrix)</option>
+                <option value="school">🏫 School Mode (Morning/Evening 2-Session)</option>
+            </select>
+        </div>
+        <div>
             <button type="submit" class="btn btn-primary" style="height:44px; width:100%;">Create Institution</button>
         </div>
     </form>
@@ -295,6 +302,8 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
                     <input type="password" name="new_password" placeholder="New pwd" style="padding:5px 8px; font-size:0.72rem; width:100px; margin-bottom:0; min-height:34px; height:34px; border-radius:8px;">
                     <button type="submit" class="btn btn-outline" style="padding:6px 8px; font-size:0.72rem; min-height:34px;">Reset</button>
                 </form>
+                {% endif %}
+                {% if inst.slug != 'default' %}
                 <button type="button" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;" onclick="openDeleteInstModal({{ inst.id }}, '{{ inst.name|replace("'", "\\'") }}')">
                     <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">delete_forever</i> Delete
                 </button>

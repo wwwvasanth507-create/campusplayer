@@ -44,14 +44,23 @@ def create_backup(app=None, prefix="campusplayer"):
     is_testing = (app and app.config.get('TESTING')) or os.getenv('TESTING') or os.getenv('FLASK_TESTING')
 
     if not db_uri.startswith('postgres'):
-        if is_testing and db_uri.startswith('sqlite'):
-            timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
-            backup_filename = f"{prefix}_sqlite_mock_{timestamp}.sql"
-            backup_path = os.path.join(BACKUP_DIR, backup_filename)
-            with open(backup_path, 'w', encoding='utf-8') as f:
-                f.write("-- MOCK SQLITE BACKUP FOR TESTING --\n")
-            return True, backup_path
-        return False, f"[Backup] Only PostgreSQL databases are supported. Got: {db_uri[:50]}"
+        if db_uri.startswith('sqlite'):
+            db_path = db_uri.replace('sqlite:///', '')
+            if os.path.exists(db_path):
+                timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
+                backup_filename = f"{prefix}_sqlite_{timestamp}.db"
+                backup_path = os.path.join(BACKUP_DIR, backup_filename)
+                shutil.copy2(db_path, backup_path)
+                print(f"[Backup] Successfully created SQLite backup: {backup_path} ({os.path.getsize(backup_path)} bytes)")
+                return True, backup_path
+            else:
+                timestamp = datetime.utcnow().strftime("%Y-%m-%d_%H%M%S")
+                backup_filename = f"{prefix}_sqlite_mock_{timestamp}.sql"
+                backup_path = os.path.join(BACKUP_DIR, backup_filename)
+                with open(backup_path, 'w', encoding='utf-8') as f:
+                    f.write("-- MOCK SQLITE BACKUP FOR TESTING --\n")
+                return True, backup_path
+        return False, f"[Backup] Unsupported database URI: {db_uri[:50]}"
 
     pg_dump_bin = shutil.which('pg_dump')
     if not pg_dump_bin:

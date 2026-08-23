@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block title %}On Duty (OD) &amp; Medical Leave (ML) Applications — Campus Player{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-outline" style="width: auto; padding: 8px 12px; min-height: 38px;">
+            <i class="material-icons" style="font-size: 1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.5rem;">OD &amp; Medical Leave Approval Portal</h1>
+            <p class="page-sub" style="margin: 2px 0 0 0; font-size: 0.85rem;">
+                Review student On-Duty (OD) and Medical Leave (ML) applications for automatic attendance protection.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% if requests %}
+<div style="display: flex; flex-direction: column; gap: 12px;">
+    {% for req in requests %}
+    <div class="card" style="margin-bottom: 0; padding: 18px; border-left: 4px solid {% if req.leave_type == 'od' %}var(--gold){% else %}#60a5fa{% endif %};">
+        <div class="flex-between" style="flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px; min-width: 240px; flex: 1;">
+                <div style="width: 46px; height: 46px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary); background: var(--surface2); flex-shrink: 0;">
+                    {% if req.student.avatar_url %}
+                    <img src="{{ req.student.avatar_url }}" alt="{{ req.student.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--primary);">
+                        {{ req.student.name[0].upper() }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text); display: flex; align-items: center; gap: 8px;">
+                        {{ req.student.name }} ({{ req.student.username }})
+                        <span class="badge" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; {% if req.leave_type == 'od' %}background: rgba(245, 158, 11, 0.15); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.3);{% else %}background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);{% endif %}">
+                            {% if req.leave_type == 'od' %}🟡 On Duty (OD){% else %}🔵 Medical Leave (ML){% endif %}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-dim); margin-top: 4px;">
+                        📅 Target Date: <strong>{{ req.date.strftime('%B %d, %Y') }}</strong> &bull; Applied: {{ req.created_at.strftime('%b %d, %H:%M') }}
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text); margin-top: 6px; background: var(--surface2); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        "{{ req.reason }}"
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approval Actions -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                {% if req.status == 'pending' %}
+                <form action="{{ url_for('teacher_approve_od_ml', request_id=req.id) }}" method="POST" style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.78rem; height: 36px; background: #2e7d32; border-color: #2e7d32;">
+                        <i class="material-icons" style="font-size: 0.95rem;">check_circle</i> Approve Request
+                    </button>
+                </form>
+                <form action="{{ url_for('teacher_approve_od_ml', request_id=req.id) }}" method="POST" style="margin: 0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="action" value="reject">
+                    <button type="submit" class="btn btn-danger" style="padding: 6px 14px; font-size: 0.78rem; height: 36px;">
+                        <i class="material-icons" style="font-size: 0.95rem;">cancel</i> Reject
+                    </button>
+                </form>
+                {% else %}
+                <span class="badge" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; {% if req.status == 'approved' %}background: rgba(46, 125, 50, 0.2); color: var(--success-color);{% else %}background: rgba(217, 83, 79, 0.2); color: var(--danger-color);{% endif %}">
+                    {% if req.status == 'approved' %}✅ APPROVED{% else %}❌ REJECTED{% endif %}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card text-center" style="padding: 40px;">
+    <i class="material-icons" style="font-size: 3rem; color: var(--text-dim); margin-bottom: 12px;">event_available</i>
+    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text);">No Leave Requests Found</h3>
+    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-dim);">There are no pending or recent OD/ML applications to review.</p>
+</div>
+{% endif %}
+{% endblock %}

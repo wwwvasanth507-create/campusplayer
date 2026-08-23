@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}XP Rewards Store — Campus Player{% endblock %}
+{% block title %}CP Rewards Store — Campus Player{% endblock %}
 
 {% block content %}
 <!-- Header Hero -->
@@ -12,13 +12,13 @@
                 </span>
                 <span style="color: var(--text-dim); font-size: 0.78rem;">Level {{ current_user.level }} Scholar</span>
             </div>
-            <h1 class="page-title font-display" style="margin: 0; font-size: 1.6rem;">XP Rewards &amp; Avatar Customizer</h1>
-            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.82rem;">Redeem earned study XP to unlock exclusive holographic avatar frames, prestigious honor titles, and badges!</p>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.6rem;">CP Rewards &amp; Avatar Customizer</h1>
+            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.82rem;">Redeem earned study CP to unlock exclusive holographic avatar frames, prestigious honor titles, and badges!</p>
         </div>
         
-        <!-- User XP Balance Card -->
+        <!-- User CP Balance Card -->
         <div class="card" style="padding: 14px 20px; margin: 0; background: var(--surface2); border: 1px solid rgba(212, 175, 55, 0.3); border-radius: var(--radius); text-align: center; min-width: 170px;">
-            <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Your XP Balance</div>
+            <div style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);">Your CP Balance</div>
             <div class="font-display" style="font-size: 1.5rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 2px;" id="userXpDisplay">
                 <i class="material-icons" style="color: var(--primary); font-size: 1.4rem;">bolt</i> {{ user_xp }}
             </div>
@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     alert(data.message || 'Purchase failed.');
                     btn.disabled = false;
-                    btn.innerHTML = `<i class="material-icons" style="font-size:0.85rem;">bolt</i> Unlock for ${cost} XP`;
+                    btn.innerHTML = `<i class="material-icons" style="font-size:0.85rem;">bolt</i> Unlock for ${cost} CP`;
                 }
             } catch (err) {
                 alert('Network error while processing purchase.');

@@ -223,29 +223,75 @@
         <div class="cls-header">
             <div>
                 <div class="cls-name">{{ cls.name }}</div>
-                <div class="cls-meta">Teacher: <b style="color:var(--text);">{{ cls.teacher.name }}</b> &bull; {{ cls.students.count() }} students</div>
+                <div class="cls-meta">Class Teacher: <b style="color:var(--text);">{{ cls.teacher.name }}</b> &bull; {{ cls.students.count() }} students</div>
                 <div class="cls-meta" style="font-family:'JetBrains Mono',monospace; color:var(--primary);">Code: {{ cls.class_code or '—' }}</div>
             </div>
             <form action="{{ url_for('delete_class', class_id=cls.id) }}" method="POST"
                 onsubmit="return confirm('Delete class \'{{ cls.name }}\' and all its data?');" style="margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-danger" style="padding:6px 10px; font-size:0.75rem; min-height:32px; height:32px;">
                     <i class="material-icons" style="font-size:0.95rem;">delete</i>
                 </button>
             </form>
         </div>
 
-        <!-- Reassign Teacher -->
+        <!-- Reassign Class Teacher (Unchanged) -->
         <form action="{{ url_for('change_class_teacher', class_id=cls.id) }}" method="POST" style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div style="flex:1;">
                 <select name="new_teacher_id" required style="margin:0; height:38px; font-size:0.8rem; padding:6px 10px;">
-                    <option value="">Reassign teacher...</option>
+                    <option value="">Reassign Class Teacher...</option>
                     {% for teacher in teachers %}
-                    <option value="{{ teacher.id }}" {% if teacher.id == cls.teacher_id %}selected{% endif %}>{{ teacher.name }}</option>
+                    <option value="{{ teacher.id }}" {% if teacher.id == cls.teacher_id %}selected{% endif %}>{{ teacher.name }} (Class Teacher)</option>
                     {% endfor %}
                 </select>
             </div>
             <button type="submit" class="btn btn-outline" style="height:38px; min-height:38px; padding:0 12px; font-size:0.75rem;">Change</button>
         </form>
+
+        <!-- Subject Teachers List -->
+        {% if cls.subject_teachers %}
+        <div class="subject-teachers-section" style="margin-bottom:12px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px;">
+            <div style="font-size:0.76rem; font-weight:700; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
+                Subject Teachers ({{ cls.subject_teachers|length }})
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                {% for st in cls.subject_teachers %}
+                <span style="font-size:0.78rem; background:rgba(37,65,178,0.15); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.3); padding:4px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="material-icons" style="font-size:0.85rem;">person</i> <b>{{ st.teacher.name if st.teacher else 'Teacher' }}</b> ({{ st.subject }})
+                    <form action="{{ url_for('remove_subject_teacher', class_id=cls.id, teacher_id=st.teacher_id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('Remove {{ st.teacher.name }} ({{ st.subject }}) from this classroom?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" style="background:none; border:none; color:var(--secondary-color); cursor:pointer; font-size:1.1rem; padding:0; line-height:1; opacity:0.8;" title="Remove Subject Teacher">&times;</button>
+                    </form>
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Add Subject Teacher Section -->
+        <div class="add-subject-teacher-section" style="background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--primary); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                <i class="material-icons" style="font-size:0.95rem;">person_add</i> Add Subject Teacher
+            </div>
+            <form action="{{ url_for('add_subject_teacher', class_id=cls.id) }}" method="POST" style="display:flex; flex-direction:column; gap:8px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <select name="teacher_id" required style="flex:1; min-width:140px; margin:0; height:38px; font-size:0.8rem; padding:6px 10px;">
+                        <option value="">Select Teacher...</option>
+                        {% for t in teachers %}
+                        {% if t.id != cls.teacher_id %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ t.username }})</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="subject" placeholder="Subject (e.g. Physics)" required style="flex:1; min-width:130px; margin:0; height:38px; font-size:0.8rem; padding:6px 10px;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="height:36px; min-height:36px; padding:0 14px; font-size:0.78rem; align-self:flex-end;">
+                    <i class="material-icons" style="font-size:0.9rem;">add</i> Assign Subject Teacher
+                </button>
+            </form>
+        </div>
 
         <!-- Add Student Section with Search & Multi-Select -->
         <div class="add-student-section" data-class-id="{{ cls.id }}">
@@ -289,7 +335,7 @@
                 style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
                 <i class="material-icons" style="font-size:1rem; color:var(--secondary-color);">chat</i> Chatroom
             </a>
-            <a href="{{ url_for('teacher_attendance_page') }}?class_id={{ cls.id }}" class="btn btn-outline"
+            <a href="{{ url_for('teacher_take_attendance_page', classroom_id=cls.id) }}" class="btn btn-outline"
                 style="flex:1; font-size:0.8rem; padding:8px 12px; min-height:36px;">
                 <i class="material-icons" style="font-size:1rem; color:var(--success-color);">fact_check</i> Attendance
             </a>

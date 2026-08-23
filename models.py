@@ -22,7 +22,9 @@ class Institution(db.Model):
     owner_admin_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='active', index=True)  # active, suspended
+    institution_type = db.Column(db.String(20), default='college', index=True)  # 'school' (2-session), 'college' (period-wise)
     logo_url = db.Column(db.String(500), nullable=True)
+    period_timings_json = db.Column(db.Text, default='{}')  # JSON string for custom period timings {"1": {"start": "09:15", "end": "10:05"}, ...}
 
     # Per-institution isolated storage root, e.g. uploads/institutions/<slug>/
     storage_root = db.Column(db.String(500), nullable=True)
@@ -35,6 +37,65 @@ class Institution(db.Model):
 
     owner_admin = db.relationship('User', foreign_keys=[owner_admin_id])
     users = db.relationship('User', backref='institution', lazy=True, foreign_keys='User.institution_id')
+
+    @property
+    def mode(self):
+        return self.institution_type or 'college'
+
+    def get_period_timings(self):
+        """Returns dict of period timings mapped 1..8 with fallback defaults."""
+        defaults = {
+            1: {"start": "09:15", "end": "10:05", "label": "Period 1 (09:15 AM - 10:05 AM)"},
+            2: {"start": "10:05", "end": "10:55", "label": "Period 2 (10:05 AM - 10:55 AM)"},
+            3: {"start": "11:10", "end": "12:00", "label": "Period 3 (11:10 AM - 12:00 PM)"},
+            4: {"start": "12:00", "end": "12:50", "label": "Period 4 (12:00 PM - 12:50 PM)"},
+            5: {"start": "13:40", "end": "14:30", "label": "Period 5 (01:40 PM - 02:30 PM)"},
+            6: {"start": "14:30", "end": "15:20", "label": "Period 6 (02:30 PM - 03:20 PM)"},
+            7: {"start": "15:20", "end": "16:10", "label": "Period 7 (03:20 PM - 04:10 PM)"},
+            8: {"start": "16:10", "end": "17:00", "label": "Period 8 (04:10 PM - 05:00 PM)"},
+        }
+        if self.period_timings_json:
+            try:
+                parsed = json.loads(self.period_timings_json)
+                for p_num in range(1, 9):
+                    str_key = str(p_num)
+                    if str_key in parsed and isinstance(parsed[str_key], dict):
+                        st = parsed[str_key].get('start', defaults[p_num]['start'])
+                        et = parsed[str_key].get('end', defaults[p_num]['end'])
+                        defaults[p_num] = {
+                            "start": st,
+                            "end": et,
+                            "label": f"Period {p_num} ({st} - {et})"
+                        }
+            except Exception:
+                pass
+        return defaults
+
+
+class Department(db.Model):
+    __tablename__ = 'department'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    code = db.Column(db.String(50), nullable=False)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    hod_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    institution = db.relationship('Institution', backref=db.backref('departments', lazy=True, cascade='all, delete-orphan'))
+    hod = db.relationship('User', foreign_keys=[hod_id])
+    subjects = db.relationship('Subject', backref='department', lazy=True, cascade='all, delete-orphan')
+
+
+class Subject(db.Model):
+    __tablename__ = 'subject'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    code = db.Column(db.String(50), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False, index=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    institution = db.relationship('Institution', backref=db.backref('master_subjects', lazy=True, cascade='all, delete-orphan'))
 
 
 # Association table for Playlist-Video
@@ -57,7 +118,24 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(db.String(20), nullable=False, index=True)  # 'system_admin', 'admin', 'teacher', 'student'
+    role = db.Column(db.String(20), nullable=False, index=True)  # 'system_admin', 'admin', 'teacher', 'student', 'hod'
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=True, index=True)
+    subject_specializations_json = db.Column(db.Text, default='[]')
+    photo_approved = db.Column(db.Boolean, default=True)
+    photo_rejection_reason = db.Column(db.String(300), nullable=True)
+
+    department = db.relationship('Department', foreign_keys=[department_id], backref=db.backref('staff_members', lazy=True))
+
+    @property
+    def is_photo_verified(self):
+        return bool(self.avatar_url and self.photo_approved)
+
+    @property
+    def subject_specializations(self):
+        try:
+            return json.loads(self.subject_specializations_json or '[]')
+        except Exception:
+            return []
 
     # NEW: multi-tenant scoping. Nullable so system_admin (who owns no single
     # institution) and pre-migration rows remain valid.
@@ -104,6 +182,23 @@ class User(UserMixin, db.Model):
     def get_display_name(self):
         return self.name
 
+    @property
+    def faculty_badge(self):
+        """Returns dedicated Faculty Badges and Title based on CP for Teachers."""
+        if self.role != 'teacher':
+            return None
+        cp = self.xp or 0
+        if cp >= 2000:
+            return {'title': 'Diamond Educator', 'badge': '🏆 Distinguished Faculty', 'color': '#3d8fa3', 'tier': 5}
+        elif cp >= 1500:
+            return {'title': 'Platinum Scholar', 'badge': '🔥 Academic Scholar', 'color': '#2541b2', 'tier': 4}
+        elif cp >= 1000:
+            return {'title': 'Gold Mentor', 'badge': '🌟 Master Instructor', 'color': '#d9822b', 'tier': 3}
+        elif cp >= 500:
+            return {'title': 'Silver Mentor', 'badge': '📚 Passionate Lecturer', 'color': '#8a94a6', 'tier': 2}
+        else:
+            return {'title': 'Bronze Mentor', 'badge': '🎓 Novice Educator', 'color': '#6b7484', 'tier': 1}
+
     # Session Tracking
     last_login = db.Column(db.DateTime, nullable=True)
     last_active = db.Column(db.DateTime, nullable=True, index=True)
@@ -124,6 +219,18 @@ class User(UserMixin, db.Model):
     equipped_title = db.Column(db.String(100), nullable=True)
     equipped_badge = db.Column(db.String(100), nullable=True)
 
+    @property
+    def is_hod(self):
+        """Returns True if user is role 'hod' or appointed HOD for any department."""
+        if self.role == 'hod':
+            return True
+        return Department.query.filter_by(hod_id=self.id).first() is not None
+
+    @property
+    def headed_department(self):
+        """Returns the department where this user is appointed HOD."""
+        return Department.query.filter_by(hod_id=self.id).first()
+
     def get_achievements(self):
         return json.loads(self.achievements_json or '[]')
 
@@ -136,7 +243,7 @@ class User(UserMixin, db.Model):
         return False
 
     def get_daily_quests(self):
-        """Return dict of active daily quests for today's UTC date based on DailyQuestTemplate definitions."""
+        """Return dict of active daily quests for today's UTC date with strict 24-hour expiration policy."""
         today_str = datetime.utcnow().strftime('%Y-%m-%d')
         raw = json.loads(self.quests_json or '{}')
 
@@ -156,7 +263,8 @@ class User(UserMixin, db.Model):
                     'icon': t.icon,
                     'progress': 0,
                     'target': t.target,
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False
                 }
         else:
             template_dict = {
@@ -168,7 +276,8 @@ class User(UserMixin, db.Model):
                     'icon': 'event_available',
                     'progress': 1,
                     'target': 1,
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False
                 },
                 'watch_video': {
                     'id': 'watch_video',
@@ -178,7 +287,8 @@ class User(UserMixin, db.Model):
                     'icon': 'play_circle_filled',
                     'progress': 0,
                     'target': 1,
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False
                 },
                 'take_quiz': {
                     'id': 'take_quiz',
@@ -188,7 +298,8 @@ class User(UserMixin, db.Model):
                     'icon': 'quiz',
                     'progress': 0,
                     'target': 1,
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False
                 },
                 'submit_assignment': {
                     'id': 'submit_assignment',
@@ -198,22 +309,56 @@ class User(UserMixin, db.Model):
                     'icon': 'assignment_turned_in',
                     'progress': 0,
                     'target': 1,
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False
                 }
             }
 
-        if raw.get('date') != today_str:
-            raw = {
-                'date': today_str,
-                'quests': {}
-            }
-
+        prev_date = raw.get('date')
         user_quests = raw.get('quests', {})
+        expired_history = raw.get('expired_history', {})
+
+        # If date rolled over (1 day passed), any unclaimed completed quest from previous day expires!
+        if prev_date and prev_date != today_str:
+            for k, q in user_quests.items():
+                if q.get('progress', 0) >= q.get('target', 1) and not q.get('claimed', False):
+                    expired_key = f"{k}_expired_{prev_date}"
+                    expired_history[expired_key] = {
+                        'id': k,
+                        'title': q.get('title', 'Daily Quest'),
+                        'desc': 'Unclaimed XP lost due to 24h expiration',
+                        'xp': q.get('xp', 0),
+                        'icon': 'timer_off',
+                        'progress': q.get('progress', 1),
+                        'target': q.get('target', 1),
+                        'claimed': False,
+                        'expired': True,
+                        'expired_date': prev_date
+                    }
+            user_quests = {}
+            raw['date'] = today_str
+            raw['quests'] = {}
+            raw['expired_history'] = expired_history
+
         merged_quests = {}
+        now_utc = datetime.utcnow()
 
         for key, t_data in template_dict.items():
             if key in user_quests:
                 q = user_quests[key]
+                is_claimed = q.get('claimed', False)
+                is_expired = q.get('expired', False)
+                completed_at_str = q.get('completed_at')
+
+                # Check 24h expiration timestamp
+                if completed_at_str and not is_claimed and not is_expired:
+                    try:
+                        completed_at = datetime.fromisoformat(completed_at_str)
+                        if (now_utc - completed_at).total_seconds() >= 86400: # 24 hours
+                            is_expired = True
+                    except Exception:
+                        pass
+
                 merged_quests[key] = {
                     'id': key,
                     'title': t_data['title'],
@@ -222,10 +367,13 @@ class User(UserMixin, db.Model):
                     'icon': t_data['icon'],
                     'progress': q.get('progress', 1 if key == 'daily_login' else 0),
                     'target': t_data['target'],
-                    'claimed': q.get('claimed', False)
+                    'claimed': is_claimed,
+                    'expired': is_expired,
+                    'completed_at': completed_at_str
                 }
             else:
                 q_progress = 1 if key == 'daily_login' else 0
+                comp_at = now_utc.isoformat() if q_progress >= t_data['target'] else None
                 merged_quests[key] = {
                     'id': key,
                     'title': t_data['title'],
@@ -234,31 +382,43 @@ class User(UserMixin, db.Model):
                     'icon': t_data['icon'],
                     'progress': q_progress,
                     'target': t_data['target'],
-                    'claimed': False
+                    'claimed': False,
+                    'expired': False,
+                    'completed_at': comp_at
                 }
+
+        # Include expired history in merged quests view so student sees lost XP tiles
+        all_display_quests = dict(merged_quests)
+        for exp_k, exp_q in expired_history.items():
+            all_display_quests[exp_k] = exp_q
 
         raw['quests'] = merged_quests
         self.quests_json = json.dumps(raw)
-        return merged_quests
+        return all_display_quests
 
     def update_quest_progress(self, quest_id, amount=1):
-        """Increment progress for a specific daily quest."""
+        """Increment progress for a specific daily quest and track completion timestamp."""
         today_str = datetime.utcnow().strftime('%Y-%m-%d')
         raw = json.loads(self.quests_json or '{}')
         if raw.get('date') != today_str:
             self.get_daily_quests()
             raw = json.loads(self.quests_json or '{}')
         quests = raw.get('quests', {})
-        if quest_id in quests and not quests[quest_id].get('claimed', False):
-            current = quests[quest_id].get('progress', 0)
-            target = quests[quest_id].get('target', 1)
-            quests[quest_id]['progress'] = min(target, current + amount)
-            self.quests_json = json.dumps(raw)
-            return True
+        if quest_id in quests:
+            q = quests[quest_id]
+            if not q.get('claimed', False) and not q.get('expired', False):
+                current = q.get('progress', 0)
+                target = q.get('target', 1)
+                new_progress = min(target, current + amount)
+                q['progress'] = new_progress
+                if new_progress >= target and not q.get('completed_at'):
+                    q['completed_at'] = datetime.utcnow().isoformat()
+                self.quests_json = json.dumps(raw)
+                return True
         return False
 
     def claim_quest(self, quest_id):
-        """Claim rewards for a completed quest and award XP."""
+        """Claim rewards for a completed quest within 24 hours. Expiration results in permanent reward loss."""
         today_str = datetime.utcnow().strftime('%Y-%m-%d')
         raw = json.loads(self.quests_json or '{}')
         if raw.get('date') != today_str:
@@ -267,6 +427,22 @@ class User(UserMixin, db.Model):
         quests = raw.get('quests', {})
         if quest_id in quests:
             quest = quests[quest_id]
+            
+            # Check 24-hour expiration threshold
+            completed_at_str = quest.get('completed_at')
+            if completed_at_str:
+                try:
+                    completed_at = datetime.fromisoformat(completed_at_str)
+                    if (datetime.utcnow() - completed_at).total_seconds() >= 86400: # 24h passed
+                        quest['expired'] = True
+                        self.quests_json = json.dumps(raw)
+                        return False, 0
+                except Exception:
+                    pass
+
+            if quest.get('expired', False):
+                return False, 0
+
             if quest.get('progress', 0) >= quest.get('target', 1) and not quest.get('claimed', False):
                 reward_xp = quest.get('xp', 0)
                 self.xp = (self.xp or 0) + reward_xp
@@ -503,7 +679,11 @@ class Playlist(db.Model):
 class Classroom(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=True, index=True)
     name = db.Column(db.String(100), nullable=False)
+    year_grade = db.Column(db.String(50), nullable=True)  # e.g. '2nd Year', 'Grade 10'
+    section = db.Column(db.String(20), nullable=True)     # e.g. 'A', 'B', 'C'
+    home_room_number = db.Column(db.String(50), default='Room 101')
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     start_time = db.Column(db.String(5), default="09:10")
@@ -512,9 +692,27 @@ class Classroom(db.Model):
     # NEW: Class color theme
     color_theme = db.Column(db.String(7), default='#4f46e5')
 
+    department = db.relationship('Department', foreign_keys=[department_id], backref=db.backref('classrooms', lazy=True))
     videos = db.relationship('Video', backref='classroom', lazy=True)
     # NEW: Assignments for this class
     assignments = db.relationship('Assignment', backref='classroom', lazy=True, cascade="all, delete-orphan")
+
+
+class ClassroomTeacher(db.Model):
+    __tablename__ = 'classroom_teacher'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False, index=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    subject = db.Column(db.String(100), nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    classroom = db.relationship('Classroom', backref=db.backref('subject_teachers', lazy=True, cascade='all, delete-orphan'))
+    teacher = db.relationship('User', backref=db.backref('subject_classrooms', lazy=True))
+
+    __table_args__ = (
+        db.UniqueConstraint('classroom_id', 'teacher_id', name='uq_classroom_teacher'),
+    )
 
 
 class Comment(db.Model):
@@ -731,6 +929,7 @@ class Attendance(db.Model):
     date = db.Column(db.Date, default=lambda: datetime.utcnow().date(), index=True)
     status = db.Column(db.String(20), default='Absent', index=True)
     arrival_time = db.Column(db.DateTime)
+    period_number = db.Column(db.Integer, nullable=True, default=1, index=True)
     classroom_rel = db.relationship('Classroom', backref=db.backref('attendance_history', lazy=True))
 
     # NEW: link to an AttendanceSession (nullable so existing rows keep working)
@@ -807,6 +1006,24 @@ class AttendanceSubSession(db.Model):
     session_date = db.Column(db.Date, default=lambda: datetime.utcnow().date(), index=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class DutyLeaveRequest(db.Model):
+    __tablename__ = 'duty_leave_request'
+    id = db.Column(db.Integer, primary_key=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=True, index=True)
+    leave_type = db.Column(db.String(20), nullable=False, default='od')  # 'od' or 'ml'
+    reason = db.Column(db.Text, nullable=False)
+    date = db.Column(db.Date, nullable=False, index=True)
+    status = db.Column(db.String(20), nullable=False, default='pending', index=True)  # 'pending', 'approved', 'rejected'
+    approved_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('duty_leave_requests', lazy=True))
+    approved_by = db.relationship('User', foreign_keys=[approved_by_id])
+    classroom = db.relationship('Classroom', foreign_keys=[classroom_id])
 
 
 class ActivityLog(db.Model):
@@ -1405,7 +1622,11 @@ class TimetableSlot(db.Model):
     institution_id = db.Column(db.Integer, db.ForeignKey('institution.id'), nullable=True, index=True)
     classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=False, index=True)
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=True, index=True)
     day_of_week = db.Column(db.String(15), nullable=False, index=True)  # 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+    period_number = db.Column(db.Integer, default=1, index=True)  # 1 to 8
+    end_period_number = db.Column(db.Integer, nullable=True, index=True)  # e.g. 3 or 7 for multi-period lab block
+    is_lab_block = db.Column(db.Boolean, default=False, index=True)  # True for continuous multi-period lab
     period_name = db.Column(db.String(50), nullable=False)  # e.g. 'Period 1', 'Morning Lab'
     start_time = db.Column(db.String(10), nullable=False)  # '09:00'
     end_time = db.Column(db.String(10), nullable=False)  # '10:00'
@@ -1415,6 +1636,7 @@ class TimetableSlot(db.Model):
 
     classroom = db.relationship('Classroom', backref=db.backref('timetable_slots', lazy=True, cascade='all, delete-orphan'))
     teacher = db.relationship('User', foreign_keys=[teacher_id])
+    subject = db.relationship('Subject', foreign_keys=[subject_id])
 
 
 class RewardItem(db.Model):
@@ -1809,7 +2031,8 @@ def backfill_all_tables_with_default_institution(db, logger=None):
             VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
             VideoFlashcard, AcademicCertificate, ParentAccessToken,
             Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
-            EBook, EBookProgress, AICopilotInteraction, UserSession, DailyQuestTemplate
+            EBook, EBookProgress, AICopilotInteraction, UserSession, DailyQuestTemplate,
+            ClassroomTeacher
         ]
         
         # Bypass before_compile filter by setting ignore flag on g

@@ -11,7 +11,15 @@
             {% endif %}
         </div>
         <div>
-            <h1 class="page-title font-display" style="margin:0;">Teacher Command Center</h1>
+            <h1 class="page-title font-display" style="margin:0; display:flex; align-items:center; gap:10px;">
+                Teacher Command Center
+                {% set active_hod_dept = hod_dept or current_user.headed_department %}
+                {% if active_hod_dept %}
+                <span class="badge" style="background:var(--gold); color:#000; font-size:0.7rem; font-weight:800; padding:3px 10px; border-radius:12px;">
+                    👑 HOD — {{ active_hod_dept.code }}
+                </span>
+                {% endif %}
+            </h1>
             <p class="page-sub" style="margin:2px 0 0 0;">Welcome back, <b style="color:var(--text);">{{ current_user.name }}</b> &bull; Manage coursework, lectures &amp; student performance</p>
         </div>
     </div>
@@ -22,25 +30,77 @@
     </div>
 </div>
 
-<!-- XP & Level Hero Card -->
+{% set active_hod_dept = hod_dept or current_user.headed_department %}
+{% if active_hod_dept %}
+<!-- 👑 Head of Department (HOD) Leadership Portal Banner -->
+<div class="card mb-16" style="padding: 20px; background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(37, 65, 178, 0.12) 100%); border: 2px solid var(--gold); border-radius: 16px; position: relative; overflow: hidden;">
+    <div style="position: absolute; right: -10px; bottom: -15px; opacity: 0.08; font-size: 7.5rem; color: var(--gold); pointer-events: none;">
+        <i class="material-icons">military_tech</i>
+    </div>
+    
+    <div class="flex-between" style="flex-wrap: wrap; gap: 14px; position: relative; z-index: 1;">
+        <div style="display: flex; align-items: center; gap: 16px; min-width: 280px; flex: 1;">
+            <div style="width: 52px; height: 52px; border-radius: 50%; background: var(--gold); color: #000; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4); flex-shrink: 0;">
+                <i class="material-icons" style="font-size: 1.8rem;">workspace_premium</i>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="badge" style="background: var(--gold); color: #000; font-weight: 800; font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; letter-spacing: 0.5px;">
+                        👑 HEAD OF DEPARTMENT (HOD)
+                    </span>
+                    <span style="font-size: 0.78rem; color: var(--text-dim);">Department Academic Authority</span>
+                </div>
+                <h3 class="font-display" style="margin: 4px 0 2px 0; font-size: 1.25rem; color: var(--text);">
+                    {{ active_hod_dept.name }} ({{ active_hod_dept.code }})
+                </h3>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-dim);">
+                    You are appointed as Head of Department. You have academic leadership authority over department faculty, master subjects, timetable matrix &amp; student rosters.
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick HOD Action Buttons -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <a href="{{ url_for('admin_departments_page') }}" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700; border-color: var(--gold); color: var(--gold);">
+                <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> Dept &amp; Subjects
+            </a>
+            <a href="{{ url_for('timetable_hub') }}" class="btn btn-primary" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700;">
+                <i class="material-icons" style="font-size: 0.95rem;">calendar_month</i> Master Timetable
+            </a>
+            <a href="{{ url_for('teacher_od_ml_requests_page') }}" class="btn btn-outline" style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700;">
+                <i class="material-icons" style="font-size: 0.95rem;">assignment_turned_in</i> OD &amp; ML Approvals
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- CP & Level Hero Card -->
 <div class="card card-royal mb-16" style="padding:22px;">
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; align-items:center;">
         <div>
-            <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Educator Academic XP</div>
-            <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--primary); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">XP</span></div>
+            <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Educator Campus Points (CP)</div>
+            <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--primary); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">CP</span></div>
+            {% if current_user.faculty_badge %}
+            <div style="margin-top:6px;">
+                <span class="badge" style="background:rgba(217,130,43,0.15); color:{{ current_user.faculty_badge.color }}; border:1px solid {{ current_user.faculty_badge.color }}; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-weight:700;">
+                    {{ current_user.faculty_badge.badge }}
+                </span>
+            </div>
+            {% endif %}
         </div>
         <div style="text-align:right;">
             <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
                 <span style="font-size:0.75rem; font-weight:700; color:var(--secondary-color); background:rgba(37,65,178,0.15); border:1px solid rgba(37,65,178,0.3); padding:3px 10px; border-radius:6px; font-family:'JetBrains Mono',monospace;">
                     LEVEL {{ (current_user.xp // 500) + 1 }}
                 </span>
-                <span style="font-size:0.75rem; color:var(--text-dim);">Scholar Rank</span>
+                <span style="font-size:0.75rem; color:var(--text-dim);">Faculty Rank</span>
             </div>
-            {% set xp_progress = ((current_user.xp % 500) / 500 * 100)|int %}
+            {% set cp_progress = ((current_user.xp % 500) / 500 * 100)|int %}
             <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; width:100%; max-width:180px; margin-left:auto;">
-                <div style="width:{{ xp_progress }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
+                <div style="width:{{ cp_progress }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
             </div>
-            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px; font-family:'JetBrains Mono',monospace;">{{ current_user.xp % 500 }}/500 XP to next level</div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px; font-family:'JetBrains Mono',monospace;">{{ current_user.xp % 500 }}/500 CP to next level</div>
         </div>
     </div>
 </div>

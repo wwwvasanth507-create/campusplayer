@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+{% block title %}Attendance Hub — Campus Player{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap: wrap; gap: 12px;">
+    <div>
+        <h1 class="page-title font-display" style="margin: 0; font-size: 1.5rem; display: flex; align-items: center; gap: 8px; color: #ffffff;">
+            <i class="material-icons" style="color: var(--gold); font-size: 1.8rem;">fact_check</i>
+            Attendance Management Hub
+        </h1>
+        <p class="page-sub" style="margin: 2px 0 0 0; font-size: 0.88rem; color: rgba(255, 255, 255, 0.85);">
+            Select a classroom below to view your assigned periods and mark daily attendance.
+        </p>
+    </div>
+</div>
+
+{% if teacher_classrooms %}
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 16px;">
+    {% for item in teacher_classrooms %}
+    {% set cls = item.classroom %}
+    <div class="card" style="padding: 20px; background: var(--surface2); border: 1px solid var(--border); border-top: 4px solid {{ cls.color_theme or '#4f46e5' }}; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <span class="badge" style="background: rgba(212, 175, 55, 0.2); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.4); font-size: 0.72rem; padding: 3px 8px; font-weight: 600;">
+                    {{ cls.department.code if cls.department else 'GEN' }} &bull; {{ cls.year_grade or 'Class' }}
+                </span>
+                <span class="badge" style="background: rgba(255, 255, 255, 0.1); color: #ffffff; font-size: 0.7rem; padding: 3px 8px;">
+                    <i class="material-icons" style="font-size: 0.75rem; vertical-align: middle; color: var(--gold);">location_on</i> Room {{ cls.home_room_number or '101' }}
+                </span>
+            </div>
+
+            <h3 class="font-display" style="margin: 6px 0 4px 0; font-size: 1.2rem; color: #ffffff; font-weight: 700;">
+                {{ cls.name }}
+            </h3>
+
+            <div style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <span>
+                    <i class="material-icons" style="font-size: 0.9rem; vertical-align: middle; color: var(--primary);">groups</i>
+                    {{ item.students_count }} Enrolled
+                </span>
+                <span>
+                    <i class="material-icons" style="font-size: 0.9rem; vertical-align: middle; color: var(--gold);">calendar_month</i>
+                    {{ item.assigned_slots_count }} Assigned Periods
+                </span>
+            </div>
+
+            {% if item.role_label %}
+            <div style="margin-bottom: 16px;">
+                <span class="badge" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.72rem; padding: 2px 8px;">
+                    Role: {{ item.role_label }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+            <a href="{{ url_for('teacher_take_attendance_page', classroom_id=cls.id) }}" class="btn btn-primary"
+               style="width: 100%; padding: 10px; font-size: 0.9rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);">
+                <i class="material-icons" style="font-size: 1.1rem;">bolt</i> Select Class &amp; Take Attendance &rarr;
+            </a>
+
+            <a href="{{ url_for('classroom_attendance_report', class_id=cls.id) }}" class="btn btn-outline"
+               style="width: 100%; padding: 8px; font-size: 0.82rem; color: rgba(255, 255, 255, 0.85); border-color: rgba(255, 255, 255, 0.2); text-align: center;">
+                <i class="material-icons" style="font-size: 0.9rem; vertical-align: middle;">assessment</i> View Attendance Reports
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card text-center" style="padding: 40px; background: var(--surface2); border: 1px solid var(--border);">
+    <i class="material-icons" style="font-size: 3.5rem; color: var(--text-dim); opacity: 0.4; display: block; margin-bottom: 12px;">school</i>
+    <h3 style="color: #ffffff; font-size: 1.1rem; margin: 0 0 6px 0;">No Classrooms Found</h3>
+    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.85rem; margin: 0 0 16px 0;">You are not currently assigned as Class Teacher or Subject Teacher for any active classrooms.</p>
+    <a href="{{ url_for('teacher_classes_page') }}" class="btn btn-primary" style="padding: 8px 18px; font-size: 0.85rem; width: auto; display: inline-block;">
+        Manage Classrooms
+    </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% block title %}My Attendance Analytics — Campus Player{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap: wrap; gap: 12px;">
+    <div>
+        <h1 class="page-title font-display" style="margin: 0; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 8px; color: #ffffff;">
+            <i class="material-icons" style="color: var(--gold); font-size: 1.8rem;">fact_check</i>
+            My Attendance Analytics &amp; Session History
+        </h1>
+        <p class="page-sub" style="margin: 2px 0 0 0; font-size: 0.88rem; color: rgba(255, 255, 255, 0.85);">
+            Track your cumulative attendance percentage, per-subject breakdown, and period-by-period logs from day 1.
+        </p>
+    </div>
+</div>
+
+<!-- 1. OVERALL TELEMETRY & 75% MINIMUM ELIGIBILITY GAUGE -->
+<div class="card mb-20" style="padding: 24px; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;">
+        <!-- Percentage Gauge -->
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="width: 100px; height: 100px; border-radius: 50%;
+                        background: radial-gradient(closest-side, var(--surface2) 79%, transparent 80% 100%),
+                                    conic-gradient({% if is_overall_low %}var(--danger-color){% else %}var(--success-color){% endif %} {{ overall_pct }}%, rgba(255,255,255,0.1) 0);
+                        display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <div style="text-align: center;">
+                    <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff; display: block; line-height: 1;">{{ overall_pct }}%</span>
+                    <span style="font-size: 0.65rem; color: rgba(255,255,255,0.7); text-transform: uppercase; font-weight: 600;">Overall</span>
+                </div>
+            </div>
+
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    {% if is_overall_low %}
+                    <span class="badge" style="background: rgba(217, 83, 79, 0.25); color: #f87171; border: 1px solid rgba(217, 83, 79, 0.5); font-size: 0.8rem; padding: 4px 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="material-icons" style="font-size: 0.95rem;">warning</i> LOW ATTENDANCE RISK (&lt; 75%)
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(46, 125, 50, 0.25); color: #4ade80; border: 1px solid rgba(46, 125, 50, 0.5); font-size: 0.8rem; padding: 4px 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="material-icons" style="font-size: 0.95rem;">check_circle</i> EXAM ELIGIBLE (&ge; 75%)
+                    </span>
+                    {% endif %}
+                </div>
+                <p style="margin: 0; font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); max-width: 480px; line-height: 1.4;">
+                    {% if is_overall_low %}
+                    Your attendance is currently below the mandatory <strong>75% minimum threshold</strong> required for university end-semester examinations. Submit Duty Leave (OD) or Medical Leave (ML) applications to restore eligibility.
+                    {% else %}
+                    Great job! Your cumulative attendance is above the <strong>75% eligibility threshold</strong>. Maintain good attendance to stay exam eligible.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Stat Counter Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; width: 100%; max-width: 520px;">
+            <div style="padding: 10px 14px; background: var(--card-bg); border-radius: 8px; border: 1px solid var(--border); text-align: center;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">{{ total_conducted }}</div>
+                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.7); font-weight: 600;">Total Conducted</div>
+            </div>
+            <div style="padding: 10px 14px; background: rgba(46, 125, 50, 0.2); border-radius: 8px; border: 1px solid rgba(46, 125, 50, 0.4); text-align: center;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #4ade80;">{{ total_present }}</div>
+                <div style="font-size: 0.72rem; color: #4ade80; font-weight: 600;">Present</div>
+            </div>
+            <div style="padding: 10px 14px; background: rgba(217, 83, 79, 0.2); border-radius: 8px; border: 1px solid rgba(217, 83, 79, 0.4); text-align: center;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #f87171;">{{ total_absent }}</div>
+                <div style="font-size: 0.72rem; color: #f87171; font-weight: 600;">Absent</div>
+            </div>
+            <div style="padding: 10px 14px; background: rgba(245, 158, 11, 0.2); border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.4); text-align: center;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: var(--gold);">{{ total_od }}</div>
+                <div style="font-size: 0.72rem; color: var(--gold); font-weight: 600;">Duty Leave (OD)</div>
+            </div>
+            <div style="padding: 10px 14px; background: rgba(59, 130, 246, 0.2); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.4); text-align: center;">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #60a5fa;">{{ total_ml }}</div>
+                <div style="font-size: 0.72rem; color: #60a5fa; font-weight: 600;">Medical (ML)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. PER-CLASS / PER-SUBJECT BREAKDOWN GRID -->
+<div class="card mb-20" style="padding: 20px; background: var(--surface2); border: 1px solid var(--border);">
+    <h3 style="margin: 0 0 14px 0; font-size: 1.1rem; color: #ffffff; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+        <i class="material-icons" style="color: var(--gold);">class</i>
+        Subject-wise Attendance Breakdown
+    </h3>
+
+    {% if subject_stats %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 14px;">
+        {% for stat in subject_stats %}
+        {% set cls = stat.classroom %}
+        <div style="padding: 16px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border); border-top: 3px solid {{ cls.color_theme or '#4f46e5' }};">
+            <div class="flex-between" style="margin-bottom: 8px;">
+                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #ffffff;">
+                    {{ cls.name }}
+                </h4>
+                <span class="badge" style="background: {% if stat.is_low_attendance %}rgba(217, 83, 79, 0.3){% else %}rgba(46, 125, 50, 0.3){% endif %};
+                                            color: {% if stat.is_low_attendance %}#f87171{% else %}#4ade80{% endif %};
+                                            border: 1px solid {% if stat.is_low_attendance %}rgba(217, 83, 79, 0.5){% else %}rgba(46, 125, 50, 0.5){% endif %};
+                                            font-weight: 700; font-size: 0.82rem; padding: 2px 8px;">
+                    {{ stat.percentage }}%
+                </span>
+            </div>
+
+            <!-- Subject Progress Bar -->
+            <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                <div style="width: {{ stat.percentage }}%; height: 100%; background: {% if stat.is_low_attendance %}var(--danger-color){% else %}var(--success-color){% endif %}; border-radius: 4px; transition: width 0.3s ease;"></div>
+            </div>
+
+            <div style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.85); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;">
+                <span>Total Periods: <strong style="color: #ffffff;">{{ stat.total_periods }}</strong></span>
+                <span>Attended: <strong style="color: #4ade80;">{{ stat.effective_attended }}</strong></span>
+                <span>Absent: <strong style="color: #f87171;">{{ stat.absent_count }}</strong></span>
+                {% if stat.od_count > 0 %}<span>OD: <strong style="color: var(--gold);">{{ stat.od_count }}</strong></span>{% endif %}
+                {% if stat.ml_count > 0 %}<span>ML: <strong style="color: #60a5fa;">{{ stat.ml_count }}</strong></span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.88rem; margin: 0;">No active class enrollments found.</p>
+    {% endif %}
+</div>
+
+<!-- 3. CHRONOLOGICAL ATTENDANCE HISTORY LOG (PERIOD BY PERIOD FROM DAY 1) -->
+<div class="card" style="padding: 20px; background: var(--surface2); border: 1px solid var(--border);">
+    <div class="flex-between mb-14" style="flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: #ffffff; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+            <i class="material-icons" style="color: var(--gold);">history</i>
+            Complete Day-by-Day Attendance Log
+        </h3>
+        
+        <span class="badge" style="background: rgba(255, 255, 255, 0.1); color: #ffffff; font-size: 0.75rem; padding: 4px 10px;">
+            {{ history_items|length }} Total Records
+        </span>
+    </div>
+
+    {% if history_items %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--border); color: rgba(255, 255, 255, 0.8);">
+                    <th style="padding: 10px; font-weight: 600;">Date</th>
+                    <th style="padding: 10px; font-weight: 600;">Day &amp; Period</th>
+                    <th style="padding: 10px; font-weight: 600;">Class / Subject</th>
+                    <th style="padding: 10px; font-weight: 600;">Status</th>
+                    <th style="padding: 10px; font-weight: 600; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history_items %}
+                {% set rec = item.record %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); transition: background 0.15s ease;">
+                    <td style="padding: 12px 10px; color: #ffffff; font-weight: 600;">
+                        {{ rec.date.strftime('%d-%m-%Y') }}
+                    </td>
+                    <td style="padding: 12px 10px; color: rgba(255, 255, 255, 0.85);">
+                        {{ item.day_name }} &bull; <span style="color: var(--gold); font-weight: 600;">Period {{ rec.period_number }}</span>
+                    </td>
+                    <td style="padding: 12px 10px; color: #ffffff; font-weight: 600;">
+                        {{ item.subject_name }}
+                    </td>
+                    <td style="padding: 12px 10px;">
+                        {% if rec.status == 'Present' %}
+                        <span class="badge" style="background: rgba(46, 125, 50, 0.3); color: #4ade80; border: 1px solid rgba(46, 125, 50, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="material-icons" style="font-size: 0.85rem;">check_circle</i> PRESENT
+                        </span>
+                        {% elif rec.status == 'OD' %}
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.3); color: var(--gold); border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="material-icons" style="font-size: 0.85rem;">assignment_ind</i> OD (DUTY LEAVE)
+                        </span>
+                        {% elif rec.status == 'Medical Leave' %}
+                        <span class="badge" style="background: rgba(59, 130, 246, 0.3); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="material-icons" style="font-size: 0.85rem;">medical_services</i> MEDICAL LEAVE
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background: rgba(217, 83, 79, 0.3); color: #f87171; border: 1px solid rgba(217, 83, 79, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="material-icons" style="font-size: 0.85rem;">cancel</i> ABSENT
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px 10px; text-align: right;">
+                        {% if rec.status == 'Absent' %}
+                        <a href="{{ url_for('student_duty_leaves') }}" class="btn btn-outline" style="padding: 3px 8px; font-size: 0.72rem; color: var(--gold); border-color: rgba(245, 158, 11, 0.4);">
+                            <i class="material-icons" style="font-size: 0.8rem; vertical-align: middle;">assignment_ind</i> Apply OD/ML
+                        </a>
+                        {% else %}
+                        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">Verified</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center" style="padding: 30px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+        <i class="material-icons" style="font-size: 3rem; color: rgba(255, 255, 255, 0.3); display: block; margin-bottom: 8px;">pending_actions</i>
+        <h4 style="margin: 0 0 4px 0; color: #ffffff;">No Attendance History Recorded Yet</h4>
+        <p style="margin: 0; font-size: 0.82rem; color: rgba(255, 255, 255, 0.7);">Your teachers have not submitted attendance records for your enrolled classes yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

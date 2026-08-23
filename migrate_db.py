@@ -107,22 +107,29 @@ def migrate():
                     ('slug', 'VARCHAR(100)'),
                     ('owner_admin_id', 'INTEGER'),
                     ('status', 'VARCHAR(20) DEFAULT \'active\''),
+                    ('institution_type', 'VARCHAR(20) DEFAULT \'college\''),
                     ('logo_url', 'VARCHAR(500)'),
                     ('storage_root', 'VARCHAR(500)'),
                     ('storage_used_bytes', 'BIGINT DEFAULT 0'),
                     ('allow_manual_video_delete', 'BOOLEAN DEFAULT 1'),
                     ('allow_auto_video_delete', 'BOOLEAN DEFAULT 1'),
                     ('max_video_retention_days', 'INTEGER DEFAULT 365'),
+                    ('period_timings_json', 'TEXT DEFAULT \'{}\''),
                 ],
                 'indexes': [
                     ('ix_institution_slug', 'slug'),
                     ('ix_institution_status', 'status'),
                     ('ix_institution_owner_admin_id', 'owner_admin_id'),
+                    ('ix_institution_type', 'institution_type'),
                 ]
             },
             'user': {
                 'columns': [
                     ('institution_id', 'INTEGER'),
+                    ('department_id', 'INTEGER'),
+                    ('subject_specializations_json', 'TEXT DEFAULT \'[]\''),
+                    ('photo_approved', 'BOOLEAN DEFAULT 1'),
+                    ('photo_rejection_reason', 'VARCHAR(300)'),
                     ('is_active_account', 'BOOLEAN DEFAULT 1'),
                     ('xp', 'INTEGER DEFAULT 0'),
                     ('phone', 'VARCHAR(20)'),
@@ -157,6 +164,7 @@ def migrate():
                     ('ix_user_role', 'role'),
                     ('ix_user_xp', 'xp'),
                     ('ix_user_institution_id', 'institution_id'),
+                    ('ix_user_department_id', 'department_id'),
                     ('ix_user_is_active', 'is_active_account'),
                     ('ix_user_created_at', 'created_at'),
                     ('ix_user_last_active', 'last_active'),
@@ -253,7 +261,11 @@ def migrate():
             'classroom': {
                 'columns': [
                     ('institution_id', 'INTEGER'),
+                    ('department_id', 'INTEGER'),
                     ('name', 'VARCHAR(100)'),
+                    ('year_grade', 'VARCHAR(50)'),
+                    ('section', 'VARCHAR(20)'),
+                    ('home_room_number', 'VARCHAR(50) DEFAULT \'Room 101\''),
                     ('teacher_id', 'INTEGER'),
                     ('created_at', 'DATETIME'),
                     ('start_time', 'VARCHAR(5) DEFAULT \'09:10\''),
@@ -263,6 +275,7 @@ def migrate():
                 ],
                 'indexes': [
                     ('ix_classroom_institution_id', 'institution_id'),
+                    ('ix_classroom_department_id', 'department_id'),
                     ('ix_classroom_teacher_id', 'teacher_id'),
                     ('ix_classroom_class_code', 'class_code'),
                 ]
@@ -480,6 +493,7 @@ def migrate():
                     ('date', 'DATE'),
                     ('status', 'VARCHAR(20) DEFAULT \'Absent\''),
                     ('arrival_time', 'DATETIME'),
+                    ('period_number', 'INTEGER DEFAULT 1'),
                     ('session_id', 'INTEGER'),
                     ('is_archived', 'BOOLEAN DEFAULT 0'),
                     ('archived_at', 'DATETIME'),
@@ -491,9 +505,29 @@ def migrate():
                     ('ix_attendance_date', 'date'),
                     ('ix_attendance_status', 'status'),
                     ('ix_attendance_session_id', 'session_id'),
-                    ('ix_attendance_class_date', 'classroom_id, date'),
-                    ('ix_attendance_student_class', 'student_id, classroom_id'),
-                    ('ix_attendance_session_student', 'session_id, student_id'),
+                    ('ix_attendance_class_date', 'classroom_id'),
+                    ('ix_attendance_student_class', 'student_id'),
+                    ('ix_attendance_session_student', 'session_id'),
+                ]
+            },
+            'duty_leave_request': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('student_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('leave_type', 'VARCHAR(20) DEFAULT \'od\''),
+                    ('reason', 'TEXT'),
+                    ('date', 'DATE'),
+                    ('status', 'VARCHAR(20) DEFAULT \'pending\''),
+                    ('approved_by_id', 'INTEGER'),
+                    ('created_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_duty_leave_request_institution_id', 'institution_id'),
+                    ('ix_duty_leave_request_student_id', 'student_id'),
+                    ('ix_duty_leave_request_classroom_id', 'classroom_id'),
+                    ('ix_duty_leave_request_date', 'date'),
+                    ('ix_duty_leave_request_status', 'status'),
                 ]
             },
             'attendance_session': {
@@ -855,6 +889,20 @@ def migrate():
                     ('ix_class_weekly_report_status', 'status'),
                 ]
             },
+            'classroom_teacher': {
+                'columns': [
+                    ('institution_id', 'INTEGER'),
+                    ('classroom_id', 'INTEGER'),
+                    ('teacher_id', 'INTEGER'),
+                    ('subject', 'VARCHAR(100)'),
+                    ('added_at', 'DATETIME'),
+                ],
+                'indexes': [
+                    ('ix_classroom_teacher_institution_id', 'institution_id'),
+                    ('ix_classroom_teacher_classroom_id', 'classroom_id'),
+                    ('ix_classroom_teacher_teacher_id', 'teacher_id'),
+                ]
+            },
             'video_checkpoint': {
                 'columns': [
                     ('institution_id', 'INTEGER'),
@@ -1013,7 +1061,11 @@ def migrate():
                     ('institution_id', 'INTEGER'),
                     ('classroom_id', 'INTEGER'),
                     ('teacher_id', 'INTEGER'),
+                    ('subject_id', 'INTEGER'),
                     ('day_of_week', 'VARCHAR(15)'),
+                    ('period_number', 'INTEGER DEFAULT 1'),
+                    ('end_period_number', 'INTEGER'),
+                    ('is_lab_block', 'BOOLEAN DEFAULT 0'),
                     ('period_name', 'VARCHAR(50)'),
                     ('start_time', 'VARCHAR(10)'),
                     ('end_time', 'VARCHAR(10)'),
@@ -1025,6 +1077,8 @@ def migrate():
                     ('ix_timetable_slot_institution_id', 'institution_id'),
                     ('ix_timetable_slot_classroom_id', 'classroom_id'),
                     ('ix_timetable_slot_day_of_week', 'day_of_week'),
+                    ('ix_timetable_slot_period_number', 'period_number'),
+                    ('ix_timetable_slot_subject_id', 'subject_id'),
                 ]
             },
             'reward_item': {

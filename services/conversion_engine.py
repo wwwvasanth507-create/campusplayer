@@ -701,7 +701,7 @@ def execute_conversion_job(app, job_id: int, worker_id: str, stop_event: threadi
         db.session.commit()
 
         # Determine adaptive ladder
-        uploader = User.query.get(video.uploader_id)
+        uploader = User.query.get(video.uploader_id) if (video and getattr(video, 'uploader_id', None)) else None
         settings = None
         if uploader and uploader.institution_id:
             settings = SiteSettings.query.filter_by(institution_id=uploader.institution_id).first()
@@ -966,9 +966,15 @@ class ConversionWorkerManager:
                     logger.info(f"[{worker_id}] Job {job_id} interrupted gracefully.")
                     self._mark_job_interrupted(job_id)
                 except Exception as e:
-                    logger.error(f"[{worker_id}] Unexpected error in job {job_id}: {e}", exc_info=True)
-                    if not stop_ev.is_set():
-                        self._handle_job_failure(job_id, str(e))
+                    if 'has been deleted' in str(e) or 'ObjectDeletedError' in type(e).__name__:
+                        logger.warning(f"[{worker_id}] Job {job_id} target video was deleted during processing.")
+                    else:
+                        logger.error(f"[{worker_id}] Unexpected error in job {job_id}: {e}", exc_info=True)
+                        if not stop_ev.is_set():
+                            self._handle_job_failure(job_id, str(e))
+                finally:
+                    if not self.global_stop.is_set() and stop_ev.is_set():
+                        stop_ev.clear()
             else:
                 # No jobs found: wait for notification or 4s timeout
                 self.notify_event.wait(timeout=4.0)
@@ -1016,7 +1022,8 @@ class ConversionWorkerManager:
                     db.session.commit()
             except Exception as e:
                 db.session.rollback()
-                logger.error(f"Error marking job {job_id} interrupted: {e}")
+                if '0 were matched' not in str(e) and 'StaleDataError' not in type(e).__name__:
+                    logger.error(f"Error marking job {job_id} interrupted: {e}")
 
     def shutdown(self, timeout: float = 5.0):
         """Gracefully shut down all conversion workers."""

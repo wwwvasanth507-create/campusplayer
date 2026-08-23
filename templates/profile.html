@@ -18,7 +18,7 @@
         <div class="stats-grid" style="grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); margin-bottom:12px;">
             <div class="stat-card">
                 <div class="stat-val font-display" style="color:var(--primary);">{{ current_user.xp }}</div>
-                <div class="stat-lbl">Earned XP</div>
+                <div class="stat-lbl">{{ 'Faculty CP' if current_user.role in ['teacher', 'hod'] else 'Earned XP' }}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-val font-display" style="color:var(--secondary-color);">Level {{ (current_user.xp // 500) + 1 }}</div>

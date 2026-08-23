@@ -22,6 +22,7 @@
                 <i class="material-icons">person_add</i> Provision Faculty
             </div>
             <form method="POST" action="{{ url_for('add_teacher') }}" style="display:flex; flex-direction:column; gap:10px; margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div>
                     <label>Teacher Username *</label>
                     <input type="text" name="username" placeholder="e.g. dr_smith" required style="margin-bottom:0; height:38px;">
@@ -30,6 +31,30 @@
                     <label>Initial Password *</label>
                     <input type="text" name="password" placeholder="Temporary password" required style="margin-bottom:0; height:38px;">
                 </div>
+                {% if departments %}
+                <div>
+                    <label>Assigned Department</label>
+                    <select name="department_id" style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                        <option value="">-- No Department Assigned --</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                {% if master_subjects %}
+                <div>
+                    <label style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px; display:block;">Subject Specializations</label>
+                    <div style="max-height:120px; overflow-y:auto; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:4px;">
+                        {% for sub in master_subjects %}
+                        <label style="font-size:0.75rem; color:var(--text); display:flex; align-items:center; gap:6px; cursor:pointer; margin:0;">
+                            <input type="checkbox" name="subject_specializations" value="{{ sub.name }}" style="margin:0; width:14px; height:14px;">
+                            <b style="color:var(--primary); font-family:'JetBrains Mono',monospace;">{{ sub.code }}</b> {{ sub.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
                 <button type="submit" class="btn btn-primary" style="margin-top:6px; height:40px; min-height:40px; font-size:0.82rem;">
                     <i class="material-icons" style="font-size:0.95rem;">add_circle</i> Create Account
                 </button>
@@ -88,12 +113,22 @@
                                 <span style="color:var(--success-color); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--success-color);">check_circle</i> Active</span>
                                 <span>Joined {{ teacher.created_at.strftime('%b %d, %Y') }}</span>
                                 <span style="color:var(--primary); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--primary);">bolt</i> {{ teacher.xp }} CP</span>
-                                {% if teacher.phone %}
-                                <span style="color:var(--secondary-color);"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">phone_iphone</i> {{ teacher.phone }}</span>
-                                {% else %}
-                                <span style="color:var(--text-dim); opacity:0.6;"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">phonelink_erase</i> No phone</span>
-                                {% endif %}
+                            {% if teacher.department %}
+                            <div style="margin-top:4px;">
+                                <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">
+                                    <i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">account_balance</i> {{ teacher.department.code }}
+                                </span>
                             </div>
+                            {% endif %}
+                            {% if teacher.subject_specializations %}
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                                {% for sub_name in teacher.subject_specializations %}
+                                <span class="badge" style="background:var(--surface2); color:var(--text); border:1px solid var(--border); font-size:0.65rem; padding:2px 5px; border-radius:4px;">
+                                    ⭐ {{ sub_name }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 

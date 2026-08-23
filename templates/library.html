@@ -83,16 +83,20 @@
         <div>
             <select name="level" onchange="this.form.submit()" style="margin-bottom: 0; height: 42px;">
                 <option value="">All Academic Levels</option>
+                {% if inst_mode in ['school', 'both'] %}
                 <optgroup label="School Grades">
                     {% for g in school_grades %}
                     <option value="{{ g }}" {% if level_filter == g %}selected{% endif %}>{{ g }}</option>
                     {% endfor %}
                 </optgroup>
+                {% endif %}
+                {% if inst_mode in ['college', 'both'] %}
                 <optgroup label="College / University">
                     {% for y in college_years %}
                     <option value="{{ y }}" {% if level_filter == y %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </optgroup>
+                {% endif %}
                 <option value="General Reference" {% if level_filter == 'General Reference' %}selected{% endif %}>General Reference</option>
             </select>
         </div>
@@ -113,33 +117,26 @@
     <a href="{{ url_for('library_hub', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
        class="btn {% if not level_filter %}btn-primary{% else %}btn-outline{% endif %}" 
        style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">layers</i> All Grades &amp; Years
+        <i class="material-icons" style="font-size: 0.95rem;">layers</i> {{ 'All Grades' if inst_mode == 'school' else ('All Academic Years' if inst_mode == 'college' else 'All Grades & Years') }}
     </a>
-    <a href="{{ url_for('library_hub', level='Grade 10', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
-       class="btn {% if level_filter == 'Grade 10' %}btn-primary{% else %}btn-outline{% endif %}" 
+    {% if inst_mode in ['school', 'both'] %}
+    {% for g in ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'] %}
+    <a href="{{ url_for('library_hub', level=g, resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == g %}btn-primary{% else %}btn-outline{% endif %}" 
        style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">school</i> Grade 10
+        <i class="material-icons" style="font-size: 0.95rem;">school</i> {{ g }}
     </a>
-    <a href="{{ url_for('library_hub', level='Grade 12', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
-       class="btn {% if level_filter == 'Grade 12' %}btn-primary{% else %}btn-outline{% endif %}" 
+    {% endfor %}
+    {% endif %}
+    {% if inst_mode in ['college', 'both'] %}
+    {% for y in ['Year 1 / 1st Year', 'Year 2 / 2nd Year', 'Year 3 / 3rd Year', 'Year 4 / 4th Year', 'Post-Graduate / Masters'] %}
+    <a href="{{ url_for('library_hub', level=y, resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
+       class="btn {% if level_filter == y %}btn-primary{% else %}btn-outline{% endif %}" 
        style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">school</i> Grade 12
+        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> {{ y.split('/')[0].strip() }}
     </a>
-    <a href="{{ url_for('library_hub', level='Year 1 / 1st Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
-       class="btn {% if level_filter == 'Year 1 / 1st Year' %}btn-primary{% else %}btn-outline{% endif %}" 
-       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 1
-    </a>
-    <a href="{{ url_for('library_hub', level='Year 2 / 2nd Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
-       class="btn {% if level_filter == 'Year 2 / 2nd Year' %}btn-primary{% else %}btn-outline{% endif %}" 
-       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 2
-    </a>
-    <a href="{{ url_for('library_hub', level='Year 3 / 3rd Year', resource_type=resource_type_filter, q=search_query, subject=subject_filter) }}" 
-       class="btn {% if level_filter == 'Year 3 / 3rd Year' %}btn-primary{% else %}btn-outline{% endif %}" 
-       style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; font-size: 0.78rem; border-radius: var(--radius-pill);">
-        <i class="material-icons" style="font-size: 0.95rem;">account_balance</i> College Year 3
-    </a>
+    {% endfor %}
+    {% endif %}
 </div>
 
 <!-- Books & Guides Grid -->
@@ -321,16 +318,20 @@
                             <label style="font-size: 0.75rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block;">Target Academic Level <span style="color: var(--danger-color);">*</span></label>
                             <select name="academic_level" required style="margin-bottom: 0;">
                                 <option value="All">All Levels / General</option>
+                                {% if inst_mode in ['school', 'both'] %}
                                 <optgroup label="School Grades">
                                     {% for g in school_grades %}
                                     <option value="{{ g }}">{{ g }}</option>
                                     {% endfor %}
                                 </optgroup>
+                                {% endif %}
+                                {% if inst_mode in ['college', 'both'] %}
                                 <optgroup label="College / University">
                                     {% for y in college_years %}
                                     <option value="{{ y }}">{{ y }}</option>
                                     {% endfor %}
                                 </optgroup>
+                                {% endif %}
                             </select>
                         </div>
                     </div>

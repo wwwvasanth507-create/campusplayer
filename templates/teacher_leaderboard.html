@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+{% block title %}Faculty CP Arena Leaderboard — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width:860px; margin:0 auto;">
+    <div class="text-center mb-16">
+        <h1 class="page-title font-display" style="margin:0; font-size:1.8rem;">
+            <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:2rem;">military_tech</i> Faculty CP Competition Arena
+        </h1>
+        <p class="page-sub" style="margin:4px 0 0 0;">Dedicated instructor ranking portal for Faculty Members &amp; Admins. Compete with peer educators via Campus Points (CP) &amp; Milestone Badges.</p>
+    </div>
+
+    <!-- Top Action Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; align-items:center;">
+            <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-weight:700; padding:6px 12px; border-radius:8px; font-size:0.8rem;">
+                <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">security</i> Faculty &amp; Admin Only
+            </span>
+        </div>
+        <div>
+            <a href="{{ url_for('leaderboard') }}" class="btn btn-outline" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
+                <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">school</i> View Scholar Leaderboard
+            </a>
+        </div>
+    </div>
+
+    {% if ranked_teachers %}
+    {# Podium - Top 3 Faculty #}
+    {% if ranked_teachers|length >= 3 %}
+    <div style="display:flex; justify-content:center; align-items:flex-end; gap:16px; margin-bottom:28px; flex-wrap:wrap;">
+        {% for i in [1,0,2] if ranked_teachers|length > i %}
+        {% set entry = ranked_teachers[i] %}
+        {% set isFirst = (i == 0) %}
+        <div class="card" style="text-align:center; padding:{{ '24px 20px' if isFirst else '18px 16px' }}; min-width:{{ '220px' if isFirst else '190px' }}; transform:{{ 'scale(1.05)' if isFirst else 'none' }}; border:1px solid {{ 'rgba(138,106,58,0.4)' if isFirst else 'var(--border)' }}; margin-bottom:0;">
+            <div style="margin-bottom:6px;">
+                {% if i == 0 %}
+                <i class="material-icons" style="font-size:2.2rem; color:var(--primary);">looks_one</i>
+                {% elif i == 1 %}
+                <i class="material-icons" style="font-size:1.8rem; color:#8a94a6;">looks_two</i>
+                {% else %}
+                <i class="material-icons" style="font-size:1.8rem; color:#6b7484;">looks_3</i>
+                {% endif %}
+            </div>
+            <div style="width:{{ '68px' if isFirst else '54px' }}; height:{{ '68px' if isFirst else '54px' }}; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:{{ '1.5rem' if isFirst else '1.2rem' }}; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid {{ 'var(--primary)' if i == 0 else ('#8a94a6' if i == 1 else '#6b7484') }}; overflow:hidden;">
+                {% if entry.user.avatar_url %}
+                <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.name }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                {{ entry.user.name[:2].upper() }}
+                {% endif %}
+            </div>
+            <div style="font-weight:700; font-size:0.98rem; color:var(--text);" class="font-display">{{ entry.user.name }}</div>
+            {% if entry.badge %}
+            <div style="margin-top:6px;">
+                <span class="badge" style="background:rgba(217,130,43,0.12); color:{{ entry.badge.color }}; border:1px solid {{ entry.badge.color }}; font-size:0.7rem; padding:3px 8px; border-radius:6px; font-weight:700;">
+                    {{ entry.badge.badge }}
+                </span>
+            </div>
+            {% endif %}
+            <div style="font-size:0.9rem; font-weight:800; color:var(--primary); margin-top:6px; font-family:'JetBrains Mono',monospace;">
+                {{ entry.user.xp }} CP
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                Level {{ entry.level }} Faculty
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# All Teachers List #}
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        {% for entry in ranked_teachers %}
+        <div class="card" style="padding:14px 20px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-color:{% if entry.user.id == current_user.id %}var(--primary){% else %}var(--border){% endif %}; background:{% if entry.user.id == current_user.id %}rgba(138,106,58,0.08){% else %}var(--surface){% endif %};">
+            <div style="width:34px; height:34px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.85rem; color:var(--text); flex-shrink:0; font-family:'JetBrains Mono',monospace;">
+                {% if loop.index == 1 %}
+                <i class="material-icons" style="font-size:1.3rem; color:var(--primary);">looks_one</i>
+                {% elif loop.index == 2 %}
+                <i class="material-icons" style="font-size:1.3rem; color:#8a94a6;">looks_two</i>
+                {% elif loop.index == 3 %}
+                <i class="material-icons" style="font-size:1.3rem; color:#6b7484;">looks_3</i>
+                {% else %}
+                #{{ loop.index }}
+                {% endif %}
+            </div>
+            <div style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.88rem; color:#fff; flex-shrink:0; overflow:hidden;">
+                {% if entry.user.avatar_url %}
+                <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.name }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                {{ entry.user.name[:2].upper() }}
+                {% endif %}
+            </div>
+            <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ entry.user.name }}</span>
+                    {% if entry.user.id == current_user.id %}
+                    <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-size:0.68rem; border-radius:6px; padding:2px 6px;">You</span>
+                    {% endif %}
+                    {% if entry.badge %}
+                    <span class="badge" style="background:rgba(217,130,43,0.12); color:{{ entry.badge.color }}; border:1px solid {{ entry.badge.color }}; font-size:0.7rem; padding:2px 8px; border-radius:6px; font-weight:700;">
+                        {{ entry.badge.badge }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
+                    Faculty Member &bull; Level {{ entry.level }} {{ entry.badge.title if entry.badge else 'Educator' }}
+                </div>
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+                <div style="font-weight:800; color:var(--primary); font-size:1.05rem; font-family:'JetBrains Mono',monospace;">
+                    {{ entry.user.xp }} CP
+                </div>
+                <div style="width:90px; height:5px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-top:4px; margin-left:auto;">
+                    <div style="width:{{ (entry.cp_progress / 500 * 100)|round }}%; height:100%; background:var(--primary);"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center" style="padding:50px;">
+        <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">military_tech</i>
+        <p style="color:var(--text-dim); font-size:0.9rem;">No faculty rankings recorded yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

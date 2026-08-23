@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}Apply for OD / Medical Leave — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 30px auto;">
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); color: var(--gold); display: flex; align-items: center; justify-content: center;">
+                <i class="material-icons" style="font-size: 1.6rem;">assignment_turned_in</i>
+            </div>
+            <div>
+                <h1 class="page-title font-display" style="margin: 0; font-size: 1.3rem;">Submit OD / Medical Leave Application</h1>
+                <p class="page-sub" style="margin: 2px 0 0 0; font-size: 0.82rem;">Submit your On Duty (OD) or Medical Leave (ML) request for Class Teacher approval.</p>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('student_submit_leave_request') }}" style="margin: 0; display: flex; flex-direction: column; gap: 14px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700;">Leave Type *</label>
+                <select name="leave_type" required style="margin: 0; height: 40px; font-size: 0.85rem;">
+                    <option value="od">🟡 On Duty (OD) — Sports, Symposium, Official Duty</option>
+                    <option value="ml">🔵 Medical Leave (ML) — Sick Leave with Certificate</option>
+                </select>
+            </div>
+
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700;">Target Date *</label>
+                <input type="date" name="date" value="{{ today_str }}" required style="margin: 0; height: 40px; font-size: 0.85rem;">
+            </div>
+
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700;">Reason &amp; Details *</label>
+                <textarea name="reason" rows="4" placeholder="Explain the reason for OD or ML application..." required style="margin: 0; font-size: 0.85rem; border-radius: 8px;"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="height: 44px; font-weight: 700; font-size: 0.9rem;">
+                <i class="material-icons" style="font-size: 1.1rem;">send</i> Submit Application to Class Teacher
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -388,7 +388,13 @@
             <div class="chat-top-sub">
                 <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">school</i> <b>{{ classroom.students.count() }}</b> Scholars Enrolled</span>
                 <span>&bull;</span>
-                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> Faculty: <b>{{ classroom.teacher.name }}</b></span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> Class Teacher: <b>{{ classroom.teacher.name }} (Class Teacher)</b></span>
+                {% if classroom.subject_teachers %}
+                {% for st in classroom.subject_teachers %}
+                <span>&bull;</span>
+                <span><i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">person</i> {{ st.teacher.name if st.teacher else 'Teacher' }} (<b>{{ st.subject }}</b>)</span>
+                {% endfor %}
+                {% endif %}
             </div>
         </div>
 
@@ -403,6 +409,8 @@
         {% if messages %}
         {% for msg in messages %}
         {% set initial = msg.user.name[0].upper() %}
+        {% set t_label = teacher_role_map.get(msg.user_id) if teacher_role_map else ('Class Teacher' if msg.user_id == classroom.teacher_id else None) %}
+        {% set formatted_author_name = (msg.user.name ~ ' (' ~ t_label ~ ')') if t_label else msg.user.name %}
         <div class="msg {{ 'own' if msg.user_id == current_user.id else 'other' }} {{ 'staff-msg' if msg.user.role == 'teacher' else '' }}"
             id="msg-{{ msg.id }}">
             <div class="msg-pic {{ 'me' if msg.user_id == current_user.id else 'you' }} {{ 'staff' if msg.user.role == 'teacher' else '' }}">
@@ -416,7 +424,7 @@
                 <div class="msg-bub">
                     {% if msg.user_id != current_user.id %}
                     <div class="msg-author">
-                        <span>{{ msg.user.name }}</span>
+                        <span>{{ formatted_author_name }}</span>
                         {% if msg.user.role == 'teacher' %}
                         <span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>
                         {% else %}
@@ -491,6 +499,7 @@
 
 <script>
     const classId = parseInt("{{ classroom.id }}", 10);
+    const classroomCreatorId = parseInt("{{ classroom.teacher_id }}", 10);
     const currentUserId = parseInt("{{ current_user.id }}", 10);
     const isTeacherOwner = ("{{ current_user.role }}" === "teacher" || "{{ current_user.role }}" === "admin");
     let lastMsgId = 0;
@@ -543,7 +552,12 @@
         r.className = `msg ${own ? 'own' : 'other'} ${st && !own ? 'staff-msg' : ''}`;
         r.id = `msg-${m.id}`;
 
-        const displayName = m.display_name || m.name || m.username || 'User';
+        let displayName = m.display_name || m.name || m.username || 'User';
+        if (st && m.teacher_label) {
+            displayName = `${displayName} (${m.teacher_label})`;
+        } else if (st && m.user_id === classroomCreatorId) {
+            displayName = `${displayName} (Class Teacher)`;
+        }
         const l = (displayName || '?')[0].toUpperCase();
         let bad = '';
         if (st && !own) bad = '<span class="staff-tag"><i class="material-icons" style="font-size:0.75rem; vertical-align:middle;">verified</i> FACULTY</span>';

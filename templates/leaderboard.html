@@ -1,37 +1,38 @@
 {% extends "layout.html" %}
-{% block title %}Leaderboard — Campus Player{% endblock %}
+{% block title %}Scholar Academic Leaderboard — Campus Player{% endblock %}
 
 {% block content %}
 <div style="max-width:860px; margin:0 auto;">
     <div class="text-center mb-16">
         <h1 class="page-title font-display" style="margin:0; font-size:1.8rem;">
-            <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:2rem;">emoji_events</i> Academic Hall of Fame
+            <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:2rem;">emoji_events</i> Scholar Academic Leaderboard
         </h1>
-        <p class="page-sub" style="margin:4px 0 0 0;">Track scholar rankings, faculty contributions, study streaks, and level progression across the campus</p>
+        <p class="page-sub" style="margin:4px 0 0 0;">Track student XP rankings, study streaks, and level progression across the campus</p>
     </div>
 
-    <!-- Filter Bar -->
+    <!-- Navigation & Filter Bar -->
     <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
-        <a href="{{ url_for('leaderboard', category='global') }}" class="btn {% if category == 'global' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">public</i> Global Fleet
+        <a href="{{ url_for('leaderboard') }}" class="btn {% if not class_id %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">school</i> All Scholars (XP)
         </a>
-        <a href="{{ url_for('leaderboard', category='students') }}" class="btn {% if category == 'students' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">school</i> Scholars
-        </a>
-        <a href="{{ url_for('leaderboard', category='teachers') }}" class="btn {% if category == 'teachers' %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
-            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">supervisor_account</i> Faculty
-        </a>
+
         {% if current_user.enrolled_classes %}
         {% for c in current_user.enrolled_classes %}
-        <a href="{{ url_for('leaderboard', category='class', class_id=c.id) }}" class="btn {% if category == 'class' and class_id == c.id %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
+        <a href="{{ url_for('leaderboard', class_id=c.id) }}" class="btn {% if class_id == c.id %}btn-primary{% else %}btn-outline{% endif %}" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px;">
             <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">class</i> {{ c.name }}
         </a>
         {% endfor %}
         {% endif %}
+
+        {% if current_user.role in ['teacher', 'admin', 'system_admin'] %}
+        <a href="{{ url_for('teacher_leaderboard') }}" class="btn btn-outline" style="padding:6px 14px; font-size:0.75rem; border-radius:var(--radius-pill); min-height:34px; border-color:rgba(138,106,58,0.4);">
+            <i class="material-icons" style="font-size:0.95rem; vertical-align:middle; color:var(--primary);">military_tech</i> Faculty CP Arena &rarr;
+        </a>
+        {% endif %}
     </div>
 
     {% if ranked_users %}
-    {# Podium - Top 3 #}
+    {# Podium - Top 3 Scholars #}
     {% if ranked_users|length >= 3 %}
     <div style="display:flex; justify-content:center; align-items:flex-end; gap:16px; margin-bottom:28px; flex-wrap:wrap;">
         {% for i in [1,0,2] if ranked_users|length > i %}
@@ -55,18 +56,18 @@
                 {% endif %}
             </div>
             <div style="font-weight:700; font-size:0.95rem; color:var(--text);" class="font-display">{{ entry.user.name }}</div>
-            <div style="font-size:0.8rem; font-weight:800; color:var(--primary); margin-top:2px; font-family:'JetBrains Mono',monospace;">
-                {{ entry.user.xp }} {{ 'CP' if entry.user.role == 'teacher' else 'XP' }}
+            <div style="font-size:0.85rem; font-weight:800; color:var(--primary); margin-top:4px; font-family:'JetBrains Mono',monospace;">
+                {{ entry.user.xp }} XP
             </div>
             <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
-                Rank {{ entry.level }} {{ 'Faculty' if entry.user.role == 'teacher' else 'Scholar' }}
+                Level {{ entry.level }} Scholar
             </div>
         </div>
         {% endfor %}
     </div>
     {% endif %}
 
-    {# All Users List #}
+    {# All Scholars List #}
     <div style="display:flex; flex-direction:column; gap:8px;">
         {% for entry in ranked_users %}
         <div class="card" style="padding:12px 18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-color:{% if entry.user.id == current_user.id %}var(--primary){% else %}var(--border){% endif %}; background:{% if entry.user.id == current_user.id %}rgba(138,106,58,0.08){% else %}var(--surface){% endif %};">
@@ -78,7 +79,7 @@
                 {% elif loop.index == 3 %}
                 <i class="material-icons" style="font-size:1.2rem; color:#6b7484;">looks_3</i>
                 {% else %}
-                {{ loop.index }}
+                #{{ loop.index }}
                 {% endif %}
             </div>
             <div style="width:36px; height:36px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:#fff; flex-shrink:0; overflow:hidden;">
@@ -101,12 +102,12 @@
                     {% endif %}
                 </div>
                 <div style="font-size:0.75rem; color:var(--text-dim); text-transform:capitalize;">
-                    {{ entry.user.role }} &bull; Level {{ entry.level }} {{ 'Faculty' if entry.user.role == 'teacher' else 'Scholar' }}
+                    Scholar &bull; Level {{ entry.level }}
                 </div>
             </div>
             <div style="text-align:right; flex-shrink:0;">
                 <div style="font-weight:800; color:var(--primary); font-size:0.9rem; font-family:'JetBrains Mono',monospace;">
-                    {{ entry.user.xp }} {{ 'CP' if entry.user.role == 'teacher' else 'XP' }}
+                    {{ entry.user.xp }} XP
                 </div>
                 <div style="width:80px; height:4px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-top:4px; margin-left:auto;">
                     <div style="width:{{ (entry.xp_progress / 500 * 100)|round }}%; height:100%; background:var(--primary);"></div>
@@ -118,7 +119,7 @@
     {% else %}
     <div class="card text-center" style="padding:50px;">
         <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">military_tech</i>
-        <p style="color:var(--text-dim); font-size:0.9rem;">No rankings recorded yet. Complete quizzes, assignments, and lectures to claim the top podium!</p>
+        <p style="color:var(--text-dim); font-size:0.9rem;">No student rankings recorded yet. Complete quizzes, assignments, and lectures to claim the top podium!</p>
     </div>
     {% endif %}
 </div>

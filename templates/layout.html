@@ -1526,7 +1526,7 @@
 <body
     class="{% if current_user.is_authenticated %}auth-user auth-{{ current_user.role }}{% else %}auth-guest{% endif %}">
     <header class="top-bar">
-        <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'student' %}{{ url_for('student_dashboard') }}{% elif current_user.role == 'teacher' %}{{ url_for('teacher_dashboard') }}{% elif current_user.role == 'admin' %}{{ url_for('admin_dashboard') }}{% else %}{{ url_for('system_admin_dashboard') }}{% endif %}{% else %}{{ url_for('login') }}{% endif %}" class="top-bar-brand">
+        <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'student' %}{{ url_for('student_dashboard') }}{% elif current_user.role in ['teacher', 'hod'] %}{{ url_for('teacher_dashboard') }}{% elif current_user.role == 'admin' %}{{ url_for('admin_dashboard') }}{% else %}{{ url_for('system_admin_dashboard') }}{% endif %}{% else %}{{ url_for('login') }}{% endif %}" class="top-bar-brand">
             <i class="material-icons">videocam</i>
             <span class="top-bar-title">CampusPlayer</span>
         </a>
@@ -1617,9 +1617,21 @@
                 class="s-nav-link {{ 'active' if request.endpoint in ['library_hub', 'read_ebook'] }}">
                 <i class="material-icons">menu_book</i> Digital Library
             </a>
+            <a href="{{ url_for('admin_departments_page') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['admin_departments_page', 'admin_create_department', 'admin_create_subject'] }}">
+                <i class="material-icons">account_balance</i> Departments &amp; Subjects
+            </a>
+            <a href="{{ url_for('admin_classrooms_page') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['admin_classrooms_page', 'admin_create_classroom'] }}">
+                <i class="material-icons">meeting_room</i> Manage Classrooms
+            </a>
             <a href="{{ url_for('admin_teachers_page') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'admin_teachers_page' }}">
                 <i class="material-icons">supervisor_account</i> Manage Teachers
+            </a>
+            <a href="{{ url_for('teacher_od_ml_requests_page') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['teacher_od_ml_requests_page', 'teacher_approve_od_ml'] }}">
+                <i class="material-icons">assignment_turned_in</i> OD &amp; ML Approvals
             </a>
             <a href="{{ url_for('attendance_pdf') }}" class="s-nav-link">
                 <i class="material-icons">fact_check</i> Attendance Report
@@ -1652,7 +1664,7 @@
                 class="s-nav-link {{ 'active' if request.endpoint == 'timetable_hub' }}">
                 <i class="material-icons">calendar_month</i> Timetable
             </a>
-            {% elif current_user.role == 'teacher' %}
+            {% elif current_user.role in ['teacher', 'hod'] %}
             <a href="{{ url_for('teacher_dashboard') }}"
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_dashboard' }}">
                 <i class="material-icons">space_dashboard</i> Dashboard
@@ -1709,9 +1721,9 @@
                 class="s-nav-link {{ 'active' if request.endpoint == 'teacher_enrolled_students_page' }}">
                 <i class="material-icons">group</i> Students
             </a>
-            <a href="{{ url_for('leaderboard') }}"
-                class="s-nav-link {{ 'active' if request.endpoint == 'leaderboard' }}">
-                <i class="material-icons">leaderboard</i> Leaderboard
+            <a href="{{ url_for('teacher_leaderboard') }}"
+                class="s-nav-link {{ 'active' if request.endpoint in ['leaderboard', 'teacher_leaderboard'] and category == 'teachers' }}">
+                <i class="material-icons">emoji_events</i> Faculty CP Arena
             </a>
             <a href="{{ url_for('bio_data_list') }}"
                 class="s-nav-link {{ 'active' if request.endpoint in ['bio_data_list', 'bio_data_detail'] }}">
@@ -1840,7 +1852,7 @@
             class="nav-item {{ 'active' if request.endpoint == 'admin_email_monitoring' }}">
             <i class="material-icons">email</i><span>Emails</span>
         </a>
-        {% elif current_user.role == 'teacher' %}
+        {% elif current_user.role in ['teacher', 'hod'] %}
         <a href="{{ url_for('teacher_dashboard') }}"
             class="nav-item {{ 'active' if request.endpoint == 'teacher_dashboard' }}">
             <i class="material-icons">space_dashboard</i><span>Home</span>
@@ -1862,7 +1874,7 @@
             <i class="material-icons">school</i><span>Classes</span>
         </a>
         <a href="{{ url_for('teacher_attendance_page') }}"
-            class="nav-item {{ 'active' if request.endpoint == 'teacher_attendance_page' }}">
+            class="nav-item {{ 'active' if request.endpoint in ['teacher_attendance_page', 'teacher_take_attendance_page'] }}">
             <i class="material-icons">fact_check</i><span>Attendance</span>
         </a>
         <a href="{{ url_for('search_page') }}" class="nav-item {{ 'active' if request.endpoint == 'search_page' }}">
@@ -1878,6 +1890,10 @@
         <a href="{{ url_for('student_dashboard') }}"
             class="nav-item {{ 'active' if request.endpoint in ['student_dashboard','watch_video'] }}">
             <i class="material-icons">explore</i><span>Discover</span>
+        </a>
+        <a href="{{ url_for('student_attendance_tracker_page') }}"
+            class="nav-item {{ 'active' if request.endpoint == 'student_attendance_tracker_page' }}">
+            <i class="material-icons">fact_check</i><span>Attendance</span>
         </a>
         <a href="{{ url_for('student_assignments') }}"
             class="nav-item {{ 'active' if request.endpoint == 'student_assignments' }}">

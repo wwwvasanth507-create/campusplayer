@@ -12,7 +12,7 @@
                 <i class="material-icons" style="color:var(--gold); vertical-align:middle; font-size:1.6rem;">quiz</i>
                 Available Examinations &amp; Quizzes
             </h1>
-            <p class="page-sub" style="margin:2px 0 0 0;">Test your knowledge, reinforce lecture concepts, and earn scholar XP</p>
+            <p class="page-sub" style="margin:2px 0 0 0;">Test your knowledge, reinforce lecture concepts, and earn scholar CP</p>
         </div>
     </div>
 </div>
@@ -53,7 +53,7 @@
             </button>
             {% else %}
             <a href="{{ url_for('take_quiz', quiz_id=quiz.id) }}" class="btn btn-primary" style="width:100%; font-size:0.8rem; min-height:36px;">
-                <i class="material-icons" style="font-size:0.95rem;">play_arrow</i> Begin Quiz (+XP)
+                <i class="material-icons" style="font-size:0.95rem;">play_arrow</i> Begin Quiz (+CP)
             </a>
             {% endif %}
         </div>

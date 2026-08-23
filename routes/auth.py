@@ -21,7 +21,7 @@ def login():
         token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken') or request.headers.get('X-CSRF-Token')
         if not current_app.config.get('TESTING') and not validate_csrf_token(token):
             session.clear()
-            from app import generate_csrf_token
+            from services.utils import generate_csrf_token
             new_token = generate_csrf_token()
             flash('Your session expired or security token was reset. Please try signing in again.', 'warning')
             return render_template('login.html', csrf_token=new_token)
@@ -36,9 +36,11 @@ def login():
 
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
-            if role and user.role != role.lower():
-                flash('Invalid role selected for this user.', 'error')
-                return render_template('login.html')
+            if role:
+                req_role = role.lower()
+                if user.role != req_role and not (req_role == 'teacher' and user.role == 'hod'):
+                    flash('Invalid role selected for this user.', 'error')
+                    return render_template('login.html')
 
             session.permanent = True
             login_user(user, remember=True)
@@ -55,7 +57,7 @@ def login():
                 target = '/sysadmin'
             elif user.role == 'admin':
                 target = '/admin'
-            elif user.role == 'teacher':
+            elif user.role in ('teacher', 'hod'):
                 target = '/teacher'
             else:
                 target = '/student'

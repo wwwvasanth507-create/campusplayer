@@ -71,9 +71,20 @@
                     {% endif %}
                 </div>
                 <div style="min-width:0;">
-                    <div style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.name }}</div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ student.name }}</span>
+                        {% if student.is_photo_verified %}
+                        <span class="badge" style="background:rgba(46,125,50,0.15); color:var(--success-color); border:1px solid rgba(46,125,50,0.3); font-size:0.68rem; padding:2px 6px; border-radius:4px;">
+                            🟢 Logged In &amp; Profile Active
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid var(--border); font-size:0.68rem; padding:2px 6px; border-radius:4px;">
+                            ⚪ Pending First Login
+                        </span>
+                        {% endif %}
+                    </div>
                     <div style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">
-                        <span style="color:var(--primary); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--primary);">bolt</i> {{ student.xp }} XP</span> &bull;
+                        <span style="color:var(--primary); font-weight:600;"><i class="material-icons" style="font-size:0.8rem; vertical-align:middle; color:var(--primary);">bolt</i> {{ student.xp }} CP</span> &bull;
                         Level {{ (student.xp // 500) + 1 }} &bull;
                         Joined {{ student.created_at.strftime('%b %d, %Y') }}
                     </div>
@@ -109,6 +120,9 @@
                 <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--primary);" onclick="toggleReset('srm-{{ student.id }}')" title="Teacher Remarks">
                     <i class="material-icons" style="font-size:0.95rem;">rate_review</i>
                 </button>
+                <button class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--danger-color); border-color:rgba(217,83,79,0.3);" onclick="toggleReset('sph-{{ student.id }}')" title="Request Photo Re-upload">
+                    <i class="material-icons" style="font-size:0.95rem;">no_accounts</i>
+                </button>
                 <a href="{{ url_for('monthly_report', student_id=student.id) }}" class="btn btn-outline"
                     style="padding:6px 10px; font-size:0.75rem; min-height:34px;" title="Performance Report">
                     <i class="material-icons" style="font-size:0.95rem;">assessment</i>
@@ -120,6 +134,16 @@
                     </button>
                 </form>
             </div>
+        </div>
+
+        <!-- Inline Photo Re-upload Request Form -->
+        <div id="sph-{{ student.id }}" style="display:none; margin-top:12px; padding:12px 14px; background:rgba(217,83,79,0.1); border:1px solid rgba(217,83,79,0.25); border-radius:8px;">
+            <h4 class="font-display" style="margin:0 0 6px 0; font-size:0.82rem; color:var(--danger-color);">🚩 Request Photo Re-upload for {{ student.name }}</h4>
+            <form action="{{ url_for('teacher_reject_photo', student_id=student.id) }}" method="POST" style="display:flex; gap:6px; align-items:center; margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="text" name="reason" placeholder="Reason (e.g. Blurry photo, meme image, unrecognisable face)..." required style="flex:1; margin:0; height:34px; font-size:0.78rem; border-radius:6px;">
+                <button type="submit" class="btn btn-danger" style="padding:6px 12px; font-size:0.75rem; height:34px;">Reject &amp; Request Re-upload</button>
+            </form>
         </div>
 
         <!-- Inline Remarks Form -->

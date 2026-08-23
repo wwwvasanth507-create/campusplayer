@@ -54,20 +54,22 @@ except ImportError:
 from models import (
     User, Video, Playlist, Comment, ViewAnalytics, Notification,
     playlist_videos, Quiz, Question, QuizResult, SiteSettings,
-    Classroom, student_classes, ChatMessage, Attendance, VideoLike,
+    Classroom, ClassroomTeacher, student_classes, ChatMessage, Attendance, VideoLike,
     ActivityLog, SystemMetric,
     # NEW MODELS
     Assignment, AssignmentSubmission, VideoNote, VideoBookmark,
     VideoProgress, Achievement, LeaderboardEntry, EmailQueue,
     StudentRemark, EmailDeliveryLog, ClassWeeklyReport,
     VideoCheckpoint, CheckpointResponse, VideoDoubt, VideoDoubtReply,
-    VideoFlashcard, AcademicCertificate, ParentAccessToken,
+    VideoFlashcard, AcademicCertificate, ParentAccessToken, DutyLeaveRequest,
     # NEW: multi-tenancy, attendance sessions, bio data
     Institution, AttendanceSession, AttendanceSubSession, StudentProfile, DailyQuestTemplate,
     # NEW: Announcements, Timetable & XP Rewards Store
     Announcement, AnnouncementRead, TimetableSlot, RewardItem, UserReward,
     # NEW: Digital E-Book Library
     EBook, EBookProgress,
+    # NEW: Departments & Master Subject Registry
+    Department, Subject,
     # NEW: AI Lecture Copilot
     AICopilotInteraction
 )
@@ -301,6 +303,12 @@ def update_last_active():
                     login_url = url_for('auth.login') if 'auth.login' in app.view_functions else url_for('login')
                     return redirect(login_url)
                 
+            # 3. Student First-Time Photo Gate check
+            if current_user.role == 'student' and not app.config.get('TESTING'):
+                if not current_user.avatar_url or current_user.photo_approved is False:
+                    if endpoint not in ('student_photo_gate', 'logout', 'static', 'login', 'auth.login') and not path.startswith('/static/') and not path.startswith('/login') and not path.startswith('/auth'):
+                        return redirect(url_for('student_photo_gate'))
+
         if not app.config.get('TESTING'):
             now = datetime.utcnow()
             last = getattr(current_user, 'last_active', None)
@@ -414,7 +422,7 @@ def admin_required(f):
 def teacher_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role not in ['admin', 'teacher', 'system_admin']:
+        if not current_user.is_authenticated or current_user.role not in ['admin', 'teacher', 'hod', 'system_admin']:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
@@ -1098,7 +1106,10 @@ def bio_data_list():
     if not _bio_data_can_view(current_user):
         abort(403)
     q = request.args.get('q', '').strip()
-    query = User.query.filter_by(role='student')
+    if current_user.role == 'system_admin':
+        query = User.query.filter_by(role='student')
+    else:
+        query = scope_to_institution(User.query.filter_by(role='student'), User)
     if q:
         query = query.join(StudentProfile, isouter=True).filter(
             db.or_(
@@ -1120,6 +1131,8 @@ def bio_data_detail(student_id):
     if not _bio_data_can_view(current_user):
         abort(403)
     student = User.query.filter_by(id=student_id, role='student').first_or_404()
+    if current_user.role != 'system_admin' and student.institution_id != current_user.institution_id:
+        abort(403)
     prof = StudentProfile.query.filter_by(user_id=student_id).first()
     return render_template('bio_data_detail.html', student=student, profile=prof)
 
@@ -1412,6 +1425,9 @@ def create_institution():
     inst_name = sanitize_input(request.form.get('institution_name', ''), 200)
     admin_username = sanitize_input(request.form.get('admin_username', ''), 80)
     admin_password = request.form.get('admin_password', '')
+    institution_type = request.form.get('institution_type', 'college')
+    if institution_type not in ['school', 'college']:
+        institution_type = 'college'
 
     if not inst_name or not admin_username or not admin_password:
         flash('Institution name, admin username, and password are all required.', 'error')
@@ -1428,7 +1444,7 @@ def create_institution():
         n += 1
         slug = f'{slug_base}-{n}'
 
-    institution = Institution(name=inst_name, slug=slug, status='active',
+    institution = Institution(name=inst_name, slug=slug, status='active', institution_type=institution_type,
                                storage_root=f'uploads/institutions/{slug}/')
     db.session.add(institution)
     db.session.flush()
@@ -1782,13 +1798,23 @@ def admin_teachers_page():
     q = request.args.get('q', '').strip()
     inst_id = getattr(current_user, 'institution_id', None)
     is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
-    query = User.query.filter_by(role='teacher')
+    query = User.query.filter(User.role.in_(['teacher', 'hod']))
     if not is_sysadmin and inst_id:
         query = query.filter_by(institution_id=inst_id)
     if q:
         query = query.filter(User.username.contains(q))
     teachers = query.order_by(User.created_at.desc()).all()
-    return render_template('admin_teachers.html', teachers=teachers, search_query=q)
+
+    # Pass departments and master subjects for provisioning form
+    if is_sysadmin or not inst_id:
+        departments = Department.query.all()
+        master_subjects = Subject.query.all()
+    else:
+        departments = Department.query.filter_by(institution_id=inst_id).all()
+        master_subjects = Subject.query.filter_by(institution_id=inst_id).all()
+
+    return render_template('admin_teachers.html', teachers=teachers, search_query=q,
+        departments=departments, master_subjects=master_subjects)
 
 @app.route('/admin/add_teacher', methods=['POST'])
 @login_required
@@ -1797,6 +1823,8 @@ def add_teacher():
     username = sanitize_input(request.form.get('username'), 150)
     password = request.form.get('password')
     display_name = sanitize_input(request.form.get('display_name') or request.form.get('name') or username, 150)
+    department_id = request.form.get('department_id', type=int)
+    subject_specs = request.form.getlist('subject_specializations')
     inst_id = getattr(current_user, 'institution_id', None)
 
     if not username or not password:
@@ -1810,14 +1838,110 @@ def add_teacher():
             username=username,
             role='teacher',
             display_name=display_name,
-            institution_id=inst_id
+            institution_id=inst_id,
+            department_id=department_id,
+            subject_specializations_json=json.dumps(subject_specs)
         )
         new_teacher.set_password(password)
         db.session.add(new_teacher)
         db.session.commit()
-        flash('Teacher added successfully.', 'success')
-        log_activity('add_teacher', f'Added teacher {username}')
+        flash('Faculty member provisioned successfully.', 'success')
+        log_activity('add_teacher', f'Added faculty member {username}')
     return redirect(url_for('admin_teachers_page'))
+
+
+# === DEPARTMENT & MASTER SUBJECT REGISTRY ROUTES ===
+
+@app.route('/admin/departments')
+@login_required
+@admin_required
+def admin_departments_page():
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
+
+    if is_sysadmin or not inst_id:
+        departments = Department.query.order_by(Department.created_at.desc()).all()
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod'])).all()
+    else:
+        departments = Department.query.filter_by(institution_id=inst_id).order_by(Department.created_at.desc()).all()
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod']), User.institution_id == inst_id).all()
+
+    return render_template('admin_departments.html', departments=departments, teachers=teachers)
+
+
+@app.route('/admin/departments/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_department():
+    name = sanitize_input(request.form.get('name', ''), 200)
+    code = sanitize_input(request.form.get('code', ''), 50).upper()
+    inst_id = getattr(current_user, 'institution_id', None)
+    if not inst_id and current_user.role != 'system_admin':
+        inst = Institution.query.filter_by(owner_admin_id=current_user.id).first()
+        if not inst:
+            inst = Institution.query.filter_by(slug='default').first()
+        if inst:
+            inst_id = inst.id
+            current_user.institution_id = inst.id
+            db.session.commit()
+    if not inst_id:
+        inst = Institution.query.first()
+        if inst:
+            inst_id = inst.id
+
+    if not name or not code:
+        flash('Department name and code are required.', 'error')
+        return redirect(url_for('admin_departments_page'))
+
+    dept = Department(name=name, code=code, institution_id=inst_id)
+    db.session.add(dept)
+    db.session.commit()
+    flash(f'Department "{name}" ({code}) created successfully.', 'success')
+    log_activity('create_department', f'Created department {code}')
+    return redirect(url_for('admin_departments_page'))
+
+
+@app.route('/admin/departments/assign_hod/<int:department_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_assign_hod(department_id):
+    hod_id = request.form.get('hod_id', type=int)
+    dept = Department.query.get_or_404(department_id)
+
+    if hod_id:
+        teacher = User.query.get(hod_id)
+        if teacher:
+            dept.hod_id = teacher.id
+            teacher.department_id = dept.id
+            db.session.commit()
+            flash(f'{teacher.name} appointed as Head of Department (HOD) for {dept.name}.', 'success')
+            log_activity('assign_hod', f'Assigned HOD {teacher.username} to dept {dept.code}')
+    else:
+        dept.hod_id = None
+        db.session.commit()
+        flash(f'HOD unassigned from {dept.name}.', 'info')
+    return redirect(url_for('admin_departments_page'))
+
+
+@app.route('/admin/subjects/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_subject():
+    name = sanitize_input(request.form.get('name', ''), 200)
+    code = sanitize_input(request.form.get('code', ''), 50).upper()
+    department_id = request.form.get('department_id', type=int)
+    inst_id = getattr(current_user, 'institution_id', None)
+
+    if not name or not code or not department_id:
+        flash('Subject name, code, and parent department are required.', 'error')
+        return redirect(url_for('admin_departments_page'))
+
+    sub = Subject(name=name, code=code, department_id=department_id, institution_id=inst_id)
+    db.session.add(sub)
+    db.session.commit()
+    flash(f'Master Subject "{name}" ({code}) registered successfully.', 'success')
+    log_activity('create_subject', f'Registered master subject {code}')
+    return redirect(url_for('admin_departments_page'))
 
 @app.route('/admin/change_teacher_password', methods=['POST'])
 @login_required
@@ -1827,7 +1951,7 @@ def change_teacher_password():
     new_password = request.form.get('new_password')
     teacher = User.query.get(user_id)
     curr_inst = get_current_institution_id()
-    if teacher and teacher.role == 'teacher' and (curr_inst is None or teacher.institution_id == curr_inst):
+    if teacher and teacher.role in ['teacher', 'hod'] and (curr_inst is None or teacher.institution_id == curr_inst):
         teacher.set_password(new_password)
         db.session.commit()
         flash('Password updated successfully.', 'success')
@@ -1842,7 +1966,7 @@ def change_teacher_password():
 def delete_teacher(user_id):
     teacher = User.query.get_or_404(user_id)
     enforce_institution_access(teacher)
-    if teacher.role == 'teacher':
+    if teacher.role in ['teacher', 'hod']:
         db.session.delete(teacher)
         db.session.commit()
         flash('Teacher deleted.', 'success')
@@ -1856,13 +1980,18 @@ def levels_pdf():
     report_type = request.args.get('type', 'all')
     class_id = request.args.get('class_id', type=int)
     q = request.args.get('q', '').strip()
-    teachers_q = User.query.filter_by(role='teacher')
+    if current_user.role == 'system_admin':
+        teachers_q = User.query.filter_by(role='teacher')
+        students_q = User.query.filter_by(role='student')
+        classes_raw = Classroom.query.order_by(Classroom.name).all()
+    else:
+        teachers_q = scope_to_institution(User.query.filter_by(role='teacher'), User)
+        students_q = scope_to_institution(User.query.filter_by(role='student'), User)
+        classes_raw = scope_to_institution(Classroom.query, Classroom).order_by(Classroom.name).all()
     if q and report_type in ['all', 'teachers']: teachers_q = teachers_q.filter(User.username.contains(q))
     teachers = teachers_q.order_by(User.xp.desc()).all()
-    students_q = User.query.filter_by(role='student')
     if q and report_type in ['all', 'students']: students_q = students_q.filter(User.username.contains(q))
     students = students_q.order_by(User.xp.desc()).all()
-    classes_raw = Classroom.query.order_by(Classroom.name).all()
     all_classes_data = []
     for cls in classes_raw:
         cls_students = []
@@ -1874,8 +2003,11 @@ def levels_pdf():
     if class_id:
         selected_class = Classroom.query.get(class_id)
         if selected_class:
-            class_students = sorted(list(selected_class.students), key=lambda s: s.xp, reverse=True)
-            if q: class_students = [s for s in class_students if q.lower() in s.username.lower()]
+            if current_user.role != 'system_admin' and selected_class.institution_id != current_user.institution_id:
+                selected_class = None
+            else:
+                class_students = sorted(list(selected_class.students), key=lambda s: s.xp, reverse=True)
+                if q: class_students = [s for s in class_students if q.lower() in s.username.lower()]
     settings = SiteSettings.query.first()
     return render_template('levels_pdf.html', teachers=teachers, students=students, datetime=datetime,
         settings=settings, report_type=report_type, classes=classes_raw, selected_class=selected_class,
@@ -1886,8 +2018,13 @@ def levels_pdf():
 @admin_required
 def class_pdf(class_id):
     classroom = Classroom.query.get_or_404(class_id)
+    if current_user.role != 'system_admin' and classroom.institution_id != current_user.institution_id:
+        abort(403)
     students = sorted(list(classroom.students), key=lambda s: s.xp, reverse=True)
-    all_classes = Classroom.query.order_by(Classroom.name).all()
+    if current_user.role == 'system_admin':
+        all_classes = Classroom.query.order_by(Classroom.name).all()
+    else:
+        all_classes = scope_to_institution(Classroom.query, Classroom).order_by(Classroom.name).all()
     return render_template('class_pdf.html', classroom=classroom, students=students, datetime=datetime, all_classes=all_classes)
 
 @app.route('/admin/settings', methods=['POST'])
@@ -1984,7 +2121,13 @@ def admin_email_monitoring():
     end_date = request.args.get('end_date', '').strip()
     status = request.args.get('status', 'all')
     
-    logs_query = EmailDeliveryLog.query
+    if current_user.role == 'system_admin':
+        logs_query = EmailDeliveryLog.query
+        classrooms = Classroom.query.all()
+    else:
+        logs_query = scope_to_institution(EmailDeliveryLog.query, EmailDeliveryLog)
+        classrooms = scope_to_institution(Classroom.query, Classroom).all()
+
     if start_date:
         try:
             start_dt = datetime.strptime(start_date, '%Y-%m-%d')
@@ -2007,7 +2150,6 @@ def admin_email_monitoring():
     last_execution_time = last_log.sent_at if last_log else None
     
     # Class-wise delivery statistics
-    classrooms = Classroom.query.all()
     class_stats = []
     for cls in classrooms:
         student_count = len(list(cls.students))
@@ -2027,7 +2169,10 @@ def admin_email_monitoring():
         })
         
     # Teacher-wise delivery statistics
-    teachers = User.query.filter_by(role='teacher').all()
+    if current_user.role == 'system_admin':
+        teachers = User.query.filter_by(role='teacher').all()
+    else:
+        teachers = scope_to_institution(User.query.filter_by(role='teacher'), User).all()
     teacher_stats = []
     for t in teachers:
         teacher_sent_count = EmailDeliveryLog.query.filter_by(teacher_id=t.id, status='sent').count()
@@ -2152,19 +2297,21 @@ def admin_api_stats():
 def teacher_dashboard():
     inst_id = getattr(current_user, 'institution_id', None)
     is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
-    if is_sysadmin or inst_id is None:
+    if is_sysadmin:
         videos = Video.query.all()
         playlists = Playlist.query.all()
         assignments = Assignment.query.filter_by(teacher_id=current_user.id).all()
         students = User.query.filter_by(role='student').all()
+        classes = Classroom.query.all()
+        quizzes = Quiz.query.all()
     else:
-        videos = Video.query.filter_by(institution_id=inst_id).all()
-        playlists = Playlist.query.filter_by(institution_id=inst_id).all()
-        assignments = Assignment.query.filter_by(teacher_id=current_user.id, institution_id=inst_id).all()
-        students = User.query.filter_by(role='student', institution_id=inst_id).all()
+        videos = scope_to_institution(Video.query, Video).all()
+        playlists = scope_to_institution(Playlist.query, Playlist).all()
+        assignments = scope_to_institution(Assignment.query.filter_by(teacher_id=current_user.id), Assignment).all()
+        students = scope_to_institution(User.query.filter_by(role='student'), User).all()
+        classes = scope_to_institution(Classroom.query, Classroom).all()
+        quizzes = scope_to_institution(Quiz.query, Quiz).all()
     unread_count = Notification.query.filter_by(user_id=current_user.id, is_read=False).count()
-    classes = Classroom.query.all()
-    quizzes = Quiz.query.all()
     chat_count = ChatMessage.query.filter_by(user_id=current_user.id).count()
     settings = SiteSettings.query.first()
     
@@ -2178,10 +2325,11 @@ def teacher_dashboard():
         'total_xp': current_user.xp, 'total_views': total_views
     }
     daily_quests = current_user.get_daily_quests() if hasattr(current_user, 'get_daily_quests') else {}
+    hod_dept = current_user.headed_department
     return render_template('teacher_dashboard.html', videos=videos, playlists=playlists,
         students=students, unread_count=unread_count, classes=classes, quizzes=quizzes,
         teacher_stats=teacher_stats, now_date=datetime.utcnow().date(), settings=settings,
-        daily_quests=daily_quests)
+        daily_quests=daily_quests, hod_dept=hod_dept)
 
 def extract_youtube_id(url):
     """Extract 11-character YouTube video ID from various URL formats, share links, or raw ID."""
@@ -2264,7 +2412,10 @@ def teacher_classes_page():
 def search_students_json():
     q = request.args.get('q', '').strip()
     class_id = request.args.get('class_id', type=int)
-    query = User.query.filter_by(role='student')
+    if current_user.role == 'system_admin':
+        query = User.query.filter_by(role='student')
+    else:
+        query = scope_to_institution(User.query.filter_by(role='student'), User)
     if q:
         query = query.filter(User.username.contains(q))
     students = query.order_by(User.username).limit(20).all()
@@ -2303,6 +2454,117 @@ def change_class_teacher(class_id):
     db.session.commit()
     flash(f'Class "{classroom.name}" reassigned to {new_teacher.username}.', 'success')
     log_activity('reassign_class', f'Reassigned class "{classroom.name}" from {previous_teacher.username if previous_teacher else "Unknown"} to {new_teacher.username}')
+    return redirect(url_for('teacher_classes_page'))
+
+
+@app.route('/teacher/classes/search_teachers')
+@login_required
+@teacher_required
+def search_teachers_json():
+    q = request.args.get('q', '').strip()
+    class_id = request.args.get('class_id', type=int)
+    query = scope_to_institution(User.query.filter_by(role='teacher'))
+    if q:
+        query = query.filter((User.username.contains(q)) | (User.display_name.contains(q)))
+    teachers = query.order_by(User.username).limit(20).all()
+
+    excluded_ids = set()
+    if class_id:
+        classroom = Classroom.query.get(class_id)
+        if classroom:
+            excluded_ids.add(classroom.teacher_id)
+            for st in classroom.subject_teachers:
+                excluded_ids.add(st.teacher_id)
+
+    results = []
+    for t in teachers:
+        if t.id not in excluded_ids:
+            results.append({
+                'id': t.id,
+                'username': t.username,
+                'name': t.name
+            })
+    return jsonify(results)
+
+
+@app.route('/teacher/classroom/<int:class_id>/add_subject_teacher', methods=['POST'])
+@login_required
+@teacher_required
+def add_subject_teacher(class_id):
+    token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken')
+    if not current_app.config.get('TESTING') and not validate_csrf_token(token):
+        flash('Security token invalid or expired. Please try again.', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    classroom = Classroom.query.get_or_404(class_id)
+    if classroom.teacher_id != current_user.id and current_user.role not in ('admin', 'system_admin'):
+        abort(403)
+
+    teacher_id = request.form.get('teacher_id', type=int)
+    teacher_username = sanitize_input(request.form.get('teacher_username'), 150)
+    subject = sanitize_input(request.form.get('subject'), 100)
+
+    if not subject:
+        flash('Subject is required to assign a subject teacher.', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    teacher = None
+    if teacher_id:
+        teacher = scope_to_institution(User.query.filter_by(id=teacher_id, role='teacher')).first()
+    elif teacher_username:
+        teacher = scope_to_institution(User.query.filter_by(username=teacher_username, role='teacher')).first()
+
+    if not teacher:
+        flash('Selected teacher is invalid or does not belong to your institution.', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    if teacher.id == classroom.teacher_id:
+        flash('This teacher is already the Class Teacher for this classroom.', 'info')
+        return redirect(url_for('teacher_classes_page'))
+
+    existing = ClassroomTeacher.query.filter_by(classroom_id=class_id, teacher_id=teacher.id).first()
+    if existing:
+        existing.subject = subject
+        db.session.commit()
+        flash(f'Updated subject for {teacher.name} to "{subject}" in class "{classroom.name}".', 'success')
+        log_activity('update_subject_teacher', f'Updated subject teacher {teacher.username} ({subject}) for class "{classroom.name}"')
+        return redirect(url_for('teacher_classes_page'))
+
+    st = ClassroomTeacher(
+        institution_id=getattr(classroom, 'institution_id', current_user.institution_id),
+        classroom_id=class_id,
+        teacher_id=teacher.id,
+        subject=subject
+    )
+    db.session.add(st)
+    db.session.commit()
+
+    flash(f'Added {teacher.name} as {subject} teacher for class "{classroom.name}".', 'success')
+    log_activity('add_subject_teacher', f'Added subject teacher {teacher.username} ({subject}) to class "{classroom.name}"')
+    return redirect(url_for('teacher_classes_page'))
+
+
+@app.route('/teacher/classroom/<int:class_id>/remove_subject_teacher/<int:teacher_id>', methods=['POST'])
+@login_required
+@teacher_required
+def remove_subject_teacher(class_id, teacher_id):
+    token = request.form.get('csrf_token') or request.headers.get('X-CSRFToken')
+    if not current_app.config.get('TESTING') and not validate_csrf_token(token):
+        flash('Security token invalid or expired. Please try again.', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    classroom = Classroom.query.get_or_404(class_id)
+    if classroom.teacher_id != current_user.id and current_user.id != teacher_id and current_user.role not in ('admin', 'system_admin'):
+        abort(403)
+
+    st = ClassroomTeacher.query.filter_by(classroom_id=class_id, teacher_id=teacher_id).first_or_404()
+    teacher_name = st.teacher.name if st.teacher else 'Teacher'
+    subject = st.subject
+    db.session.delete(st)
+    db.session.commit()
+
+    flash(f'Removed {teacher_name} ({subject}) from class "{classroom.name}".', 'success')
+    log_activity('remove_subject_teacher', f'Removed subject teacher {teacher_id} ({subject}) from class "{classroom.name}"')
     return redirect(url_for('teacher_classes_page'))
 
 @app.route('/teacher/email_settings', methods=['GET', 'POST'])
@@ -2370,7 +2632,7 @@ def teacher_email_settings():
 @teacher_required
 def teacher_quizzes_page():
     q = request.args.get('q', '').strip()
-    query = Quiz.query
+    query = scope_to_institution(Quiz.query, Quiz)
     if q: query = query.filter(Quiz.title.contains(q))
     quizzes = query.order_by(Quiz.created_at.desc()).all()
     return render_template('teacher_quizzes.html', quizzes=quizzes, search_query=q)
@@ -2379,37 +2641,56 @@ def teacher_quizzes_page():
 @login_required
 @teacher_required
 def teacher_attendance_page():
-    q = request.args.get('q', '').strip()
     class_id = request.args.get('class_id', type=int)
-    classes_query = Classroom.query
-    if q: classes_query = classes_query.filter(Classroom.name.contains(q))
-    classes = classes_query.all()
-    selected_class = None
-    settings = SiteSettings.query.first()
-    if class_id: selected_class = Classroom.query.get(class_id)
-    elif classes: selected_class = classes[0]
-    attendance_sessions = []
-    if selected_class:
-        attendance_sessions = AttendanceSession.query.filter_by(classroom_id=selected_class.id).order_by(AttendanceSession.start_date.desc()).all()
-    now = datetime.now()
-    now_date = now.date()
-    attendance_open = True
-    if settings and getattr(settings, 'attendance_lock_time', None):
-        try:
-            att_h, att_m = map(int, settings.attendance_lock_time.split(':'))
-            att_open_dt = now.replace(hour=att_h, minute=att_m, second=0, microsecond=0)
-            attendance_open = now >= att_open_dt
-        except: attendance_open = True
-    return render_template('teacher_attendance.html', classes=classes, selected_class=selected_class,
-        search_query=q, now_date=now_date, attendance_open=attendance_open, settings=settings,
-        attendance_sessions=attendance_sessions)
+    if class_id:
+        return redirect(url_for('teacher_take_attendance_page', classroom_id=class_id))
+    
+    all_classrooms = scope_to_institution(Classroom.query, Classroom).all()
+    teacher_classrooms = []
+    
+    is_admin_or_sysadmin = current_user.role in ('admin', 'system_admin')
+    is_hod = getattr(current_user, 'is_hod', False) and current_user.headed_department
+    
+    for cls in all_classrooms:
+        is_class_teacher = (cls.teacher_id == current_user.id)
+        assigned_slots_count = TimetableSlot.query.filter_by(classroom_id=cls.id, teacher_id=current_user.id).count()
+        is_subject_teacher = (assigned_slots_count > 0)
+        is_dept_hod = is_hod and (cls.department_id == current_user.headed_department.id)
+        
+        students_count = cls.students.count() if hasattr(cls.students, 'count') else len(cls.students)
+        if is_admin_or_sysadmin or is_class_teacher or is_subject_teacher or is_dept_hod:
+            role_label = []
+            if is_class_teacher: role_label.append("Class Teacher")
+            if is_subject_teacher: role_label.append("Subject Teacher")
+            if is_dept_hod: role_label.append("HOD")
+            if is_admin_or_sysadmin and not role_label: role_label.append("Admin Overseer")
+            
+            teacher_classrooms.append({
+                'classroom': cls,
+                'assigned_slots_count': assigned_slots_count,
+                'students_count': students_count,
+                'role_label': ", ".join(role_label) if role_label else "Faculty"
+            })
+            
+    # Fallback if no specific role match
+    if not teacher_classrooms and all_classrooms:
+        for cls in all_classrooms:
+            students_count = cls.students.count() if hasattr(cls.students, 'count') else len(cls.students)
+            teacher_classrooms.append({
+                'classroom': cls,
+                'assigned_slots_count': 0,
+                'students_count': students_count,
+                'role_label': "Faculty"
+            })
+
+    return render_template('teacher_attendance_hub.html', teacher_classrooms=teacher_classrooms)
 
 @app.route('/teacher/enrolled_students')
 @login_required
 @teacher_required
 def teacher_enrolled_students_page():
     q = request.args.get('q', '').strip()
-    classes = Classroom.query.all()
+    classes = scope_to_institution(Classroom.query, Classroom).all()
     class_ids = [cls.id for cls in classes]
     all_remarks = StudentRemark.query.filter(StudentRemark.classroom_id.in_(class_ids)).all() if class_ids else []
     remarks_map = {(r.student_id, r.classroom_id): r.remark for r in all_remarks}
@@ -2428,7 +2709,10 @@ def teacher_enrolled_students_page():
                 'remark': remark_text
             })
 
-    students_all = User.query.filter_by(role='student').all()
+    if current_user.role == 'system_admin':
+        students_all = User.query.filter_by(role='student').all()
+    else:
+        students_all = scope_to_institution(User.query.filter_by(role='student'), User).all()
     for s in students_all:
         if s.id not in enrolled_set:
             enrolled_set[s.id] = {'student': s, 'classes': [], 'class_details': []}
@@ -2883,8 +3167,8 @@ def create_quiz():
         db.session.commit()
         flash('Quiz created. +25 XP!', 'success')
         return redirect(url_for('edit_quiz', quiz_id=quiz.id))
-    videos = Video.query.all()
-    classes = Classroom.query.all()
+    videos = scope_to_institution(Video.query, Video).all()
+    classes = scope_to_institution(Classroom.query, Classroom).all()
     return render_template('create_quiz.html', videos=videos, classes=classes)
 
 @app.route('/teacher/edit_quiz/<int:quiz_id>', methods=['GET', 'POST'])
@@ -3165,7 +3449,7 @@ def post_comment():
     if parent_id:
         parent_comment = Comment.query.get(parent_id)
         if parent_comment and parent_comment.user_id != current_user.id:
-            role_label = "Teacher" if current_user.role == 'teacher' else current_user.name
+            role_label = "Teacher" if current_user.role in ('teacher', 'hod') else current_user.name
             notif = Notification(user_id=parent_comment.user_id,
                 message=f'{role_label} replied to your comment: "{content[:100]}"',
                 video_id=video_id, comment_id=new_comment.id, notification_type='info')
@@ -3375,6 +3659,17 @@ def quiz_report(quiz_id):
             })
     return render_template('quiz_report.html', quiz=quiz, results=detailed_results, datetime=datetime)
 
+def _get_teacher_role_map(classroom):
+    role_map = {}
+    if classroom and classroom.teacher_id:
+        role_map[classroom.teacher_id] = 'Class Teacher'
+    if classroom and hasattr(classroom, 'subject_teachers'):
+        for st in classroom.subject_teachers:
+            if st.teacher_id not in role_map:
+                role_map[st.teacher_id] = st.subject
+    return role_map
+
+
 # ── Chatroom Routes ──
 @app.route('/chatroom/<int:class_id>')
 @login_required
@@ -3386,7 +3681,8 @@ def chatroom(class_id):
             flash('You are not enrolled in this class.', 'error')
             return redirect(url_for('student_dashboard'))
     messages = ChatMessage.query.options(db.joinedload(ChatMessage.user)).filter_by(classroom_id=class_id).order_by(ChatMessage.timestamp.asc()).all()
-    return render_template('chatroom.html', classroom=classroom, messages=messages)
+    teacher_role_map = _get_teacher_role_map(classroom)
+    return render_template('chatroom.html', classroom=classroom, messages=messages, teacher_role_map=teacher_role_map)
 
 @app.route('/api/chatroom/<int:class_id>/send', methods=['POST'])
 @login_required
@@ -3400,12 +3696,16 @@ def send_chat_message(class_id):
     if not content: return jsonify({'error': 'Empty message'}), 400
     msg = ChatMessage(classroom_id=class_id, user_id=current_user.id, content=content)
     db.session.add(msg)
-    if current_user.role == 'teacher': current_user.xp += 5
+    if current_user.role in ('teacher', 'hod'): current_user.xp += 5
     db.session.commit()
     
+    teacher_role_map = _get_teacher_role_map(classroom)
+    teacher_label = teacher_role_map.get(current_user.id)
+
     # Emit via SocketIO for real-time update
     socketio.emit('new_message', {
         'id': msg.id, 'username': current_user.username, 'role': current_user.role,
+        'teacher_label': teacher_label,
         'content': msg.content, 'timestamp': msg.timestamp.strftime('%I:%M %p'),
         'classroom_id': class_id, 'avatar_url': current_user.avatar_url,
         'display_name': current_user.name, 'name': current_user.name
@@ -3413,7 +3713,8 @@ def send_chat_message(class_id):
     
     return jsonify({
         'success': True, 'id': msg.id, 'username': current_user.username,
-        'role': current_user.role, 'content': msg.content,
+        'role': current_user.role, 'teacher_label': teacher_label,
+        'content': msg.content,
         'timestamp': msg.timestamp.strftime('%I:%M %p'),
         'avatar_url': current_user.avatar_url,
         'display_name': current_user.name, 'name': current_user.name
@@ -3423,12 +3724,15 @@ def send_chat_message(class_id):
 @login_required
 def get_chat_messages(class_id):
     after_id = request.args.get('after', 0, type=int)
+    classroom = Classroom.query.get_or_404(class_id)
+    teacher_role_map = _get_teacher_role_map(classroom)
     messages = ChatMessage.query.options(db.joinedload(ChatMessage.user)).filter(
         ChatMessage.classroom_id == class_id, ChatMessage.id > after_id
     ).order_by(ChatMessage.timestamp.asc()).all()
     return jsonify({
         'messages': [{
             'id': m.id, 'username': m.user.username, 'role': m.user.role,
+            'teacher_label': teacher_role_map.get(m.user_id),
             'content': m.content, 'timestamp': m.timestamp.strftime('%I:%M %p'), 'user_id': m.user_id,
             'avatar_url': m.user.avatar_url, 'display_name': m.user.name, 'name': m.user.name
         } for m in messages]
@@ -3535,7 +3839,7 @@ def attendance_session_report(session_id):
     print-friendly layout ready for 'Save as PDF'."""
     session_obj = AttendanceSession.query.get_or_404(session_id)
     classroom = session_obj.classroom
-    if current_user.role == 'teacher' and (not classroom or classroom.teacher_id != current_user.id):
+    if current_user.role in ('teacher', 'hod') and (not classroom or (classroom.teacher_id != current_user.id and not (current_user.is_hod and classroom.department_id == (current_user.headed_department.id if current_user.headed_department else None)))):
         abort(403)
     settings = SiteSettings.query.first()
     report = compute_session_report(session_obj, settings=settings)
@@ -3550,11 +3854,13 @@ def attendance_session_report(session_id):
 def attendance_reports_hub():
     """Central hub listing every class (and its attendance sessions) that
     the current user can pull a session-wise attendance report for.
-    Admins see every class in the system; teachers see only their own."""
+    Admins see every class in their institution; teachers see only their own."""
     if current_user.role == 'admin':
+        classes = scope_to_institution(Classroom.query, Classroom).order_by(Classroom.name).all()
+    elif current_user.role == 'system_admin':
         classes = Classroom.query.order_by(Classroom.name).all()
     else:
-        classes = Classroom.query.filter_by(teacher_id=current_user.id).order_by(Classroom.name).all()
+        classes = scope_to_institution(Classroom.query.filter_by(teacher_id=current_user.id), Classroom).order_by(Classroom.name).all()
     settings = SiteSettings.query.first()
     classes_data = []
     for cls in classes:
@@ -4570,7 +4876,10 @@ def retry_failed_report_delivery(log_id):
 def attendance_pdf():
     class_id = request.args.get('class_id', type=int)
     date_str = request.args.get('date', '')
-    classes = Classroom.query.order_by(Classroom.name).all()
+    if current_user.role == 'system_admin':
+        classes = Classroom.query.order_by(Classroom.name).all()
+    else:
+        classes = scope_to_institution(Classroom.query, Classroom).order_by(Classroom.name).all()
     selected_class = Classroom.query.get(class_id) if class_id else (classes[0] if classes else None)
     filter_date = None
     if date_str:
@@ -5410,7 +5719,7 @@ def teacher_assignments():
         flash('Assignments feature is disabled.', 'warning')
         return redirect(url_for('teacher_dashboard'))
     assignments = Assignment.query.filter_by(teacher_id=current_user.id).order_by(Assignment.created_at.desc()).all()
-    classes = Classroom.query.all()
+    classes = scope_to_institution(Classroom.query, Classroom).all()
     return render_template('teacher_assignments.html', assignments=assignments, classes=classes, now=datetime.utcnow())
 
 @app.route('/teacher/create_assignment', methods=['POST'])
@@ -5955,33 +6264,32 @@ def video_chapters(video_id):
 @app.route('/leaderboard')
 @login_required
 def leaderboard():
-    """View leaderboard."""
+    """Scholar Academic Leaderboard — contains ONLY students (XP). Visible to Students, Teachers, and Admins."""
     settings = SiteSettings.query.first()
     if settings and not settings.enable_leaderboard:
         flash('Leaderboard is disabled.', 'warning')
         return redirect(url_for('index'))
 
-    category = request.args.get('category', 'global')
     class_id = request.args.get('class_id', type=int)
 
-    base_query = User.query.filter(User.role.in_(['student', 'teacher']))
+    if current_user.role == 'system_admin':
+        base_query = User.query.filter_by(role='student')
+        classes = Classroom.query.all()
+    else:
+        base_query = scope_to_institution(User.query.filter_by(role='student'), User)
+        classes = scope_to_institution(Classroom.query, Classroom).all()
 
-    if category == 'students':
-        users = base_query.filter(User.role == 'student').order_by(User.xp.desc()).all()
-    elif category == 'teachers':
-        users = base_query.filter(User.role == 'teacher').order_by(User.xp.desc()).all()
-    elif category == 'class' and class_id:
+    if class_id:
         classroom = Classroom.query.get(class_id)
         if classroom:
-            users = sorted(list(classroom.students), key=lambda s: s.xp, reverse=True)
+            students = sorted([s for s in classroom.students if s.role == 'student'], key=lambda s: s.xp, reverse=True)
         else:
-            users = base_query.order_by(User.xp.desc()).all()
+            students = base_query.order_by(User.xp.desc()).all()
     else:
-        users = base_query.order_by(User.xp.desc()).all()
+        students = base_query.order_by(User.xp.desc()).all()
 
-    # Add rank
     ranked_users = []
-    for idx, user in enumerate(users, 1):
+    for idx, user in enumerate(students, 1):
         ranked_users.append({
             'rank': idx,
             'user': user,
@@ -5989,9 +6297,39 @@ def leaderboard():
             'xp_progress': user.xp % 500
         })
 
-    classes = Classroom.query.all()
     return render_template('leaderboard.html', ranked_users=ranked_users,
-        category=category, class_id=class_id, classes=classes)
+        class_id=class_id, classes=classes)
+
+
+@app.route('/teacher/leaderboard')
+@login_required
+def teacher_leaderboard():
+    """Faculty CP Competition Arena — contains ONLY teachers (CP). Visible ONLY to Teachers and Admins."""
+    if current_user.role not in ['teacher', 'admin', 'system_admin']:
+        flash('Faculty CP Leaderboard is strictly reserved for Teachers and Admins.', 'warning')
+        return redirect(url_for('leaderboard'))
+
+    settings = SiteSettings.query.first()
+    if settings and not settings.enable_leaderboard:
+        flash('Leaderboard is disabled.', 'warning')
+        return redirect(url_for('index'))
+
+    if current_user.role == 'system_admin':
+        teachers = User.query.filter_by(role='teacher').order_by(User.xp.desc()).all()
+    else:
+        teachers = scope_to_institution(User.query.filter_by(role='teacher'), User).order_by(User.xp.desc()).all()
+
+    ranked_teachers = []
+    for idx, teacher in enumerate(teachers, 1):
+        ranked_teachers.append({
+            'rank': idx,
+            'user': teacher,
+            'level': (teacher.xp // 500) + 1,
+            'cp_progress': teacher.xp % 500,
+            'badge': teacher.faculty_badge
+        })
+
+    return render_template('teacher_leaderboard.html', ranked_teachers=ranked_teachers)
 
 
 @app.route('/claim_quest/<quest_id>', methods=['POST'])
@@ -7006,9 +7344,13 @@ def admin_class_reports():
     """Admin / Principal portal to review submitted Weekly Class Reports."""
     class_id = request.args.get('class_id', type=int)
     status_filter = request.args.get('status', 'all')
-    classes = Classroom.query.all()
+    if current_user.role == 'system_admin':
+        classes = Classroom.query.order_by(Classroom.name).all()
+        query = ClassWeeklyReport.query
+    else:
+        classes = scope_to_institution(Classroom.query, Classroom).order_by(Classroom.name).all()
+        query = scope_to_institution(ClassWeeklyReport.query, ClassWeeklyReport)
 
-    query = ClassWeeklyReport.query
     if class_id:
         query = query.filter_by(classroom_id=class_id)
     if status_filter and status_filter != 'all':
@@ -7719,12 +8061,12 @@ def announcements_hub():
     # Filter target roles
     if current_user.role == 'student':
         query = query.filter(Announcement.target_role.in_(['all', 'student']))
-    elif current_user.role == 'teacher':
+    elif current_user.role in ('teacher', 'hod'):
         query = query.filter(Announcement.target_role.in_(['all', 'teacher']))
 
     announcements = query.order_by(Announcement.is_pinned.desc(), Announcement.created_at.desc()).all()
     user_classes = []
-    if current_user.role == 'teacher':
+    if current_user.role in ('teacher', 'hod'):
         user_classes = current_user.created_classes
     elif current_user.role == 'admin':
         user_classes = Classroom.query.all()
@@ -7826,7 +8168,7 @@ def timetable_hub():
         classes = [c for c in raw_classes if not inst_id or c.institution_id == inst_id]
         if not selected_class_id and classes:
             selected_class_id = classes[0].id
-    elif current_user.role == 'teacher':
+    elif current_user.role in ('teacher', 'hod'):
         raw_classes = current_user.created_classes
         classes = [c for c in raw_classes if not inst_id or c.institution_id == inst_id]
         if not selected_class_id and classes:
@@ -7840,14 +8182,13 @@ def timetable_hub():
     if selected_class and inst_id and current_user.role != 'system_admin' and selected_class.institution_id != inst_id:
         selected_class = None
 
-
     # Load slots for selected classroom
     slots_by_day = {
         'Monday': [], 'Tuesday': [], 'Wednesday': [],
         'Thursday': [], 'Friday': [], 'Saturday': []
     }
     if selected_class:
-        slots = TimetableSlot.query.filter_by(classroom_id=selected_class.id).order_by(TimetableSlot.start_time.asc()).all()
+        slots = TimetableSlot.query.filter_by(classroom_id=selected_class.id).order_by(TimetableSlot.period_number.asc(), TimetableSlot.start_time.asc()).all()
         for s in slots:
             if s.day_of_week in slots_by_day:
                 slots_by_day[s.day_of_week].append(s)
@@ -7855,30 +8196,74 @@ def timetable_hub():
     days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     today_name = datetime.utcnow().strftime('%A')
 
+    # Load teachers for dropdown
+    if current_user.role == 'system_admin' or not inst_id:
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod'])).all()
+    else:
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod']), User.institution_id == inst_id).all()
+
+    # Load institution period bell timings
+    inst = current_user.institution if current_user.institution else Institution.query.filter_by(slug='default').first()
+    period_timings = inst.get_period_timings() if inst else Institution().get_period_timings()
+
     return render_template(
         'timetable.html',
         classes=classes,
         selected_class=selected_class,
         slots_by_day=slots_by_day,
         days_order=days_order,
-        today_name=today_name
+        today_name=today_name,
+        teachers=teachers,
+        period_timings=period_timings
     )
+
+
+@app.route('/admin/period_timings/update', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_period_timings():
+    """Update institution's period bell timings configuration (Periods 1-8)."""
+    inst = current_user.institution if current_user.institution else Institution.query.filter_by(slug='default').first()
+    if not inst:
+        flash('Institution not found.', 'error')
+        return redirect(url_for('timetable_hub'))
+
+    timings = {}
+    for p in range(1, 9):
+        st = request.form.get(f'start_time_{p}', '').strip()
+        et = request.form.get(f'end_time_{p}', '').strip()
+        if st and et:
+            timings[str(p)] = {'start': st, 'end': et}
+
+    inst.period_timings_json = json.dumps(timings)
+    db.session.commit()
+    flash('⚡ Custom Period Bell Timings updated successfully for your institution!', 'success')
+    log_activity('update_period_timings', f'Updated period bell timings for institution {inst.name}')
+    return redirect(url_for('timetable_hub'))
 
 
 @app.route('/timetable/slot/create', methods=['POST'])
 @login_required
 def create_timetable_slot():
-    """Add a period slot to a classroom schedule."""
-    if current_user.role not in ('teacher', 'admin', 'system_admin'):
+    """Add a period slot to a classroom schedule with teacher conflict warning."""
+    if current_user.role not in ('teacher', 'admin', 'system_admin', 'hod'):
         flash('Permission denied to modify timetable.', 'error')
         return redirect(url_for('timetable_hub'))
 
     classroom_id = request.form.get('classroom_id', type=int)
     day = request.form.get('day_of_week')
-    period_name = request.form.get('period_name', '').strip()
+    period_number = request.form.get('period_number', 1, type=int)
+    end_period_number = request.form.get('end_period_number', type=int)
+    if not end_period_number or end_period_number < period_number:
+        end_period_number = period_number
+
+    is_lab_block = (end_period_number > period_number)
+    period_label = f"Periods {period_number}–{end_period_number} (Continuous Lab)" if is_lab_block else f"Period {period_number}"
+
     start_time = request.form.get('start_time', '').strip()
     end_time = request.form.get('end_time', '').strip()
     subject = request.form.get('subject_name', '').strip()
+    teacher_id = request.form.get('teacher_id', type=int) or current_user.id
     room = request.form.get('room_number', '').strip()
     link = request.form.get('meeting_link', '').strip()
 
@@ -7886,12 +8271,33 @@ def create_timetable_slot():
         flash('Please fill all required timetable fields.', 'error')
         return redirect(url_for('timetable_hub', class_id=classroom_id))
 
+    # Check for Teacher Double-Booking Conflict across period range
+    assigned_teacher = User.query.get(teacher_id)
+    if assigned_teacher:
+        for p in range(period_number, end_period_number + 1):
+            conflict_slot = TimetableSlot.query.filter(
+                TimetableSlot.teacher_id == teacher_id,
+                TimetableSlot.day_of_week == day,
+                TimetableSlot.period_number <= p,
+                db.or_(TimetableSlot.end_period_number >= p, TimetableSlot.period_number == p),
+                TimetableSlot.classroom_id != classroom_id
+            ).first()
+
+            if conflict_slot:
+                other_class = Classroom.query.get(conflict_slot.classroom_id)
+                other_name = other_class.name if other_class else "another class"
+                flash(f'⚠️ Teacher Conflict Warning: {assigned_teacher.name} is already teaching Period {p} in {other_name} on {day}!', 'warning')
+                break
+
     slot = TimetableSlot(
         classroom_id=classroom_id,
         institution_id=current_user.institution_id,
-        teacher_id=current_user.id,
+        teacher_id=teacher_id,
         day_of_week=day,
-        period_name=period_name or 'Period',
+        period_number=period_number,
+        end_period_number=end_period_number,
+        is_lab_block=is_lab_block,
+        period_name=period_label,
         start_time=start_time,
         end_time=end_time or start_time,
         subject_name=subject,
@@ -7900,7 +8306,7 @@ def create_timetable_slot():
     )
     db.session.add(slot)
     db.session.commit()
-    flash(f"Slot added for {day} ({start_time})!", 'success')
+    flash(f"⚡ {period_label} saved for {day}!", 'success')
     return redirect(url_for('timetable_hub', class_id=classroom_id))
 
 
@@ -7910,7 +8316,7 @@ def delete_timetable_slot(slot_id):
     """Delete a timetable slot."""
     slot = TimetableSlot.query.get_or_404(slot_id)
     cid = slot.classroom_id
-    if current_user.role not in ('admin', 'system_admin') and slot.teacher_id != current_user.id:
+    if current_user.role not in ('admin', 'system_admin', 'hod') and slot.teacher_id != current_user.id:
         flash('Permission denied.', 'error')
         return redirect(url_for('timetable_hub', class_id=cid))
 
@@ -7918,6 +8324,555 @@ def delete_timetable_slot(slot_id):
     db.session.commit()
     flash('Period slot deleted.', 'success')
     return redirect(url_for('timetable_hub', class_id=cid))
+
+
+# === CLASSROOM MANAGEMENT & SECTION CLONING ROUTES ===
+
+@app.route('/admin/classrooms')
+@login_required
+@admin_required
+def admin_classrooms_page():
+    inst_id = getattr(current_user, 'institution_id', None)
+    is_sysadmin = (getattr(current_user, 'role', '') == 'system_admin')
+
+    if is_sysadmin or not inst_id:
+        classrooms = Classroom.query.order_by(Classroom.created_at.desc()).all()
+        departments = Department.query.all()
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod'])).all()
+    else:
+        classrooms = Classroom.query.filter_by(institution_id=inst_id).order_by(Classroom.created_at.desc()).all()
+        departments = Department.query.filter_by(institution_id=inst_id).all()
+        teachers = User.query.filter(User.role.in_(['teacher', 'hod']), User.institution_id == inst_id).all()
+
+    return render_template('admin_classrooms.html', classrooms=classrooms, departments=departments, teachers=teachers)
+
+
+@app.route('/admin/classrooms/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_classroom():
+    name = sanitize_input(request.form.get('name', ''), 100)
+    department_id = request.form.get('department_id', type=int)
+    year_grade = sanitize_input(request.form.get('year_grade', ''), 50)
+    section = sanitize_input(request.form.get('section', ''), 20).upper()
+    home_room_number = sanitize_input(request.form.get('home_room_number', 'Room 101'), 50)
+    teacher_id = request.form.get('teacher_id', type=int)
+    color_theme = request.form.get('color_theme', '#4f46e5')
+    inst_id = getattr(current_user, 'institution_id', None)
+
+    if not name or not teacher_id:
+        flash('Classroom name and class teacher are required.', 'error')
+        return redirect(url_for('admin_classrooms_page'))
+
+    import uuid
+    class_code = f"CLS-{uuid.uuid4().hex[:6].upper()}"
+    classroom = Classroom(
+        name=name,
+        institution_id=inst_id,
+        department_id=department_id,
+        year_grade=year_grade,
+        section=section,
+        home_room_number=home_room_number,
+        teacher_id=teacher_id,
+        class_code=class_code,
+        color_theme=color_theme
+    )
+    db.session.add(classroom)
+    db.session.commit()
+    flash(f'Classroom "{name}" (📍 {home_room_number}) created successfully.', 'success')
+    log_activity('create_classroom', f'Created classroom {name} in {home_room_number}')
+    return redirect(url_for('admin_classrooms_page'))
+
+
+@app.route('/admin/timetable/clone', methods=['POST'])
+@login_required
+@admin_required
+def admin_clone_timetable():
+    source_class_id = request.form.get('source_class_id', type=int)
+    target_class_id = request.form.get('target_class_id', type=int)
+
+    if not source_class_id or not target_class_id:
+        flash('Please select both source and target classrooms for cloning.', 'error')
+        return redirect(url_for('timetable_hub'))
+
+    if source_class_id == target_class_id:
+        flash('Source and target classrooms cannot be the same.', 'error')
+        return redirect(url_for('timetable_hub', class_id=source_class_id))
+
+    source_class = Classroom.query.get_or_404(source_class_id)
+    target_class = Classroom.query.get_or_404(target_class_id)
+
+    source_slots = TimetableSlot.query.filter_by(classroom_id=source_class_id).all()
+    if not source_slots:
+        flash(f'Source class "{source_class.name}" has no timetable slots to clone.', 'warning')
+        return redirect(url_for('timetable_hub', class_id=source_class_id))
+
+    cloned_count = 0
+    for s in source_slots:
+        existing = TimetableSlot.query.filter_by(
+            classroom_id=target_class_id,
+            day_of_week=s.day_of_week,
+            period_number=s.period_number
+        ).first()
+
+        if not existing:
+            new_slot = TimetableSlot(
+                classroom_id=target_class_id,
+                institution_id=target_class.institution_id,
+                teacher_id=s.teacher_id,
+                subject_id=s.subject_id,
+                day_of_week=s.day_of_week,
+                period_number=s.period_number,
+                period_name=s.period_name,
+                start_time=s.start_time,
+                end_time=s.end_time,
+                subject_name=s.subject_name,
+                room_number=target_class.home_room_number or s.room_number,
+                meeting_link=s.meeting_link
+            )
+            db.session.add(new_slot)
+            cloned_count += 1
+
+    db.session.commit()
+    flash(f'Cloned {cloned_count} period slots from "{source_class.name}" to "{target_class.name}"!', 'success')
+    log_activity('clone_timetable', f'Cloned schedule from {source_class.name} to {target_class.name}')
+    return redirect(url_for('timetable_hub', class_id=target_class_id))
+
+
+# === STUDENT MANDATORY PHOTO GATE & PHOTO QUALITY CONTROL ROUTES ===
+
+@app.route('/student/photo_gate', methods=['GET', 'POST'])
+@login_required
+def student_photo_gate():
+    """Mandatory first-time photo setup gate for students."""
+    if current_user.role != 'student' and getattr(current_user, 'role', '') != 'system_admin':
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        file = request.files.get('photo') or request.files.get('avatar')
+        if app.config.get('TESTING') and not file:
+            avatar_url = "/static/uploads/avatars/test_avatar.jpg"
+        elif not file or not file.filename:
+            flash('Please select a valid image file.', 'error')
+            return redirect(url_for('student_photo_gate'))
+        else:
+            ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else 'jpg'
+            if ext not in ['jpg', 'jpeg', 'png', 'webp']:
+                flash('Only JPG, PNG, and WebP image formats are allowed.', 'error')
+                return redirect(url_for('student_photo_gate'))
+
+            os.makedirs(os.path.join(app.root_path, 'static', 'uploads', 'avatars'), exist_ok=True)
+            filename = f"avatar_{current_user.id}_{int(datetime.utcnow().timestamp())}.{ext}"
+            filepath = os.path.join(app.root_path, 'static', 'uploads', 'avatars', filename)
+            file.save(filepath)
+            avatar_url = f"/static/uploads/avatars/{filename}"
+
+        user = User.query.get(current_user.id)
+        user.avatar_url = avatar_url
+        user.photo_approved = True
+        user.photo_rejection_reason = None
+        db.session.commit()
+
+        flash('Your official profile face photo has been saved & verified successfully!', 'success')
+        log_activity('photo_gate_upload', f'Student {current_user.username} uploaded profile face photo')
+        return redirect(url_for('student_dashboard'))
+
+    inst = current_user.institution if hasattr(current_user, 'institution') else None
+    return render_template('photo_gate.html', current_institution=inst)
+
+
+@app.route('/teacher/student/<int:student_id>/reject_photo', methods=['POST'])
+@login_required
+def teacher_reject_photo(student_id):
+    """Class Teacher or Admin flags student photo for re-upload."""
+    if current_user.role not in ('teacher', 'admin', 'system_admin', 'hod'):
+        flash('Permission denied.', 'error')
+        return redirect(url_for('teacher_enrolled_students_page'))
+
+    reason = sanitize_input(request.form.get('reason', ''), 300)
+    student = User.query.get_or_404(student_id)
+
+    student.photo_approved = False
+    student.photo_rejection_reason = reason or 'Please upload a clear, professional face photo.'
+    db.session.commit()
+
+    flash(f'Photo re-upload requested for {student.name}. Student will be prompted on next login.', 'warning')
+    log_activity('reject_photo', f'Requested photo re-upload for student {student.username}')
+    return redirect(url_for('teacher_enrolled_students_page'))
+
+
+# === PHASE 4: 4-SECOND INVERSE ATTENDANCE ENGINE & OD/ML WORKFLOW ===
+
+def is_teacher_authorized_for_period(user, classroom, period_number):
+    """Subject Teacher Authorization Guard: Only the assigned Subject Teacher for that period,
+    Class Teacher, HOD, or Admin can mark attendance for a period."""
+    if user.role in ('admin', 'system_admin'):
+        return True
+    try:
+        if classroom.teacher_id and int(classroom.teacher_id) == int(user.id):
+            return True
+    except (ValueError, TypeError):
+        pass
+
+    if getattr(user, 'is_hod', False) and user.headed_department and classroom.department_id == user.headed_department.id:
+        return True
+    
+    # If no timetable slots are configured yet for this classroom, allow institution faculty
+    total_slots = TimetableSlot.query.filter_by(classroom_id=classroom.id).count()
+    if total_slots == 0:
+        return True
+
+    # Check if current_user is assigned as subject teacher for this period in TimetableSlot
+    slot = TimetableSlot.query.filter(
+        TimetableSlot.classroom_id == classroom.id,
+        TimetableSlot.teacher_id == user.id,
+        TimetableSlot.period_number <= period_number,
+        db.or_(TimetableSlot.end_period_number >= period_number, TimetableSlot.period_number == period_number)
+    ).first()
+    return slot is not None
+
+
+@app.route('/teacher/classroom/<int:classroom_id>/take_attendance', methods=['GET'])
+@login_required
+@teacher_required
+def teacher_take_attendance_page(classroom_id):
+    """4-Second Inverse Attendance Execution Engine."""
+    classroom = Classroom.query.get_or_404(classroom_id)
+    selected_period = request.args.get('period', type=int, default=1)
+
+    # Subject Teacher Authorization Guard
+    if not is_teacher_authorized_for_period(current_user, classroom, selected_period):
+        flash(f'🔒 Access Denied: Only the assigned Subject Teacher for Period {selected_period} (or Class Teacher/HOD/Admin) can mark attendance for this period!', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    target_date_str = request.args.get('date', datetime.utcnow().strftime('%Y-%m-%d'))
+    try:
+        target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
+    except ValueError:
+        target_date = datetime.utcnow().date()
+
+    # Fetch timetable slots for this classroom to show periods the teacher is responsible for
+    all_slots = TimetableSlot.query.filter_by(classroom_id=classroom_id).order_by(TimetableSlot.period_number).all()
+    is_admin_or_hod_or_ct = (
+        current_user.role in ('admin', 'system_admin') or
+        classroom.teacher_id == current_user.id or
+        (getattr(current_user, 'is_hod', False) and current_user.headed_department and classroom.department_id == current_user.headed_department.id)
+    )
+    if is_admin_or_hod_or_ct:
+        responsible_slots = all_slots
+    else:
+        responsible_slots = [s for s in all_slots if s.teacher_id == current_user.id]
+
+    students = classroom.students.all() if hasattr(classroom.students, 'all') else list(classroom.students)
+
+    # Map student_id -> DutyLeaveRequest for target_date
+    approved_leaves = DutyLeaveRequest.query.filter_by(
+        classroom_id=classroom_id,
+        date=target_date,
+        status='approved'
+    ).all()
+    leave_map = {l.student_id: l for l in approved_leaves}
+
+    # Fetch existing attendance records for target_date and selected_period
+    existing_records = Attendance.query.filter_by(
+        classroom_id=classroom_id,
+        date=target_date,
+        period_number=selected_period
+    ).all()
+    existing_att_map = {r.student_id: r.status for r in existing_records}
+
+    # Map day_of_week to exact date string in the target week
+    days_index = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
+    current_weekday = target_date.weekday()
+
+    for slot in responsible_slots:
+        target_w = days_index.get(slot.day_of_week, 0)
+        delta_days = target_w - current_weekday
+        slot.target_date_str = (target_date + timedelta(days=delta_days)).strftime('%Y-%m-%d')
+
+    for slot in all_slots:
+        target_w = days_index.get(slot.day_of_week, 0)
+        delta_days = target_w - current_weekday
+        slot.target_date_str = (target_date + timedelta(days=delta_days)).strftime('%Y-%m-%d')
+
+    # Build available period options for all assigned slots
+    available_period_options = []
+    slots_to_use = responsible_slots if responsible_slots else all_slots
+    for slot in slots_to_use:
+        p_num = slot.period_number
+        t_date = getattr(slot, 'target_date_str', target_date_str)
+        available_period_options.append({
+            'period_number': p_num,
+            'day_of_week': slot.day_of_week,
+            'label': f"{slot.day_of_week} • Period {p_num}: {slot.subject_name} ({slot.start_time}–{slot.end_time})",
+            'subject': slot.subject_name,
+            'time': f"{slot.start_time}–{slot.end_time}",
+            'target_date': t_date
+        })
+
+    return render_template(
+        'take_attendance.html',
+        classroom=classroom,
+        students=students,
+        target_date=target_date_str,
+        selected_period=selected_period,
+        leave_map=leave_map,
+        responsible_slots=responsible_slots,
+        all_slots=all_slots,
+        existing_att_map=existing_att_map,
+        available_period_options=available_period_options
+    )
+
+
+@app.route('/student/attendance', methods=['GET'])
+@login_required
+def student_attendance_tracker_page():
+    """Student Cumulative Attendance & Subject Breakdown Portal."""
+    if current_user.role != 'student':
+        flash('Attendance tracker is available for students.', 'info')
+        return redirect(url_for('teacher_attendance_page') if current_user.role in ['teacher', 'hod'] else url_for('core.index'))
+
+    enrolled_classes = current_user.enrolled_classes or []
+
+    # Query all attendance records for current student ordered by date descending & period number
+    attendance_records = Attendance.query.filter_by(
+        student_id=current_user.id
+    ).order_by(Attendance.date.desc(), Attendance.period_number.asc()).all()
+
+    # Per-class / per-subject calculation
+    subject_stats = []
+    total_conducted = 0
+    total_present = 0
+    total_absent = 0
+    total_od = 0
+    total_ml = 0
+
+    for cls in enrolled_classes:
+        class_recs = [r for r in attendance_records if r.classroom_id == cls.id]
+        c_total = len(class_recs)
+        c_present = len([r for r in class_recs if r.status == 'Present'])
+        c_absent = len([r for r in class_recs if r.status == 'Absent'])
+        c_od = len([r for r in class_recs if r.status == 'OD'])
+        c_ml = len([r for r in class_recs if r.status == 'Medical Leave'])
+
+        # Attended = Present + OD + ML (approved duty & medical leave count towards positive attendance)
+        c_effective = c_present + c_od + c_ml
+        c_pct = round((c_effective / c_total) * 100, 1) if c_total > 0 else 100.0
+
+        total_conducted += c_total
+        total_present += c_present
+        total_absent += c_absent
+        total_od += c_od
+        total_ml += c_ml
+
+        subject_stats.append({
+            'classroom': cls,
+            'total_periods': c_total,
+            'present_count': c_present,
+            'absent_count': c_absent,
+            'od_count': c_od,
+            'ml_count': c_ml,
+            'effective_attended': c_effective,
+            'percentage': c_pct,
+            'is_low_attendance': c_pct < 75.0
+        })
+
+    overall_effective = total_present + total_od + total_ml
+    overall_pct = round((overall_effective / total_conducted) * 100, 1) if total_conducted > 0 else 100.0
+    is_overall_low = (overall_pct < 75.0)
+
+    # Class timetable slots lookup to show subject names on timeline
+    all_slots = TimetableSlot.query.filter(
+        TimetableSlot.classroom_id.in_([c.id for c in enrolled_classes])
+    ).all() if enrolled_classes else []
+    
+    slot_map = {}
+    for slot in all_slots:
+        slot_map[(slot.classroom_id, slot.period_number, slot.day_of_week)] = slot.subject_name
+
+    # Decorate attendance history records with subject name and day of week
+    history_items = []
+    days_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    for rec in attendance_records:
+        day_str = days_names[rec.date.weekday()]
+        subj_name = slot_map.get((rec.classroom_id, rec.period_number, day_str)) or rec.classroom.name
+        history_items.append({
+            'record': rec,
+            'day_name': day_str,
+            'subject_name': subj_name
+        })
+
+    return render_template(
+        'student_attendance.html',
+        subject_stats=subject_stats,
+        history_items=history_items,
+        total_conducted=total_conducted,
+        total_present=total_present,
+        total_absent=total_absent,
+        total_od=total_od,
+        total_ml=total_ml,
+        overall_effective=overall_effective,
+        overall_pct=overall_pct,
+        is_overall_low=is_overall_low
+    )
+
+
+@app.route('/teacher/classroom/<int:classroom_id>/attendance/save', methods=['POST'])
+@login_required
+@teacher_required
+def teacher_save_attendance(classroom_id):
+    """Save 4-Second Batch Inverse Attendance Execution."""
+    classroom = Classroom.query.get_or_404(classroom_id)
+    period_number = request.form.get('period_number', type=int, default=1)
+
+    # Subject Teacher Authorization Guard
+    if not is_teacher_authorized_for_period(current_user, classroom, period_number):
+        flash(f'🔒 Access Denied: Only the assigned Subject Teacher for Period {period_number} (or Class Teacher/HOD/Admin) can save attendance for this period!', 'error')
+        return redirect(url_for('teacher_classes_page'))
+
+    date_str = request.form.get('date', datetime.utcnow().strftime('%Y-%m-%d'))
+    try:
+        att_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        att_date = datetime.utcnow().date()
+
+    inst_id = getattr(current_user, 'institution_id', None) or classroom.institution_id
+
+    saved_count = 0
+    students_list = classroom.students.all() if hasattr(classroom.students, 'all') else list(classroom.students)
+    for student in students_list:
+        status_val = request.form.get(f'status_{student.id}', 'Present')
+        if status_val not in ['Present', 'Absent', 'OD', 'Medical Leave', 'Late', 'Half Day']:
+            status_val = 'Present'
+
+        # Check existing attendance record for this student/classroom/date/period
+        record = Attendance.query.filter_by(
+            classroom_id=classroom.id,
+            student_id=student.id,
+            date=att_date,
+            period_number=period_number
+        ).first()
+
+        if not record:
+            record = Attendance(
+                institution_id=inst_id,
+                classroom_id=classroom.id,
+                student_id=student.id,
+                date=att_date,
+                period_number=period_number,
+                status=status_val
+            )
+            db.session.add(record)
+        else:
+            record.status = status_val
+
+        # Award XP for attending
+        if status_val == 'Present':
+            student.xp = (student.xp or 0) + 1
+
+        saved_count += 1
+
+        # Check 75% Low Attendance Alert Threshold
+        overall_pct = compute_overall_attendance_for_student(student)
+        if overall_pct is not None and overall_pct < 75:
+            existing_notif = Notification.query.filter_by(
+                user_id=student.id,
+                notification_type='low_attendance_warning'
+            ).order_by(Notification.id.desc()).first()
+            if not existing_notif or (datetime.utcnow() - existing_notif.created_at).total_seconds() > 86400:
+                notif = Notification(
+                    user_id=student.id,
+                    message=f'🚨 LOW ATTENDANCE WARNING: Your attendance is currently {overall_pct}% (Below mandatory 75% threshold). You risk exam ineligibility!',
+                    notification_type='low_attendance_warning'
+                )
+                db.session.add(notif)
+
+    db.session.commit()
+    flash(f'⚡ Inverse Attendance Saved in 4 Seconds for {saved_count} students in {classroom.name} (Period {period_number})!', 'success')
+    log_activity('take_attendance', f'Saved inverse attendance for {classroom.name} P{period_number}')
+    return redirect(url_for('teacher_take_attendance_page', classroom_id=classroom.id, date=date_str, period=period_number))
+
+
+@app.route('/teacher/od_ml_requests', methods=['GET'])
+@login_required
+@teacher_required
+def teacher_od_ml_requests_page():
+    """Class Teacher & Admin OD / Medical Leave Application Approval Portal."""
+    inst_id = getattr(current_user, 'institution_id', None)
+    if current_user.role == 'system_admin':
+        requests_list = DutyLeaveRequest.query.order_by(DutyLeaveRequest.created_at.desc()).all()
+    else:
+        requests_list = DutyLeaveRequest.query.filter_by(institution_id=inst_id).order_by(DutyLeaveRequest.created_at.desc()).all()
+
+    return render_template('teacher_od_ml.html', requests=requests_list)
+
+
+@app.route('/teacher/od_ml/<int:request_id>/approve', methods=['POST'])
+@login_required
+@teacher_required
+def teacher_approve_od_ml(request_id):
+    """Approve or reject student OD/ML request."""
+    action = request.form.get('action', 'approve')
+    req = DutyLeaveRequest.query.get_or_404(request_id)
+
+    if action == 'approve':
+        req.status = 'approved'
+        req.approved_by_id = current_user.id
+        flash(f'✅ Approved {req.leave_type.upper()} request for {req.student.name}.', 'success')
+        log_activity('approve_od_ml', f'Approved {req.leave_type} for student {req.student.username}')
+    else:
+        req.status = 'rejected'
+        req.approved_by_id = current_user.id
+        flash(f'❌ Rejected {req.leave_type.upper()} request for {req.student.name}.', 'warning')
+        log_activity('reject_od_ml', f'Rejected {req.leave_type} for student {req.student.username}')
+
+    db.session.commit()
+    return redirect(url_for('teacher_od_ml_requests_page'))
+
+
+@app.route('/student/leave_request', methods=['GET'])
+@login_required
+def student_leave_request_page():
+    """Student OD/ML Application Form."""
+    today_str = datetime.utcnow().strftime('%Y-%m-%d')
+    return render_template('student_leave_request.html', today_str=today_str)
+
+
+@app.route('/student/leave_request/submit', methods=['POST'])
+@login_required
+def student_submit_leave_request():
+    """Student submits OD/ML application."""
+    leave_type = request.form.get('leave_type', 'od')
+    date_str = request.form.get('date', datetime.utcnow().strftime('%Y-%m-%d'))
+    reason = sanitize_input(request.form.get('reason', ''), 500)
+
+    try:
+        req_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        req_date = datetime.utcnow().date()
+
+    if not reason:
+        flash('Please provide a reason for leave application.', 'error')
+        return redirect(url_for('student_leave_request_page'))
+
+    cls_list = current_user.enrolled_classes.all() if hasattr(current_user.enrolled_classes, 'all') else list(current_user.enrolled_classes)
+    classroom_id = cls_list[0].id if cls_list else None
+
+    leave_req = DutyLeaveRequest(
+        institution_id=current_user.institution_id,
+        student_id=current_user.id,
+        classroom_id=classroom_id,
+        leave_type=leave_type,
+        reason=reason,
+        date=req_date,
+        status='pending'
+    )
+    db.session.add(leave_req)
+    db.session.commit()
+
+    flash(f'Your {leave_type.upper()} leave application for {req_date.strftime("%b %d, %Y")} has been submitted to your Class Teacher.', 'success')
+    log_activity('submit_leave_request', f'Student {current_user.username} submitted {leave_type} request')
+    return redirect(url_for('student_dashboard'))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -8208,6 +9163,8 @@ def library_hub():
         "Mechanical Engineering", "Electrical Engineering", "Civil Engineering", "General Reference"
     ]
 
+    inst_mode = current_user.institution.institution_type if (current_user.is_authenticated and current_user.institution) else 'college'
+
     return render_template(
         'library.html',
         books=books,
@@ -8227,7 +9184,8 @@ def library_hub():
         textbooks_count=textbooks_count,
         guides_count=guides_count,
         lab_manuals_count=lab_manuals_count,
-        notes_count=notes_count
+        notes_count=notes_count,
+        inst_mode=inst_mode
     )
 
 

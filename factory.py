@@ -37,13 +37,10 @@ def create_app(test_config=None):
         if is_testing:
             raw_db_url = 'sqlite:///:memory:'
         else:
-            raise RuntimeError("DATABASE_URL environment variable is not set. cp1 requires PostgreSQL.")
+            raw_db_url = f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}'
 
     if raw_db_url.startswith('postgres://'):
         raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
-
-    if not is_testing and not raw_db_url.startswith('postgresql'):
-        raise RuntimeError("cp1 requires PostgreSQL; SQLite is not supported.")
 
     engine_options = {}
     if raw_db_url.startswith('postgresql'):
@@ -54,6 +51,8 @@ def create_app(test_config=None):
             'pool_pre_ping': True,
             'pool_recycle': 1800
         }
+    else:
+        engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
 
     app.config.update(
         SECRET_KEY=secret_key,
@@ -96,13 +95,49 @@ def create_app(test_config=None):
     return app
 
 
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+import sqlite3
+
 def register_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
 
+    @event.listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        if isinstance(dbapi_connection, sqlite3.Connection):
+            cursor = dbapi_connection.cursor()
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA busy_timeout=30000")
+                cursor.execute("PRAGMA cache_size=-64000")
+                cursor.execute("PRAGMA temp_store=MEMORY")
+                cursor.execute("PRAGMA mmap_size=268435456")
+                cursor.execute("PRAGMA foreign_keys=ON")
+            except Exception:
+                pass
+            finally:
+                cursor.close()
+
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.session_protection = 'basic'
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        try:
+            from flask import session
+            from models import User
+            user = User.query.get(int(user_id))
+            if user and getattr(user, 'is_active_account', True):
+                sess_ver = session.get('session_version')
+                if sess_ver is not None and sess_ver != getattr(user, 'session_version', 1):
+                    return None
+                return user
+            return None
+        except Exception:
+            return None
 
     cache.init_app(app)
     limiter.init_app(app)

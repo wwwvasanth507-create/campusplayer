@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block title %}Mandatory Profile Photo Setup — Campus Player{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 40px auto;">
+    <div class="card card-royal" style="padding: 28px; border-color: rgba(212, 175, 55, 0.4);">
+        
+        <div class="text-center mb-20">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(212, 175, 55, 0.15); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px solid rgba(212, 175, 55, 0.3);">
+                <i class="material-icons" style="font-size: 2.2rem;">camera_alt</i>
+            </div>
+            <h1 class="page-title font-display" style="margin: 0; font-size: 1.5rem;">Mandatory Profile Photo Setup</h1>
+            <p class="page-sub" style="margin: 4px 0 0 0; font-size: 0.85rem;">
+                Complete your profile by uploading your official face photo for class registration and attendance verification.
+            </p>
+        </div>
+
+        {% if current_user.photo_rejection_reason %}
+        <div style="background: rgba(217, 83, 79, 0.12); border: 1px solid rgba(217, 83, 79, 0.3); color: var(--danger-color); padding: 12px 16px; border-radius: 10px; font-size: 0.82rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <i class="material-icons" style="font-size: 1.2rem; flex-shrink: 0;">warning</i>
+            <div>
+                <strong>Photo Re-upload Request from Class Teacher / Admin:</strong><br>
+                <span>{{ current_user.photo_rejection_reason }}</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mode-Specific Guidelines Card -->
+        <div style="background: var(--surface2); border: 1px solid var(--border); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="font-weight: 700; font-size: 0.85rem; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i class="material-icons" style="color: var(--primary); font-size: 1.1rem;">verified</i>
+                {% if current_institution and current_institution.institution_type == 'school' %}
+                🏫 School Mode Photo Guidelines
+                {% else %}
+                🏛️ College Mode Professional Photo Guidelines
+                {% endif %}
+            </div>
+            
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin: 0; line-height: 1.5;">
+                {% if current_institution and current_institution.institution_type == 'school' %}
+                Please upload a clear, recent photo of yourself so your class teacher can easily recognize you in the daily attendance register.
+                {% else %}
+                Please upload a formal, professional passport-style photo (clear front-facing view, plain background). This photo will be displayed on your Official Attendance Register, Student ID, and Academic Reports.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Upload Form -->
+        <form method="POST" action="{{ url_for('student_photo_gate') }}" enctype="multipart/form-data" style="margin: 0; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div style="position: relative; width: 140px; height: 140px; border-radius: 50%; overflow: hidden; border: 3px solid var(--primary); background: var(--surface2); display: flex; align-items: center; justify-content: center;">
+                <img id="photoPreview" src="{{ current_user.avatar_url or url_for('static', filename='images/default_avatar.png') }}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+
+            <div style="width: 100%;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: block; text-align: center;">
+                    Select Face Photo (JPG / PNG)
+                </label>
+                <input type="file" name="photo" accept="image/*" required onchange="previewStudentPhoto(this)" style="margin-bottom: 0; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; width: 100%;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; height: 46px; font-weight: 700; font-size: 0.9rem;">
+                <i class="material-icons" style="font-size: 1.1rem;">cloud_upload</i> Save &amp; Activate My Profile
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewStudentPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

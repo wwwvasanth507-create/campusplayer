@@ -1,0 +1,150 @@
+{% extends "layout.html" %}
+{% block title %}Classroom Management — Campus Player{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-16" style="flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:14px;">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="width:auto; padding:8px 12px; min-height:38px;">
+            <i class="material-icons" style="font-size:1.1rem;">arrow_back</i>
+        </a>
+        <div>
+            <h1 class="page-title font-display" style="margin:0;">Classroom Management &amp; Home Room Assignment</h1>
+            <p class="page-sub" style="margin:2px 0 0 0;">Provision classrooms, assign fixed home room numbers, and delegate class teachers</p>
+        </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+        <a href="{{ url_for('timetable_view') }}" class="btn btn-primary" style="width:auto; padding:8px 16px; font-size:0.82rem; height:38px;">
+            <i class="material-icons" style="font-size:1rem;">calendar_today</i> Timetable Engine &amp; Section Cloning
+        </a>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:flex-start;">
+    <!-- Left: Create Classroom Form -->
+    <div class="card" style="padding:18px;">
+        <div class="card-title font-display" style="margin-bottom:14px; font-size:1rem;">
+            <i class="material-icons" style="color:var(--primary);">meeting_room</i> Create New Classroom
+        </div>
+        <form method="POST" action="{{ url_for('admin_create_classroom') }}" style="display:flex; flex-direction:column; gap:12px; margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            
+            <div>
+                <label>Classroom Title / Name *</label>
+                <input type="text" name="name" placeholder="e.g. II - B.Tech AI & ML - B" required style="margin-bottom:0; height:38px;">
+            </div>
+
+            {% if departments %}
+            <div>
+                <label>Department *</label>
+                <select name="department_id" required style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label>Year / Grade *</label>
+                    <select name="year_grade" required style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                        {% if current_institution and current_institution.institution_type == 'school' %}
+                        <option value="Grade 6">Grade 6</option>
+                        <option value="Grade 7">Grade 7</option>
+                        <option value="Grade 8">Grade 8</option>
+                        <option value="Grade 9">Grade 9</option>
+                        <option value="Grade 10">Grade 10</option>
+                        <option value="Grade 11">Grade 11</option>
+                        <option value="Grade 12">Grade 12</option>
+                        {% else %}
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year" selected>2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                        <option value="PG">Postgraduate (PG)</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div>
+                    <label>Section *</label>
+                    <select name="section" required style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                        <option value="A">Section A</option>
+                        <option value="B" selected>Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label>📍 Fixed Home Room Number *</label>
+                <input type="text" name="home_room_number" placeholder="e.g. Room 302" required value="Room 302" style="margin-bottom:0; height:38px; font-family:'JetBrains Mono',monospace;">
+            </div>
+
+            <div>
+                <label>Class Teacher *</label>
+                <select name="teacher_id" required style="margin-bottom:0; height:38px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px;">
+                    {% for t in teachers %}
+                    <option value="{{ t.id }}">{{ t.name }} ({{ t.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label>Class Color Theme</label>
+                <input type="color" name="color_theme" value="#4f46e5" style="height:36px; width:100%; border-radius:6px; padding:2px; cursor:pointer; margin-bottom:0;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:6px; height:42px; min-height:42px; font-size:0.85rem;">
+                <i class="material-icons" style="font-size:1rem;">add_circle</i> Provision Classroom
+            </button>
+        </form>
+    </div>
+
+    <!-- Right: Classrooms List Matrix -->
+    <div>
+        {% if classrooms %}
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:16px;">
+            {% for c in classrooms %}
+            <div class="card" style="margin-bottom:0; padding:18px; border-top:4px solid {{ c.color_theme or '#4f46e5' }}; display:flex; flex-direction:column; justify-between:space-between;">
+                <div>
+                    <div class="flex-between mb-8" style="gap:8px;">
+                        <span class="badge" style="background:rgba(138,106,58,0.15); color:var(--primary); border:1px solid rgba(138,106,58,0.3); font-weight:800; font-family:'JetBrains Mono',monospace;">
+                            {{ c.department.code if c.department else 'GEN' }}
+                        </span>
+                        <span class="badge" style="background:rgba(37,65,178,0.12); color:var(--secondary-color); border:1px solid rgba(37,65,178,0.25); font-family:'JetBrains Mono',monospace; font-weight:700;">
+                            📍 {{ c.home_room_number or 'Room 101' }}
+                        </span>
+                    </div>
+
+                    <h3 class="font-display" style="margin:4px 0; font-size:1.1rem; color:var(--text);">{{ c.name }}</h3>
+                    <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">
+                        {{ c.year_grade or 'Standard' }} &bull; Section {{ c.section or 'A' }} &bull; Code: <b style="color:var(--text); font-family:'JetBrains Mono',monospace;">{{ c.class_code or '—' }}</b>
+                    </div>
+
+                    <div style="background:var(--surface2); border:1px solid var(--border); padding:8px 12px; border-radius:8px; display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <i class="material-icons" style="color:var(--primary); font-size:1.1rem;">supervisor_account</i>
+                        <div>
+                            <div style="font-size:0.68rem; color:var(--text-dim); text-transform:uppercase; font-weight:700;">Class Teacher</div>
+                            <div style="font-size:0.82rem; font-weight:700; color:var(--text);">{{ c.teacher.name if c.teacher else '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                    <a href="{{ url_for('timetable_view') }}?classroom_id={{ c.id }}" class="btn btn-outline" style="flex:1; padding:6px; font-size:0.75rem; min-height:34px; justify-content:center;">
+                        <i class="material-icons" style="font-size:0.9rem;">calendar_today</i> Timetable
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card text-center" style="padding:40px;">
+            <i class="material-icons" style="font-size:3.5rem; color:var(--text-dim); opacity:0.3; display:block; margin-bottom:10px;">meeting_room</i>
+            <p style="color:var(--text-dim); font-size:0.9rem;">No classrooms created yet. Use the form on the left to provision your first classroom!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
