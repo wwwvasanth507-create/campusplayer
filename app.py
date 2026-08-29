@@ -1913,6 +1913,7 @@ def admin_assign_hod(department_id):
         if teacher:
             dept.hod_id = teacher.id
             teacher.department_id = dept.id
+            teacher.role = 'hod'
             db.session.commit()
             flash(f'{teacher.name} appointed as Head of Department (HOD) for {dept.name}.', 'success')
             log_activity('assign_hod', f'Assigned HOD {teacher.username} to dept {dept.code}')

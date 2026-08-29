@@ -11,7 +11,6 @@ from crypto_helper import encrypt_password
 def app_ctx():
     app = create_app({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
         'WTF_CSRF_ENABLED': False
     })
     with app.app_context():
@@ -30,8 +29,6 @@ def app_ctx():
         db.session.commit()
         yield app
         db.session.remove()
-        if db.engine.name == 'sqlite':
-            db.session.execute(db.text("PRAGMA foreign_keys=OFF;"))
         db.drop_all()
 
 @pytest.fixture

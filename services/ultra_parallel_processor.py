@@ -100,6 +100,11 @@ def get_ffmpeg_bin():
     for candidate in ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe']:
         if os.path.exists(candidate):
             return candidate
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        pass
     return 'ffmpeg'
 
 def get_ffprobe_bin():

@@ -38,17 +38,12 @@
         {% for i in [1,0,2] if ranked_users|length > i %}
         {% set entry = ranked_users[i] %}
         {% set isFirst = (i == 0) %}
-        <div class="card" style="text-align:center; padding:{{ '24px 20px' if isFirst else '18px 16px' }}; min-width:{{ '210px' if isFirst else '180px' }}; transform:{{ 'scale(1.05)' if isFirst else 'none' }}; border:1px solid {{ 'rgba(138,106,58,0.4)' if isFirst else 'var(--border)' }}; margin-bottom:0;">
+        {% if isFirst %}
+        <div class="card" style="text-align:center; padding:24px 20px; min-width:210px; transform:scale(1.05); border:1px solid rgba(138,106,58,0.4); margin-bottom:0;">
             <div style="margin-bottom:6px;">
-                {% if i == 0 %}
                 <i class="material-icons" style="font-size:2rem; color:var(--primary);">looks_one</i>
-                {% elif i == 1 %}
-                <i class="material-icons" style="font-size:1.7rem; color:#8a94a6;">looks_two</i>
-                {% else %}
-                <i class="material-icons" style="font-size:1.7rem; color:#6b7484;">looks_3</i>
-                {% endif %}
             </div>
-            <div style="width:{{ '64px' if isFirst else '52px' }}; height:{{ '64px' if isFirst else '52px' }}; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:{{ '1.4rem' if isFirst else '1.1rem' }}; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid {{ 'var(--primary)' if i == 0 else ('#8a94a6' if i == 1 else '#6b7484') }}; overflow:hidden;">
+            <div style="width:64px; height:64px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.4rem; font-weight:800; color:#fff; margin:0 auto 10px; border:3px solid var(--primary); overflow:hidden;">
                 {% if entry.user.avatar_url %}
                 <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.name }}" style="width:100%; height:100%; object-fit:cover;">
                 {% else %}
@@ -63,6 +58,31 @@
                 Level {{ entry.level }} Scholar
             </div>
         </div>
+        {% else %}
+        <div class="card" style="text-align:center; padding:18px 16px; min-width:180px; transform:none; border:1px solid var(--border); margin-bottom:0;">
+            <div style="margin-bottom:6px;">
+                {% if i == 1 %}
+                <i class="material-icons" style="font-size:1.7rem; color:#8a94a6;">looks_two</i>
+                {% else %}
+                <i class="material-icons" style="font-size:1.7rem; color:#6b7484;">looks_3</i>
+                {% endif %}
+            </div>
+            <div style="width:52px; height:52px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:800; color:#fff; margin:0 auto 10px; {% if i == 1 %}border:3px solid #8a94a6;{% else %}border:3px solid #6b7484;{% endif %} overflow:hidden;">
+                {% if entry.user.avatar_url %}
+                <img src="{{ entry.user.avatar_url }}" alt="{{ entry.user.name }}" style="width:100%; height:100%; object-fit:cover;">
+                {% else %}
+                {{ entry.user.name[:2].upper() }}
+                {% endif %}
+            </div>
+            <div style="font-weight:700; font-size:0.95rem; color:var(--text);" class="font-display">{{ entry.user.name }}</div>
+            <div style="font-size:0.85rem; font-weight:800; color:var(--primary); margin-top:4px; font-family:'JetBrains Mono',monospace;">
+                {{ entry.user.xp }} XP
+            </div>
+            <div style="font-size:0.72rem; color:var(--text-dim); margin-top:2px;">
+                Level {{ entry.level }} Scholar
+            </div>
+        </div>
+        {% endif %}
         {% endfor %}
     </div>
     {% endif %}
@@ -70,7 +90,7 @@
     {# All Scholars List #}
     <div style="display:flex; flex-direction:column; gap:8px;">
         {% for entry in ranked_users %}
-        <div class="card" style="padding:12px 18px; margin-bottom:0; display:flex; align-items:center; gap:14px; border-color:{% if entry.user.id == current_user.id %}var(--primary){% else %}var(--border){% endif %}; background:{% if entry.user.id == current_user.id %}rgba(138,106,58,0.08){% else %}var(--surface){% endif %};">
+        <div class="card" style="padding:12px 18px; margin-bottom:0; display:flex; align-items:center; gap:14px; {% if entry.user.id == current_user.id %}border-color:var(--primary); background:rgba(138,106,58,0.08);{% else %}border-color:var(--border); background:var(--surface);{% endif %}">
             <div style="width:32px; height:32px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.82rem; color:var(--text); flex-shrink:0; font-family:'JetBrains Mono',monospace;">
                 {% if loop.index == 1 %}
                 <i class="material-icons" style="font-size:1.2rem; color:var(--primary);">looks_one</i>
@@ -109,8 +129,10 @@
                 <div style="font-weight:800; color:var(--primary); font-size:0.9rem; font-family:'JetBrains Mono',monospace;">
                     {{ entry.user.xp }} XP
                 </div>
+                {% set progress_pct = (entry.xp_progress / 500 * 100)|round|int %}
+                {% set w_style = 'width:' ~ progress_pct ~ '%;' %}
                 <div style="width:80px; height:4px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-top:4px; margin-left:auto;">
-                    <div style="width:{{ (entry.xp_progress / 500 * 100)|round }}%; height:100%; background:var(--primary);"></div>
+                    <div style="{{ w_style }} height:100%; background:var(--primary);"></div>
                 </div>
             </div>
         </div>

@@ -43,13 +43,15 @@
     <div class="card" style="margin-bottom:0; padding:0; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between;">
         <div>
             {% if playlist.thumbnail_path %}
-            <div style="height:140px; background-image:url('{{ url_for('static', filename=playlist.thumbnail_path) }}'); background-size:cover; background-position:center; position:relative;">
+            {% set thumb_url = url_for('static', filename=playlist.thumbnail_path) %}
+            <div style="height:140px; background-image:url('{{ thumb_url }}'); background-size:cover; background-position:center; position:relative;">
                 <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.75); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">
                     {{ playlist.videos|length }} videos
                 </div>
             </div>
             {% elif settings and settings.global_playlist_thumbnail %}
-            <div style="height:140px; background-image:url('{{ url_for('static', filename=settings.global_playlist_thumbnail) }}'); background-size:cover; background-position:center; position:relative;">
+            {% set global_thumb_url = url_for('static', filename=settings.global_playlist_thumbnail) %}
+            <div style="height:140px; background-image:url('{{ global_thumb_url }}'); background-size:cover; background-position:center; position:relative;">
                 <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.75); color:#fff; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;">
                     {{ playlist.videos|length }} videos
                 </div>

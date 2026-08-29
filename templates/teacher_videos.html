@@ -283,8 +283,9 @@
             </span>
         </div>
         {% elif video.thumbnail_path %}
+        {% set video_thumb = video.thumbnail_path if video.thumbnail_path.startswith('http') else url_for('static', filename=video.thumbnail_path) %}
         <div class="thumb"
-            style="background-image:url('{{ video.thumbnail_path if video.thumbnail_path.startswith('http') else url_for('static', filename=video.thumbnail_path) }}'); background-size:cover; background-position:center;">
+            style="background-image:url('{{ video_thumb }}'); background-size:cover; background-position:center;">
             {% if video.status == 'completed' or video.status == 'ready' %}<span class="status-chip chip-ok" style="display:inline-flex; align-items:center; gap:2px;"><i class="material-icons" style="font-size:0.8rem;">check_circle</i> Ready</span>
             {% elif video.status == 'processing' %}<span class="status-chip chip-proc">{{ video.processing_progress }}%</span>
             {% elif video.status == 'failed' %}<span class="status-chip chip-fail">Failed</span>
@@ -325,12 +326,12 @@
                         {% if video.status!='completed' and video.status!='ready' %}disabled{% endif %}>Add</button>
                     
                     <button type="button" class="btn btn-outline" style="padding:9px;" title="Generate AI Quiz"
-                        onclick="openAiQuizModal({{ video.id }}, '{{ video.title|replace('\'', '\\\'') }}')">
+                        onclick="openAiQuizModal({{ video.id }}, {{ video.title|tojson|forceescape }})">
                         <i class="material-icons" style="font-size:1.1rem; color:var(--primary);">auto_awesome</i>
                     </button>
 
                     <button type="button" class="btn btn-outline" style="padding:9px;" title="Audience Retention Heatmap"
-                        onclick="openRetentionModal({{ video.id }}, '{{ video.title|replace('\'', '\\\'') }}')">
+                        onclick="openRetentionModal({{ video.id }}, {{ video.title|tojson|forceescape }})">
                         <i class="material-icons" style="font-size:1.1rem; color:var(--secondary-color);">insights</i>
                     </button>
 

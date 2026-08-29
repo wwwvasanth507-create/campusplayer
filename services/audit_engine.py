@@ -84,29 +84,19 @@ def run_platform_audit(app=None):
             }
             report['counts'] = counts
 
-            # 2. Database connectivity and sanity check (PostgreSQL-native with SQLite fallback in testing)
+            # 2. Database connectivity and sanity check (PostgreSQL-native)
             try:
                 core_tables = ['institution', 'user', 'video', 'classroom', 'quiz', 'site_settings']
                 missing_tables = []
-                is_sqlite = (db.engine.dialect.name == 'sqlite')
 
                 for tbl in core_tables:
-                    if is_sqlite:
-                        exists = db.session.execute(
-                            db.text(
-                                "SELECT 1 FROM sqlite_master "
-                                "WHERE type='table' AND name = :tbl"
-                            ),
-                            {'tbl': tbl}
-                        ).scalar()
-                    else:
-                        exists = db.session.execute(
-                            db.text(
-                                "SELECT 1 FROM information_schema.tables "
-                                "WHERE table_schema = 'public' AND table_name = :tbl"
-                            ),
-                            {'tbl': tbl}
-                        ).scalar()
+                    exists = db.session.execute(
+                        db.text(
+                            "SELECT 1 FROM information_schema.tables "
+                            "WHERE table_name = :tbl"
+                        ),
+                        {'tbl': tbl}
+                    ).scalar()
                     if not exists:
                         missing_tables.append(tbl)
 

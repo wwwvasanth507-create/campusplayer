@@ -162,12 +162,14 @@
                             {{ user.xp }} <span style="font-size:0.72rem; color:var(--text-dim); font-weight:400;">{{ 'CP' if role_type == 'Teacher' else 'XP' }}</span>
                         </td>
                         <td>
+                            {% set progress_pct = [(user.xp / max_pts * 100), 100]|min %}
+                            {% set w_style = 'width:' ~ progress_pct ~ '%;' %}
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <div style="flex:1; height:6px; background:var(--surface2); border-radius:4px; overflow:hidden;">
-                                    <div style="width:{{ [(user.xp / max_pts * 100), 100]|min }}%; height:100%; background:{{ 'var(--secondary-color)' if role_type == 'Teacher' else 'var(--primary)' }}; border-radius:4px;"></div>
+                                    <div style="{{ w_style }} height:100%; {% if role_type == 'Teacher' %}background:var(--secondary-color);{% else %}background:var(--primary);{% endif %} border-radius:4px;"></div>
                                 </div>
                                 <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; width:35px; text-align:right;">
-                                    {{ [(user.xp / max_pts * 100)|int, 100]|min }}%
+                                    {{ progress_pct|int }}%
                                 </span>
                             </div>
                         </td>

@@ -36,11 +36,19 @@
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <!-- Attendance Standing Box -->
             <a href="{{ url_for('student_attendance_tracker_page') }}" class="cp-badge-stat" style="background:var(--surface2); border:1px solid var(--border); padding:8px 16px; border-radius:8px; display:flex; align-items:center; gap:10px; text-decoration:none; transition: all 0.2s ease;">
-                <i class="material-icons" style="font-size:1rem; color:{{ 'var(--success-color)' if attendance_pct >= 75 else 'var(--danger-color)' }};">fiber_manual_record</i>
+                {% if attendance_pct >= 75 %}
+                <i class="material-icons" style="font-size:1rem; color:var(--success-color);">fiber_manual_record</i>
                 <div>
                     <div style="color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Attendance Standing</div>
-                    <strong style="color:{{ 'var(--success-color)' if attendance_pct >= 75 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace; font-size:0.92rem;"> {{ attendance_pct }}% &rarr;</strong>
+                    <strong style="color:var(--success-color); font-family:'JetBrains Mono',monospace; font-size:0.92rem;"> {{ attendance_pct }}% &rarr;</strong>
                 </div>
+                {% else %}
+                <i class="material-icons" style="font-size:1rem; color:var(--danger-color);">fiber_manual_record</i>
+                <div>
+                    <div style="color:var(--text-dim); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:600;">Attendance Standing</div>
+                    <strong style="color:var(--danger-color); font-family:'JetBrains Mono',monospace; font-size:0.92rem;"> {{ attendance_pct }}% &rarr;</strong>
+                </div>
+                {% endif %}
             </a>
 
             <!-- Daily Quests Action Box -->
@@ -101,19 +109,19 @@
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
             {% for q_id, q in daily_quests.items() %}
-            <div class="quest-tile" style="background:var(--surface); border:1px solid {{ 'rgba(217,83,79,0.4)' if q.expired else ('rgba(61,143,163,0.4)' if q.claimed else ('rgba(212,175,55,0.4)' if q.progress >= q.target else 'var(--border)')) }}; border-radius:8px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div class="quest-tile" style="background:var(--surface); border-radius:8px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; {% if q.expired %}border:1px solid rgba(217,83,79,0.4);{% elif q.claimed %}border:1px solid rgba(61,143,163,0.4);{% elif q.progress >= q.target %}border:1px solid rgba(212,175,55,0.4);{% else %}border:1px solid var(--border);{% endif %}">
                 <div>
                     <div class="flex-between mb-8" style="gap:8px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <div style="width:34px; height:34px; border-radius:6px; background:{{ 'rgba(217,83,79,0.15)' if q.expired else ('rgba(61,143,163,0.15)' if q.claimed else ('rgba(212,175,55,0.15)' if q.progress >= q.target else 'rgba(37,65,178,0.15)')) }}; display:flex; align-items:center; justify-content:center;">
-                                <i class="material-icons" style="font-size:1.1rem; color:{{ 'var(--danger-color)' if q.expired else ('var(--success-color)' if q.claimed else ('var(--primary)' if q.progress >= q.target else 'var(--secondary-color)')) }};">{{ q.icon }}</i>
+                            <div style="width:34px; height:34px; border-radius:6px; display:flex; align-items:center; justify-content:center; {% if q.expired %}background:rgba(217,83,79,0.15);{% elif q.claimed %}background:rgba(61,143,163,0.15);{% elif q.progress >= q.target %}background:rgba(212,175,55,0.15);{% else %}background:rgba(37,65,178,0.15);{% endif %}">
+                                <i class="material-icons" style="font-size:1.1rem; {% if q.expired %}color:var(--danger-color);{% elif q.claimed %}color:var(--success-color);{% elif q.progress >= q.target %}color:var(--primary);{% else %}color:var(--secondary-color);{% endif %}">{{ q.icon }}</i>
                             </div>
                             <div>
                                 <div style="font-weight:700; font-size:0.88rem; color:var(--text);">{{ q.title }}</div>
                                 <div style="font-size:0.7rem; color:var(--text-dim);">{{ q.desc }}</div>
                             </div>
                         </div>
-                        <span class="badge" style="background:{{ 'rgba(217,83,79,0.15)' if q.expired else 'rgba(212,175,55,0.15)' }}; color:{{ 'var(--danger-color)' if q.expired else 'var(--primary)' }}; border:1px solid {{ 'rgba(217,83,79,0.3)' if q.expired else 'rgba(212,175,55,0.3)' }}; font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px;">
+                        <span class="badge" style="font-weight:800; font-size:0.7rem; font-family:'JetBrains Mono',monospace; border-radius:6px; padding:2px 6px; {% if q.expired %}background:rgba(217,83,79,0.15); color:var(--danger-color); border:1px solid rgba(217,83,79,0.3);{% else %}background:rgba(212,175,55,0.15); color:var(--primary); border:1px solid rgba(212,175,55,0.3);{% endif %}">
                             {{ '-' if q.expired else '+' }}{{ q.xp }} XP
                         </span>
                     </div>
@@ -123,8 +131,10 @@
                             <span>Progress</span>
                             <span>{{ q.progress }}/{{ q.target }}</span>
                         </div>
+                        {% set q_pct = [((q.progress / q.target) * 100), 100]|min %}
+                        {% set q_w_style = 'width:' ~ q_pct ~ '%;' %}
                         <div style="width:100%; height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden;">
-                            <div style="width:{{ [((q.progress / q.target) * 100), 100]|min }}%; height:100%; background:{{ 'var(--danger-color)' if q.expired else ('var(--success-color)' if q.claimed else ('var(--primary)' if q.progress >= q.target else 'var(--secondary-color)')) }};"></div>
+                            <div style="{{ q_w_style }} height:100%; {% if q.expired %}background:var(--danger-color);{% elif q.claimed %}background:var(--success-color);{% elif q.progress >= q.target %}background:var(--primary);{% else %}background:var(--secondary-color);{% endif %}"></div>
                         </div>
                     </div>
                 </div>
@@ -417,7 +427,7 @@
                     <div style="flex:1; min-width:0;">
                         <!-- Title & Options Menu -->
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px;">
-                            <h3 class="cp-card-title" style="font-size:0.88rem; font-weight:700; color:var(--text); line-height:1.3; max-height:2.6em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin:0 0 3px 0; word-break:break-word;">
+                            <h3 class="cp-card-title" style="font-size:0.88rem; font-weight:700; color:var(--text); line-height:1.3; max-height:2.6em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; margin:0 0 3px 0; word-break:break-word;">
                                 {{ video.title }}
                             </h3>
                             <i class="material-icons" style="font-size:1rem; color:var(--text-dim); flex-shrink:0; opacity:0.7;" title="Options">more_vert</i>

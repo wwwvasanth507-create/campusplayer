@@ -109,12 +109,14 @@
                             {{ student.xp }} <span style="font-size:0.72rem; color:var(--text-dim); font-weight:400;">XP</span>
                         </td>
                         <td>
+                            {% set progress_pct = [(student.xp / max_xp * 100), 100]|min %}
+                            {% set pct_style = 'width:' ~ progress_pct ~ '%;' %}
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <div style="flex:1; height:6px; background:var(--surface2); border-radius:4px; overflow:hidden;">
-                                    <div style="width:{{ [(student.xp / max_xp * 100), 100]|min }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
+                                    <div style="{{ pct_style }} height:100%; background:var(--primary); border-radius:4px;"></div>
                                 </div>
                                 <span style="font-size:0.72rem; color:var(--text-dim); font-family:'JetBrains Mono',monospace; width:35px; text-align:right;">
-                                    {{ [(student.xp / max_xp * 100)|int, 100]|min }}%
+                                    {{ progress_pct|int }}%
                                 </span>
                             </div>
                         </td>

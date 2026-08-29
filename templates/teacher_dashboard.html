@@ -82,8 +82,10 @@
             <div style="font-size:0.72rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; font-weight:700;">Educator Campus Points (CP)</div>
             <div class="font-display" style="font-size:2.4rem; font-weight:800; color:var(--primary); line-height:1.1; margin:4px 0;">{{ current_user.xp }} <span style="font-size:1rem; font-weight:600; color:var(--text-dim);">CP</span></div>
             {% if current_user.faculty_badge %}
+            {% set badge_color = current_user.faculty_badge.color %}
+            {% set b_style = 'color:' ~ badge_color ~ '; border:1px solid ' ~ badge_color ~ ';' %}
             <div style="margin-top:6px;">
-                <span class="badge" style="background:rgba(217,130,43,0.15); color:{{ current_user.faculty_badge.color }}; border:1px solid {{ current_user.faculty_badge.color }}; font-size:0.72rem; padding:3px 8px; border-radius:6px; font-weight:700;">
+                <span class="badge" style="background:rgba(217,130,43,0.15); {{ b_style }} font-size:0.72rem; padding:3px 8px; border-radius:6px; font-weight:700;">
                     {{ current_user.faculty_badge.badge }}
                 </span>
             </div>
@@ -97,8 +99,9 @@
                 <span style="font-size:0.75rem; color:var(--text-dim);">Faculty Rank</span>
             </div>
             {% set cp_progress = ((current_user.xp % 500) / 500 * 100)|int %}
+            {% set cp_w_style = 'width:' ~ cp_progress ~ '%;' %}
             <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; width:100%; max-width:180px; margin-left:auto;">
-                <div style="width:{{ cp_progress }}%; height:100%; background:var(--primary); border-radius:4px;"></div>
+                <div style="{{ cp_w_style }} height:100%; background:var(--primary); border-radius:4px;"></div>
             </div>
             <div style="font-size:0.65rem; color:var(--text-dim); margin-top:4px; font-family:'JetBrains Mono',monospace;">{{ current_user.xp % 500 }}/500 CP to next level</div>
         </div>

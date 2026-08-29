@@ -20,7 +20,7 @@ sys.path.insert(0, BASE_DIR)
 from app import app
 from extensions import db
 from models import Video, User, Institution
-from services.upload_engine import get_ffmpeg_bin
+from services.conversion_engine import get_ffmpeg_bin
 
 def generate_sample_mp4(duration_sec=3):
     """Generate a lightweight valid MP4 video buffer using FFmpeg."""

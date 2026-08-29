@@ -86,9 +86,7 @@
                 {% endif %}
                 {{ title }}
             </div>
-            <span class="badge" style="font-weight:700; padding:3px 8px; border-radius:6px;
-                background:{{ 'rgba(61,143,163,0.15)' if status_type=='Present' else ('rgba(138,106,58,0.15)' if status_type=='Late' else 'rgba(217,130,43,0.15)') }};
-                color:{{ 'var(--success-color)' if status_type=='Present' else ('var(--primary)' if status_type=='Late' else 'var(--danger-color)') }};">
+            <span class="badge" style="font-weight:700; padding:3px 8px; border-radius:6px; {% if status_type == 'Present' %}background:rgba(61,143,163,0.15); color:var(--success-color);{% elif status_type == 'Late' %}background:rgba(138,106,58,0.15); color:var(--primary);{% else %}background:rgba(217,130,43,0.15); color:var(--danger-color);{% endif %}">
                 {{ records|length }} Records
             </span>
         </div>
@@ -117,9 +115,7 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge" style="font-weight:700; font-size:0.7rem; padding:3px 6px; border-radius:6px;
-                                background:{{ 'rgba(61,143,163,0.15)' if r.status=='Present' else ('rgba(138,106,58,0.15)' if r.status=='Late' else 'rgba(217,130,43,0.15)') }};
-                                color:{{ 'var(--success-color)' if r.status=='Present' else ('var(--primary)' if r.status=='Late' else 'var(--danger-color)') }};">
+                            <span class="badge" style="font-weight:700; font-size:0.7rem; padding:3px 6px; border-radius:6px; {% if r.status == 'Present' %}background:rgba(61,143,163,0.15); color:var(--success-color);{% elif r.status == 'Late' %}background:rgba(138,106,58,0.15); color:var(--primary);{% else %}background:rgba(217,130,43,0.15); color:var(--danger-color);{% endif %}">
                                 {{ r.status }}
                             </span>
                         </td>
@@ -130,7 +126,7 @@
                             {{ r.arrival_time.strftime('%H:%M') if r.arrival_time else '—' }}
                         </td>
                         <td class="no-print">
-                            <button onclick="openSmsModal({{ r.student_id }}, '{{ r.student.name }}')"
+                            <button onclick="openSmsModal({{ r.student_id }}, {{ r.student.name|tojson|forceescape }})"
                                 style="background:none; border:none; color:var(--secondary-color); cursor:pointer; padding:4px;"
                                 title="Send SMS Attendance Report">
                                 <i class="material-icons" style="font-size:1.1rem;">chat</i>

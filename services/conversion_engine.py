@@ -73,6 +73,11 @@ def get_ffmpeg_bin() -> str:
     for candidate in ['/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg', 'C:\\ffmpeg\\bin\\ffmpeg.exe']:
         if os.path.exists(candidate):
             return candidate
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        pass
     return 'ffmpeg'
 
 
@@ -444,8 +449,10 @@ def transcode_rendition_resumable(
 
     # Check if this rendition is already 100% finished
     is_fully_done = (
-        len(valid_indices) >= estimated_total_segments or
-        (total_duration > 0 and completed_secs >= (total_duration - 1.0))
+        total_duration > 0 and (
+            len(valid_indices) >= estimated_total_segments or
+            completed_secs >= (total_duration - 1.0)
+        )
     )
 
     if is_fully_done and len(valid_indices) > 0:

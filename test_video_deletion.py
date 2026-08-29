@@ -434,25 +434,33 @@ def test_7_quiz_disassociation_on_video_delete():
         db.session.add(quiz)
         db.session.commit()
 
-        # Delete video via route
-        with app.test_client() as client:
-            with client.session_transaction() as sess:
-                sess['_user_id'] = str(teacher.id)
-                sess['_fresh'] = True
-                sess['csrf_token'] = 'test_csrf'
+        teacher_id = teacher.id
+        video_id = video.id
+        quiz_id = quiz.id
 
-            del_res = client.post(f'/teacher/delete_video/{video.id}', data={'csrf_token': 'test_csrf'}, follow_redirects=True)
-            assert del_res.status_code in (200, 302), f"Expected 200/302, got {del_res.status_code}"
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(teacher_id)
+            sess['_fresh'] = True
+            sess['csrf_token'] = 'test_valid_csrf_token'
 
-        # Verify video deleted and quiz disassociated cleanly
-        v_check = db.session.get(Video, video.id)
-        q_check = db.session.get(Quiz, quiz.id)
+        del_res = client.post(
+            f'/teacher/delete_video/{video_id}',
+            data={'csrf_token': 'test_valid_csrf_token'},
+            headers={'X-CSRF-Token': 'test_valid_csrf_token'},
+            follow_redirects=True
+        )
+        assert del_res.status_code == 200, f"Expected 200, got {del_res.status_code}"
+
+    with app.app_context():
+        v_check = db.session.get(Video, video_id)
+        q_check = db.session.get(Quiz, quiz_id)
 
         assert v_check is None, "Video DB record was not deleted"
         assert q_check is not None, "Quiz record was incorrectly deleted"
         assert q_check.video_id is None, f"Quiz video_id expected None, got {q_check.video_id}"
 
-        db.session.delete(quiz)
+        db.session.delete(q_check)
         db.session.commit()
 
     print("  [PASS] Test 7: Video deleted and linked Quiz disassociated cleanly without FK error.")
@@ -476,15 +484,23 @@ def test_8_sysadmin_video_deletion():
         db.session.commit()
 
         vid_id = video.id
-        with app.test_client() as client:
-            with client.session_transaction() as sess:
-                sess['_user_id'] = str(sysadmin.id)
-                sess['_fresh'] = True
-                sess['csrf_token'] = 'test_csrf'
+        sysadmin_id = sysadmin.id
 
-            del_res = client.post(f'/teacher/delete_video/{vid_id}', data={'csrf_token': 'test_csrf'}, follow_redirects=True)
-            assert del_res.status_code == 200, f"Expected 200, got {del_res.status_code}"
+    with app.test_client() as client:
+        with client.session_transaction() as sess:
+            sess['_user_id'] = str(sysadmin_id)
+            sess['_fresh'] = True
+            sess['csrf_token'] = 'test_valid_csrf_token'
 
+        del_res = client.post(
+            f'/teacher/delete_video/{vid_id}',
+            data={'csrf_token': 'test_valid_csrf_token'},
+            headers={'X-CSRF-Token': 'test_valid_csrf_token'},
+            follow_redirects=True
+        )
+        assert del_res.status_code == 200, f"Expected 200, got {del_res.status_code}"
+
+    with app.app_context():
         v_check = db.session.get(Video, vid_id)
         assert v_check is None, "Video DB record was not deleted by System Admin"
 

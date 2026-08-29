@@ -74,11 +74,16 @@ fi
 # Grant privileges
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 sudo -u postgres psql -d "$DB_NAME" -c "GRANT ALL ON SCHEMA public TO $DB_USER;"
+sudo -u postgres psql -d "$DB_NAME" -c "ALTER SCHEMA public OWNER TO $DB_USER;" 2>/dev/null || true
 echo "  -> PostgreSQL setup complete."
 
 # ---- Step 2: Install Python dependencies ----
 echo ""
 echo "[2/6] Installing Python dependencies..."
+if [ ! -d "$VENV" ]; then
+    echo "  -> Virtual environment not found at $VENV. Creating..."
+    python3 -m venv "$VENV"
+fi
 $VENV/bin/pip install --upgrade pip -q
 $VENV/bin/pip install -r $APP_DIR/requirements.txt -q
 echo "  -> Dependencies installed."
@@ -86,6 +91,10 @@ echo "  -> Dependencies installed."
 # ---- Step 3: Set ownership ----
 echo ""
 echo "[3/6] Setting file ownership..."
+if ! id "$APP_USER" &>/dev/null; then
+    echo "  -> User '$APP_USER' does not exist. Creating system user..."
+    useradd -m -s /bin/bash "$APP_USER" 2>/dev/null || APP_USER="$(id -un)"
+fi
 chown -R $APP_USER:$APP_USER $APP_DIR
 chmod 600 $APP_DIR/.env
 echo "  -> Ownership set to $APP_USER."

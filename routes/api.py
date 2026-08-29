@@ -56,6 +56,13 @@ def api_health():
     ffmpeg_path = shutil.which('ffmpeg') or os.getenv('FFMPEG_PATH')
     ffprobe_path = shutil.which('ffprobe') or os.getenv('FFPROBE_PATH')
 
+    if not ffmpeg_path:
+        try:
+            import imageio_ffmpeg
+            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:
+            pass
+
     status['components']['ffmpeg'] = {
         'status': 'up' if ffmpeg_path else 'down',
         'ffmpeg_binary': ffmpeg_path or 'not_found',

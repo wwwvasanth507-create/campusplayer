@@ -2,6 +2,8 @@
 Comprehensive test of all routes with proper login session handling.
 """
 import os
+os.environ['FLASK_TESTING'] = '1'
+os.environ['TESTING'] = '1'
 import requests
 import re
 import sys
@@ -11,9 +13,12 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
 
 def ensure_server_running():
     from app import app
-    from extensions import db
+    from extensions import db, limiter
     from models import User, Institution
+    app.config['RATELIMIT_ENABLED'] = False
+    limiter.enabled = False
     with app.app_context():
+        db.create_all()
         default_inst = Institution.query.filter_by(slug='default').first()
         inst_id = default_inst.id if default_inst else None
         admin_u = User.query.filter_by(username='admin').first()
@@ -86,6 +91,8 @@ def post_json(session, path, json_data=None, headers=None, allow_redirects=True)
 
 def make_session(username, password, role='Admin'):
     """Create an authenticated session."""
+    from extensions import limiter
+    limiter.reset()
     s = requests.Session()
     login_page = s.get(BASE + '/login')
     token = get_csrf_token(login_page.text) or ''

@@ -27,6 +27,7 @@ class MultiTenantIsolationTestCase(unittest.TestCase):
             db.session.rollback()
             db.session.remove()
             db.engine.dispose()
+            db.create_all()
 
             import time
             ts = str(int(time.time()))

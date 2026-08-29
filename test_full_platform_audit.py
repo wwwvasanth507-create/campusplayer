@@ -71,7 +71,8 @@ class FullPlatformAudit(unittest.TestCase):
             'ai_generate_quiz_for_video', 'save_ai_quiz', 'submit_audio_assignment'
         ]
         for ep in critical_endpoints:
-            self.assertIn(ep, endpoints, f"Critical endpoint '{ep}' missing from URL map!")
+            found = ep in endpoints or f'auth.{ep}' in endpoints or f'video.{ep}' in endpoints
+            self.assertTrue(found, f"Critical endpoint '{ep}' missing from URL map!")
         print(f" [PASS] 2. All {len(rules)} URL routes and critical endpoints verified.")
 
     def test_03_database_models_and_multi_tenancy(self):

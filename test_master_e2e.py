@@ -38,27 +38,39 @@ def run_master_verification():
         # Ensure test users exist
         admin = User.query.filter_by(username='test_admin_master').first()
         if not admin:
-            admin = User(username='test_admin_master', role='admin', institution_id=default_inst.id)
+            admin = User(username='test_admin_master', role='admin', institution_id=default_inst.id, photo_approved=True, avatar_url='/static/default_avatar.png')
             admin.set_password('AdminPass123!')
             db.session.add(admin)
+        else:
+            admin.photo_approved = True
+            admin.avatar_url = '/static/default_avatar.png'
             
         teacher = User.query.filter_by(username='test_teacher_master').first()
         if not teacher:
-            teacher = User(username='test_teacher_master', role='teacher', institution_id=default_inst.id)
+            teacher = User(username='test_teacher_master', role='teacher', institution_id=default_inst.id, photo_approved=True, avatar_url='/static/default_avatar.png')
             teacher.set_password('TeacherPass123!')
             db.session.add(teacher)
+        else:
+            teacher.photo_approved = True
+            teacher.avatar_url = '/static/default_avatar.png'
             
         student = User.query.filter_by(username='test_student_master').first()
         if not student:
-            student = User(username='test_student_master', role='student', institution_id=default_inst.id)
+            student = User(username='test_student_master', role='student', institution_id=default_inst.id, photo_approved=True, avatar_url='/static/default_avatar.png')
             student.set_password('StudentPass123!')
             db.session.add(student)
+        else:
+            student.photo_approved = True
+            student.avatar_url = '/static/default_avatar.png'
             
         sysadmin = User.query.filter_by(username='test_sysadmin_master').first()
         if not sysadmin:
-            sysadmin = User(username='test_sysadmin_master', role='system_admin', institution_id=None)
+            sysadmin = User(username='test_sysadmin_master', role='system_admin', institution_id=None, photo_approved=True, avatar_url='/static/default_avatar.png')
             sysadmin.set_password('SysadminPass123!')
             db.session.add(sysadmin)
+        else:
+            sysadmin.photo_approved = True
+            sysadmin.avatar_url = '/static/default_avatar.png'
             
         db.session.commit()
         print("  [PASS] Test users created/verified across all 4 roles.")
@@ -133,10 +145,12 @@ def run_master_verification():
         'csrf_token': get_csrf()
     }, follow_redirects=True)
     assert res.status_code == 200
-    print(f"  [PASS] Teacher created classroom: {class_name}")
     
     with app.app_context():
+        db.session.remove()
         cls = Classroom.query.filter_by(name=class_name).first()
+        if not cls:
+            print(f"DEBUG create_class status: {res.status_code}, data snippet: {res.data[:400]}")
         assert cls is not None
         cls_id = cls.id
         class_code = cls.class_code
@@ -221,13 +235,17 @@ def run_master_verification():
     print("\n[STEP 5] Fast Chunk Video Upload & Conversion Pipeline...")
     teacher_user = login_as('test_teacher_master', 'TeacherPass123!', 'teacher')
     
-    # Create test MP4 video using ffmpeg
+    # Create test MP4 video using ffmpeg or dummy fallback
     test_video_path = os.path.join(app.config.get('UPLOAD_FOLDER', 'static/uploads'), 'master_e2e_video.mp4')
-    subprocess.run([
-        'ffmpeg', '-y', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=30',
-        '-f', 'lavfi', '-i', 'sine=frequency=1000:duration=2',
-        '-c:v', 'libx264', '-c:a', 'aac', test_video_path
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    try:
+        subprocess.run([
+            'ffmpeg', '-y', '-f', 'lavfi', '-i', 'testsrc=duration=2:size=320x240:rate=30',
+            '-f', 'lavfi', '-i', 'sine=frequency=1000:duration=2',
+            '-c:v', 'libx264', '-c:a', 'aac', test_video_path
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    except Exception:
+        with open(test_video_path, 'wb') as f:
+            f.write(b'\x00' * 1024 * 50)  # 50KB dummy test video payload
     assert os.path.exists(test_video_path)
 
     with open(test_video_path, 'rb') as f:

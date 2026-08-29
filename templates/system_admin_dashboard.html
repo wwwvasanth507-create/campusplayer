@@ -121,15 +121,13 @@
                         {{ q.target }}
                     </td>
                     <td style="padding: 10px;">
-                        <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
-                            background: {{ 'rgba(16,185,129,0.15)' if q.is_active else 'rgba(244,63,94,0.15)' }};
-                            color: {{ '#10b981' if q.is_active else '#f43f5e' }};">
+                        <span style="font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; {% if q.is_active %}background:rgba(16,185,129,0.15); color:#10b981;{% else %}background:rgba(244,63,94,0.15); color:#f43f5e;{% endif %}">
                             {{ 'ACTIVE' if q.is_active else 'DISABLED' }}
                         </span>
                     </td>
                     <td style="padding: 10px; text-align: right;">
                         <div style="display: inline-flex; gap: 6px;">
-                            <button onclick="editQuestModal('{{ q.id }}', '{{ q.quest_key }}', '{{ q.title|e }}', '{{ q.desc|e }}', '{{ q.xp }}', '{{ q.icon }}', '{{ q.target }}', {{ q.is_active|tojson }})"
+                            <button onclick="editQuestModal({{ q.id|tojson|forceescape }}, {{ q.quest_key|tojson|forceescape }}, {{ q.title|tojson|forceescape }}, {{ q.desc|tojson|forceescape }}, {{ q.xp|tojson|forceescape }}, {{ q.icon|tojson|forceescape }}, {{ q.target|tojson|forceescape }}, {{ q.is_active|tojson|forceescape }})"
                                 class="btn btn-outline" style="padding: 4px 8px; font-size: 0.72rem; height: 30px;">
                                 Edit
                             </button>
@@ -269,10 +267,7 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
                 <span class="font-display" style="font-size:1.05rem; font-weight:700; color:var(--text);">{{ inst.name }}</span>
-                <span style="font-size:0.68rem; font-family:'JetBrains Mono', monospace; font-weight:700; padding:3px 8px; border-radius:8px; margin-left:8px;
-                    background:{{ 'rgba(61,143,163,0.15)' if inst.status=='active' else 'rgba(217,130,43,0.15)' }};
-                    color:{{ '#3d8fa3' if inst.status=='active' else '#d9822b' }};
-                    border:1px solid {{ 'rgba(61,143,163,0.3)' if inst.status=='active' else 'rgba(217,130,43,0.3)' }};">{{ inst.status|upper }}</span>
+                <span style="font-size:0.68rem; font-family:'JetBrains Mono', monospace; font-weight:700; padding:3px 8px; border-radius:8px; margin-left:8px; {% if inst.status=='active' %}background:rgba(61,143,163,0.15); color:#3d8fa3; border:1px solid rgba(61,143,163,0.3);{% else %}background:rgba(217,130,43,0.15); color:#d9822b; border:1px solid rgba(217,130,43,0.3);{% endif %}">{{ inst.status|upper }}</span>
                 <div style="font-size:0.75rem; color:var(--text-dim); margin-top:4px;">
                     Admin: <b style="color:var(--text);">{{ inst.owner_admin.name if inst.owner_admin else '—' }}</b> &bull; Slug: <span style="font-family:'JetBrains Mono',monospace;">{{ inst.slug }}</span>
                 </div>
@@ -304,7 +299,7 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
                 </form>
                 {% endif %}
                 {% if inst.slug != 'default' %}
-                <button type="button" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;" onclick="openDeleteInstModal({{ inst.id }}, '{{ inst.name|replace("'", "\\'") }}')">
+                <button type="button" class="btn btn-danger" style="padding:6px 10px; font-size:0.72rem; min-height:34px;" onclick="openDeleteInstModal({{ inst.id }}, {{ inst.name|tojson|forceescape }})">
                     <i class="material-icons" style="font-size:0.95rem; vertical-align:middle;">delete_forever</i> Delete
                 </button>
                 {% endif %}
@@ -342,9 +337,7 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
         <div style="background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px;">
             <div class="flex-between" style="margin-bottom:8px;">
                 <span style="font-weight:700; font-size:0.95rem; color:var(--text);">{{ item.institution.name }}</span>
-                <span class="badge" style="font-size:0.68rem; font-weight:700; padding:3px 6px; border-radius:6px;
-                    background:{{ 'rgba(61,143,163,0.15)' if item.rollover_processed else 'rgba(37,65,178,0.15)' }};
-                    color:{{ '#3d8fa3' if item.rollover_processed else 'var(--secondary-color)' }};">
+                <span class="badge" style="font-size:0.68rem; font-weight:700; padding:3px 6px; border-radius:6px; {% if item.rollover_processed %}background:rgba(61,143,163,0.15); color:#3d8fa3;{% else %}background:rgba(37,65,178,0.15); color:var(--secondary-color);{% endif %}">
                     {{ 'Rollover Done' if item.rollover_processed else 'Active Term' }}
                 </span>
             </div>
@@ -367,7 +360,7 @@ function editQuestModal(id, key, title, desc, xp, icon, target, active) {
                     Scheduled: <b style="color:var(--text);">{{ item.scheduled_end_date.strftime('%b %d, %Y') if item.scheduled_end_date else 'Not scheduled' }}</b>
                 </span>
                 {% if item.total_archived > 0 %}
-                <form method="POST" action="{{ url_for('restore_archive', institution_id=item.institution.id) }}" style="margin:0;" onsubmit="return confirm('Restore all {{ item.total_archived }} archived items for {{ item.institution.name }} back to active status?');">
+                <form method="POST" action="{{ url_for('restore_archive', institution_id=item.institution.id) }}" style="margin:0;" onsubmit="return confirm('Restore all ' + {{ item.total_archived|tojson|forceescape }} + ' archived items for ' + {{ item.institution.name|tojson|forceescape }} + ' back to active status?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="btn" style="padding:6px 12px; font-size:0.72rem; min-height:30px; background:rgba(61,143,163,0.15); color:#3d8fa3; border:1px solid rgba(61,143,163,0.3); font-weight:700;">
                         <i class="material-icons" style="font-size:0.85rem; vertical-align:middle;">restore</i> Restore All ({{ item.total_archived }})

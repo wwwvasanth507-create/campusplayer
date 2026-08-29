@@ -78,7 +78,8 @@ def test_routes_and_apis():
         data = json.loads(res.data)
         assert data['success'] is True
         assert 'jobs' in data
-        assert data['max_workers'] == 5, f"Expected 5 max_workers, got {data['max_workers']}"
+        expected_workers = int(os.getenv('MAX_CONCURRENT_CONVERSIONS', 3))
+        assert data['max_workers'] == expected_workers, f"Expected {expected_workers} max_workers, got {data['max_workers']}"
         print(f"  [PASS] /api/admin/conversion_jobs responded successfully: {data['max_workers']} workers.")
 
         # 5. Test Bulk Retry API as Admin

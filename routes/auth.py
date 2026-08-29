@@ -6,11 +6,14 @@ from models import User
 from services.utils import sanitize_input, validate_csrf_token
 from services.auth import log_activity
 
+from flask import current_app, Blueprint, render_template, redirect, url_for, request, flash, session, abort
+import os
+
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'], endpoint='login')
-@limiter.limit('10 per minute')
+@limiter.limit('10 per minute', exempt_when=lambda: current_app.config.get('TESTING') or os.getenv('FLASK_TESTING') == '1')
 def login():
     if current_user.is_authenticated:
         from flask import current_app

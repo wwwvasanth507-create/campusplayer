@@ -970,6 +970,7 @@
     margin: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     color: var(--vp-text);
@@ -1680,9 +1681,11 @@
                 var videoType = {{ (video.video_type or 'local') | tojson }};
                 var isYouTube = {{ 'true' if (video.video_type == 'youtube' or video.youtube_id or (video.filename and video.filename.startswith('youtube_'))) else 'false' }};
                 var youtubeId = {{ (video.resolved_youtube_id or video.youtube_id or (video.filename.replace('youtube_', '') if video.filename and video.filename.startswith('youtube_') else '')) | tojson }};
+                var lockSpeed = {{ (settings.lock_video_speed if settings else false) | tojson }};
+                var lockSkipping = {{ (settings.lock_video_skipping if settings else false) | tojson }};
                 var settingsData = {
-                    lock_video_speed: {% if settings %}{{ settings.lock_video_speed | tojson }}{% else %} false{% endif %},
-                    lock_video_skipping: {% if settings %}{{ settings.lock_video_skipping | tojson }}{% else %} false{% endif %}
+                    lock_video_speed: lockSpeed,
+                    lock_video_skipping: lockSkipping
                 };
 
                 var is_youtube_video = (videoType === 'youtube' || isYouTube || !!youtubeId);
@@ -1842,9 +1845,10 @@
                     var renditions = {{ video.get_renditions() | tojson }};
                     var hlsUrl = {{ hls_url | tojson }};
                     console.debug('[Video Player] hls_source:', {{ hls_source | tojson }} , 'hlsUrl:', hlsUrl);
-                    {% set thumbnail_vtt_url = url_for('serve_hls', video_id=video.id, filename='thumbnails.vtt') if video.thumbnails_vtt_path or hls_source else none %}
-                    var subtitleUrl = {% if video.subtitle_path %}{{ url_for('static', filename=video.subtitle_path) | tojson }}{% else %}null{% endif %};
-                    var thumbnailsVtt = {% if thumbnail_vtt_url %}{{ thumbnail_vtt_url | tojson }}{% else %}null{% endif %};
+                    {% set subtitle_url_val = url_for('static', filename=video.subtitle_path) if video.subtitle_path else none %}
+                    {% set thumbnail_vtt_url_val = url_for('serve_hls', video_id=video.id, filename='thumbnails.vtt') if video.thumbnails_vtt_path or hls_source else none %}
+                    var subtitleUrl = {{ subtitle_url_val | tojson }};
+                    var thumbnailsVtt = {{ thumbnail_vtt_url_val | tojson }};
                     document.addEventListener('DOMContentLoaded', function () {
                         var player = new CampusPlayer({
                             videoElement: 'video-player',
@@ -1855,7 +1859,7 @@
                             settings: settingsData,
                             subtitleUrl: subtitleUrl,
                             thumbnailsVtt: thumbnailsVtt,
-                            duration: {{ video.duration_seconds }}
+                            duration: {{ (video.duration_seconds or 0) | tojson }}
                         });
                         window.campusPlayer = player;
                     });

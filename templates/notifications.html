@@ -27,15 +27,15 @@
     <div id="notifications-list" style="display:flex; flex-direction:column; gap:10px;">
         {% for notif in notifications %}
         <div class="card notif-item" id="notif-{{ notif.id }}"
-            style="padding:16px 20px; margin-bottom:0; display:flex; gap:16px; align-items:flex-start; border-left:3px solid {{ 'var(--primary)' if not notif.is_read else 'var(--border)' }}; opacity:{{ '1' if not notif.is_read else '0.78' }};">
-            <div style="width:40px; height:40px; border-radius:8px; background:{{ 'var(--primary)' if not notif.is_read else 'var(--surface2)' }}; color:{{ '#fff' if not notif.is_read else 'var(--text-dim)' }}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            style="padding:16px 20px; margin-bottom:0; display:flex; gap:16px; align-items:flex-start; {% if not notif.is_read %}border-left:3px solid var(--primary); opacity:1;{% else %}border-left:3px solid var(--border); opacity:0.78;{% endif %}">
+            <div style="width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; {% if not notif.is_read %}background:var(--primary); color:#fff;{% else %}background:var(--surface2); color:var(--text-dim);{% endif %}">
                 <i class="material-icons" style="font-size:1.15rem;">
                     {% if "replied" in notif.message %}reply{% elif "quiz" in notif.message.lower() %}quiz{% elif "assignment" in notif.message.lower() %}assignment{% else %}notifications{% endif %}
                 </i>
             </div>
 
             <div style="flex:1; min-width:0;">
-                <div style="font-size:0.9rem; color:var(--text); line-height:1.45; font-weight:{{ '700' if not notif.is_read else '400' }}; margin-bottom:8px;">
+                <div style="font-size:0.9rem; color:var(--text); line-height:1.45; margin-bottom:8px; {% if not notif.is_read %}font-weight:700;{% else %}font-weight:400;{% endif %}">
                     {{ notif.message }}
                 </div>
                 <div class="flex-between" style="flex-wrap:wrap; gap:8px;">

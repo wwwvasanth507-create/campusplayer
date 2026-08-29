@@ -440,7 +440,7 @@
                         {% endif %}
                     </div>
                     {% if current_user.role in ['teacher', 'admin'] %}
-                    <button class="msg-del" onclick="deleteMessage({{ msg.id }})" title="Delete Message">
+                    <button class="msg-del" onclick="deleteMessage(Number('{{ msg.id }}'))" title="Delete Message">
                         <i class="material-icons" style="font-size:0.75rem;">close</i>
                     </button>
                     {% endif %}

@@ -1822,9 +1822,8 @@
             {% for category, message in messages %}
             <div class="toast toast-{{ category }}" data-auto-dismiss="true">
                 <i class="material-icons"
-                    style="font-size:1.1rem; color:{% if category=='success' %}var(--success-color){% elif category in ['error','danger'] %}var(--error-color){% else %}var(--info-color){% endif %}">
-                    {% if category == 'success' %}check_circle{% elif category in ['error','danger'] %}error{% else
-                    %}info{% endif %}
+                    style="font-size:1.1rem; {% if category=='success' %}color:var(--success-color);{% elif category in ['error','danger'] %}color:var(--error-color);{% else %}color:var(--info-color);{% endif %}">
+                    {% if category == 'success' %}check_circle{% elif category in ['error','danger'] %}error{% else %}info{% endif %}
                 </i>
                 {{ message }}
                 <i class="material-icons" style="margin-left:auto; opacity:0.4; font-size:1rem; cursor:pointer;"

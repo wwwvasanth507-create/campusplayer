@@ -134,7 +134,7 @@
 
                     <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                         {% if teacher.phone %}
-                        <button onclick="copyLevelsLink({{ teacher.username|tojson }}, {{ url_for('levels_pdf', type='teachers', _external=True)|tojson }})"
+                        <button onclick="copyLevelsLink({{ teacher.username|tojson|forceescape }}, {{ url_for('levels_pdf', type='teachers', _external=True)|tojson|forceescape }})"
                             class="btn btn-outline" style="padding:6px 10px; font-size:0.75rem; min-height:34px; color:var(--secondary-color);" title="Copy Report Link">
                             <i class="material-icons" style="font-size:0.95rem;">share</i>
                         </button>

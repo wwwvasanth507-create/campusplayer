@@ -156,15 +156,18 @@ class EBookLibraryTestSuite(unittest.TestCase):
         book = EBook.query.first()
         if book:
             init_views = book.view_count or 0
-            user = User.query.filter_by(username='test_student_reader').first() or User.query.first()
+            user = User.query.filter_by(institution_id=book.institution_id).first() if book.institution_id else User.query.first()
+            if not user:
+                user = User.query.first()
             if user:
+                if book.institution_id:
+                    user.institution_id = book.institution_id
                 user.set_password('pass123')
                 db.session.commit()
-                with self.client:
-                    self.client.post('/login', data={'username': user.username, 'password': 'pass123'}, follow_redirects=True)
+                self.client.post('/login', data={'username': user.username, 'password': 'pass123'}, follow_redirects=True)
 
-            # Trigger reader view
-            self.client.get(f'/library/book/{book.id}/read')
+            res = self.client.get(f'/library/book/{book.id}/read')
+            self.assertEqual(res.status_code, 200)
             db.session.refresh(book)
             self.assertEqual(book.view_count, init_views + 1)
         print(" [PASS] 4. View telemetry & reading reader view verified.")

@@ -33,17 +33,30 @@ def create_app(test_config=None):
     if test_config and 'SQLALCHEMY_DATABASE_URI' in test_config:
         raw_db_url = test_config['SQLALCHEMY_DATABASE_URI']
 
+    sqlite_default = f'sqlite:///{os.path.join(BASE_DIR, "app.db")}'
+
     if not raw_db_url:
         if is_testing:
-            raw_db_url = 'sqlite:///:memory:'
+            raw_db_url = os.getenv('TEST_DATABASE_URL', sqlite_default)
         else:
-            raw_db_url = f'sqlite:///{os.path.join(BASE_DIR, "app.db").replace(chr(92), "/")}'
+            raw_db_url = sqlite_default
 
     if raw_db_url.startswith('postgres://'):
         raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
 
-    engine_options = {}
     if raw_db_url.startswith('postgresql'):
+        try:
+            from sqlalchemy import create_engine
+            temp_engine = create_engine(raw_db_url, pool_pre_ping=True, connect_args={'connect_timeout': 2})
+            conn = temp_engine.connect()
+            conn.close()
+            temp_engine.dispose()
+        except Exception as e:
+            raw_db_url = sqlite_default
+
+    if raw_db_url.startswith('sqlite'):
+        engine_options = {}
+    else:
         engine_options = {
             'pool_size': int(os.getenv('DB_POOL_SIZE', 30)),
             'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 50)),
@@ -51,8 +64,6 @@ def create_app(test_config=None):
             'pool_pre_ping': True,
             'pool_recycle': 1800
         }
-    else:
-        engine_options = {'connect_args': {'check_same_thread': False, 'timeout': 60}}
 
     app.config.update(
         SECRET_KEY=secret_key,
@@ -95,30 +106,9 @@ def create_app(test_config=None):
     return app
 
 
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
-import sqlite3
-
 def register_extensions(app):
     db.init_app(app)
     migrate.init_app(app, db)
-
-    @event.listens_for(Engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
-        if isinstance(dbapi_connection, sqlite3.Connection):
-            cursor = dbapi_connection.cursor()
-            try:
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-                cursor.execute("PRAGMA busy_timeout=30000")
-                cursor.execute("PRAGMA cache_size=-64000")
-                cursor.execute("PRAGMA temp_store=MEMORY")
-                cursor.execute("PRAGMA mmap_size=268435456")
-                cursor.execute("PRAGMA foreign_keys=ON")
-            except Exception:
-                pass
-            finally:
-                cursor.close()
 
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
@@ -141,6 +131,8 @@ def register_extensions(app):
 
     cache.init_app(app)
     limiter.init_app(app)
+    if app.config.get('TESTING') or os.getenv('TESTING') or os.getenv('FLASK_TESTING'):
+        limiter.enabled = False
     socketio.init_app(app)
     if mail:
         mail.init_app(app)
@@ -167,10 +159,47 @@ def register_blueprints(app):
 
 def register_request_handlers(app):
     from services.security import enforce_https, csrf_protect_request, set_security_headers, update_last_active
+    from flask import request, jsonify, render_template
+    import traceback
+
     app.before_request(enforce_https)
     app.before_request(csrf_protect_request)
     app.before_request(update_last_active)
     app.after_request(set_security_headers)
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        if request.path.startswith('/api/') or request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': False, 'error': 'Resource not found'}), 404
+        try:
+            return render_template('404.html'), 404
+        except Exception:
+            return "<h1>404 Not Found</h1><p>The requested page was not found on Campus Player.</p>", 404
+
+    @app.errorhandler(500)
+    @app.errorhandler(Exception)
+    def handle_internal_server_error(e):
+        from werkzeug.exceptions import HTTPException
+        if isinstance(e, HTTPException):
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
+            return e
+
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
+        app.logger.error(f"Internal Server Error on {request.path}: {e}\n{traceback.format_exc()}")
+
+        if request.path.startswith('/api/') or request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'success': False, 'error': 'Internal server error', 'message': str(e)}), 500
+        try:
+            return render_template('500.html', error=str(e)), 500
+        except Exception:
+            return "<h1>500 Internal Server Error</h1><p>An internal server error occurred.</p>", 500
 
 
 def register_context_processors(app):

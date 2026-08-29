@@ -76,7 +76,7 @@
             <h3 class="font-display" style="margin:0; font-size:1rem; color:var(--text); display:flex; align-items:center; gap:6px;">
                 <i class="material-icons" style="color:var(--primary); font-size:1.15rem;">fact_check</i> Attendance (Past 30 Days)
             </h3>
-            <span style="font-size:1.1rem; font-weight:800; color:{{ 'var(--success-color)' if (att_stats.percentage or 100.0) >= 75 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace;">
+            <span style="font-size:1.1rem; font-weight:800; font-family:'JetBrains Mono',monospace; {% if (att_stats.percentage or 100.0) >= 75 %}color:var(--success-color);{% else %}color:var(--danger-color);{% endif %}">
                 {{ "%.0f"|format(att_stats.percentage) if att_stats.percentage is not none else "100" }}%
             </span>
         </div>
@@ -116,7 +116,7 @@
                     </div>
                 </div>
                 <div style="text-align:right;">
-                    <div style="font-weight:800; font-size:0.95rem; color:{{ 'var(--success-color)' if (q.score / (q.total_questions or 1)) >= 0.7 else 'var(--danger-color)' }}; font-family:'JetBrains Mono',monospace;">
+                    <div style="font-weight:800; font-size:0.95rem; font-family:'JetBrains Mono',monospace; {% if (q.score / (q.total_questions or 1)) >= 0.7 %}color:var(--success-color);{% else %}color:var(--danger-color);{% endif %}">
                         {{ q.score }} / {{ q.total_questions }}
                     </div>
                     <div style="font-size:0.68rem; color:var(--text-dim);">

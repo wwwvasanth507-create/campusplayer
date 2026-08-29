@@ -1,12 +1,13 @@
 import io
 import unittest
 from app import app as flask_app
-from extensions import db
+from extensions import db, limiter
 from models import User, Institution, Classroom
 
 class TestPhase3StudentOnboardingSuite(unittest.TestCase):
     def setUp(self):
         flask_app.config.update({'TESTING': True, 'WTF_CSRF_ENABLED': False})
+        limiter.reset()
         self.app_context = flask_app.app_context()
         self.app_context.push()
         self.client = flask_app.test_client()
